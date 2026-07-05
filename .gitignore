@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════
+# llmWikiGerman – .gitignore
+# edition by ZeroDot1
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# ─── IDEs und Editoren ───────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# ─── qmd (lokale Such-Indizes & Cache) ───────────────────────
+.qmd/
+
+# ─── Rohquellen (archiviertes Material, nicht Teil des Wikis) ─
+raw/*
+
+# ─── Temporäre Exporte ──────────────────────────────────────
+output_docs/*
+!output_docs/.gitkeep
+
+# ─── Logs & temporäre Dateien ───────────────────────────────
+*.log
+/tmp/
+TMP/
+
+# ─── System ──────────────────────────────────────────────────
+Thumbs.db
+.desktop.ini
+*.bak
+*.orig

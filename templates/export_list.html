@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Exportierte Dokumente (output_docs/){% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>📤 Exportierte Dokumente</h1>
+</div>
+
+<p class="subtitle">
+    Dies sind deine exportierten Dokumente im Ordner <code>output_docs/</code>. Diese Dateien können an andere weitergegeben oder geteilt werden.
+</p>
+
+{% if files %}
+<div class="table-container">
+    <table class="raw-table">
+        <thead>
+            <tr>
+                <th>Dateiname</th>
+                <th>Größe</th>
+                <th>Exportiert am</th>
+                <th style="text-align: right;">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>
+                    <span class="file-icon">📄</span>
+                    <strong class="file-name">{{ file.name }}</strong>
+                </td>
+                <td class="file-size">{{ file.size_formatted }}</td>
+                <td class="file-date">{{ file.mtime_formatted }}</td>
+                <td style="text-align: right;">
+                    <a href="/export/{{ file.name }}" class="btn btn-sm btn-secondary">Ansehen</a>
+                    <a href="/export/{{ file.name }}?download=1" class="btn btn-sm btn-accent">Herunterladen</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="search-no-results">
+    <p style="font-size: 2rem; margin-bottom: 0.5rem;">📭</p>
+    <p>Noch keine exportierten Dokumente im Ordner <code>output_docs/</code> vorhanden.</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+        Du kannst jede Wiki-Seite exportieren, indem du auf den Button am Fußende des Artikels klickst.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

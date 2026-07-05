@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Wiki-Gesundheitscheck (Lint){% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>🏥 Wiki-Gesundheitscheck (Lint)</h1>
+    <a href="/lint?run=1" class="btn btn-primary">🔍 Check jetzt ausführen</a>
+</div>
+
+<p class="subtitle">
+    Der Gesundheitscheck analysiert dein Wiki auf strukturelle Mängel, wie z. B. verwaiste Seiten (ohne eingehende Links) oder Links auf Seiten, die noch gar nicht existieren.
+</p>
+
+{% if run_check %}
+    <div class="status-summary" style="margin-bottom: 2rem; padding: 1rem; border-radius: var(--radius); background: {% if issue_count == 0 %}rgba(74, 222, 128, 0.12){% else %}rgba(251, 191, 36, 0.12){% endif %}; border: 1px solid {% if issue_count == 0 %}var(--accent-green){% else %}var(--accent-yellow){% endif %};">
+        {% if issue_count == 0 %}
+        <strong style="color: var(--accent-green);">🎉 Keine Probleme gefunden!</strong> Dein Wiki ist gesund und vollständig verknüpft.
+        {% else %}
+        <strong style="color: var(--accent-yellow);">⚠ {{ issue_count }} potenzielle Probleme gefunden.</strong> Siehe die Details unten.
+        {% endif %}
+    </div>
+
+    <!-- Verwaiste Seiten -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">📄 Verwaiste Seiten (Orphans)</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Diese Seiten existieren zwar, aber keine andere Seite im Wiki verweist auf sie. Füge Links in anderen Artikeln hinzu, um sie auffindbar zu machen.
+        </p>
+        {% if orphans %}
+            <ul class="page-list">
+                {% for orphan in orphans %}
+                <li style="border-color: rgba(248, 113, 113, 0.2);">
+                    <a href="/wiki/{{ orphan.slug }}" style="color: var(--accent-red);">
+                        <span>📄 {{ orphan.title }}</span>
+                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">{{ orphan.filename }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">✅ Keine verwaisten Seiten gefunden.</p>
+        {% endif %}
+    </div>
+
+    <!-- Fehlende verlinkte Seiten -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">🔗 Erwähnte aber fehlende Seiten</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Diese Seiten wurden in Artikeln per <code>[[Seitenname]]</code> verlinkt, aber es wurde noch keine Wiki-Seite dafür angelegt. Du kannst auf die Links klicken, um sie über den Ingest anzulegen.
+        </p>
+        {% if missing %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for ref in missing %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 0.8rem 1.2rem; background: var(--bg-card);">
+                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                        <a href="/ingest?title={{ ref.title }}" style="color: var(--accent-yellow); font-weight: 600; text-decoration: none; font-size: 1.05rem;">
+                            <span>🔗 [[{{ ref.title }}]]</span>
+                        </a>
+                        <span class="score-badge" style="font-size: 0.75rem; background: rgba(255, 169, 64, 0.15); color: var(--accent-yellow); padding: 0.15rem 0.6rem; border-radius: 10px; font-weight: 500;">
+                            {{ ref.count }} Verweise
+                        </span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                        Referenziert von: 
+                        {% for src_title, src_slug in ref.sources %}
+                        <a href="/wiki/{{ src_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link); margin-right: 0.5rem;">{{ src_title }}</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">✅ Alle verlinkten Seiten existieren.</p>
+        {% endif %}
+    </div>
+
+    <!-- Veraltete Seiten (Staleness) -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">⏳ Potenzial veraltete Seiten (Stale Pages)</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Dies sind die am längsten nicht mehr bearbeiteten Seiten im Wiki. Überprüfe sie gelegentlich, um sicherzustellen, dass das Wissen noch aktuell ist.
+        </p>
+        {% if stale %}
+            <ul class="page-list">
+                {% for page in stale %}
+                <li style="border-color: rgba(162, 162, 162, 0.2); padding: 0.75rem 1rem;">
+                    <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary); display: flex; justify-content: space-between; width: 100%; text-decoration: none;">
+                        <span>📄 {{ page.title }}</span>
+                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">Zuletzt geändert: {{ page.mtime_formatted }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">Keine Seiten analysiert.</p>
+        {% endif %}
+    </div>
+
+    <!-- Fehlende Rohquellen (Raw File Refs) -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-red);">⚠️ Defekte Rohquellen-Referenzen (Raw File Refs)</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Diese Wiki-Seiten verweisen auf eine Rohdatei im Ordner <code>raw/</code>, die physisch nicht existiert.
+        </p>
+        {% if missing_raw %}
+            <ul class="page-list">
+                {% for ref in missing_raw %}
+                <li style="border-color: rgba(248, 113, 113, 0.2); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>
+                        Seite <a href="/wiki/{{ ref.page_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ ref.page_title }}</a> verweist auf:
+                    </span>
+                    <code style="color: var(--accent-red); font-size: 0.85rem; font-family: var(--font-mono); background: rgba(248, 113, 113, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ ref.raw_file }}</code>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">✅ Alle referenzierten Rohdateien existieren in raw/.</p>
+        {% endif %}
+    </div>
+{% else %}
+    <div class="search-no-results">
+        <p style="font-size: 2rem; margin-bottom: 0.5rem;">🏥</p>
+        <p>Klicke auf den Button oben, um den Gesundheitscheck zu starten.</p>
+    </div>
+{% endif %}
+{% endblock %}

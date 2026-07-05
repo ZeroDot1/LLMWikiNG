@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Export: {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>📄 Exportiertes Dokument: {{ filename }}</h1>
+    <div>
+        <a href="/export" class="btn btn-secondary"> Zurück zur Übersicht</a>
+        <a href="/export/{{ filename }}?download=1" class="btn btn-accent">Herunterladen</a>
+    </div>
+</div>
+
+<div class="raw-metadata">
+    <p><strong>Pfad:</strong> <code>output_docs/{{ filename }}</code> | <strong>Größe:</strong> {{ size_formatted }} | <strong>Geändert:</strong> {{ mtime_formatted }}</p>
+</div>
+
+<div class="export-content-container" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-top: 1rem; box-shadow: var(--shadow);">
+    {% if is_markdown %}
+        {{ content_html|safe }}
+    {% else %}
+        <pre class="raw-code"><code>{{ content }}</code></pre>
+    {% endif %}
+</div>
+{% endblock %}

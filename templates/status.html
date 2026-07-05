@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Systemstatus & Statistik{% endblock %}
+
+{% block content %}
+<h1>📊 Systemstatus & Statistik</h1>
+<p class="subtitle">
+    Übersicht über den Zustand deiner LLM-Wiki-Instanz, der verknüpften Tools und der Datenbankstatistiken.
+</p>
+
+<div class="wiki-stats" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+        <span class="stat-num">{{ stats.page_count }}</span>
+        <span class="stat-label">Wiki-Seiten</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-num">{{ stats.raw_count }}</span>
+        <span class="stat-label">Rohquellen</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-num">{{ stats.word_count }}</span>
+        <span class="stat-label">Wörter gesamt</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-num">{{ stats.export_count }}</span>
+        <span class="stat-label">Exportiert</span>
+    </div>
+</div>
+
+<div class="status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- System-Konfiguration -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">⚙️ Konfiguration</h2>
+        <table style="width: 100%; border: none;">
+            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">LLM Backend:</td><td style="font-weight: 600;">{{ config.backend }}</td></tr>
+            {% if config.backend == 'ollama' %}
+            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">Ollama-Modell:</td><td style="font-family: var(--font-mono); font-size: 0.85rem;">{{ config.ollama_model }}</td></tr>
+            {% endif %}
+            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">Wiki-Pfad:</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.wiki_dir }}</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">Quellordner:</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.raw_dir }}</td></tr>
+            <tr><td style="padding: 0.5rem 0; color: var(--text-secondary);">Export-Ordner:</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.export_dir }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Tool-Status -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🛠️ Externe Werkzeuge</h2>
+        <table style="width: 100%;">
+            {% for tool, status in tools.items() %}
+            <tr style="border-bottom: 1px solid var(--border-light);">
+                <td style="padding: 0.5rem 0; font-weight: 500;">{{ tool }}</td>
+                <td style="text-align: right; padding: 0.5rem 0;">
+                    {% if status %}
+                    <span style="color: var(--accent-green); font-weight: 600;">✅ Installiert</span>
+                    {% else %}
+                    <span style="color: var(--accent-red); font-weight: 600;">❌ Fehlt</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Top Hubs -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🎯 Top-Verlinkte Seiten (Hubs)</h2>
+        {% if analytics.hubs %}
+        <ul style="list-style: none; padding: 0;">
+            {% for hub in analytics.hubs %}
+            <li style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                <a href="/wiki/{{ hub.slug }}" style="font-weight: 500;">{{ hub.title }}</a>
+                <span class="score-badge" style="font-size: 0.75rem; background: rgba(102, 126, 234, 0.15); color: var(--accent-hover); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ hub.links }} Links</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Noch keine Verknüpfungen vorhanden.</p>
+        {% endif %}
+    </div>
+
+    <!-- Top Tags -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🏷️ Beliebte Tags</h2>
+        {% if analytics.top_tags %}
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.5rem;">
+            {% for tag, count in analytics.top_tags %}
+            <span style="font-size: 0.8rem; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-primary); padding: 0.25rem 0.6rem; border-radius: 12px;">
+                #{{ tag }} <strong style="color: var(--accent-yellow);">({{ count }})</strong>
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Keine Tags vergeben.</p>
+        {% endif %}
+    </div>
+
+    <!-- Brücken-Seiten (Bridges) -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🌉 Brücken-Seiten (Tag-Verbindungen)</h2>
+        {% if analytics.bridges %}
+        <ul style="list-style: none; padding: 0;">
+            {% for bridge in analytics.bridges %}
+            <li style="display: flex; flex-direction: column; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light); gap: 0.2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="/wiki/{{ bridge.slug }}" style="font-weight: 500;">{{ bridge.title }}</a>
+                    <span class="score-badge" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: var(--accent-green); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ bridge.tags_count }} Tag-Bereiche</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Verbindet: {% for tag in bridge.connected_tags %}<span style="color: var(--accent-yellow); margin-right: 0.3rem;">#{{ tag }}</span>{% endfor %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Keine Brücken-Seiten identifiziert.</p>
+        {% endif %}
+    </div>
+
+    <!-- Sackgassen -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🚏 Sackgassen (Keine ausgehenden Links)</h2>
+        {% if analytics.dead_ends %}
+        <ul style="list-style: none; padding: 0;">
+            {% for page in analytics.dead_ends %}
+            <li style="padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary);">{{ page.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Alle Seiten enthalten Verweise!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🔄 Synchronisations-Status</h2>
+    <p>
+        {% if sync_needed %}
+        <span style="color: var(--accent-yellow); font-weight: 600;">🔄 Sync erforderlich.</span> Es wurden neue oder geänderte Dateien im Wiki oder den Rohquellen erkannt, die noch nicht im Suchindex sind.
+        {% else %}
+        <span style="color: var(--accent-green); font-weight: 600;">✅ System synchronisiert.</span> Alle Suchindizes und Übersichten sind auf dem neuesten Stand.
+        {% endif %}
+    </p>
+    <div style="margin-top: 1rem;">
+        <a href="/admin/sync" class="btn btn-primary">Jetzt synchronisieren</a>
+    </div>
+</div>
+{% endblock %}

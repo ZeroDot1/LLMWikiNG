@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Rohquelle: {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>📄 Rohquelle: {{ filename }}</h1>
+    <div>
+        <a href="/raw" class="btn btn-secondary"> Zurück zur Übersicht</a>
+        {% if wiki_slug %}
+        <a href="/wiki/{{ wiki_slug }}" class="btn btn-accent">Wiki-Seite anzeigen</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="raw-metadata">
+    <p><strong>Pfad:</strong> <code>raw/{{ filename }}</code> | <strong>Größe:</strong> {{ size_formatted }} | <strong>Geändert:</strong> {{ mtime_formatted }}</p>
+</div>
+
+<div class="raw-content-container">
+    {% if is_text %}
+        <pre class="raw-code"><code>{{ content }}</code></pre>
+    {% else %}
+        <div class="binary-warning">
+            <p>Dies ist eine Binärdatei oder ihr Format wird im Browser nicht nativ angezeigt.</p>
+            <a href="/raw/{{ filename }}?download=1" class="btn btn-primary">Datei herunterladen</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

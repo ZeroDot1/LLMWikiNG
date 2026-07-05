@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Wissensgraph{% endblock %}
+
+{% block content %}
+<div class="header-action" style="margin-bottom: 1.5rem;">
+    <div>
+        <h1>🕸️ Wissensgraph</h1>
+        <p class="subtitle">Interaktive Visualisierung aller verknüpften Wiki-Seiten und deren Beziehungen.</p>
+    </div>
+    <div>
+        <button onclick="resetGraph()" class="btn btn-secondary">🔍 Ansicht zurücksetzen</button>
+    </div>
+</div>
+
+<!-- Container für den Graph -->
+<div id="graph-container" style="width: 100%; height: 650px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius); position: relative; box-shadow: var(--shadow);">
+    <div id="network-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-secondary); text-align: center; z-index: 10;">
+        <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+        <p>Generiere Wissensgraph...</p>
+    </div>
+    <div id="network" style="width: 100%; height: 100%;"></div>
+</div>
+
+<div class="admonition admonition-tip" style="margin-top: 1.5rem;">
+    <strong>Bedienungshinweise:</strong>
+    <ul>
+        <li><strong>Ziehen / Navigieren:</strong> Klicke und ziehe den Hintergrund, um die Ansicht zu verschieben. Nutze das Mausrad zum Zoomen.</li>
+        <li><strong>Knoten verschieben:</strong> Ziehe einzelne Knoten mit der Maus, um das Layout anzupassen.</li>
+        <li><strong>Seite öffnen:</strong> Doppelklicke auf einen Knoten, um direkt zu der entsprechenden Wiki-Seite zu springen.</li>
+        <li><strong>Beziehungen hervorheben:</strong> Klicke einfach auf einen Knoten, um alle direkt verbundenen Seiten hervorzuheben.</li>
+    </ul>
+</div>
+
+<!-- Lade Vis-Network lokal -->
+<script type="text/javascript" src="/static/vis-network.min.js"></script>
+
+<script type="text/javascript">
+let network = null;
+let nodesDataset = null;
+let edgesDataset = null;
+
+document.addEventListener("DOMContentLoaded", function() {
+    fetch("/graph/data")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("network-loader").style.display = "none";
+            
+            // Formatierte Knoten für Vis.js
+            const formattedNodes = data.nodes.map(node => {
+                let color = {
+                    background: "#667eea", // Tokyo Night Indigo/Purple
+                    border: "#7f9cf5",
+                    highlight: {
+                        background: "#7f9cf5",
+                        border: "#a5b4fc"
+                    }
+                };
+                
+                if (node.group === "system") {
+                    color = {
+                        background: "#f56c6c", // Red warning color
+                        border: "#ffa3a3",
+                        highlight: { background: "#ffa3a3", border: "#ffc9c9" }
+                    };
+                } else if (node.group === "source") {
+                    color = {
+                        background: "#4a90d9", // Source -> Blue
+                        border: "#7cb6f2",
+                        highlight: { background: "#7cb6f2", border: "#b3d8ff" }
+                    };
+                } else if (node.group && node.group.startsWith("tag-")) {
+                    const tag = node.group.substring(4);
+                    // Generate a color hue based on tag name
+                    const hash = tag.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                    const hues = [35, 90, 160, 200, 280, 320]; // Warm Amber, Emerald, Mint, Sky, Purple, Pink
+                    const hue = hues[hash % hues.length];
+                    color = {
+                        background: `hsl(${hue}, 60%, 45%)`,
+                        border: `hsl(${hue}, 60%, 55%)`,
+                        highlight: {
+                            background: `hsl(${hue}, 60%, 55%)`,
+                            border: `hsl(${hue}, 60%, 65%)`
+                        }
+                    };
+                }
+                
+                return {
+                    id: node.id,
+                    label: node.label,
+                    title: `Doppelklick zum Öffnen von: ${node.label}`,
+                    color: color,
+                    font: {
+                        color: "#f8fafc",
+                        size: 14,
+                        face: "Inter, system-ui, sans-serif"
+                    },
+                    shape: "box",
+                    margin: 10,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    shadow: true
+                };
+            });
+
+            // Formatierte Kanten
+            const formattedEdges = data.edges.map(edge => {
+                const edgeColor = edge.color || "#475569";
+                return {
+                    from: edge.from,
+                    to: edge.to,
+                    arrows: "to",
+                    color: {
+                        color: edgeColor,
+                        highlight: edge.color ? edge.color : "#818cf8",
+                        hover: edge.color ? edge.color : "#818cf8"
+                    },
+                    dashes: edge.dashes || false,
+                    title: edge.title || "",
+                    width: edge.color ? 2.5 : 1.5,
+                    smooth: {
+                        type: "continuous"
+                    }
+                };
+            });
+
+            nodesDataset = new vis.DataSet(formattedNodes);
+            edgesDataset = new vis.DataSet(formattedEdges);
+
+            const container = document.getElementById("network");
+            const networkData = {
+                nodes: nodesDataset,
+                edges: edgesDataset
+            };
+
+            const options = {
+                physics: {
+                    stabilization: {
+                        iterations: 150
+                    },
+                    barnesHut: {
+                        gravitationalConstant: -2000,
+                        centralGravity: 0.3,
+                        springLength: 120,
+                        springConstant: 0.04
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200
+                }
+            };
+
+            network = new vis.Network(container, networkData, options);
+
+            // Doppelklick-Handler zum Öffnen von Seiten
+            network.on("doubleClick", function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    window.location.href = `/wiki/${nodeId}`;
+                }
+            });
+
+            // Einfachklick zum Hervorheben von Verbindungen
+            network.on("click", function(params) {
+                const selectedNode = params.nodes[0];
+                if (selectedNode) {
+                    // Alle Knoten und Kanten temporär abdunkeln
+                    const allNodes = nodesDataset.get();
+                    const allEdges = edgesDataset.get();
+                    
+                    const connectedNodes = network.getConnectedNodes(selectedNode);
+                    
+                    allNodes.forEach(node => {
+                        if (node.id === selectedNode || connectedNodes.includes(node.id)) {
+                            node.opacity = 1.0;
+                        } else {
+                            node.opacity = 0.25;
+                        }
+                        nodesDataset.update(node);
+                    });
+                } else {
+                    // Alle Hervorhebungen zurücksetzen
+                    const allNodes = nodesDataset.get();
+                    allNodes.forEach(node => {
+                        node.opacity = 1.0;
+                        nodesDataset.update(node);
+                    });
+                }
+            });
+        });
+});
+
+function resetGraph() {
+    if (network) {
+        network.fit();
+        const allNodes = nodesDataset.get();
+        allNodes.forEach(node => {
+            node.opacity = 1.0;
+            nodesDataset.update(node);
+        });
+    }
+}
+</script>
+{% endblock %}

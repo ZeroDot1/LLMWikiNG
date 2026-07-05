@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Ausstehender Ingest{% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>⏳ Ausstehender Ingest</h1>
+    {% if files %}
+    <a href="/pending/ingest-all" class="btn btn-primary" onclick="showLoading(this)">📥 Alle einspielen (Ingest All)</a>
+    {% endif %}
+</div>
+
+<p class="subtitle">
+    Dies sind Dateien im Ordner <code>raw/</code>, die manuell dort abgelegt, aber noch nicht in das Wiki eingepflegt (ingestiert) wurden. Du kannst sie einzeln oder alle zusammen einspielen.
+</p>
+
+{% if success_msg %}
+<div class="admonition admonition-tip">
+    <strong>Erfolg:</strong> {{ success_msg }}
+</div>
+{% endif %}
+
+{% if error_msg %}
+<div class="admonition admonition-warning">
+    <strong>Fehler:</strong> {{ error_msg }}
+</div>
+{% endif %}
+
+{% if files %}
+<div class="table-container">
+    <table class="raw-table">
+        <thead>
+            <tr>
+                <th>Dateiname</th>
+                <th>Größe</th>
+                <th>Hinzugefügt am</th>
+                <th style="text-align: right;">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>
+                    <span class="file-icon">📄</span>
+                    <strong class="file-name">{{ file.name }}</strong>
+                </td>
+                <td class="file-size">{{ file.size_formatted }}</td>
+                <td class="file-date">{{ file.mtime_formatted }}</td>
+                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <a href="/pending/ingest/{{ file.name }}" class="btn btn-sm btn-primary" onclick="showLoading(this)">📥 Ingest</a>
+                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">Vorschau</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="search-no-results">
+    <p style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</p>
+    <p>Keine ausstehenden Dateien vorhanden. Alle Rohquellen sind bereits eingepflegt!</p>
+</div>
+{% endif %}
+
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Ingest läuft und das LLM generiert die Zusammenfassungen... Bitte warten...</p>
+</div>
+
+<script>
+function showLoading(btn) {
+    document.getElementById('loading-overlay').classList.add('active');
+}
+</script>
+{% endblock %}

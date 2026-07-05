@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}E-Mail Konfiguration{% endblock %}
+
+{% block content %}
+<h1>⚙️ E-Mail & SMTP Konfiguration</h1>
+<p class="subtitle">
+    Konfiguriere deine SMTP-Serverdaten für den automatischen und sicheren Versand von wöchentlichen Wiki-Briefings.
+</p>
+
+{% if success_msg %}
+<div class="admonition admonition-tip" style="margin-bottom: 1.5rem;">
+    <strong>Erfolg:</strong> {{ success_msg }}
+</div>
+{% endif %}
+{% if error_msg %}
+<div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
+    <strong>Fehler:</strong> {{ error_msg }}
+</div>
+{% endif %}
+
+<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 650px; margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
+        SMTP-Server Einstellungen
+    </h2>
+
+    <div style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius);">
+        <span style="font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 0.6rem;">Anbieter-Presets:</span>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">Gmail</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">ProtonMail Bridge</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">Mail.ru (SSL)</button>
+        </div>
+    </div>
+
+    <form action="/config" method="post" style="display: flex; flex-direction: column; gap: 1.2rem;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="smtp_host" style="font-weight: 500;">SMTP-Host / Server:</label>
+                <input type="text" name="smtp_host" id="smtp_host" class="form-control" value="{{ config.smtp_host }}" required>
+            </div>
+            <div class="form-group">
+                <label for="smtp_port" style="font-weight: 500;">Port:</label>
+                <input type="number" name="smtp_port" id="smtp_port" class="form-control" value="{{ config.smtp_port }}" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="smtp_user" style="font-weight: 500;">SMTP-Benutzername / Absender-E-Mail:</label>
+            <input type="text" name="smtp_user" id="smtp_user" class="form-control" value="{{ config.smtp_user }}" placeholder="absender@example.com">
+            {% if env_user %}
+            <span style="font-size: 0.75rem; color: var(--accent-green);">✔ Umgebungsvariable GMAIL_USER vorhanden ({{ env_user }}). Wird als Fallback genutzt.</span>
+            {% else %}
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Leer lassen, um GMAIL_USER aus den System-Umgebungsvariablen zu nutzen.</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="smtp_pass" style="font-weight: 500;">SMTP-Passwort (oder Gmail App-Passwort):</label>
+            <input type="password" name="smtp_pass" id="smtp_pass" class="form-control" value="{{ config.smtp_pass }}" placeholder="••••••••••••••••">
+            {% if env_pass_exists %}
+            <span style="font-size: 0.75rem; color: var(--accent-green);">✔ Umgebungsvariable GMAIL_APP_PASSWORD vorhanden. Wird als Fallback genutzt.</span>
+            {% else %}
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Leer lassen, um GMAIL_APP_PASSWORD aus den System-Umgebungsvariablen zu nutzen.</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if config.use_tls %}checked{% endif %}>
+            <label for="use_tls" style="cursor: pointer; font-size: 0.95rem;">STARTTLS-Verschlüsselung aktivieren (empfohlen für Port 587)</label>
+        </div>
+
+        <div class="form-group">
+            <label for="recipients" style="font-weight: 500;">Standard-Empfänger (Komma-separiert):</label>
+            <input type="text" name="recipients" id="recipients" class="form-control" value="{{ config.recipients }}" placeholder="leser1@example.com, leser2@example.com">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Diese E-Mail-Adressen erhalten standardmäßig die Briefings.</span>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.7rem;">💾 Konfiguration speichern</button>
+            <a href="/briefings" class="btn btn-secondary" style="padding: 0.7rem; text-decoration: none; text-align: center;">Zurück zu Briefings</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function applyPreset(host, port, useTls, placeholder) {
+    document.getElementById('smtp_host').value = host;
+    document.getElementById('smtp_port').value = port;
+    document.getElementById('use_tls').checked = useTls;
+    const userEl = document.getElementById('smtp_user');
+    userEl.placeholder = "z.B. " + placeholder;
+}
+</script>
+{% endblock %}

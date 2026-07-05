@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Über LLMWikiNG{% endblock %}
+
+{% block content %}
+<h1>ℹ️ Über LLMWikiNG</h1>
+
+<p>
+    <strong>LLMWikiNG</strong> ist eine von <strong>ZeroDot1</strong> entwickelte, lokale und datenschutzfreundliche Wiki-Plattform,
+    die auf dem <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f" target="_blank">Karpathy LLM-Wiki-Pattern</a>
+    basiert. Das Wiki wird von KI-Assistenten gepflegt und erweitert – und du kannst es
+    bequem im Browser lesen, durchsuchen und verwalten.
+</p>
+
+<p>
+    Ein ganz besonderer Dank geht an <a href="https://github.com/tevsa" target="_blank">https://github.com/tevsa</a> für die großartige Idee und hervorragende Unterstützung bei der Umsetzung dieses Projekts!
+</p>
+
+<h2>📋 Features</h2>
+<ul>
+    <li>📄 <strong>Markdown-Rendering</strong> – Alle Wiki-Seiten werden als schönes HTML dargestellt</li>
+    <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (offline betrieben via Vis.js). Widersprüche und Spannungen werden rot gestrichelt dargestellt.</li>
+    <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite.</li>
+    <li>📰 <strong>Wochenberichte & E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen zu Wochenberichten und verschickt sie sicher über einen integrierten SMTP-Client. Inklusive Schnell-Presets für <strong>Gmail</strong>, <strong>ProtonMail Bridge</strong> und <strong>Mail.ru</strong>.</li>
+    <li>🔍 <strong>Volltextsuche</strong> – Superschnelle BM25-Suche im Wiki, in Rohquellen und exportierten Dokumenten mit Treffer-Hervorhebung.</li>
+    <li>⏳ <strong>Ausstehender Ingest</strong> – Manuell abgelegte Dateien per Knopfdruck einzeln oder im Stapel („Ingest All“) ins Wiki überführen.</li>
+    <li>📤 <strong>Export & Verwaltung</strong> – Wiki-Seiten in den Exportordner kopieren und dort ansehen oder herunterladen.</li>
+    <li>📝 <strong>Später einspielen</strong> – Notieren von Web-URLs und Texten zum späteren Import (Merkzettel).</li>
+    <li>🩹 <strong>Gesundheitscheck (Lint)</strong> – Spürt verwaiste Seiten, nicht existierende Link-Ziele (priorisiert nach Häufigkeit) und veraltete Seiten (Stale Pages) auf.</li>
+    <li>🌙 <strong>Tokyo-Night Theme</strong> – Extrem edles, kontrastreiches Dark-Theme für augenschonendes Arbeiten.</li>
+</ul>
+
+<h2>🛠 Technik</h2>
+<table>
+    <tr><th>Komponente</th><th>Version</th></tr>
+    <tr><td>Python</td><td>{{ python_version }}</td></tr>
+    <tr><td>Flask (WSGI Framework)</td><td>{{ flask_version }}</td></tr>
+    <tr><td>Uvicorn (ASGI Server)</td><td>{{ uvicorn_version }}</td></tr>
+    <tr><td>Python-Markdown</td><td>{{ markdown_version }}</td></tr>
+    <tr><td>qmd</td><td>{{ qmd_version }}</td></tr>
+    <tr><td>Jinja2</td><td>{{ jinja_version }}</td></tr>
+</table>
+
+<h2>📁 Projektstruktur</h2>
+<pre style="font-size: 0.85rem;">
+Recht/
+├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint)
+├── llmWiki.py           # 🌐 Webserver
+├── email_sender.py      # 📧 SMTP E-Mail Sender Modul
+├── config.json          # ⚙️ Gespeicherte SMTP-Konfigurationsdatei
+├── start.sh             # Starter-Skript
+├── wiki/                # Wiki-Seiten (Markdown)
+├── raw/                 # Archivierte Rohquellen
+├── templates/           # HTML-Templates
+├── static/              # CSS, Assets (z.B. vis-network.min.js)
+├── output_docs/         # Exportierte Dokumente
+└── .agy.yaml            # Agent-Konfiguration
+</pre>
+
+<h2>🌐 Web-Endpunkte</h2>
+<table style="width: 100%; border: none; margin-bottom: 1.5rem;">
+    <tr style="border-bottom: 2px solid var(--border);"><th style="padding: 0.5rem; text-align: left;">Route</th><th style="padding: 0.5rem; text-align: left;">Beschreibung</th></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/</code></td><td style="padding: 0.5rem;">Startseite (Cockpit mit Cockpit-Listen & Aktivitäts-Timeline)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/wiki/&lt;page_name&gt;</code></td><td style="padding: 0.5rem;">Rendert eine Wiki-Seite (inkl. Pfad-Navigation falls Teil eines Trails)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/wiki/&lt;page_name&gt;/export</code></td><td style="padding: 0.5rem;">Kopiert die Seite als Markdown-Datei nach <code>output_docs/</code></td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/wiki/&lt;page_name&gt;/delete</code></td><td style="padding: 0.5rem;">Löscht die Seite und aktualisiert den Suchindex</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/clear-log</code></td><td style="padding: 0.5rem;">Setzt das Wiki-Aktivitätslogbuch zurück</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/search</code></td><td style="padding: 0.5rem;">BM25-Volltextsuche in Wiki-Seiten, Rohdateien und Exporten</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/lint</code></td><td style="padding: 0.5rem;">Web-Linter (Gesundheitscheck für verwaiste/veraltete/fehlende Seiten)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/status</code></td><td style="padding: 0.5rem;">Systemstatus, Konfigurationsdaten und Brücken-Seiten-Analytik</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/briefings</code></td><td style="padding: 0.5rem;">Generiert Wochenberichte und versendet sie per E-Mail</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/config</code></td><td style="padding: 0.5rem;">SMTP-Konfiguration (gespeichert in <code>config.json</code>)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest</code></td><td style="padding: 0.5rem;">Ermöglicht Dateiupload, Textpaste oder Merkzettel-Import (ingestlater)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest/all</code></td><td style="padding: 0.5rem;">Führt einen vollständigen Ingest aller neuen Dateien in <code>raw/</code> aus</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/sync</code></td><td style="padding: 0.5rem;">Aktualisiert die BM25-Suchindizes manuell</td></tr>
+</table>
+
+<h2>🔗 Links</h2>
+<ul>
+    <li><a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f" target="_blank">Original Karpathy LLM-Wiki Gist</a></li>
+</ul>
+{% endblock %}

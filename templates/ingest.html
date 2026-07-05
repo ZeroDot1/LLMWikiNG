@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Quelle einspielen / merken{% endblock %}
+
+{% block content %}
+<div class="header-action" style="margin-bottom: 1.5rem;">
+    <h1>📥 Quellen verwalten</h1>
+    <a href="/wiki/ingestlater" class="btn btn-secondary">📝 Merkzettel (Ingest Later) anzeigen</a>
+</div>
+<p class="subtitle" style="margin-bottom: 2rem;">
+    Importiere neue Quellen direkt in dein Wiki oder merke dir URLs und Texte für eine spätere Bearbeitung.
+</p>
+
+{% if success_msg %}
+<div class="admonition admonition-tip">
+    <strong>{{ success_msg }}</strong>
+    {% if new_slug %}
+    <br><a href="/wiki/{{ new_slug }}" style="font-weight: 600;">Zur neu erstellten Wiki-Seite →</a>
+    {% elif is_later %}
+    <br><a href="/wiki/ingestlater" style="font-weight: 600;">Zur Ingest-Later Liste →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if error_msg %}
+<div class="admonition admonition-warning">
+    <strong>Fehler:</strong> {{ error_msg }}
+</div>
+{% endif %}
+
+<div class="ingest-tabs">
+    <button class="tab-btn active" onclick="switchTab('file-tab')">📁 Datei importieren</button>
+    <button class="tab-btn" onclick="switchTab('text-tab')">📝 Text importieren</button>
+    <button class="tab-btn" onclick="switchTab('url-later-tab')">🔗 URL für später merken</button>
+    <button class="tab-btn" onclick="switchTab('text-later-tab')">✍️ Text für später merken</button>
+</div>
+
+<!-- 1. Datei-Upload (Sofortiger Ingest) -->
+<div id="file-tab" class="tab-content active">
+    <form action="/ingest" method="post" enctype="multipart/form-data" class="ingest-form">
+        <input type="hidden" name="type" value="file">
+        
+        <div class="form-group">
+            <label for="file">Datei auswählen (Markdown, Text, etc.):</label>
+            <input type="file" id="file" name="file" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="file_title">Titel (optional, wird sonst aus Datei ermittelt):</label>
+            <input type="text" id="file_title" name="title" class="form-control" placeholder="z. B. Arch Linux Installation">
+        </div>
+
+        <div class="form-group">
+            <label for="backend_file">LLM Backend:</label>
+            <select id="backend_file" name="backend" class="form-control">
+                <option value="ollama">Ollama (lokal)</option>
+                <option value="agy">agy (Agent)</option>
+                <option value="opencode">opencode</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">📥 Jetzt importieren</button>
+    </form>
+</div>
+
+<!-- 2. Text-Paste (Sofortiger Ingest) -->
+<div id="text-tab" class="tab-content">
+    <form action="/ingest" method="post" class="ingest-form">
+        <input type="hidden" name="type" value="text">
+
+        <div class="form-group">
+            <label for="title">Titel:</label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="z. B. Mein neues Rezept" required>
+        </div>
+
+        <div class="form-group">
+            <label for="content_text">Textinhalt:</label>
+            <textarea id="content_text" name="content" rows="10" class="form-control" placeholder="Schreibe oder füge hier deinen Text ein..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="backend_text">LLM Backend:</label>
+            <select id="backend_text" name="backend" class="form-control">
+                <option value="ollama">Ollama (lokal)</option>
+                <option value="agy">agy (Agent)</option>
+                <option value="opencode">opencode</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">📥 Jetzt importieren</button>
+    </form>
+</div>
+
+<!-- 3. URL für später merken -->
+<div id="url-later-tab" class="tab-content">
+    <form action="/ingest" method="post" class="ingest-form">
+        <input type="hidden" name="type" value="url_later">
+
+        <div class="form-group">
+            <label for="url_later">URL zum Merken:</label>
+            <input type="url" id="url_later" name="url" class="form-control" placeholder="https://example.com/artikel-name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="url_title">Beschreibung / Titel (optional):</label>
+            <input type="text" id="url_title" name="title" class="form-control" placeholder="z. B. Dokumentation über RAG-Systeme">
+        </div>
+
+        <button type="submit" class="btn btn-secondary">💾 URL in ingestlater.md speichern</button>
+    </form>
+</div>
+
+<!-- 4. Text für später merken -->
+<div id="text-later-tab" class="tab-content">
+    <form action="/ingest" method="post" class="ingest-form">
+        <input type="hidden" name="type" value="text_later">
+
+        <div class="form-group">
+            <label for="text_later_title">Titel / Thema:</label>
+            <input type="text" id="text_later_title" name="title" class="form-control" placeholder="z. B. Gedanken zu Vektordatenbanken" required>
+        </div>
+
+        <div class="form-group">
+            <label for="text_later_content">Notiz- / Textinhalt:</label>
+            <textarea id="text_later_content" name="content" rows="8" class="form-control" placeholder="Füge hier Notizen ein, die du später strukturieren möchtest..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-secondary">💾 Text in ingestlater.md speichern</button>
+    </form>
+</div>
+
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>LLM analysiert die Quelle und pflegt das Wiki ein... Bitte warten...</p>
+</div>
+
+<script>
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function showLoading(btn) {
+    const form = btn.closest('form');
+    if (form.checkValidity()) {
+        document.getElementById('loading-overlay').classList.add('active');
+    }
+}
+</script>
+{% endblock %}

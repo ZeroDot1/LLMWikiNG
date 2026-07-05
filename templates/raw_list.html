@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Rohquellen (raw/){% endblock %}
+
+{% block content %}
+<div class="header-action">
+    <h1>📦 Rohquellen</h1>
+    <a href="/ingest" class="btn btn-primary">📥 Neue Quelle hinzufügen</a>
+</div>
+
+<p class="subtitle">
+    Dies sind deine unveränderten Original-Dokumente im Ordner <code>raw/</code>. Sie dienen dem Wiki als unveränderliche Basis (Source of Truth).
+</p>
+
+{% if files %}
+<div class="table-container">
+    <table class="raw-table">
+        <thead>
+            <tr>
+                <th>Dateiname</th>
+                <th>Größe</th>
+                <th>Hinzugefügt am</th>
+                <th style="text-align: right;">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>
+                    <span class="file-icon">📄</span>
+                    <strong class="file-name">{{ file.name }}</strong>
+                </td>
+                <td class="file-size">{{ file.size_formatted }}</td>
+                <td class="file-date">{{ file.mtime_formatted }}</td>
+                <td style="text-align: right;">
+                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">Ansehen</a>
+                    {% if file.wiki_slug %}
+                    <a href="/wiki/{{ file.wiki_slug }}" class="btn btn-sm btn-accent">Wiki-Seite</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="search-no-results">
+    <p style="font-size: 2rem; margin-bottom: 0.5rem;">📭</p>
+    <p>Noch keine Rohquellen im Ordner <code>raw/</code> vorhanden.</p>
+    <p style="margin-top: 1rem;">
+        <a href="/ingest" class="btn btn-primary">Jetzt die erste Quelle hochladen</a>
+    </p>
+</div>
+{% endif %}
+{% endblock %}

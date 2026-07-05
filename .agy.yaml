@@ -1,0 +1,36 @@
+# .agy.yaml – Vollständige Konfiguration für das LLM Wiki
+# Arch Linux + qmd (Quick Markdown) – mit ollama/agy/opencode-Integration
+# Basis: Karpathy LLM-Wiki-Pattern
+
+agent:
+  name: "LLMWikiNG-Bot"
+  version: "3.0-full"
+  description: >
+    Vollständiger LLMWikiNG-Agent von ZeroDot1. Nutzt wiki.sh für Suche, Ingest, Export, Lint.
+    LLM-Backend: ollama (lokal). qmd für token-sparende Hybrid-Suche.
+
+  llm:
+    model: "llama3.2:3b"       # Lokales Modell via ollama (keine API-Kosten)
+    temperature: 0.1            # Niedrig für faktenbasierte Antworten
+
+  system_prompt_path: "./prompts/system.md"
+
+  tools:
+    - "./wiki.sh"               # Alles-in-Einem: search, export, ingest, lint, sync, list
+
+  # Wiki-Struktur (Karpathy-Pattern: 3 Ebenen)
+  wiki:
+    base_path: "./wiki/"         # 🧠 Das Wiki (LLM-geschrieben)
+    raw: "./raw/"                # 📦 Rohquellen (immutable)
+    export: "./output_docs/"     # 📄 Exportierte Dokumente
+    index: "./wiki/index.md"     # Inhaltsverzeichnis
+    log: "./wiki/log.md"         # Änderungslog
+    collection: "my_wiki"        # qmd-Collection-Name
+
+  # Ingest-Konventionen
+  conventions:
+    frontmatter: true            # YAML-Frontmatter für jede Seite
+    date_format: "%Y-%m-%d"
+    tags_required: false         # Optional, aber empfohlen
+    cross_references: true       # Immer Querverweise einbauen
+    source_archive: true         # Quellen in raw/ archivieren

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% if success_msg %}
+<div class="admonition admonition-tip" style="margin-bottom: 1rem;">
+    <strong>Erfolg:</strong> {{ success_msg }}
+</div>
+{% endif %}
+
+{% if error_msg %}
+<div class="admonition admonition-warning" style="margin-bottom: 1rem;">
+    <strong>Fehler:</strong> {{ error_msg }}
+</div>
+{% endif %}
+
+{% if wikilinks_missing %}
+<div class="admonition admonition-warning">
+    <strong>⚠ Verwaiste Links:</strong>
+    Folgende verlinkte Seiten existieren noch nicht:
+    {% for link in wikilinks_missing %}
+    <a href="/wiki/{{ link }}" class="wikilink-missing">{{ link }}</a>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    – <a href="/search?q={{ wikilinks_missing[0] }}">im Wiki suchen</a>
+</div>
+{% endif %}
+
+{% if trail_info %}
+<div class="trail-bar" style="background: rgba(102, 126, 234, 0.08); border: 1px solid rgba(102, 126, 234, 0.25); border-radius: var(--radius); padding: 0.8rem 1.2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: 0.9rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); font-weight: 500;">
+        <span>🚶 Pfad:</span>
+        <a href="/wiki/{{ trail_info.slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ trail_info.title }}</a>
+        <span style="color: var(--text-muted); font-size: 0.8rem; background: rgba(102, 126, 234, 0.15); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ trail_info.index }} / {{ trail_info.total }}</span>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        {% if trail_info.prev %}
+        <a href="/wiki/{{ trail_info.prev[1] }}" class="btn btn-sm btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; text-decoration: none;" title="{{ trail_info.prev[0] }}">← Zurück</a>
+        {% endif %}
+        {% if trail_info.next %}
+        <a href="/wiki/{{ trail_info.next[1] }}" class="btn btn-sm btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; text-decoration: none;" title="{{ trail_info.next[0] }}">Weiter →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if is_log %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border); padding: 0.8rem 1.2rem; border-radius: var(--radius); flex-wrap: wrap; gap: 0.8rem;">
+    <span style="color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">📅 Das Logbuch wird automatisch vom LLM-Wiki geführt.</span>
+    <a href="/admin/clear-log" class="btn btn-sm btn-danger" style="text-decoration: none;" onclick="return confirm('Möchtest du das Logbuch wirklich leeren? Alle protokollierten Aktivitäten gehen verloren.');">🧹 Logbuch leeren</a>
+</div>
+{% endif %}
+
+{{ content|safe }}
+
+<div style="margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+    <div>
+        {% if show_source and source_path %}
+        📄 <strong>Rohquelle:</strong> <code>{{ source_path }}</code>
+        ·
+        <a href="/raw/{{ source_path }}">Rohdatei anzeigen</a>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/wiki/{{ raw_page_name }}/export" class="btn btn-sm btn-secondary" style="font-weight: 500;">📤 Exportieren</a>
+        {% if raw_page_name not in ("index", "log", "ingestlater") %}
+        <a href="/wiki/{{ raw_page_name }}/delete" class="btn btn-sm btn-danger" style="font-weight: 500;" onclick="return confirm('Möchtest du diese Wiki-Seite wirklich unwiderruflich löschen?');">🗑️ Löschen</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

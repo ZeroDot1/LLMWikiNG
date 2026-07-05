@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LLMWikiNG{% endblock %} – LLMWikiNG</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>📖</text></svg>">
+    <meta name="description" content="LLMWikiNG – Dein lokales LLM-Wiki by ZeroDot1">
+</head>
+<body>
+
+<!-- ═════ Sidebar (Wikipedia-Stil) ═════ -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <a href="/" class="sidebar-logo">
+            LLMWikiNG
+            <small>by ZeroDot1</small>
+        </a>
+    </div>
+
+    <div class="sidebar-nav">
+        <span class="sidebar-subtitle">Navigation</span>
+        <a href="/" class="{% if active_page == 'home' %}active{% endif %}">
+            🏠 Startseite
+        </a>
+        <a href="/wiki/index" class="{% if active_page == 'index' %}active{% endif %}">
+            📑 Index
+        </a>
+        <a href="/wiki/log" class="{% if active_page == 'log' %}active{% endif %}">
+            📜 Logbuch
+        </a>
+        <a href="/raw" class="{% if active_page == 'raw_list' %}active{% endif %}">
+            📦 Rohquellen
+        </a>
+        <a href="/pending" class="{% if active_page == 'pending_list' %}active{% endif %}">
+            ⏳ Ausstehendes
+        </a>
+        <a href="/export" class="{% if active_page == 'export_list' %}active{% endif %}">
+            📤 Exportiertes
+        </a>
+        <a href="/graph" class="{% if active_page == 'graph' %}active{% endif %}">
+            🕸️ Wissensgraph
+        </a>
+        <a href="/ingest" class="{% if active_page == 'ingest' %}active{% endif %}">
+            📥 Quelle einspielen
+        </a>
+    </div>
+
+    <div class="sidebar-nav">
+        <span class="sidebar-subtitle">System & Tools</span>
+        <a href="/search" class="{% if active_page == 'search' %}active{% endif %}">
+            🔍 Suche
+        </a>
+        <a href="/lint" class="{% if active_page == 'lint' %}active{% endif %}">
+            🏥 Gesundheitscheck (Lint)
+        </a>
+        <a href="/status" class="{% if active_page == 'status' %}active{% endif %}">
+            📊 Status & Statistik
+        </a>
+        <a href="/briefings" class="{% if active_page == 'briefings' %}active{% endif %}">
+            📰 Wochenberichte
+        </a>
+        <a href="/config" class="{% if active_page == 'config' %}active{% endif %}">
+            ⚙️ E-Mail Konfiguration
+        </a>
+        <a href="/admin/sync" id="syncBtn" class="sync-btn {% if sync_needed %}sync-needed{% endif %}"
+           onclick="this.innerHTML='🔄 Sync läuft…'; this.style.cursor='wait';">
+            {% if sync_needed %}🔄 Sync erforderlich{% else %}✅ Sync OK{% endif %}
+        </a>
+        <a href="/about" class="{% if active_page == 'about' %}active{% endif %}">
+            ℹ️ Über llmWiki
+        </a>
+    </div>
+
+    <div class="sidebar-nav" style="max-height: 250px; overflow-y: auto;">
+        <span class="sidebar-subtitle">Wiki-Seiten</span>
+        {% for page in all_pages %}
+        <a href="/wiki/{{ page.name }}"
+           class="{% if active_page == page.name %}active{% endif %}"
+           title="{{ page.desc }}">
+            📄 {{ page.title }}
+        </a>
+        {% endfor %}
+    </div>
+</aside>
+
+<!-- ═════ Main Content ═════ -->
+<main class="main">
+    <!-- Suchleiste -->
+    <div class="search-container">
+        <form class="search-form" action="/search" method="get">
+            <input
+                type="text"
+                name="q"
+                class="search-input"
+                placeholder="Wiki durchsuchen…"
+                value="{{ query or '' }}"
+                autocomplete="off"
+            >
+            <button type="submit" class="search-btn">Suchen</button>
+        </form>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>
+            <strong>LLMWikiNG</strong> – by <a href="https://github.com/ZeroDot1" target="_blank">ZeroDot1</a> ·
+            Powered by Flask + qmd ·
+            <a href="/about">Impressum</a>
+        </p>
+    </footer>
+</main>
+
+<!-- Back to Top -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+    // Back-to-top Button einblenden
+    window.addEventListener('scroll', function() {
+        document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 300);
+    });
+
+    // Tastaturkürzel: Strg+/ = Fokus Suche
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+            e.preventDefault();
+            document.querySelector('.search-input')?.focus();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Startseite{% endblock %}
+
+{% block content %}
+{% if sync_status %}
+<div class="admonition {% if '✅' in sync_status %}admonition-tip{% else %}admonition-warning{% endif %}" style="margin-bottom: 1rem;">
+    <strong>{{ sync_status }}</strong> {{ sync_msg }}
+    <a href="/wiki/log" style="float: right; font-size: 0.85rem;">→ Logbuch</a>
+</div>
+{% endif %}
+
+{% if sync_needed %}
+<div class="admonition admonition-warning" style="margin-bottom: 1rem;">
+    <strong>🔄 Sync empfohlen:</strong>
+    Neue oder geänderte Dateien wurden erkannt.
+    <a href="/admin/sync" style="font-weight: 600;">Jetzt synchronisieren →</a>
+</div>
+{% endif %}
+
+<h1>Willkommen bei LLMWikiNG</h1>
+<p class="subtitle" style="margin-bottom: 2rem;">
+    Dein lokales, LLM-gepflegtes Wissens-Wiki nach dem Karpathy-Pattern. Ein compounding Artifact aus verlinkten Markdown-Dateien.
+</p>
+
+<!-- Cockpit Statistik Grid -->
+<div class="wiki-stats" style="margin-bottom: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+    <div class="stat-card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--shadow);">
+        <span class="stat-num" style="display: block; font-size: 2rem; font-weight: 800; color: var(--accent-hover);">{{ stats.page_count }}</span>
+        <span class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Wiki-Seiten</span>
+    </div>
+    <div class="stat-card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--shadow);">
+        <span class="stat-num" style="display: block; font-size: 2rem; font-weight: 800; color: var(--accent-green);">{{ stats.raw_count }}</span>
+        <span class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Rohquellen</span>
+    </div>
+    <div class="stat-card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--shadow);">
+        <span class="stat-num" style="display: block; font-size: 2rem; font-weight: 800; color: var(--accent-yellow);">{{ stats.word_count }}</span>
+        <span class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Wörter gesamt</span>
+    </div>
+    <div class="stat-card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--shadow);">
+        <span class="stat-num" style="display: block; font-size: 2rem; font-weight: 800; color: var(--link);">{{ stats.export_count }}</span>
+        <span class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Exportiert</span>
+    </div>
+</div>
+
+<div class="dashboard-layout" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+    <!-- Linker Bereich: Wiki-Inhalt & Seiten -->
+    <div class="main-column">
+        {% if index_content %}
+            <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; box-shadow: var(--shadow);">
+                {{ index_content|safe }}
+            </div>
+        {% endif %}
+
+        <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow);">
+            <h2 style="margin-top: 0; margin-bottom: 1.2rem; font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">📄 Alle Wiki-Seiten</h2>
+            {% if pages %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for page in pages %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.6rem; padding: 0.8rem 1.2rem; background: var(--bg-card); transition: all 0.2s ease-in-out;">
+                    <a href="/wiki/{{ page.slug }}" style="text-decoration: none; display: flex; flex-direction: column; gap: 0.25rem;">
+                        <span style="font-weight: 600; color: var(--link); font-size: 1.1rem;">{{ page.title }}</span>
+                        <span class="page-desc" style="font-size: 0.85rem; color: var(--text-secondary);">{{ page.desc }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="color: var(--text-muted);">📭 Noch keine Seiten im Wiki vorhanden.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Rechter Bereich: Kürzliche Aktivitäten & Logbuch -->
+    <div class="side-column">
+        <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);">
+            <h2 style="margin-top: 0; margin-bottom: 1.2rem; font-size: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">📜 Kürzliche Aktivitäten</h2>
+            
+            {% if recent_logs %}
+            <div class="timeline" style="position: relative; border-left: 2px solid var(--border); padding-left: 1.2rem; margin-left: 0.4rem; margin-top: 1rem;">
+                {% for log in recent_logs %}
+                <div class="timeline-item" style="position: relative; margin-bottom: 1.5rem;">
+                    <!-- Marker-Punkt -->
+                    <div style="position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); left: -1.6rem; top: 0.3rem; border: 2px solid var(--bg-content);"></div>
+                    
+                    <div class="timeline-date" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                        {{ log.date }}
+                    </div>
+                    
+                    <div class="timeline-header" style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-top: 0.15rem;">
+                        {{ log.action }} {% if log.details %}· <span style="font-weight: normal; color: var(--text-secondary); font-size: 0.85rem;">{{ log.details }}</span>{% endif %}
+                    </div>
+                    
+                    {% if log.body %}
+                    <div class="timeline-body" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.3rem; background: var(--bg-card); padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px dashed var(--border);">
+                        {{ log.body.replace('\n', '<br>')|safe }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div style="text-align: right; margin-top: 0.5rem; font-size: 0.85rem;">
+                <a href="/wiki/log" style="color: var(--link); font-weight: 500;">Gesamtes Logbuch anzeigen →</a>
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Noch keine Aktivitäten protokolliert.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

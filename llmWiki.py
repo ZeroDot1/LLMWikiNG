@@ -1500,7 +1500,7 @@ def admin_update():
     if not update_script.exists():
         return render_template("page.html",
             page_title="Update nicht verfügbar",
-            active_page="status",
+            active_page="update",
             content="<h1>Update nicht verfügbar</h1><p>Die Datei <code>update.sh</code> wurde nicht gefunden.</p>")
 
     result_lines = []
@@ -1539,7 +1539,7 @@ def admin_update():
 
     return render_template("page.html",
         page_title="Update ausgeführt",
-        active_page="status",
+        active_page="update",
         content=content)
 
 

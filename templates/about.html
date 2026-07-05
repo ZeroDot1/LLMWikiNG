@@ -27,6 +27,7 @@
     <li>📝 <strong>Später einspielen</strong> – Notieren von Web-URLs und Texten zum späteren Import (Merkzettel).</li>
     <li>🩹 <strong>Gesundheitscheck (Lint)</strong> – Spürt verwaiste Seiten, nicht existierende Link-Ziele (priorisiert nach Häufigkeit) und veraltete Seiten (Stale Pages) auf.</li>
     <li>🌙 <strong>Tokyo-Night Theme</strong> – Extrem edles, kontrastreiches Dark-Theme für augenschonendes Arbeiten.</li>
+    <li>⬇️ <strong>Selbstupdate</strong> – Integrierte Update-Funktion: Prüft auf neue GitHub-Versionen und aktualisiert sich selbst per Klick. Schützt Wiki, Rohquellen und Konfiguration.</li>
 </ul>
 
 <h2>ℹ️ Version</h2>
@@ -46,14 +47,15 @@
 <h2>📁 Projektstruktur</h2>
 <pre style="font-size: 0.85rem;">
 Recht/
-├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint)
+├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint, Update)
 ├── llmWiki.py           # 🌐 Webserver
 ├── email_sender.py      # 📧 SMTP E-Mail Sender Modul
+├── update.sh            # ⬇️ Selbstupdate-Skript (via GitHub)
 ├── config.json          # ⚙️ Gespeicherte SMTP-Konfigurationsdatei
 ├── start.sh             # Starter-Skript
 ├── wiki/                # Wiki-Seiten (Markdown)
 ├── raw/                 # Archivierte Rohquellen
-├── templates/           # HTML-Templates
+├── templates/           # HTML-Templates (update.html, about.html, …)
 ├── static/              # CSS, Assets (z.B. vis-network.min.js)
 ├── output_docs/         # Exportierte Dokumente
 └── .agy.yaml            # Agent-Konfiguration
@@ -75,6 +77,19 @@ Recht/
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest</code></td><td style="padding: 0.5rem;">Ermöglicht Dateiupload, Textpaste oder Merkzettel-Import (ingestlater)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest/all</code></td><td style="padding: 0.5rem;">Führt einen vollständigen Ingest aller neuen Dateien in <code>raw/</code> aus</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/sync</code></td><td style="padding: 0.5rem;">Aktualisiert die BM25-Suchindizes manuell</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update</code></td><td style="padding: 0.5rem;">⬇️ Update-Seite mit Versionsinfo und Auslöse-Button</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update/run</code></td><td style="padding: 0.5rem;">Führt das Update aus (POST) – zeigt Log an</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update/check</code></td><td style="padding: 0.5rem;">JSON-API: Prüft auf neue GitHub-Version (AJAX)</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/graph</code></td><td style="padding: 0.5rem;">🕸️ Interaktiver Wissensgraph aller Wiki-Seiten</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/graph/data</code></td><td style="padding: 0.5rem;">Liefert Graph-Daten als JSON für vis-network</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/pending</code></td><td style="padding: 0.5rem;">⏳ Ausstehende Ingests aus dem Merkzettel</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/pending/ingest/&lt;datei&gt;</code></td><td style="padding: 0.5rem;">Einzel-Ingest einer ausstehenden Datei</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/pending/ingest-all</code></td><td style="padding: 0.5rem;">Stapel-Ingest aller ausstehenden Dateien</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/export</code></td><td style="padding: 0.5rem;">📤 Verwaltung exportierter Dokumente</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/export/&lt;datei&gt;</code></td><td style="padding: 0.5rem;">Lädt ein exportiertes Dokument herunter</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/raw</code></td><td style="padding: 0.5rem;">📦 Übersicht aller archivierten Rohquellen</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/raw/&lt;datei&gt;</code></td><td style="padding: 0.5rem;">Zeigt eine Rohquelle an</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/about</code></td><td style="padding: 0.5rem;">ℹ️ Über-Seite mit Versions- und Projektinformationen</td></tr>
 </table>
 
 <h2>🔗 Links</h2>

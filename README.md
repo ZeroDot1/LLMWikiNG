@@ -33,6 +33,10 @@ Das CLI-Skript `wiki.sh` bündelt alle Operationen zur Verwaltung des Wikis:
 *   `./wiki.sh list` – Listet alle aktuellen Wiki-Seiten auf.
 *   `./wiki.sh status` – Zeigt Statistiken zum Wiki, den Rohquellen und dem LLM-Backend an.
 *   `./wiki.sh config` – Zeigt die aktuelle Konfiguration an.
+*   `./wiki.sh update` – Führt ein Selbstupdate via GitHub durch (lädt `main.zip` herunter).
+*   `./wiki.sh reindex` – Baut den BM25-Suchindex neu auf.
+*   `./wiki.sh help` – Zeigt die Hilfe-Seite mit allen Befehlen an.
+*   `./wiki.sh --version` – Gibt die aktuelle Versionsnummer aus.
 
 ---
 
@@ -48,6 +52,7 @@ Zusätzlich zur CLI bietet das Projekt ein voll ausgestattetes, extrem performan
 *   **📤 Export-Verwaltung**: Sieh alle exportierten Dokumente im Browser ein, lies sie gerendert oder lade sie direkt herunter.
 *   **🔍 Suche mit Term-Highlighting**: Blitzschnelle BM25-Suche im gesamten Wiki, in den Rohdateien sowie den Exporten mit farblichen Markierungen im Text.
 *   **🏥 Web-Linter**: Zeigt verwaiste Seiten, veraltete Seiten (Staleness), defekte Rohquellen-Referenzen (Raw File Refs) und offene Link-Verweise sortiert nach ihrer Wichtigkeit (Häufigkeit) an.
+*   **⬇️ Selbstupdate**: Integrierte Update-Funktion – prüft auf neue GitHub-Versionen und aktualisiert sich selbst per Klick. Schützt Wiki-Seiten, Rohquellen und Konfiguration.
 
 ### Web-Interface starten:
 Der Webserver läuft standardmäßig auf einem modernen **Uvicorn ASGI-Server** (Standard post-2026 für maximale Performance und Konkurrenzfähigkeit).
@@ -77,6 +82,17 @@ Das Web-Interface stellt folgende Routen bereit:
 *   `/ingest` – Ingest-Center für Uploads, URL-Notizen (Merkzettel) und Stapelverarbeitung.
 *   `/ingest/all` – Ingest aller ausstehenden Rohdateien in `raw/` durchführen.
 *   `/admin/sync` – Stößt eine manuelle Index-Synchronisation an.
+*   `/admin/update` – Zeigt die Update-Seite mit Versionsinfo und Auslöse-Button.
+*   `/admin/update/run` – Führt das Update-Skript aus (POST) und zeigt das Log.
+*   `/admin/update/check` – Prüft auf neue GitHub-Versionen (JSON-API für AJAX).
+*   `/graph` – Interaktiver Wissensgraph (vis-network) aller Wiki-Seiten-Verknüpfungen.
+*   `/graph/data` – Liefert die Graph-Daten als JSON.
+*   `/pending` – Zeigt ausstehende Ingests aus dem Merkzettel an.
+*   `/export` – Verwaltung aller exportierten Dokumente.
+*   `/export/<filename>` – Lädt ein exportiertes Dokument herunter.
+*   `/raw` – Übersicht aller archivierten Rohquellen.
+*   `/raw/<filename>` – Zeigt eine Rohquelle an.
+*   `/about` – Über-Seite mit Version und Projektinformationen.
 
 ---
 
@@ -113,6 +129,22 @@ LLM_BACKEND=ollama OLLAMA_MODEL=llama3:8b ./wiki.sh ingest datei.md
 
 *   `LLM_BACKEND`: `ollama`, `agy` oder `opencode` (Standard: `ollama`)
 *   `OLLAMA_MODEL`: Das zu verwendende Modell (Standard: `llama3.2:3b`)
+
+### 📦 Selbstupdate
+
+Das Projekt enthält eine integrierte Update-Funktion:
+
+```bash
+./update.sh            # Vollständiges Selbstupdate von GitHub
+./update.sh --check    # Nur prüfen, ob ein Update verfügbar ist
+./wiki.sh update       # Update via CLI
+```
+
+Das Update-Skript:
+- Erstellt ein **automatisches Backup** vor dem Update
+- Ersetzt Programmdateien, Templates, Prompts und Styles
+- Schützt **Wiki-Seiten (`wiki/`), Rohquellen (`raw/`), Exporte (`output_docs/`), SMTP-Konfiguration (`config.json`) und LLM-Einstellungen (`.agy.yaml`)**
+- Zeigt den gesamten Update-Verlauf im Log an
 
 ---
 

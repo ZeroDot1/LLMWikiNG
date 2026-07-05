@@ -1450,6 +1450,7 @@ def about():
     return render_template(
         "about.html",
         active_page="about",
+        app_version=APP_VERSION,
         python_version=sys.version.split()[0],
         flask_version=flask_ver,
         markdown_version=md_ver,

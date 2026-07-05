@@ -19,6 +19,11 @@
 set -euo pipefail
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# VERSION
+# ═══════════════════════════════════════════════════════════════════════════════
+VERSION="1.0.0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # KONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 WIKI_DIR="./wiki"
@@ -182,7 +187,8 @@ append_log() {
 
 show_help() {
     echo -e "${BLUE}╔══════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║      LLM-Wiki CLI – Karpathy-Pattern mit qmd        ║${NC}"
+    echo -e "${BLUE}║      LLMWikiNG CLI – v${VERSION}                     ║${NC}"
+    echo -e "${BLUE}║      Karpathy-Pattern mit qmd                        ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${CYAN}Verwendung:${NC} $0 [befehl] [parameter]"
@@ -705,6 +711,9 @@ case "${1:-help}" in
         ;;
     config)
         show_config
+        ;;
+    version|--version|-V)
+        echo "LLMWikiNG v${VERSION}"
         ;;
     help|--help|-h|"")
         show_help

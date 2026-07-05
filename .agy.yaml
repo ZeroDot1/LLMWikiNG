@@ -4,7 +4,7 @@
 
 agent:
   name: "LLMWikiNG-Bot"
-  version: "3.0-full"
+  version: "1.0.0"
   description: >
     Vollständiger LLMWikiNG-Agent von ZeroDot1. Nutzt wiki.sh für Suche, Ingest, Export, Lint.
     LLM-Backend: ollama (lokal). qmd für token-sparende Hybrid-Suche.

@@ -1550,6 +1550,42 @@ def admin_update_run():
     )
 
 
+@app.route("/admin/update/check")
+def admin_update_check():
+    """Prüft, ob ein Update auf GitHub verfügbar ist."""
+    version_file = PROJECT_ROOT / "VERSION"
+    local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+    try:
+        proc = subprocess.run(
+            ["curl", "-sL", "https://raw.githubusercontent.com/ZeroDot1/LLMWikiNG/main/VERSION"],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        github_version = proc.stdout.strip()
+        if not github_version or proc.returncode != 0:
+            github_version = None
+    except Exception:
+        github_version = None
+
+    if github_version is None:
+        return {
+            "success": False,
+            "error": "Konnte Version von GitHub nicht abrufen."
+        }
+
+    update_available = github_version != local_version
+
+    return {
+        "success": True,
+        "local_version": local_version,
+        "github_version": github_version,
+        "update_available": update_available,
+        "up_to_date": not update_available
+    }
+
+
 def get_wiki_analytics():
     """Berechnet detaillierte Statistiken und Analysen über das Wiki."""
     wiki_pages = get_all_wiki_pages()

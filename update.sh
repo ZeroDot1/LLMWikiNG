@@ -3,7 +3,8 @@
 # Lädt die neueste Version von GitHub herunter und ersetzt alle Programmdateien.
 # Benutzerdaten (wiki/, raw/, output_docs/, config.json) bleiben erhalten.
 #
-# Nutzung: ./update.sh
+# Nutzung: ./update.sh            – Update ausführen
+#          ./update.sh --check    – Nur prüfen, ob Update verfügbar ist
 #
 # Repository: https://github.com/ZeroDot1/LLMWikiNG
 
@@ -34,27 +35,47 @@ die() {
 
 # ─── Start ────────────────────────────────────────────────────────────────────
 
-echo -e "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║           LLMWikiNG – Selbstupdate                  ║${NC}"
-echo -e "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
-echo ""
-
 # Projektverzeichnis ermitteln (dort, wo update.sh liegt)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
-echo -e "  Projektverzeichnis: ${YELLOW}$PROJECT_DIR${NC}"
 
 # Aktuelle Version ermitteln
 CURRENT_VERSION="unbekannt"
 if [ -f "VERSION" ]; then
     CURRENT_VERSION=$(cat VERSION)
 fi
-echo -e "  Aktuelle Version:   ${YELLOW}${CURRENT_VERSION}${NC}"
 
 # Prüfen ob curl installiert ist
 if ! command -v curl &>/dev/null; then
     die "❌ curl nicht gefunden. Bitte installieren: sudo pacman -S curl"
 fi
+
+# ─── --check-Modus: Nur prüfen, ob ein Update verfügbar ist ───────────────────
+
+if [ "${1:-}" = "--check" ]; then
+    echo -e "  Aktuelle Version: ${YELLOW}${CURRENT_VERSION}${NC}"
+    GITHUB_VERSION=$(curl -sL "https://raw.githubusercontent.com/ZeroDot1/LLMWikiNG/main/VERSION" 2>/dev/null || echo "unbekannt")
+    echo -e "  GitHub Version:   ${YELLOW}${GITHUB_VERSION}${NC}"
+    echo ""
+    if [ "$GITHUB_VERSION" = "unbekannt" ] || [ -z "$GITHUB_VERSION" ]; then
+        echo -e "${RED}❌ Konnte Version von GitHub nicht abrufen.${NC}"
+        exit 2
+    fi
+    if [ "$CURRENT_VERSION" = "$GITHUB_VERSION" ]; then
+        echo -e "${GREEN}✅ LLMWikiNG ist aktuell (${CURRENT_VERSION}).${NC}"
+        exit 0
+    else
+        echo -e "${YELLOW}⬇️  Update verfügbar: ${CURRENT_VERSION} → ${GITHUB_VERSION}${NC}"
+        exit 1
+    fi
+fi
+
+echo -e "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║           LLMWikiNG – Selbstupdate                  ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "  Projektverzeichnis: ${YELLOW}$PROJECT_DIR${NC}"
+echo -e "  Aktuelle Version:   ${YELLOW}${CURRENT_VERSION}${NC}"
 
 # Prüfen ob unzip installiert ist
 if ! command -v unzip &>/dev/null; then

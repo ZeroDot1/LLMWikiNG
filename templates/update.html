@@ -16,17 +16,28 @@
             <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
         <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Methode:</td>
             <td><code>curl</code> + <code>unzip</code> (main.zip)</td></tr>
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Aktuelle Version:</td>
-            <td><strong>{{ app_version }}</strong></td></tr>
+        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Lokale Version:</td>
+            <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
     </table>
+
+    <div id="checkResult" style="margin-bottom: 1rem; display: none;"></div>
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button id="checkUpdateBtn" class="btn btn-primary"
+                style="background: var(--accent-hover);"
+                onclick="checkUpdate()">
+            🔍 Auf Update prüfen
+        </button>
+    </div>
 
     <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Folgende Bereiche werden aktualisiert:</h3>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius); padding: 1rem;">
             <strong style="color: var(--accent-green);">✅ Wird ersetzt</strong>
             <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
-                <li>wiki.sh, llmWiki.py, email_sender.py</li>
-                <li>start.sh, update.sh</li>
+                <li><strong>llmWiki.py</strong> (Webserver)</li>
+                <li><strong>email_sender.py</strong> (E-Mail)</li>
+                <li>wiki.sh, start.sh, update.sh</li>
                 <li>prompts/ (System-Prompts)</li>
                 <li>templates/ (HTML-Vorlagen)</li>
                 <li>static/ (CSS, JS)</li>
@@ -89,8 +100,46 @@
 <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
     <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Update via Terminal</h2>
     <p>Alternativ kann das Update auch direkt im Terminal ausgeführt werden:</p>
-    <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh
+    <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh          # Update ausführen
+./update.sh --check  # Nur prüfen
 # oder
 ./wiki.sh update</pre>
 </div>
+
+<script>
+function checkUpdate() {
+    var btn = document.getElementById('checkUpdateBtn');
+    var result = document.getElementById('checkResult');
+    btn.disabled = true;
+    btn.innerHTML = '🔄 Prüfe…';
+    result.style.display = 'block';
+    result.innerHTML = '<p style="color: var(--text-muted);">Prüfe auf neue Version auf GitHub…</p>';
+
+    fetch('/admin/update/check')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                result.innerHTML = '<div class="admonition admonition-warning"><strong>Fehler:</strong> ' + data.error + '</div>';
+                return;
+            }
+            if (data.up_to_date) {
+                result.innerHTML = '<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius); padding: 1rem;">' +
+                    '<strong style="color: var(--accent-green);">✅ LLMWikiNG ist aktuell!</strong><br>' +
+                    '<span style="color: var(--text-secondary);">Lokal: <strong>' + data.local_version + '</strong> – GitHub: <strong>' + data.github_version + '</strong></span></div>';
+            } else {
+                result.innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 1rem;">' +
+                    '<strong style="color: var(--accent-yellow);">⬇️ Update verfügbar!</strong><br>' +
+                    '<span style="color: var(--text-secondary);">Lokal: <strong>' + data.local_version + '</strong> → GitHub: <strong>' + data.github_version + '</strong></span>' +
+                    '<br><br><a href="/admin/update" class="btn btn-primary" style="background: var(--accent-green);">⬇️ Update jetzt ausführen</a></div>';
+            }
+        })
+        .catch(function(err) {
+            result.innerHTML = '<div class="admonition admonition-warning"><strong>Fehler:</strong> ' + err.message + '</div>';
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Auf Update prüfen';
+        });
+}
+</script>
 {% endblock %}

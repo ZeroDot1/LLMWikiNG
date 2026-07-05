@@ -68,6 +68,9 @@
            onclick="this.innerHTML='🔄 Sync läuft…'; this.style.cursor='wait';">
             {% if sync_needed %}🔄 Sync erforderlich{% else %}✅ Sync OK{% endif %}
         </a>
+        <a href="/admin/update" class="{% if active_page == 'update' %}active{% endif %}">
+            ⬇️ Update
+        </a>
         <a href="/about" class="{% if active_page == 'about' %}active{% endif %}">
             ℹ️ Über llmWiki
         </a>

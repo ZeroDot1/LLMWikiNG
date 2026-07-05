@@ -101,6 +101,9 @@ app = Flask(APP_NAME,
             static_folder=str(PROJECT_ROOT / "static"),
             static_url_path="/static")
 
+# Templates immer neu laden (auch im Produktionsmodus)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+
 
 # ─── Hilfsfunktionen ────────────────────────────────────────────────────────
 
@@ -1493,19 +1496,36 @@ def admin_sync():
 
 @app.route("/admin/update")
 def admin_update():
-    """Führt ein Update von GitHub durch (via update.sh)."""
-    import shlex
+    """Zeigt die Update-Seite mit Informationen und Auslöse-Button."""
+    version_file = PROJECT_ROOT / "VERSION"
+    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
+    update_available = (PROJECT_ROOT / "update.sh").exists()
+
+    return render_template(
+        "update.html",
+        active_page="update",
+        app_version=app_version_text,
+        update_available=update_available,
+        update_log=None
+    )
+
+
+@app.route("/admin/update/run", methods=["POST"])
+def admin_update_run():
+    """Führt das Update-Skript aus und zeigt das Log."""
     update_script = PROJECT_ROOT / "update.sh"
+    version_file = PROJECT_ROOT / "VERSION"
+    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
+    update_available = update_script.exists()
 
-    if not update_script.exists():
-        return render_template("page.html",
-            page_title="Update nicht verfügbar",
+    if not update_available:
+        return render_template(
+            "update.html",
             active_page="update",
-            content="<h1>Update nicht verfügbar</h1><p>Die Datei <code>update.sh</code> wurde nicht gefunden.</p>")
-
-    result_lines = []
-    result_lines.append(f"$ {shlex.join(['./update.sh'])}")
-    result_lines.append("")
+            app_version=app_version_text,
+            update_available=False,
+            update_log="FEHLER: update.sh nicht gefunden."
+        )
 
     try:
         proc = subprocess.run(
@@ -1515,32 +1535,19 @@ def admin_update():
             timeout=120,
             cwd=str(PROJECT_ROOT)
         )
-        output = proc.stdout + proc.stderr
+        log_output = proc.stdout + proc.stderr
     except subprocess.TimeoutExpired:
-        output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
+        log_output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
     except Exception as e:
-        output = f"FEHLER: {e}"
+        log_output = f"FEHLER: {e}"
 
-    result_lines.append(output)
-
-    content = (
-        "<h1>LLMWikiNG Update</h1>"
-        "<pre style='background:var(--bg-code);padding:1rem;border-radius:var(--radius);"
-        "overflow-x:auto;white-space:pre-wrap;font-size:0.85rem;'>"
-        + "".join(result_lines) +
-        "</pre>"
-        "<p style='margin-top:1rem;'>"
-        "<strong style='color:var(--accent-yellow);'>Bitte den Webserver neu starten, "
-        "damit alle Änderungen übernommen werden:</strong><br>"
-        "<code style='background:var(--bg-code);padding:0.2rem 0.5rem;border-radius:4px;'>./start.sh</code>"
-        "</p>"
-        "<p><a href='/' class='btn btn-primary'>Zur Startseite</a></p>"
-    )
-
-    return render_template("page.html",
-        page_title="Update ausgeführt",
+    return render_template(
+        "update.html",
         active_page="update",
-        content=content)
+        app_version=app_version_text,
+        update_available=update_available,
+        update_log=log_output
+    )
 
 
 def get_wiki_analytics():

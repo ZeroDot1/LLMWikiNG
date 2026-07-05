@@ -147,4 +147,28 @@
         <a href="/admin/sync" class="btn btn-primary">Jetzt synchronisieren</a>
     </div>
 </div>
+
+<!-- Update-Bereich -->
+<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">⬇️ LLMWikiNG Update</h2>
+    <p>
+        <strong>Aktuelle Version:</strong> <code style="background: var(--bg-code); padding: 0.1rem 0.4rem; border-radius: 4px;">{{ app_version }}</code>
+    </p>
+    {% if update_available %}
+    <p>Lade die neueste Version von GitHub herunter und aktualisiere alle Programmdateien.
+       Deine Wiki-Seiten, Rohquellen, Exporte und Konfiguration bleiben erhalten.</p>
+    <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/admin/update" class="btn btn-primary" style="background: var(--accent-green);"
+           onclick="return confirm('Update jetzt ausführen?\n\nDer Webserver muss nach dem Update neu gestartet werden.');">
+            ⬇️ Update ausführen
+        </a>
+        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
+           style="background: var(--bg-hover); border: 1px solid var(--border);">
+            GitHub-Repository öffnen
+        </a>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted);"><em>update.sh nicht gefunden – Update-Funktion nicht verfügbar.</em></p>
+    {% endif %}
+</div>
 {% endblock %}

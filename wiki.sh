@@ -206,6 +206,7 @@ show_help() {
     echo "  list                   📋  Alle Wiki-Dokumente anzeigen"
     echo "  status                 📊  Wiki-Statistiken"
     echo "  config                 ⚙️   Konfiguration anzeigen"
+    echo "  update                 ⬇️  LLMWikiNG via GitHub aktualisieren (curl)"
     echo "  help                   ❓  Diese Hilfe"
     echo ""
     echo -e "${YELLOW}Beispiele:${NC}"
@@ -711,6 +712,14 @@ case "${1:-help}" in
         ;;
     config)
         show_config
+        ;;
+    update)
+        if [ -f "./update.sh" ]; then
+            exec ./update.sh
+        else
+            echo -e "${RED}❌ update.sh nicht gefunden.${NC}"
+            exit 1
+        fi
         ;;
     version|--version|-V)
         echo "LLMWikiNG v${VERSION}"

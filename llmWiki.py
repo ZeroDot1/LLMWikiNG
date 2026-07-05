@@ -1489,6 +1489,60 @@ def admin_sync():
     status = "✅ Sync erfolgreich!" if (results["qmd"] and results["index"]) else "⚠ Sync teilweise fehlgeschlagen"
     messages = "; ".join(results["messages"])
     return redirect(url_for("index", _external=True) + f"?sync_status={status}&sync_msg={messages}")
+
+
+@app.route("/admin/update")
+def admin_update():
+    """Führt ein Update von GitHub durch (via update.sh)."""
+    import shlex
+    update_script = PROJECT_ROOT / "update.sh"
+
+    if not update_script.exists():
+        return render_template("page.html",
+            page_title="Update nicht verfügbar",
+            active_page="status",
+            content="<h1>Update nicht verfügbar</h1><p>Die Datei <code>update.sh</code> wurde nicht gefunden.</p>")
+
+    result_lines = []
+    result_lines.append(f"$ {shlex.join(['./update.sh'])}")
+    result_lines.append("")
+
+    try:
+        proc = subprocess.run(
+            [str(update_script)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=str(PROJECT_ROOT)
+        )
+        output = proc.stdout + proc.stderr
+    except subprocess.TimeoutExpired:
+        output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
+    except Exception as e:
+        output = f"FEHLER: {e}"
+
+    result_lines.append(output)
+
+    content = (
+        "<h1>LLMWikiNG Update</h1>"
+        "<pre style='background:var(--bg-code);padding:1rem;border-radius:var(--radius);"
+        "overflow-x:auto;white-space:pre-wrap;font-size:0.85rem;'>"
+        + "".join(result_lines) +
+        "</pre>"
+        "<p style='margin-top:1rem;'>"
+        "<strong style='color:var(--accent-yellow);'>Bitte den Webserver neu starten, "
+        "damit alle Änderungen übernommen werden:</strong><br>"
+        "<code style='background:var(--bg-code);padding:0.2rem 0.5rem;border-radius:4px;'>./start.sh</code>"
+        "</p>"
+        "<p><a href='/' class='btn btn-primary'>Zur Startseite</a></p>"
+    )
+
+    return render_template("page.html",
+        page_title="Update ausgeführt",
+        active_page="status",
+        content=content)
+
+
 def get_wiki_analytics():
     """Berechnet detaillierte Statistiken und Analysen über das Wiki."""
     wiki_pages = get_all_wiki_pages()
@@ -1623,13 +1677,22 @@ def status_dashboard():
         "export_dir": str(EXPORT_DIR)
     }
     
+    # Version aus VERSION-Datei lesen
+    version_file = PROJECT_ROOT / "VERSION"
+    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
+
+    # Prüfen, ob update.sh verfügbar ist
+    update_available = (PROJECT_ROOT / "update.sh").exists()
+
     return render_template(
         "status.html",
         active_page="status",
         stats=stats,
         tools=tools,
         config=config_data,
-        analytics=analytics
+        analytics=analytics,
+        app_version=app_version_text,
+        update_available=update_available
     )
 
 

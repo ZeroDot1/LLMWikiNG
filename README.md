@@ -33,7 +33,7 @@ Das CLI-Skript `wiki.sh` bündelt alle Operationen zur Verwaltung des Wikis:
 *   `./wiki.sh list` – Listet alle aktuellen Wiki-Seiten auf.
 *   `./wiki.sh status` – Zeigt Statistiken zum Wiki, den Rohquellen und dem LLM-Backend an.
 *   `./wiki.sh config` – Zeigt die aktuelle Konfiguration an.
-*   `./wiki.sh update` – Führt ein Selbstupdate via GitHub durch (lädt `main.zip` herunter).
+*   `./wiki.sh update` – Führt ein Selbstupdate via GitHub durch (`git fetch origin && git reset --hard origin/main`).
 *   `./wiki.sh reindex` – Baut den BM25-Suchindex neu auf.
 *   `./wiki.sh help` – Zeigt die Hilfe-Seite mit allen Befehlen an.
 *   `./wiki.sh --version` – Gibt die aktuelle Versionsnummer aus.
@@ -164,9 +164,10 @@ Das Projekt enthält eine integrierte Update-Funktion:
 ./wiki.sh update       # Update via CLI
 ```
 
-Das Update-Skript:
+Das Update-Skript (Git-basiert):
 - Erstellt ein **automatisches Backup** vor dem Update
-- Ersetzt Programmdateien, Templates, Prompts und Styles
+- Führt `git fetch origin` aus und setzt auf `origin/main` zurück (`git reset --hard`)
+- Stasht lokale Änderungen automatisch (bei Bedarf: `git stash pop`)
 - Schützt **Wiki-Seiten (`wiki/`), Rohquellen (`raw/`), Exporte (`output_docs/`), SMTP-Konfiguration (`config.json`) und LLM-Einstellungen (`.agy.yaml`)**
 - Zeigt den gesamten Update-Verlauf im Log an
 

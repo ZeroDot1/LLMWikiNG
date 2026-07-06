@@ -7,6 +7,20 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.2.0] – 2026-07-06
+
+### Git-basierte Update-Funktion
+
+#### Changed
+- **Update-Mechanismus**: Von curl+unzip auf Git umgestellt (`git fetch origin && git reset --hard origin/main`)
+- **Versionsprüfung**: Nutzt jetzt `git fetch` + `git show origin/main:VERSION` statt curl
+- **update.sh**: Komplett überarbeitet – prüft auf Git-Verfügbarkeit, erstellt Backup, stasht lokale Änderungen, führt `git reset --hard origin/main` aus
+
+#### Removed
+- Abhängigkeit von `curl` und `unzip` für Updates (weiterhin für andere Funktionen verfügbar)
+
+---
+
 ## [1.1.0] – 2026-07-06
 
 ### Mehrsprachigkeit & Einstellungs-Seite

@@ -29,7 +29,7 @@ COLLECTION_NAME = "my_wiki"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 
@@ -1642,16 +1642,25 @@ def admin_update_run():
 
 @app.route("/admin/update/check")
 def admin_update_check():
-    """Prüft, ob ein Update auf GitHub verfügbar ist."""
+    """Prüft, ob ein Update auf GitHub verfügbar ist (via Git)."""
     version_file = PROJECT_ROOT / "VERSION"
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
     try:
-        proc = subprocess.run(
-            ["curl", "-sL", "https://raw.githubusercontent.com/ZeroDot1/LLMWikiNG/main/VERSION"],
+        # Git fetch (leise) und Remote-Version aus VERSION-Datei auslesen
+        subprocess.run(
+            ["git", "fetch", "origin"],
             capture_output=True,
             text=True,
-            timeout=15
+            timeout=30,
+            cwd=str(PROJECT_ROOT)
+        )
+        proc = subprocess.run(
+            ["git", "show", "origin/main:VERSION"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=str(PROJECT_ROOT)
         )
         github_version = proc.stdout.strip()
         if not github_version or proc.returncode != 0:

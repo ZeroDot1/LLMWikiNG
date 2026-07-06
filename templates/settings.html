@@ -245,7 +245,7 @@
             <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.repo_label') }}</td>
                 <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
             <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.method_label') }}</td>
-                <td><code>curl</code> + <code>unzip</code> (main.zip)</td></tr>
+                <td><code>git pull</code> (via GitHub)</td></tr>
             <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.local_version_label') }}</td>
                 <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
         </table>
@@ -312,7 +312,7 @@
         <div class="admonition admonition-warning">
             <strong>{{ _('update.not_available_title') }}</strong><br>
             {{ _('update.not_available_desc') }}
-            <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">curl -sL https://github.com/ZeroDot1/LLMWikiNG/raw/main/update.sh -o update.sh && chmod +x update.sh</pre>
+            <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
         </div>
         {% endif %}
     </div>

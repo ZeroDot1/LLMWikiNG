@@ -61,10 +61,61 @@
         {% endif %}
     </div>
     <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-sm btn-secondary" style="font-weight: 500; cursor: pointer; border: none;"
+                onclick="copyPageLink(this)" title="Link zu dieser Seite kopieren">
+            🔗 Link teilen
+        </button>
         <a href="/wiki/{{ raw_page_name }}/export" class="btn btn-sm btn-secondary" style="font-weight: 500;">📤 Exportieren</a>
         {% if raw_page_name not in ("index", "log", "ingestlater") %}
         <a href="/wiki/{{ raw_page_name }}/delete" class="btn btn-sm btn-danger" style="font-weight: 500;" onclick="return confirm('Möchtest du diese Wiki-Seite wirklich unwiderruflich löschen?');">🗑️ Löschen</a>
         {% endif %}
     </div>
 </div>
+
+<script>
+function copyPageLink(btn) {
+    const url = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✅ Link kopiert!';
+            btn.style.background = 'var(--accent-green)';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2500);
+        }).catch(() => {
+            fallbackCopy(url, btn);
+        });
+    } else {
+        fallbackCopy(url, btn);
+    }
+}
+function fallbackCopy(text, btn) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ Link kopiert!';
+        btn.style.background = 'var(--accent-green)';
+        btn.style.color = '#fff';
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.style.background = '';
+            btn.style.color = '';
+        }, 2500);
+    } catch (e) {
+        btn.innerHTML = '❌ Fehler';
+        setTimeout(() => { btn.innerHTML = '🔗 Link teilen'; }, 2000);
+    }
+    document.body.removeChild(ta);
+}
+</script>
 {% endblock %}

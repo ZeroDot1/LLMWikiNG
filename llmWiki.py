@@ -24,11 +24,116 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 WIKI_DIR = PROJECT_ROOT / "wiki"
 RAW_DIR = PROJECT_ROOT / "raw"
 EXPORT_DIR = PROJECT_ROOT / "output_docs"
+LANG_DIR = PROJECT_ROOT / "lang"
 COLLECTION_NAME = "my_wiki"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
+DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
+CONFIG_FILE = PROJECT_ROOT / "config.json"
+
+# ─── App-Konfiguration laden ────────────────────────────────────────────────
+
+def load_app_config():
+    """Lädt die globale App-Konfiguration aus config.json.
+
+    Enthält neben SMTP-Einstellungen auch die Standard-Sprache u. a.
+    Gibt ein Dict mit Standardwerten zurück, falls die Datei fehlt.
+    """
+    default_config = {
+        "language": "de",
+        "smtp_host": "smtp.gmail.com",
+        "smtp_port": 587,
+        "smtp_user": "",
+        "smtp_pass": "",
+        "use_tls": True,
+        "recipients": "",
+    }
+    if CONFIG_FILE.exists():
+        try:
+            data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            for k, v in default_config.items():
+                data.setdefault(k, v)
+            return data
+        except (json.JSONDecodeError, Exception):
+            return default_config
+    return default_config
+
+
+# ─── Übersetzungssystem (Mehrsprachigkeit) ──────────────────────────────────
+
+_translations_cache = {}  # {lang_code: dict}
+
+def get_available_languages():
+    """Ermittelt verfügbare Sprachen aus dem lang/-Ordner."""
+    langs = {}
+    if LANG_DIR.exists():
+        for f in sorted(LANG_DIR.iterdir()):
+            if f.suffix == ".json":
+                code = f.stem
+                try:
+                    data = json.loads(f.read_text(encoding="utf-8"))
+                    name = data.get("_meta", {}).get("name", code)
+                    langs[code] = name
+                except (json.JSONDecodeError, Exception):
+                    langs[code] = code
+    if not langs:
+        langs[DEFAULT_LANG] = "Deutsch"
+    return langs
+
+def load_translations(lang_code):
+    """Lädt die Übersetzungsdatei für eine Sprache und gibt ein dict zurück."""
+    if lang_code in _translations_cache:
+        return _translations_cache[lang_code]
+    fallback = {}
+    filepath = LANG_DIR / f"{lang_code}.json"
+    if filepath.exists():
+        try:
+            data = json.loads(filepath.read_text(encoding="utf-8"))
+            _translations_cache[lang_code] = data
+            return data
+        except (json.JSONDecodeError, Exception):
+            pass
+    # Fallback auf Deutsch
+    if lang_code != DEFAULT_LANG:
+        return load_translations(DEFAULT_LANG)
+    return {}
+
+class Translator:
+    """Einfacher Übersetzer, der mit Punkt-Notation auf das JSON zugreift.
+    Usage in Templates: {{ _('sidebar.home') }} oder {{ _('index.welcome_heading') }}
+    """
+    def __init__(self, lang_code):
+        self.lang_code = lang_code
+        self.data = load_translations(lang_code)
+
+    def get(self, key, default=None):
+        """Holt einen Wert per Punkt-Notation (z.B. 'sidebar.home')."""
+        if not key:
+            return default or key
+        parts = key.split(".")
+        current = self.data
+        for part in parts:
+            if isinstance(current, dict):
+                current = current.get(part)
+                if current is None:
+                    return default or key
+            else:
+                return default or key
+        if isinstance(current, str):
+            return current
+        return default or key
+
+    def __call__(self, key, **kwargs):
+        """Ruft einen übersetzten String ab und führt optional .format() aus."""
+        value = self.get(key)
+        if kwargs and isinstance(value, str):
+            try:
+                return value.format(**kwargs)
+            except (KeyError, ValueError):
+                return value
+        return value
 
 # Markdown-Extensions
 MD_EXTENSIONS = [
@@ -554,12 +659,29 @@ def do_sync():
 
 @app.context_processor
 def inject_globals():
+    # Sprache aus Cookie oder Query-Parameter ermitteln
+    lang_code = DEFAULT_LANG
+    if hasattr(request, 'args') and request.args.get("lang"):
+        lang_code = request.args.get("lang")
+    elif hasattr(request, 'cookies') and request.cookies.get("llmwiki_lang"):
+        lang_code = request.cookies.get("llmwiki_lang")
+
+    # Verfügbare Sprachen prüfen
+    available = get_available_languages()
+    if lang_code not in available:
+        lang_code = DEFAULT_LANG
+
+    _t = Translator(lang_code)
+
     return {
         "all_pages": get_all_wiki_pages(),
         "now": datetime.now(),
         "app_name": APP_NAME,
         "app_edition": APP_EDITION,
         "sync_needed": is_sync_needed(),
+        "_": _t,                     # Übersetzungsfunktion für Templates
+        "current_lang": lang_code,   # Aktueller Sprachcode
+        "available_languages": available,  # {code: name}
     }
 
 
@@ -1423,6 +1545,18 @@ def search():
     )
 
 
+@app.route("/lang/<code>")
+def switch_language(code):
+    """Schaltet die Sprache um und setzt ein Cookie."""
+    available = get_available_languages()
+    if code not in available:
+        code = DEFAULT_LANG
+    referrer = request.referrer or "/"
+    response = flask.redirect(referrer)
+    response.set_cookie("llmwiki_lang", code, max_age=365*24*3600)  # 1 Jahr
+    return response
+
+
 @app.route("/about")
 def about():
     """Über-Seite mit Versionsinfo."""
@@ -1496,58 +1630,14 @@ def admin_sync():
 
 @app.route("/admin/update")
 def admin_update():
-    """Zeigt die Update-Seite mit Informationen und Auslöse-Button."""
-    version_file = PROJECT_ROOT / "VERSION"
-    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
-    update_available = (PROJECT_ROOT / "update.sh").exists()
-
-    return render_template(
-        "update.html",
-        active_page="update",
-        app_version=app_version_text,
-        update_available=update_available,
-        update_log=None
-    )
+    """Weiterleitung zur Einstellungsseite (Update-Tab)."""
+    return redirect("/settings?tab=update")
 
 
 @app.route("/admin/update/run", methods=["POST"])
 def admin_update_run():
-    """Führt das Update-Skript aus und zeigt das Log."""
-    update_script = PROJECT_ROOT / "update.sh"
-    version_file = PROJECT_ROOT / "VERSION"
-    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
-    update_available = update_script.exists()
-
-    if not update_available:
-        return render_template(
-            "update.html",
-            active_page="update",
-            app_version=app_version_text,
-            update_available=False,
-            update_log="FEHLER: update.sh nicht gefunden."
-        )
-
-    try:
-        proc = subprocess.run(
-            [str(update_script)],
-            capture_output=True,
-            text=True,
-            timeout=120,
-            cwd=str(PROJECT_ROOT)
-        )
-        log_output = proc.stdout + proc.stderr
-    except subprocess.TimeoutExpired:
-        log_output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
-    except Exception as e:
-        log_output = f"FEHLER: {e}"
-
-    return render_template(
-        "update.html",
-        active_page="update",
-        app_version=app_version_text,
-        update_available=update_available,
-        update_log=log_output
-    )
+    """Weiterleitung zur Einstellungsseite (Update-Tab). Nutze stattdessen das Formular in den Einstellungen."""
+    return redirect("/settings?tab=update")
 
 
 @app.route("/admin/update/check")
@@ -1911,6 +2001,193 @@ def config_page():
     )
 
 
+@app.route("/settings", methods=["GET", "POST"])
+def settings_page():
+    """Einstellungsseite mit Tabs: Sprache, E-Mail-Konfiguration, Gesundheitscheck, Update."""
+    from email_sender import load_smtp_config, save_smtp_config
+
+    config_success_msg = None
+    config_error_msg = None
+
+    # Update-Variablen
+    version_file = PROJECT_ROOT / "VERSION"
+    app_version_text = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else APP_VERSION
+    update_available_flag = (PROJECT_ROOT / "update.sh").exists()
+    update_log_output = None
+
+    # POST-Handling: SMTP Config ODER Update ausführen
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        if action == "run_update":
+            # Update ausführen
+            update_script = PROJECT_ROOT / "update.sh"
+            if not update_script.exists():
+                update_log_output = "FEHLER: update.sh nicht gefunden."
+            else:
+                try:
+                    proc = subprocess.run(
+                        [str(update_script)],
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                        cwd=str(PROJECT_ROOT)
+                    )
+                    update_log_output = proc.stdout + proc.stderr
+                except subprocess.TimeoutExpired:
+                    update_log_output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
+                except Exception as e:
+                    update_log_output = f"FEHLER: {e}"
+        else:
+            # SMTP Config speichern
+            smtp_host = request.form.get("smtp_host", "smtp.gmail.com")
+            try:
+                smtp_port = int(request.form.get("smtp_port", "587"))
+            except ValueError:
+                smtp_port = 587
+            smtp_user = request.form.get("smtp_user", "").strip()
+            smtp_pass = request.form.get("smtp_pass", "").strip()
+            use_tls = request.form.get("use_tls") == "1"
+            recipients = request.form.get("recipients", "").strip()
+
+            new_config = {
+                "smtp_host": smtp_host,
+                "smtp_port": smtp_port,
+                "smtp_user": smtp_user,
+                "smtp_pass": smtp_pass,
+                "use_tls": use_tls,
+                "recipients": recipients
+            }
+
+            if save_smtp_config(new_config):
+                config_success_msg = "Konfiguration erfolgreich in config.json gespeichert!"
+            else:
+                config_error_msg = "Fehler beim Speichern der Konfiguration."
+
+    smtp_config_data = load_smtp_config()
+    env_user = os.environ.get("GMAIL_USER", "")
+    env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
+
+    # Gesundheitscheck (Lint)
+    health_run_check = request.args.get("run") == "1"
+    health_orphans = []
+    health_missing = []
+    health_stale = []
+    health_missing_raw = []
+    health_issue_count = 0
+
+    if health_run_check and WIKI_DIR.exists():
+        pages = get_all_wiki_pages()
+        all_slugs = {p["slug"] for p in pages}
+
+        # 1. Orphans
+        for p in pages:
+            if p["slug"] in ("index", "log", "ingestlater"):
+                continue
+            has_backlink = False
+            for other in pages:
+                if other["slug"] == p["slug"]:
+                    continue
+                other_file = WIKI_DIR / f"{other['slug']}.md"
+                try:
+                    other_content = other_file.read_text(encoding="utf-8", errors="replace").lower()
+                    if f"[[{p['slug'].replace('-', ' ')}]]" in other_content or f"[[{p['slug']}]]" in other_content:
+                        has_backlink = True
+                        break
+                except Exception:
+                    pass
+            if not has_backlink:
+                health_orphans.append(p)
+                health_issue_count += 1
+
+        # 2. Missing pages
+        missing_map = {}
+        for p in pages:
+            file_path = WIKI_DIR / f"{p['slug']}.md"
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="replace")
+                refs = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content)
+                for ref in refs:
+                    target_raw = ref.strip()
+                    target_slug = target_raw.lower().replace(" ", "-")
+                    target_slug = target_slug.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+                    target_slug = re.sub(r'[^a-z0-9-]', '', target_slug)
+                    target_slug = re.sub(r'-+', '-', target_slug).strip('-')
+                    if target_slug and target_slug not in all_slugs and target_slug not in ("index", "log", "ingestlater"):
+                        if target_slug not in missing_map:
+                            missing_map[target_slug] = {"title": target_raw, "sources": set()}
+                        missing_map[target_slug]["sources"].add((p["title"], p["slug"]))
+            except Exception:
+                pass
+
+        for ref_slug, info in missing_map.items():
+            sources_list = sorted(list(info["sources"]))
+            health_missing.append({
+                "slug": ref_slug,
+                "title": info["title"],
+                "sources": sources_list,
+                "count": len(sources_list)
+            })
+            health_issue_count += 1
+
+        # 3. Stale pages
+        for p in pages:
+            if p["slug"] in ("index", "log", "ingestlater"):
+                continue
+            file_path = WIKI_DIR / f"{p['slug']}.md"
+            if file_path.exists():
+                try:
+                    stat = file_path.stat()
+                    health_stale.append({
+                        "slug": p["slug"],
+                        "title": p["title"],
+                        "mtime_formatted": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d"),
+                        "mtime": stat.st_mtime
+                    })
+                except Exception:
+                    pass
+        health_stale.sort(key=lambda x: x["mtime"])
+        health_stale = health_stale[:5]
+
+        # 4. Missing raw refs
+        for p in pages:
+            file_path = WIKI_DIR / f"{p['slug']}.md"
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="replace")
+                raw_matches = re.findall(r'\*\*Quelle:\*\*\s*`([^`]+)`', content)
+                for raw_file in raw_matches:
+                    raw_file = raw_file.strip()
+                    raw_path = RAW_DIR / raw_file
+                    if not raw_path.exists():
+                        health_missing_raw.append({
+                            "page_title": p["title"],
+                            "page_slug": p["slug"],
+                            "raw_file": raw_file
+                        })
+                        health_issue_count += 1
+            except Exception:
+                pass
+
+    return render_template(
+        "settings.html",
+        active_page="settings",
+        smtp_config=smtp_config_data,
+        env_user=env_user,
+        env_pass_exists=env_pass_exists,
+        config_success_msg=config_success_msg,
+        config_error_msg=config_error_msg,
+        health_run_check=health_run_check,
+        health_orphans=health_orphans,
+        health_missing=health_missing,
+        health_stale=health_stale,
+        health_missing_raw=health_missing_raw,
+        health_issue_count=health_issue_count,
+        app_version=app_version_text,
+        update_available=update_available_flag,
+        update_log=update_log_output,
+    )
+
+
 @app.route("/briefings", methods=["GET", "POST"])
 def briefings_dashboard():
     """Wöchentliche Zusammenfassungen (Briefings) generieren und versenden."""
@@ -2181,31 +2458,55 @@ def server_error(e):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
+    global DEFAULT_LANG
     import argparse
     parser = argparse.ArgumentParser(
         description=f"{APP_NAME} {APP_EDITION} – Lokaler Wiki-Webserver",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Beispiele:\n"
+            "  python3 llmWiki.py                       # Port 8080, Sprache aus config.json\n"
+            "  python3 llmWiki.py --port 9090            # Anderer Port\n"
+            "  python3 llmWiki.py -p 9090 -d             # Debug + Port 9090\n"
+            "  python3 llmWiki.py --lang en              # Englisch als Startsprache\n"
+            "  python3 llmWiki.py --lang de -H 127.0.0.1 # Deutsch, nur localhost\n"
+        ),
     )
     parser.add_argument("--port", "-p", type=int, default=8080, help="Port (Standard: 8080)")
     parser.add_argument("--host", "-H", default="0.0.0.0", help="Host (Standard: 0.0.0.0)")
-    parser.add_argument("--debug", "-d", action="store_true", help="Debug-Modus")
+    parser.add_argument("--debug", "-d", action="store_true", help="Debug-Modus (Flask, kein Uvicorn)")
+    parser.add_argument("--lang", "-l", default=None, help="Startsprache (z. B. de, en) – überschreibt config.json")
     args = parser.parse_args()
+
+    # Sprache ermitteln: CLI-Argument überschreibt config.json
+    cfg = load_app_config()
+    if args.lang:
+        DEFAULT_LANG = args.lang
+    elif cfg.get("language"):
+        DEFAULT_LANG = cfg["language"]
+
+    available = get_available_languages()
+    if DEFAULT_LANG not in available:
+        print(f"  ⚠ Sprache '{DEFAULT_LANG}' nicht in lang/ gefunden, Fallback auf Deutsch.")
+        DEFAULT_LANG = "de"
 
     print(f"\n{'='*60}")
     print(f"  {APP_NAME}")
     print(f"  {APP_EDITION}")
     print(f"  Version {APP_VERSION}")
     print(f"{'='*60}")
-    print(f"  Wiki-Verzeichnis: {WIKI_DIR}")
-    print(f"  Rohquellen:       {RAW_DIR}")
+    print(f"  Wiki-Verzeichnis:  {WIKI_DIR}")
+    print(f"  Rohquellen:        {RAW_DIR}")
+    print(f"  Startsprache:      {DEFAULT_LANG} ({available.get(DEFAULT_LANG, DEFAULT_LANG)})")
     if args.debug:
-        print(f"  Betriebsmodus:    Entwicklung (Flask-Debug)")
-        print(f"  Server startet    http://{args.host}:{args.port}")
+        print(f"  Betriebsmodus:     Entwicklung (Flask-Debug)")
+        print(f"  Server startet     http://{args.host}:{args.port}")
         print(f"  Drücke Strg+C zum Beenden")
         print(f"{'='*60}\n")
         app.run(host=args.host, port=args.port, debug=True)
     else:
-        print(f"  Betriebsmodus:    Produktion (Uvicorn ASGI-Standard)")
-        print(f"  Server startet    http://{args.host}:{args.port}")
+        print(f"  Betriebsmodus:     Produktion (Uvicorn ASGI-Standard)")
+        print(f"  Server startet     http://{args.host}:{args.port}")
         print(f"  Drücke Strg+C zum Beenden")
         print(f"{'='*60}\n")
         from asgiref.wsgi import WsgiToAsgi

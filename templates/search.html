@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Volltextsuche{% endblock %}
+{% block title %}{{ _('search.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="search-page-header" style="margin-bottom: 2rem;">
-    <h1>🔍 Volltextsuche</h1>
-    <p class="subtitle">Durchsuche das gesamte Wiki nach Begriffen, Artikeln oder Querverweisen.</p>
+    <h1>{{ _('search.heading') }}</h1>
+    <p class="subtitle">{{ _('search.subtitle') }}</p>
 </div>
 
 <!-- Große Suchleiste im Hauptfenster -->
@@ -14,29 +14,29 @@
             type="text"
             name="q"
             class="form-control"
-            placeholder="Suchbegriff eingeben..."
+            placeholder="{{ _('search.input_placeholder') }}"
             value="{{ query or '' }}"
             style="font-size: 1.1rem; padding: 0.8rem 1.2rem; flex: 1;"
             required
             autofocus
         >
-        <button type="submit" class="btn btn-primary" style="font-size: 1rem; padding: 0 1.8rem;">Suchen</button>
+        <button type="submit" class="btn btn-primary" style="font-size: 1rem; padding: 0 1.8rem;">{{ _('search.button') }}</button>
     </form>
 </div>
 
 {% if sync_hint %}
 <div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-    <strong>🔄 Suchindex veraltet:</strong>
-    Es wurden neue oder geänderte Seiten im Wiki erkannt.
-    <a href="/admin/sync" style="font-weight: 600;">Jetzt synchronisieren →</a>
+    <strong>{{ _('search.index_outdated_title') }}</strong>
+    {{ _('search.index_outdated_desc') }}
+    <a href="/admin/sync" style="font-weight: 600;">{{ _('search.sync_now') }}</a>
 </div>
 {% endif %}
 
 {% if query %}
     <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">
-        Suchergebnisse für „<strong style="color: var(--accent-hover);">{{ query }}</strong>“
+        {{ _('search.results_for') }} „<strong style="color: var(--accent-hover);">{{ query }}</strong>“
         {% if results %}
-        <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted); margin-left: 0.5rem;">({{ results|length }} Treffer)</span>
+        <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted); margin-left: 0.5rem;">({{ results|length }} {{ _('search.hits') }})</span>
         {% endif %}
     </h2>
 {% endif %}
@@ -44,19 +44,19 @@
 {% if query and not slug_exists and raw_mentions_count > 0 %}
 <div class="admonition admonition-tip" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.5rem;">
     <div style="font-size: 0.9rem;">
-        💡 <strong>Neuer Themen-Vorschlag?</strong> 
-        Der Begriff „<strong>{{ query }}</strong>“ existiert noch nicht im Wiki, wird aber in <strong>{{ raw_mentions_count }}</strong> Rohquelle(n) erwähnt.
+        <strong>{{ _('search.topic_suggestion') }}</strong> 
+        {{ _('search.topic_not_exists', query=query, count=raw_mentions_count) }}
         {% if raw_mentions_count >= 3 %}
-        <br><span style="color: var(--accent-green); font-weight: 600; font-size: 0.85rem;">✔ Erfüllt die Relevanzschwelle (&ge; 3 Erwähnungen) zum Erstellen einer eigenen Wiki-Seite.</span>
+        <br><span style="color: var(--accent-green); font-weight: 600; font-size: 0.85rem;">{{ _('search.relevance_threshold') }}</span>
         {% endif %}
     </div>
-    <a href="/ingest?title={{ query }}" class="btn btn-sm btn-primary" style="text-decoration: none; white-space: nowrap;">Wiki-Seite anlegen</a>
+    <a href="/ingest?title={{ query }}" class="btn btn-sm btn-primary" style="text-decoration: none; white-space: nowrap;">{{ _('search.create_wiki_page') }}</a>
 </div>
 {% endif %}
 
 {% if error %}
     <div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-        <strong>⚠ Fehler:</strong> {{ error }}
+        <strong>{{ _('search.error_prefix') }}</strong> {{ error }}
     </div>
 {% endif %}
 
@@ -70,7 +70,7 @@
                 </div>
                 {% if result.score %}
                 <span class="score-badge" style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.15); color: var(--accent-hover); padding: 0.2rem 0.5rem; border-radius: 12px; font-weight: 500;">
-                    Score: {{ result.score }}
+                    {{ _('search.score') }} {{ result.score }}
                 </span>
                 {% endif %}
             </div>
@@ -83,7 +83,7 @@
             
             <div class="search-result-footer" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.5rem;">
                 <span style="font-family: var(--font-mono);">{{ result.path }}</span>
-                <a href="{{ result.url }}" style="color: var(--link); font-weight: 500;">Ansehen →</a>
+                <a href="{{ result.url }}" style="color: var(--link); font-weight: 500;">{{ _('search.view') }}</a>
             </div>
         </li>
     {% endfor %}
@@ -91,15 +91,15 @@
 {% elif query %}
     <div class="search-no-results">
         <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔎</p>
-        <p>Keine Ergebnisse für <strong>„{{ query }}“</strong> gefunden.</p>
+        <p>{{ _('search.no_results') }} <strong>„{{ query }}“</strong> {{ _('search.no_results_found') }}</p>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-            Überprüfe die Schreibweise oder verwende allgemeinere Begriffe.
+            {{ _('search.no_results_hint') }}
         </p>
     </div>
 {% else %}
     <div class="search-no-results">
         <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">⌨️</p>
-        <p>Gib oben einen Suchbegriff ein, um das Wiki zu durchsuchen.</p>
+        <p>{{ _('search.idle_hint') }}</p>
     </div>
 {% endif %}
 {% endblock %}

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Über LLMWikiNG{% endblock %}
+{% block title %}{{ _('about.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>ℹ️ Über LLMWikiNG</h1>
+<h1>{{ _('about.heading') }}</h1>
 
 <p>
     <strong>LLMWikiNG</strong> ist eine von <strong>ZeroDot1</strong> entwickelte, lokale und datenschutzfreundliche Wiki-Plattform,
@@ -15,7 +15,7 @@
     Ein ganz besonderer Dank geht an <a href="https://github.com/tevsa" target="_blank">https://github.com/tevsa</a> für die großartige Idee und hervorragende Unterstützung bei der Umsetzung dieses Projekts!
 </p>
 
-<h2>📋 Features</h2>
+<h2>{{ _('about.features_heading') }}</h2>
 <ul>
     <li>📄 <strong>Markdown-Rendering</strong> – Alle Wiki-Seiten werden als schönes HTML dargestellt</li>
     <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (offline betrieben via Vis.js). Widersprüche und Spannungen werden rot gestrichelt dargestellt.</li>
@@ -30,12 +30,12 @@
     <li>⬇️ <strong>Selbstupdate</strong> – Integrierte Update-Funktion: Prüft auf neue GitHub-Versionen und aktualisiert sich selbst per Klick. Schützt Wiki, Rohquellen und Konfiguration.</li>
 </ul>
 
-<h2>ℹ️ Version</h2>
-<p><strong>LLMWikiNG Version {{ app_version }}</strong></p>
+<h2>{{ _('about.version_heading') }}</h2>
+<p><strong>{{ _('about.version_text') }} {{ app_version }}</strong></p>
 
-<h2>🛠 Technik</h2>
+<h2>{{ _('about.tech_heading') }}</h2>
 <table>
-    <tr><th>Komponente</th><th>Version</th></tr>
+    <tr><th>{{ _('about.tech_table_component') }}</th><th>{{ _('about.tech_table_version') }}</th></tr>
     <tr><td>Python</td><td>{{ python_version }}</td></tr>
     <tr><td>Flask (WSGI Framework)</td><td>{{ flask_version }}</td></tr>
     <tr><td>Uvicorn (ASGI Server)</td><td>{{ uvicorn_version }}</td></tr>
@@ -44,7 +44,7 @@
     <tr><td>Jinja2</td><td>{{ jinja_version }}</td></tr>
 </table>
 
-<h2>📁 Projektstruktur</h2>
+<h2>{{ _('about.project_structure_heading') }}</h2>
 <pre style="font-size: 0.85rem;">
 Recht/
 ├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint, Update)
@@ -61,9 +61,9 @@ Recht/
 └── .agy.yaml            # Agent-Konfiguration
 </pre>
 
-<h2>🌐 Web-Endpunkte</h2>
+<h2>{{ _('about.endpoints_heading') }}</h2>
 <table style="width: 100%; border: none; margin-bottom: 1.5rem;">
-    <tr style="border-bottom: 2px solid var(--border);"><th style="padding: 0.5rem; text-align: left;">Route</th><th style="padding: 0.5rem; text-align: left;">Beschreibung</th></tr>
+    <tr style="border-bottom: 2px solid var(--border);"><th style="padding: 0.5rem; text-align: left;">{{ _('about.endpoints_table_route') }}</th><th style="padding: 0.5rem; text-align: left;">{{ _('about.endpoints_table_desc') }}</th></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/</code></td><td style="padding: 0.5rem;">Startseite (Cockpit mit Cockpit-Listen & Aktivitäts-Timeline)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/wiki/&lt;page_name&gt;</code></td><td style="padding: 0.5rem;">Rendert eine Wiki-Seite (inkl. Pfad-Navigation falls Teil eines Trails)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/wiki/&lt;page_name&gt;/export</code></td><td style="padding: 0.5rem;">Kopiert die Seite als Markdown-Datei nach <code>output_docs/</code></td></tr>
@@ -77,8 +77,7 @@ Recht/
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest</code></td><td style="padding: 0.5rem;">Ermöglicht Dateiupload, Textpaste oder Merkzettel-Import (ingestlater)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/ingest/all</code></td><td style="padding: 0.5rem;">Führt einen vollständigen Ingest aller neuen Dateien in <code>raw/</code> aus</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/sync</code></td><td style="padding: 0.5rem;">Aktualisiert die BM25-Suchindizes manuell</td></tr>
-    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update</code></td><td style="padding: 0.5rem;">⬇️ Update-Seite mit Versionsinfo und Auslöse-Button</td></tr>
-    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update/run</code></td><td style="padding: 0.5rem;">Führt das Update aus (POST) – zeigt Log an</td></tr>
+    <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/settings</code></td><td style="padding: 0.5rem;">⚙️ Einstellungen (Sprache, SMTP, Gesundheitscheck, Update)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/admin/update/check</code></td><td style="padding: 0.5rem;">JSON-API: Prüft auf neue GitHub-Version (AJAX)</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/graph</code></td><td style="padding: 0.5rem;">🕸️ Interaktiver Wissensgraph aller Wiki-Seiten</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/graph/data</code></td><td style="padding: 0.5rem;">Liefert Graph-Daten als JSON für vis-network</td></tr>
@@ -91,6 +90,30 @@ Recht/
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/raw/&lt;datei&gt;</code></td><td style="padding: 0.5rem;">Zeigt eine Rohquelle an</td></tr>
     <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;"><code>/about</code></td><td style="padding: 0.5rem;">ℹ️ Über-Seite mit Versions- und Projektinformationen</td></tr>
 </table>
+
+<h2>🚀 Server-Parameter</h2>
+<p>Der Webserver kann mit folgenden Parametern gestartet werden (direkt oder via <code>start.sh</code>):</p>
+<table>
+    <tr><th>Parameter</th><th>Via start.sh</th><th>Beschreibung</th></tr>
+    <tr><td><code>--port, -p PORT</code></td><td><code>./start.sh 9090</code></td><td>Port (Standard: <code>8080</code>); start.sh sucht automatisch den nächsten freien Port</td></tr>
+    <tr><td><code>--host, -H HOST</code></td><td>—</td><td>Binde-Adresse (Standard: <code>0.0.0.0</code>)</td></tr>
+    <tr><td><code>--debug, -d</code></td><td><code>./start.sh -d</code></td><td>Debug-Modus (Flask-interner Server statt Uvicorn, Live-Reload)</td></tr>
+    <tr><td><code>--lang, -l CODE</code></td><td><code>./start.sh --lang en</code></td><td>Startsprache (<code>de</code>, <code>en</code>, …). Überschreibt den Wert aus <code>config.json</code></td></tr>
+</table>
+<p>Die Standard-Sprache wird in <code>config.json</code> unter <code>"language"</code> gespeichert. Wird kein <code>--lang</code> übergeben, gilt der Config-Wert; danach Deutsch als Fallback.</p>
+
+<h2>📦 Drittanbieter-Lizenzen</h2>
+<p>Dieses Projekt nutzt folgende externe Komponenten:</p>
+
+<h3 style="font-size: 1rem;">vis-network (Wissensgraph)</h3>
+<p>
+    <a href="https://visjs.github.io/vis-network/" target="_blank">vis-network</a> v10.1.0 – eine dynamische, browser-basierte Visualisierungsbibliothek.<br>
+    <em>Copyright:</em> (c) 2011–2017 Almende B.V · (c) 2017–2019 visjs contributors<br>
+    <em>Lizenz:</em> Dual-lizenziert unter
+    <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a> und
+    <a href="http://opensource.org/licenses/MIT" target="_blank">MIT</a>.
+    Vis.js darf unter einer der beiden Lizenzen verteilt werden.
+</p>
 
 <h2>🔗 Links</h2>
 <ul>

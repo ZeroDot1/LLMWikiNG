@@ -20,64 +20,58 @@
     </div>
 
     <div class="sidebar-nav">
-        <span class="sidebar-subtitle">Navigation</span>
+        <span class="sidebar-subtitle">{{ _('sidebar.nav_title') }}</span>
         <a href="/" class="{% if active_page == 'home' %}active{% endif %}">
-            🏠 Startseite
+            {{ _('sidebar.home') }}
         </a>
         <a href="/wiki/index" class="{% if active_page == 'index' %}active{% endif %}">
-            📑 Index
+            {{ _('sidebar.index') }}
         </a>
         <a href="/wiki/log" class="{% if active_page == 'log' %}active{% endif %}">
-            📜 Logbuch
+            {{ _('sidebar.logbook') }}
         </a>
         <a href="/raw" class="{% if active_page == 'raw_list' %}active{% endif %}">
-            📦 Rohquellen
+            {{ _('sidebar.raw_sources') }}
         </a>
         <a href="/pending" class="{% if active_page == 'pending_list' %}active{% endif %}">
-            ⏳ Ausstehendes
+            {{ _('sidebar.pending') }}
         </a>
         <a href="/export" class="{% if active_page == 'export_list' %}active{% endif %}">
-            📤 Exportiertes
+            {{ _('sidebar.exported') }}
         </a>
         <a href="/graph" class="{% if active_page == 'graph' %}active{% endif %}">
-            🕸️ Wissensgraph
+            {{ _('sidebar.knowledge_graph') }}
         </a>
         <a href="/ingest" class="{% if active_page == 'ingest' %}active{% endif %}">
-            📥 Quelle einspielen
+            {{ _('sidebar.ingest') }}
         </a>
     </div>
 
     <div class="sidebar-nav">
-        <span class="sidebar-subtitle">System & Tools</span>
+        <span class="sidebar-subtitle">{{ _('sidebar.system_tools') }}</span>
         <a href="/search" class="{% if active_page == 'search' %}active{% endif %}">
-            🔍 Suche
+            {{ _('sidebar.search') }}
         </a>
-        <a href="/lint" class="{% if active_page == 'lint' %}active{% endif %}">
-            🏥 Gesundheitscheck (Lint)
+        <a href="/settings" class="{% if active_page == 'settings' %}active{% endif %}">
+            ⚙️ {{ _('sidebar.settings') }}
         </a>
         <a href="/status" class="{% if active_page == 'status' %}active{% endif %}">
-            📊 Status & Statistik
+            {{ _('sidebar.status_stats') }}
         </a>
         <a href="/briefings" class="{% if active_page == 'briefings' %}active{% endif %}">
-            📰 Wochenberichte
-        </a>
-        <a href="/config" class="{% if active_page == 'config' %}active{% endif %}">
-            ⚙️ E-Mail Konfiguration
+            {{ _('sidebar.weekly_reports') }}
         </a>
         <a href="/admin/sync" id="syncBtn" class="sync-btn {% if sync_needed %}sync-needed{% endif %}"
-           onclick="this.innerHTML='🔄 Sync läuft…'; this.style.cursor='wait';">
-            {% if sync_needed %}🔄 Sync erforderlich{% else %}✅ Sync OK{% endif %}
-        </a>
-        <a href="/admin/update" class="{% if active_page == 'update' %}active{% endif %}">
-            ⬇️ Update
+           onclick="this.innerHTML='{{ _('sidebar.sync_running') }}'; this.style.cursor='wait';">
+            {% if sync_needed %}{{ _('sidebar.sync_needed') }}{% else %}{{ _('sidebar.sync_ok') }}{% endif %}
         </a>
         <a href="/about" class="{% if active_page == 'about' %}active{% endif %}">
-            ℹ️ Über llmWiki
+            {{ _('sidebar.about') }}
         </a>
     </div>
 
     <div class="sidebar-nav" style="max-height: 250px; overflow-y: auto;">
-        <span class="sidebar-subtitle">Wiki-Seiten</span>
+        <span class="sidebar-subtitle">{{ _('sidebar.wiki_pages') }}</span>
         {% for page in all_pages %}
         <a href="/wiki/{{ page.name }}"
            class="{% if active_page == page.name %}active{% endif %}"
@@ -97,11 +91,11 @@
                 type="text"
                 name="q"
                 class="search-input"
-                placeholder="Wiki durchsuchen…"
+                placeholder="{{ _('searchbar.placeholder') }}"
                 value="{{ query or '' }}"
                 autocomplete="off"
             >
-            <button type="submit" class="search-btn">Suchen</button>
+            <button type="submit" class="search-btn">{{ _('searchbar.button') }}</button>
         </form>
     </div>
 
@@ -112,9 +106,8 @@
 
     <footer class="footer">
         <p>
-            <strong>LLMWikiNG</strong> – by <a href="https://github.com/ZeroDot1" target="_blank">ZeroDot1</a> ·
-            Powered by Flask + qmd ·
-            <a href="/about">Impressum</a>
+            {{ _('footer.text') }}
+            <a href="/about">{{ _('footer.imprint') }}</a>
         </p>
     </footer>
 </main>

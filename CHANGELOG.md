@@ -7,6 +7,29 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.1.0] – 2026-07-06
+
+### Mehrsprachigkeit & Einstellungs-Seite
+
+#### Added
+- **Mehrsprachigkeit**: Vollständige Internationalisierung (DE/EN) mit Sprachumschaltung via Cookie (`?lang=de|en`)
+- **Einstellungs-Seite** (`/settings`): Tab-basierte Oberfläche mit Sprache, SMTP-Konfiguration, Gesundheitscheck und Update
+- **Sprach-Parameter** für Server-Start: `--lang/-l` (CLI), `"language"` in `config.json`
+- **Drittanbieter-Credits**: vis-network Lizenzhinweise in README, about.html und graph.html
+- **Übersetzung**: Alle 17 HTML-Templates nutzen `{{ _('key') }}`-Funktion, 435 Strings in `lang/de.json` und `lang/en.json`
+
+#### Changed
+- **Update-Funktion**: Von eigener Seite (`/admin/update`) in Einstellungs-Tab verschoben
+- **Sidebar**: Aufgeräumt – Lint, Config und Update nur noch über Einstellungen erreichbar
+- **README & about.html**: Vollständige Server-Parameter-Dokumentation
+
+#### Removed
+- Separate `/admin/update`-Seite (weitergeleitet zu `/settings?tab=update`)
+- Separate `/lint`- und `/config`-Menüpunkte in der Sidebar
+- Sprachwechsler aus der Sidebar (jetzt in Einstellungen)
+
+---
+
 ## [1.0.0] – 2026-07-06
 
 ### Erster stabiler Release

@@ -1,27 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Ausstehender Ingest{% endblock %}
+{% block title %}{{ _('pending_list.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action">
-    <h1>⏳ Ausstehender Ingest</h1>
+    <h1>{{ _('pending_list.heading') }}</h1>
     {% if files %}
-    <a href="/pending/ingest-all" class="btn btn-primary" onclick="showLoading(this)">📥 Alle einspielen (Ingest All)</a>
+    <a href="/pending/ingest-all" class="btn btn-primary" onclick="showLoading(this)">{{ _('pending_list.ingest_all') }}</a>
     {% endif %}
 </div>
 
 <p class="subtitle">
-    Dies sind Dateien im Ordner <code>raw/</code>, die manuell dort abgelegt, aber noch nicht in das Wiki eingepflegt (ingestiert) wurden. Du kannst sie einzeln oder alle zusammen einspielen.
+    {{ _('pending_list.subtitle') }}
 </p>
 
 {% if success_msg %}
 <div class="admonition admonition-tip">
-    <strong>Erfolg:</strong> {{ success_msg }}
+    <strong>{{ _('pending_list.success_prefix') }}</strong> {{ success_msg }}
 </div>
 {% endif %}
 
 {% if error_msg %}
 <div class="admonition admonition-warning">
-    <strong>Fehler:</strong> {{ error_msg }}
+    <strong>{{ _('pending_list.error_prefix') }}</strong> {{ error_msg }}
 </div>
 {% endif %}
 
@@ -30,10 +30,10 @@
     <table class="raw-table">
         <thead>
             <tr>
-                <th>Dateiname</th>
-                <th>Größe</th>
-                <th>Hinzugefügt am</th>
-                <th style="text-align: right;">Aktionen</th>
+                <th>{{ _('pending_list.table_filename') }}</th>
+                <th>{{ _('pending_list.table_size') }}</th>
+                <th>{{ _('pending_list.table_added') }}</th>
+                <th style="text-align: right;">{{ _('pending_list.table_actions') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -46,8 +46,8 @@
                 <td class="file-size">{{ file.size_formatted }}</td>
                 <td class="file-date">{{ file.mtime_formatted }}</td>
                 <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                    <a href="/pending/ingest/{{ file.name }}" class="btn btn-sm btn-primary" onclick="showLoading(this)">📥 Ingest</a>
-                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">Vorschau</a>
+                    <a href="/pending/ingest/{{ file.name }}" class="btn btn-sm btn-primary" onclick="showLoading(this)">{{ _('pending_list.ingest_button') }}</a>
+                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">{{ _('pending_list.preview_button') }}</a>
                 </td>
             </tr>
             {% endfor %}
@@ -57,13 +57,13 @@
 {% else %}
 <div class="search-no-results">
     <p style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</p>
-    <p>Keine ausstehenden Dateien vorhanden. Alle Rohquellen sind bereits eingepflegt!</p>
+    <p>{{ _('pending_list.empty_title') }}</p>
 </div>
 {% endif %}
 
 <div id="loading-overlay" class="loading-overlay">
     <div class="loading-spinner"></div>
-    <p>Ingest läuft und das LLM generiert die Zusammenfassungen... Bitte warten...</p>
+    <p>{{ _('pending_list.loading_text') }}</p>
 </div>
 
 <script>

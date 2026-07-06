@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Wissensgraph{% endblock %}
+{% block title %}{{ _('graph.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action" style="margin-bottom: 1.5rem;">
     <div>
-        <h1>🕸️ Wissensgraph</h1>
-        <p class="subtitle">Interaktive Visualisierung aller verknüpften Wiki-Seiten und deren Beziehungen.</p>
+        <h1>{{ _('graph.heading') }}</h1>
+        <p class="subtitle">{{ _('graph.subtitle') }}</p>
     </div>
     <div>
-        <button onclick="resetGraph()" class="btn btn-secondary">🔍 Ansicht zurücksetzen</button>
+        <button onclick="resetGraph()" class="btn btn-secondary">{{ _('graph.reset_button') }}</button>
     </div>
 </div>
 
@@ -16,22 +16,26 @@
 <div id="graph-container" style="width: 100%; height: 650px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius); position: relative; box-shadow: var(--shadow);">
     <div id="network-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-secondary); text-align: center; z-index: 10;">
         <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-        <p>Generiere Wissensgraph...</p>
+        <p>{{ _('graph.loading') }}</p>
     </div>
     <div id="network" style="width: 100%; height: 100%;"></div>
 </div>
 
+<p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+    {{ _('graph.credit') }}
+</p>
+
 <div class="admonition admonition-tip" style="margin-top: 1.5rem;">
-    <strong>Bedienungshinweise:</strong>
+    <strong>{{ _('graph.instructions_heading') }}</strong>
     <ul>
-        <li><strong>Ziehen / Navigieren:</strong> Klicke und ziehe den Hintergrund, um die Ansicht zu verschieben. Nutze das Mausrad zum Zoomen.</li>
-        <li><strong>Knoten verschieben:</strong> Ziehe einzelne Knoten mit der Maus, um das Layout anzupassen.</li>
-        <li><strong>Seite öffnen:</strong> Doppelklicke auf einen Knoten, um direkt zu der entsprechenden Wiki-Seite zu springen.</li>
-        <li><strong>Beziehungen hervorheben:</strong> Klicke einfach auf einen Knoten, um alle direkt verbundenen Seiten hervorzuheben.</li>
+        <li><strong>{{ _('graph.instruction_pan') }}</strong></li>
+        <li><strong>{{ _('graph.instruction_drag') }}</strong></li>
+        <li><strong>{{ _('graph.instruction_open') }}</strong></li>
+        <li><strong>{{ _('graph.instruction_highlight') }}</strong></li>
     </ul>
 </div>
 
-<!-- Lade Vis-Network lokal -->
+<!-- Lade Vis-Network lokal (vis-network v10.1.0, dual-lizenziert unter Apache 2.0 / MIT) -->
 <script type="text/javascript" src="/static/vis-network.min.js"></script>
 
 <script type="text/javascript">
@@ -87,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 return {
                     id: node.id,
                     label: node.label,
-                    title: `Doppelklick zum Öffnen von: ${node.label}`,
+                    title: `{{ _('graph.double_click_hint') }} ${node.label}`,
                     color: color,
                     font: {
                         color: "#f8fafc",

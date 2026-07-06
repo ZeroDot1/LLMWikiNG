@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Exportierte Dokumente (output_docs/){% endblock %}
+{% block title %}{{ _('export_list.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action">
-    <h1>📤 Exportierte Dokumente</h1>
+    <h1>{{ _('export_list.heading') }}</h1>
 </div>
 
 <p class="subtitle">
-    Dies sind deine exportierten Dokumente im Ordner <code>output_docs/</code>. Diese Dateien können an andere weitergegeben oder geteilt werden.
+    {{ _('export_list.subtitle') }}
 </p>
 
 {% if files %}
@@ -15,10 +15,10 @@
     <table class="raw-table">
         <thead>
             <tr>
-                <th>Dateiname</th>
-                <th>Größe</th>
-                <th>Exportiert am</th>
-                <th style="text-align: right;">Aktionen</th>
+                <th>{{ _('export_list.table_filename') }}</th>
+                <th>{{ _('export_list.table_size') }}</th>
+                <th>{{ _('export_list.table_exported') }}</th>
+                <th style="text-align: right;">{{ _('export_list.table_actions') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -31,8 +31,8 @@
                 <td class="file-size">{{ file.size_formatted }}</td>
                 <td class="file-date">{{ file.mtime_formatted }}</td>
                 <td style="text-align: right;">
-                    <a href="/export/{{ file.name }}" class="btn btn-sm btn-secondary">Ansehen</a>
-                    <a href="/export/{{ file.name }}?download=1" class="btn btn-sm btn-accent">Herunterladen</a>
+                    <a href="/export/{{ file.name }}" class="btn btn-sm btn-secondary">{{ _('export_list.view_button') }}</a>
+                    <a href="/export/{{ file.name }}?download=1" class="btn btn-sm btn-accent">{{ _('export_list.download_button') }}</a>
                 </td>
             </tr>
             {% endfor %}
@@ -42,9 +42,9 @@
 {% else %}
 <div class="search-no-results">
     <p style="font-size: 2rem; margin-bottom: 0.5rem;">📭</p>
-    <p>Noch keine exportierten Dokumente im Ordner <code>output_docs/</code> vorhanden.</p>
+    <p>{{ _('export_list.empty_title') }}</p>
     <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-        Du kannst jede Wiki-Seite exportieren, indem du auf den Button am Fußende des Artikels klickst.
+        {{ _('export_list.empty_hint') }}
     </p>
 </div>
 {% endif %}

@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Wöchentliche Briefings{% endblock %}
+{% block title %}{{ _('briefing.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action" style="margin-bottom: 1.5rem;">
-    <h1>📰 Wöchentliche Briefings (Wochenberichte)</h1>
+    <h1>{{ _('briefing.heading') }}</h1>
     <form action="/briefings" method="get" style="display: flex; gap: 0.5rem; align-items: center;">
-        <label for="week" style="font-size: 0.9rem; color: var(--text-secondary);">Woche:</label>
-        <input type="text" name="week" id="week" class="form-control" value="{{ week }}" style="width: 120px; padding: 0.3rem 0.6rem; font-size: 0.9rem;" placeholder="YYYY-Www">
-        <button type="submit" class="btn btn-sm btn-primary">Auswählen</button>
+        <label for="week" style="font-size: 0.9rem; color: var(--text-secondary);">{{ _('briefing.week_label') }}</label>
+        <input type="text" name="week" id="week" class="form-control" value="{{ week }}" style="width: 120px; padding: 0.3rem 0.6rem; font-size: 0.9rem;" placeholder="{{ _('briefing.week_placeholder') }}">
+        <button type="submit" class="btn btn-sm btn-primary">{{ _('briefing.select_button') }}</button>
     </form>
 </div>
 
 <p class="subtitle" style="margin-bottom: 2rem;">
-    Aggregiere alle neuen Wiki-Artikel einer Kalenderwoche zu einem strukturierten Wochenbericht und simuliere den E-Mail-Versand an Empfänger (entspricht <code>send_briefing.py</code>).
+    {{ _('briefing.subtitle') }}
 </p>
 
 <div class="status-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
     <!-- 1. Themen dieser Woche -->
     <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
         <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
-            📂 In Woche {{ week }} erfasste Themen ({{ week_pages|length }})
+            {{ _('briefing.topics_heading', week=week, count=week_pages|length) }}
         </h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            Zeitraum: {{ start_date.strftime('%d.%m.%Y') }} bis {{ end_date.strftime('%d.%m.%Y') }}
+            {{ _('briefing.timeframe', start=start_date.strftime('%d.%m.%Y'), end=end_date.strftime('%d.%m.%Y')) }}
         </p>
 
         {% if week_pages %}
@@ -41,12 +41,12 @@
 
             <form action="/briefings?week={{ week }}" method="post">
                 <input type="hidden" name="action" value="generate">
-                <button type="submit" class="btn btn-primary" style="width: 100%;">📝 Wochenbericht im Wiki generieren</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">{{ _('briefing.generate_button') }}</button>
             </form>
         {% else %}
             <div style="text-align: center; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--bg-card); color: var(--text-muted);">
                 <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">📭</p>
-                <p>Keine Einträge für diese Kalenderwoche registriert.</p>
+                <p>{{ _('briefing.no_entries') }}</p>
             </div>
         {% endif %}
     </div>
@@ -55,33 +55,33 @@
     <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
             <h2 style="margin: 0; font-size: 1.2rem; color: var(--accent-green);">
-                📧 E-Mail-Briefing versenden
+                {{ _('briefing.email_heading') }}
             </h2>
-            <a href="/config" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.5rem;">⚙️ SMTP einrichten</a>
+            <a href="/config" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.5rem;">{{ _('briefing.email_setup_button') }}</a>
         </div>
         
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            Verschicke den Wochenbericht über deine SMTP-Verbindung.
+            {{ _('briefing.email_subtitle') }}
         </p>
 
         {% if smtp_cfg.smtp_user or default_smtp_user %}
         <div style="font-size: 0.8rem; background: var(--bg-card); border: 1px solid var(--border); padding: 0.6rem; border-radius: var(--radius); margin-bottom: 1.2rem;">
-            <strong>Aktiv:</strong> {{ smtp_cfg.smtp_host }}:{{ smtp_cfg.smtp_port }} ({{ smtp_cfg.smtp_user or default_smtp_user }})
+            <strong>{{ _('briefing.email_active_prefix') }}</strong> {{ smtp_cfg.smtp_host }}:{{ smtp_cfg.smtp_port }} ({{ smtp_cfg.smtp_user or default_smtp_user }})
         </div>
         {% else %}
         <div style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); padding: 0.6rem; border-radius: var(--radius); margin-bottom: 1.2rem; color: var(--accent-red);">
-            ⚠ Keine Zugangsdaten hinterlegt. Bitte richte SMTP ein oder setze Umgebungsvariablen.
+            {{ _('briefing.email_no_creds') }}
         </div>
         {% endif %}
 
         {% if success_msg %}
         <div class="admonition admonition-tip" style="margin-bottom: 1rem;">
-            <strong>Erfolg:</strong> {{ success_msg }}
+            <strong>{{ _('briefing.email_success_prefix') }}</strong> {{ success_msg }}
         </div>
         {% endif %}
         {% if error_msg %}
         <div class="admonition admonition-warning" style="margin-bottom: 1rem;">
-            <strong>Fehler:</strong> {{ error_msg }}
+            <strong>{{ _('briefing.email_error_prefix') }}</strong> {{ error_msg }}
         </div>
         {% endif %}
 
@@ -89,19 +89,19 @@
             <input type="hidden" name="action" value="email">
 
             <div class="form-group">
-                <label for="to_emails" style="font-size: 0.85rem; color: var(--text-secondary);">Empfänger (Komma-separiert):</label>
-                <input type="text" name="to_emails" id="to_emails" class="form-control" value="{{ recipients_value }}" placeholder="empfaenger1@example.com, empfaenger2@example.com" style="padding: 0.4rem;" required>
+                <label for="to_emails" style="font-size: 0.85rem; color: var(--text-secondary);">{{ _('briefing.email_recipients_label') }}</label>
+                <input type="text" name="to_emails" id="to_emails" class="form-control" value="{{ recipients_value }}" placeholder="{{ _('briefing.email_recipients_placeholder') }}" style="padding: 0.4rem;" required>
             </div>
 
-            <button type="submit" class="btn btn-primary" {% if not week_pages or (not smtp_cfg.smtp_user and not default_smtp_user) %}disabled{% endif %}>🚀 Wochenbericht per Mail senden</button>
+            <button type="submit" class="btn btn-primary" {% if not week_pages or (not smtp_cfg.smtp_user and not default_smtp_user) %}disabled{% endif %}>{{ _('briefing.email_send_button') }}</button>
         </form>
 
         {% if email_simulation %}
             <div style="border-top: 1.5px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
-                <h3 style="font-size: 1rem; margin-bottom: 0.8rem; color: var(--text-primary);">💻 Gerenderter Mail-Entwurf</h3>
+                <h3 style="font-size: 1rem; margin-bottom: 0.8rem; color: var(--text-primary);">{{ _('briefing.email_draft_heading') }}</h3>
                 <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border);">
-                    <strong>An:</strong> {{ email_simulation.to }}<br>
-                    <strong>Betreff:</strong> {{ email_simulation.subject }}
+                    <strong>{{ _('briefing.email_to_label') }}</strong> {{ email_simulation.to }}<br>
+                    <strong>{{ _('briefing.email_subject_label') }}</strong> {{ email_simulation.subject }}
                 </div>
                 <!-- E-Mail-Vorschau Sandboxed Iframe -->
                 <div style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 1rem; color: black;">

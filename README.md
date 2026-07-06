@@ -63,8 +63,33 @@ Starte den Server einfach über das Starter-Skript:
 ```
 *   *Entwicklungsmodus mit Live-Reload:* `./start.sh -d`
 *   *Spezifischer Port:* `./start.sh 9090`
+*   *Startsprache festlegen:* `./start.sh --lang en`
 
 Öffne danach `http://localhost:8081` (oder den zugewiesenen Port) in deinem Browser.
+
+### Server-Parameter
+
+Der Webserver (`llmWiki.py`) kann direkt oder via `start.sh` mit folgenden Parametern gestartet werden:
+
+| Parameter | Via start.sh | Beschreibung |
+|-----------|--------------|-------------|
+| `--port, -p PORT` | `./start.sh 9090` | Port (Standard: 8080). `start.sh` sucht automatisch den nächsten freien Port. |
+| `--host, -H HOST` | — (immer `0.0.0.0`) | Binde-Adresse (Standard: `0.0.0.0`) |
+| `--debug, -d` | `./start.sh -d` | Debug-Modus (Flask-interner Server statt Uvicorn, Live-Reload) |
+| `--lang, -l CODE` | `./start.sh --lang en` | Startsprache (z. B. `de`, `en`). Überschreibt den Wert aus `config.json`. |
+
+Alle Parameter können auch direkt an `llmWiki.py` übergeben werden:
+```bash
+python3 llmWiki.py --port 9090 --lang en -d
+```
+
+Die Standard-Sprache wird in `config.json` unter dem Schlüssel `"language"` gespeichert:
+```json
+{
+  "language": "de"
+}
+```
+Wird kein `--lang`-Parameter übergeben, verwendet der Server den Wert aus `config.json`. Fehlt auch dort die Angabe, wird Deutsch (`de`) als Fallback genutzt.
 
 ### 🌐 Web-Endpunkte (Routen)
 Das Web-Interface stellt folgende Routen bereit:
@@ -82,8 +107,7 @@ Das Web-Interface stellt folgende Routen bereit:
 *   `/ingest` – Ingest-Center für Uploads, URL-Notizen (Merkzettel) und Stapelverarbeitung.
 *   `/ingest/all` – Ingest aller ausstehenden Rohdateien in `raw/` durchführen.
 *   `/admin/sync` – Stößt eine manuelle Index-Synchronisation an.
-*   `/admin/update` – Zeigt die Update-Seite mit Versionsinfo und Auslöse-Button.
-*   `/admin/update/run` – Führt das Update-Skript aus (POST) und zeigt das Log.
+*   `/settings` – ⚙️ Einstellungen (Sprache, SMTP-Konfiguration, Gesundheitscheck, Update).
 *   `/admin/update/check` – Prüft auf neue GitHub-Versionen (JSON-API für AJAX).
 *   `/graph` – Interaktiver Wissensgraph (vis-network) aller Wiki-Seiten-Verknüpfungen.
 *   `/graph/data` – Liefert die Graph-Daten als JSON.
@@ -153,3 +177,11 @@ Das Update-Skript:
 Dieses Projekt wurde von **ZeroDot1** erstellt und ist unter der **Unlicense** veröffentlicht, wodurch es vollständig gemeinfrei (Public Domain) ist. Du kannst den Code kopieren, verändern, verbreiten und kommerziell nutzen, ohne irgendwelche Bedingungen erfüllen zu müssen.
 
 Ein besonderer Dank geht an [tevsa](https://github.com/tevsa) für die großartige Idee und Unterstützung bei der Realisierung dieses Projekts. Weitere Details findest du in der [LICENSE](LICENSE)-Datei.
+
+### Drittanbieter-Komponenten / Third-Party Components
+
+#### vis-network (Wissensgraph)
+Dieses Projekt verwendet [vis-network](https://visjs.github.io/vis-network/) v10.1.0, eine dynamische, browser-basierte Visualisierungsbibliothek für den interaktiven Wissensgraphen.
+
+- **Copyright**: (c) 2011–2017 Almende B.V, http://almende.com · (c) 2017–2019 visjs contributors, https://github.com/visjs
+- **Lizenz**: Dual-lizenziert unter Apache 2.0 (http://www.apache.org/licenses/LICENSE-2.0) und MIT (http://opensource.org/licenses/MIT). Vis.js darf unter einer der beiden Lizenzen verteilt werden.

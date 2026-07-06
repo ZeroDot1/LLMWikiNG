@@ -1,22 +1,21 @@
 {% extends "base.html" %}
-{% block title %}LLMWikiNG Update{% endblock %}
+{% block title %}{{ _('update.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>⬇️ LLMWikiNG Update</h1>
+<h1>{{ _('update.heading') }}</h1>
 
 <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Update von GitHub</h2>
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.card_heading') }}</h2>
     <p>
-        Lade die neueste Version von <strong>ZeroDot1/LLMWikiNG</strong> herunter
-        und aktualisiere alle Programmdateien.
+        {{ _('update.intro') }}
     </p>
 
     <table style="width: 100%; border: none; margin-bottom: 1rem;">
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Repository:</td>
+        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.repo_label') }}</td>
             <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Methode:</td>
+        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.method_label') }}</td>
             <td><code>curl</code> + <code>unzip</code> (main.zip)</td></tr>
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">Lokale Version:</td>
+        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.local_version_label') }}</td>
             <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
     </table>
 
@@ -26,14 +25,14 @@
         <button id="checkUpdateBtn" class="btn btn-primary"
                 style="background: var(--accent-hover);"
                 onclick="checkUpdate()">
-            🔍 Auf Update prüfen
+            {{ _('update.check_button') }}
         </button>
     </div>
 
-    <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Folgende Bereiche werden aktualisiert:</h3>
+    <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ _('update.sections_heading') }}</h3>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius); padding: 1rem;">
-            <strong style="color: var(--accent-green);">✅ Wird ersetzt</strong>
+            <strong style="color: var(--accent-green);">{{ _('update.section_replaced_heading') }}</strong>
             <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
                 <li><strong>llmWiki.py</strong> (Webserver)</li>
                 <li><strong>email_sender.py</strong> (E-Mail)</li>
@@ -46,7 +45,7 @@
             </ul>
         </div>
         <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius); padding: 1rem;">
-            <strong style="color: var(--accent-red);">🛡️ Bleibt erhalten</strong>
+            <strong style="color: var(--accent-red);">{{ _('update.section_preserved_heading') }}</strong>
             <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
                 <li>wiki/ (Deine Wiki-Seiten)</li>
                 <li>raw/ (Deine Rohquellen)</li>
@@ -59,28 +58,29 @@
 </div>
 
 <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Update ausführen</h2>
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.run_heading') }}</h2>
 
     {% if update_available %}
-    <p>Klicke auf den Button, um das Update zu starten. Das Skript erstellt vorher ein Backup.</p>
+    <p>{{ _('update.run_intro') }}</p>
 
     <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-        <form action="/admin/update/run" method="post" style="display: inline;">
+        <form action="/settings?tab=update" method="post" style="display: inline;">
+            <input type="hidden" name="action" value="run_update">
             <button type="submit" class="btn btn-primary"
                     style="background: var(--accent-green); font-size: 1.1rem; padding: 0.8rem 2rem;"
-                    onclick="return confirm('⚠️ Update jetzt ausführen?\n\nDer Webserver muss nach dem Update neu gestartet werden!');">
-                ⬇️ Update jetzt ausführen
+                    onclick="return confirm('{{ _('update.run_confirm') }}');">
+                {{ _('update.run_button') }}
             </button>
         </form>
         <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
            style="background: var(--bg-hover); border: 1px solid var(--border);">
-            GitHub-Repository öffnen
+            {{ _('update.github_button') }}
         </a>
     </div>
     {% else %}
     <div class="admonition admonition-warning">
-        <strong>⚠️ Update nicht verfügbar</strong><br>
-        Die Datei <code>update.sh</code> wurde nicht gefunden. Bitte installiere sie manuell:
+        <strong>{{ _('update.not_available_title') }}</strong><br>
+        {{ _('update.not_available_desc') }}
         <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">curl -sL https://github.com/ZeroDot1/LLMWikiNG/raw/main/update.sh -o update.sh && chmod +x update.sh</pre>
     </div>
     {% endif %}
@@ -88,18 +88,18 @@
 
 {% if update_log %}
 <div class="card" style="background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">Update-Log</h2>
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">{{ _('update.log_heading') }}</h2>
     <pre style="white-space: pre-wrap; font-size: 0.85rem; margin: 0;">{{ update_log }}</pre>
     <p style="margin-top: 1rem; padding: 0.8rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius);">
-        <strong style="color: var(--accent-yellow);">⚠️ Bitte den Webserver neu starten:</strong><br>
+        <strong style="color: var(--accent-yellow);">{{ _('update.restart_warning') }}</strong><br>
         <code style="background: var(--bg-code); padding: 0.2rem 0.5rem; border-radius: 4px;">./start.sh</code>
     </p>
 </div>
 {% endif %}
 
 <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Update via Terminal</h2>
-    <p>Alternativ kann das Update auch direkt im Terminal ausgeführt werden:</p>
+    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.terminal_heading') }}</h2>
+    <p>{{ _('update.terminal_desc') }}</p>
     <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh          # Update ausführen
 ./update.sh --check  # Nur prüfen
 # oder
@@ -111,34 +111,34 @@ function checkUpdate() {
     var btn = document.getElementById('checkUpdateBtn');
     var result = document.getElementById('checkResult');
     btn.disabled = true;
-    btn.innerHTML = '🔄 Prüfe…';
+    btn.innerHTML = '{{ _('update.checking') }}';
     result.style.display = 'block';
-    result.innerHTML = '<p style="color: var(--text-muted);">Prüfe auf neue Version auf GitHub…</p>';
+    result.innerHTML = '<p style="color: var(--text-muted);">{{ _('update.checking_text') }}</p>';
 
     fetch('/admin/update/check')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success) {
-                result.innerHTML = '<div class="admonition admonition-warning"><strong>Fehler:</strong> ' + data.error + '</div>';
+                result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + data.error + '</div>';
                 return;
             }
             if (data.up_to_date) {
                 result.innerHTML = '<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                    '<strong style="color: var(--accent-green);">✅ LLMWikiNG ist aktuell!</strong><br>' +
-                    '<span style="color: var(--text-secondary);">Lokal: <strong>' + data.local_version + '</strong> – GitHub: <strong>' + data.github_version + '</strong></span></div>';
+                    '<strong style="color: var(--accent-green);">{{ _('update.up_to_date') }}</strong><br>' +
+                    '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> – {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span></div>';
             } else {
                 result.innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                    '<strong style="color: var(--accent-yellow);">⬇️ Update verfügbar!</strong><br>' +
-                    '<span style="color: var(--text-secondary);">Lokal: <strong>' + data.local_version + '</strong> → GitHub: <strong>' + data.github_version + '</strong></span>' +
-                    '<br><br><a href="/admin/update" class="btn btn-primary" style="background: var(--accent-green);">⬇️ Update jetzt ausführen</a></div>';
+                    '<strong style="color: var(--accent-yellow);">{{ _('update.update_available') }}</strong><br>' +
+                    '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> → {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span>' +
+                    '<br><br><a href="/settings?tab=update" class="btn btn-primary" style="background: var(--accent-green);">{{ _('update.run_button') }}</a></div>';
             }
         })
         .catch(function(err) {
-            result.innerHTML = '<div class="admonition admonition-warning"><strong>Fehler:</strong> ' + err.message + '</div>';
+            result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + err.message + '</div>';
         })
         .finally(function() {
             btn.disabled = false;
-            btn.innerHTML = '🔍 Auf Update prüfen';
+            btn.innerHTML = '{{ _('update.check_button') }}';
         });
 }
 </script>

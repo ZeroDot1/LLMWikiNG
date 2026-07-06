@@ -1,37 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Quelle einspielen / merken{% endblock %}
+{% block title %}{{ _('ingest.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action" style="margin-bottom: 1.5rem;">
-    <h1>📥 Quellen verwalten</h1>
-    <a href="/wiki/ingestlater" class="btn btn-secondary">📝 Merkzettel (Ingest Later) anzeigen</a>
+    <h1>{{ _('ingest.heading') }}</h1>
+    <a href="/wiki/ingestlater" class="btn btn-secondary">{{ _('ingest.show_ingestlater') }}</a>
 </div>
 <p class="subtitle" style="margin-bottom: 2rem;">
-    Importiere neue Quellen direkt in dein Wiki oder merke dir URLs und Texte für eine spätere Bearbeitung.
+    {{ _('ingest.subtitle') }}
 </p>
 
 {% if success_msg %}
 <div class="admonition admonition-tip">
     <strong>{{ success_msg }}</strong>
     {% if new_slug %}
-    <br><a href="/wiki/{{ new_slug }}" style="font-weight: 600;">Zur neu erstellten Wiki-Seite →</a>
+    <br><a href="/wiki/{{ new_slug }}" style="font-weight: 600;">{{ _('ingest.go_to_new_page') }}</a>
     {% elif is_later %}
-    <br><a href="/wiki/ingestlater" style="font-weight: 600;">Zur Ingest-Later Liste →</a>
+    <br><a href="/wiki/ingestlater" style="font-weight: 600;">{{ _('ingest.go_to_ingestlater') }}</a>
     {% endif %}
 </div>
 {% endif %}
 
 {% if error_msg %}
 <div class="admonition admonition-warning">
-    <strong>Fehler:</strong> {{ error_msg }}
+    <strong>{{ _('ingest.error_prefix') }}</strong> {{ error_msg }}
 </div>
 {% endif %}
 
 <div class="ingest-tabs">
-    <button class="tab-btn active" onclick="switchTab('file-tab')">📁 Datei importieren</button>
-    <button class="tab-btn" onclick="switchTab('text-tab')">📝 Text importieren</button>
-    <button class="tab-btn" onclick="switchTab('url-later-tab')">🔗 URL für später merken</button>
-    <button class="tab-btn" onclick="switchTab('text-later-tab')">✍️ Text für später merken</button>
+    <button class="tab-btn active" onclick="switchTab('file-tab')">{{ _('ingest.tab_file') }}</button>
+    <button class="tab-btn" onclick="switchTab('text-tab')">{{ _('ingest.tab_text') }}</button>
+    <button class="tab-btn" onclick="switchTab('url-later-tab')">{{ _('ingest.tab_url_later') }}</button>
+    <button class="tab-btn" onclick="switchTab('text-later-tab')">{{ _('ingest.tab_text_later') }}</button>
 </div>
 
 <!-- 1. Datei-Upload (Sofortiger Ingest) -->
@@ -40,25 +40,25 @@
         <input type="hidden" name="type" value="file">
         
         <div class="form-group">
-            <label for="file">Datei auswählen (Markdown, Text, etc.):</label>
+            <label for="file">{{ _('ingest.file_label') }}</label>
             <input type="file" id="file" name="file" class="form-control" required>
         </div>
 
         <div class="form-group">
-            <label for="file_title">Titel (optional, wird sonst aus Datei ermittelt):</label>
-            <input type="text" id="file_title" name="title" class="form-control" placeholder="z. B. Arch Linux Installation">
+            <label for="file_title">{{ _('ingest.title_optional') }}</label>
+            <input type="text" id="file_title" name="title" class="form-control" placeholder="{{ _('ingest.title_placeholder') }}">
         </div>
 
         <div class="form-group">
-            <label for="backend_file">LLM Backend:</label>
+            <label for="backend_file">{{ _('ingest.backend_label') }}</label>
             <select id="backend_file" name="backend" class="form-control">
-                <option value="ollama">Ollama (lokal)</option>
-                <option value="agy">agy (Agent)</option>
-                <option value="opencode">opencode</option>
+                <option value="ollama">{{ _('ingest.backend_ollama') }}</option>
+                <option value="agy">{{ _('ingest.backend_agy') }}</option>
+                <option value="opencode">{{ _('ingest.backend_opencode') }}</option>
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">📥 Jetzt importieren</button>
+        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
     </form>
 </div>
 
@@ -68,25 +68,25 @@
         <input type="hidden" name="type" value="text">
 
         <div class="form-group">
-            <label for="title">Titel:</label>
-            <input type="text" id="title" name="title" class="form-control" placeholder="z. B. Mein neues Rezept" required>
+            <label for="title">{{ _('ingest.text_title_label') }}</label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="{{ _('ingest.text_title_placeholder') }}" required>
         </div>
 
         <div class="form-group">
-            <label for="content_text">Textinhalt:</label>
-            <textarea id="content_text" name="content" rows="10" class="form-control" placeholder="Schreibe oder füge hier deinen Text ein..." required></textarea>
+            <label for="content_text">{{ _('ingest.text_content_label') }}</label>
+            <textarea id="content_text" name="content" rows="10" class="form-control" placeholder="{{ _('ingest.text_content_placeholder') }}" required></textarea>
         </div>
 
         <div class="form-group">
-            <label for="backend_text">LLM Backend:</label>
+            <label for="backend_text">{{ _('ingest.backend_label') }}</label>
             <select id="backend_text" name="backend" class="form-control">
-                <option value="ollama">Ollama (lokal)</option>
-                <option value="agy">agy (Agent)</option>
-                <option value="opencode">opencode</option>
+                <option value="ollama">{{ _('ingest.backend_ollama') }}</option>
+                <option value="agy">{{ _('ingest.backend_agy') }}</option>
+                <option value="opencode">{{ _('ingest.backend_opencode') }}</option>
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">📥 Jetzt importieren</button>
+        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
     </form>
 </div>
 
@@ -96,16 +96,16 @@
         <input type="hidden" name="type" value="url_later">
 
         <div class="form-group">
-            <label for="url_later">URL zum Merken:</label>
-            <input type="url" id="url_later" name="url" class="form-control" placeholder="https://example.com/artikel-name" required>
+            <label for="url_later">{{ _('ingest.url_label') }}</label>
+            <input type="url" id="url_later" name="url" class="form-control" placeholder="{{ _('ingest.url_placeholder') }}" required>
         </div>
 
         <div class="form-group">
-            <label for="url_title">Beschreibung / Titel (optional):</label>
-            <input type="text" id="url_title" name="title" class="form-control" placeholder="z. B. Dokumentation über RAG-Systeme">
+            <label for="url_title">{{ _('ingest.url_title_label') }}</label>
+            <input type="text" id="url_title" name="title" class="form-control" placeholder="{{ _('ingest.url_title_placeholder') }}">
         </div>
 
-        <button type="submit" class="btn btn-secondary">💾 URL in ingestlater.md speichern</button>
+        <button type="submit" class="btn btn-secondary">{{ _('ingest.url_save') }}</button>
     </form>
 </div>
 
@@ -115,22 +115,22 @@
         <input type="hidden" name="type" value="text_later">
 
         <div class="form-group">
-            <label for="text_later_title">Titel / Thema:</label>
-            <input type="text" id="text_later_title" name="title" class="form-control" placeholder="z. B. Gedanken zu Vektordatenbanken" required>
+            <label for="text_later_title">{{ _('ingest.text_later_title_label') }}</label>
+            <input type="text" id="text_later_title" name="title" class="form-control" placeholder="{{ _('ingest.text_later_title_placeholder') }}" required>
         </div>
 
         <div class="form-group">
-            <label for="text_later_content">Notiz- / Textinhalt:</label>
-            <textarea id="text_later_content" name="content" rows="8" class="form-control" placeholder="Füge hier Notizen ein, die du später strukturieren möchtest..." required></textarea>
+            <label for="text_later_content">{{ _('ingest.text_later_content_label') }}</label>
+            <textarea id="text_later_content" name="content" rows="8" class="form-control" placeholder="{{ _('ingest.text_later_content_placeholder') }}" required></textarea>
         </div>
 
-        <button type="submit" class="btn btn-secondary">💾 Text in ingestlater.md speichern</button>
+        <button type="submit" class="btn btn-secondary">{{ _('ingest.text_save') }}</button>
     </form>
 </div>
 
 <div id="loading-overlay" class="loading-overlay">
     <div class="loading-spinner"></div>
-    <p>LLM analysiert die Quelle und pflegt das Wiki ein... Bitte warten...</p>
+    <p>{{ _('ingest.loading_text') }}</p>
 </div>
 
 <script>

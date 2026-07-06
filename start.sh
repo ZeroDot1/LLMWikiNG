@@ -3,37 +3,78 @@
 # by ZeroDot1 | Karpathy-Pattern | Flask + qmd
 #
 # Nutzung:
-#   ./start.sh              → Automatisch freier Port ab 8080
-#   ./start.sh 9090         → Ab Port 9090 suchen
-#   ./start.sh -d           → Debug-Modus (automatisch freier Port)
-#   ./start.sh 9090 -d      → Port 9090 + Debug
-#   ./start.sh --help       → Hilfe
+#   ./start.sh                  → Automatisch freier Port ab 8080
+#   ./start.sh 9090             → Ab Port 9090 suchen
+#   ./start.sh -d               → Debug-Modus (automatisch freier Port)
+#   ./start.sh 9090 -d          → Port 9090 + Debug
+#   ./start.sh --lang en        → Englisch als Startsprache
+#   ./start.sh 9090 --lang de   → Port 9090 + Deutsch
+#   ./start.sh --help           → Hilfe
 
 set -euo pipefail
 
 APP_NAME="LLMWikiNG"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_SCRIPT="$SCRIPT_DIR/llmWiki.py"
-WANTED_PORT="${1:-8080}"
+WANTED_PORT=""
 DEBUG=""
+LANG_ARG=""
 
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════
 # Argumente parsen
-# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════
 
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "$APP_NAME – Lokaler Wiki-Webserver"
-    echo ""
-    echo "Verwendung:"
-    echo "  ./start.sh              Automatisch freier Port (ab 8080)"
-    echo "  ./start.sh 9090         Ab Port 9090 suchen"
-    echo "  ./start.sh -d           Debug-Modus, automatisch freier Port"
-    echo "  ./start.sh 9090 -d      Debug-Modus ab Port 9090"
-    echo ""
-    echo "Der Server sucht automatisch den nächsten freien Port."
-    echo "Danach im Browser: http://localhost:PORT"
-    exit 0
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            echo "$APP_NAME – Lokaler Wiki-Webserver"
+            echo ""
+            echo "Verwendung:"
+            echo "  ./start.sh                      Automatisch freier Port (ab 8080)"
+            echo "  ./start.sh 9090                 Ab Port 9090 suchen"
+            echo "  ./start.sh -d                   Debug-Modus, automatisch freier Port"
+            echo "  ./start.sh 9090 -d              Debug-Modus ab Port 9090"
+            echo "  ./start.sh --lang en            Startsprache (z.B. de, en)"
+            echo "  ./start.sh 9090 --lang de       Port 9090 + Deutsch"
+            echo ""
+            echo "Weitere Parameter werden direkt an llmWiki.py durchgereicht."
+            echo "Der Server sucht automatisch den nächsten freien Port."
+            echo "Danach im Browser: http://localhost:PORT"
+            exit 0
+            ;;
+        --lang|-l)
+            if [[ -n "${2:-}" ]]; then
+                LANG_ARG="--lang $2"
+                shift 2
+            else
+                echo "❌ --lang benötigt einen Wert (z.B. de, en)"
+                exit 1
+            fi
+            ;;
+        -d|--debug)
+            DEBUG="--debug"
+            shift
+            ;;
+        -*)
+            echo "❌ Unbekannte Option: $1"
+            echo "Verwende --help für Hilfe."
+            exit 1
+            ;;
+        *)
+            # Erstes nicht-Option-Argument = Port
+            if [[ -z "$WANTED_PORT" ]]; then
+                WANTED_PORT="$1"
+            else
+                echo "❌ Unerwartetes Argument: $1"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Port default setzen falls nicht gesetzt
+WANTED_PORT="${WANTED_PORT:-8080}"
 
 if [ "${2:-}" = "-d" ] || [ "${1:-}" = "-d" ]; then
     DEBUG="--debug"
@@ -128,7 +169,7 @@ echo ""
 echo "╔════════════════════════════════════════════════╗"
 echo "║  $APP_NAME"
 echo "║  edition by ZeroDot1"
-echo "║  Version 1.0.0"
+echo "║  Version 1.1.0"
 echo "╠════════════════════════════════════════════════╣"
 echo "║  📂 Wiki:     $SCRIPT_DIR/wiki"
 echo "║  🌐 URL:      http://localhost:${PORT}"
@@ -136,4 +177,4 @@ echo "║  🛑 Stopp:    Strg+C"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
 
-exec python3 "$SERVER_SCRIPT" --port "$PORT" --host "0.0.0.0" $DEBUG
+exec python3 "$SERVER_SCRIPT" --port "$PORT" --host "0.0.0.0" $DEBUG $LANG_ARG

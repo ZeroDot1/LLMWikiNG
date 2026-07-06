@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Rohquelle: {{ filename }}{% endblock %}
+{% block title %}{{ _('raw_view.page_title_prefix') }} {{ filename }}{% endblock %}
 
 {% block content %}
 <div class="header-action">
-    <h1>📄 Rohquelle: {{ filename }}</h1>
+    <h1>{{ _('raw_view.heading_prefix') }} {{ filename }}</h1>
     <div>
-        <a href="/raw" class="btn btn-secondary"> Zurück zur Übersicht</a>
+        <a href="/raw" class="btn btn-secondary">{{ _('raw_view.back_button') }}</a>
         {% if wiki_slug %}
-        <a href="/wiki/{{ wiki_slug }}" class="btn btn-accent">Wiki-Seite anzeigen</a>
+        <a href="/wiki/{{ wiki_slug }}" class="btn btn-accent">{{ _('raw_view.wiki_page_button') }}</a>
         {% endif %}
     </div>
 </div>
 
 <div class="raw-metadata">
-    <p><strong>Pfad:</strong> <code>raw/{{ filename }}</code> | <strong>Größe:</strong> {{ size_formatted }} | <strong>Geändert:</strong> {{ mtime_formatted }}</p>
+    <p><strong>{{ _('raw_view.path_label') }}</strong> <code>raw/{{ filename }}</code> | <strong>{{ _('raw_view.size_label') }}</strong> {{ size_formatted }} | <strong>{{ _('raw_view.modified_label') }}</strong> {{ mtime_formatted }}</p>
 </div>
 
 <div class="raw-content-container">
@@ -21,8 +21,8 @@
         <pre class="raw-code"><code>{{ content }}</code></pre>
     {% else %}
         <div class="binary-warning">
-            <p>Dies ist eine Binärdatei oder ihr Format wird im Browser nicht nativ angezeigt.</p>
-            <a href="/raw/{{ filename }}?download=1" class="btn btn-primary">Datei herunterladen</a>
+            <p>{{ _('raw_view.binary_warning') }}</p>
+            <a href="/raw/{{ filename }}?download=1" class="btn btn-primary">{{ _('raw_view.download_button') }}</a>
         </div>
     {% endif %}
 </div>

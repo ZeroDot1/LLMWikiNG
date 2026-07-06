@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Rohquellen (raw/){% endblock %}
+{% block title %}{{ _('raw_list.page_title') }}{% endblock %}
 
 {% block content %}
 <div class="header-action">
-    <h1>📦 Rohquellen</h1>
-    <a href="/ingest" class="btn btn-primary">📥 Neue Quelle hinzufügen</a>
+    <h1>{{ _('raw_list.heading') }}</h1>
+    <a href="/ingest" class="btn btn-primary">{{ _('raw_list.add_source') }}</a>
 </div>
 
 <p class="subtitle">
-    Dies sind deine unveränderten Original-Dokumente im Ordner <code>raw/</code>. Sie dienen dem Wiki als unveränderliche Basis (Source of Truth).
+    {{ _('raw_list.subtitle') }}
 </p>
 
 {% if files %}
@@ -16,10 +16,10 @@
     <table class="raw-table">
         <thead>
             <tr>
-                <th>Dateiname</th>
-                <th>Größe</th>
-                <th>Hinzugefügt am</th>
-                <th style="text-align: right;">Aktionen</th>
+                <th>{{ _('raw_list.table_filename') }}</th>
+                <th>{{ _('raw_list.table_size') }}</th>
+                <th>{{ _('raw_list.table_added') }}</th>
+                <th style="text-align: right;">{{ _('raw_list.table_actions') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -32,9 +32,9 @@
                 <td class="file-size">{{ file.size_formatted }}</td>
                 <td class="file-date">{{ file.mtime_formatted }}</td>
                 <td style="text-align: right;">
-                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">Ansehen</a>
+                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">{{ _('raw_list.view_button') }}</a>
                     {% if file.wiki_slug %}
-                    <a href="/wiki/{{ file.wiki_slug }}" class="btn btn-sm btn-accent">Wiki-Seite</a>
+                    <a href="/wiki/{{ file.wiki_slug }}" class="btn btn-sm btn-accent">{{ _('raw_list.wiki_page_button') }}</a>
                     {% endif %}
                 </td>
             </tr>
@@ -45,9 +45,9 @@
 {% else %}
 <div class="search-no-results">
     <p style="font-size: 2rem; margin-bottom: 0.5rem;">📭</p>
-    <p>Noch keine Rohquellen im Ordner <code>raw/</code> vorhanden.</p>
+    <p>{{ _('raw_list.empty_title') }}</p>
     <p style="margin-top: 1rem;">
-        <a href="/ingest" class="btn btn-primary">Jetzt die erste Quelle hochladen</a>
+        <a href="/ingest" class="btn btn-primary">{{ _('raw_list.empty_button') }}</a>
     </p>
 </div>
 {% endif %}

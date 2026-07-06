@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+{% block title %}{{ _('settings.page_title') }}{% endblock %}
+
+{% block content %}
+<h1>{{ _('settings.heading') }}</h1>
+<p class="subtitle" style="margin-bottom: 2rem;">
+    {{ _('settings.subtitle') }}
+</p>
+
+<!-- Tab Navigation -->
+<div class="settings-tabs" style="display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--border);">
+    <button class="settings-tab active" data-tab="tab-language" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-primary); font-size: 1rem; font-weight: 600; border-bottom: 3px solid var(--accent); transition: all 0.2s;">
+        {{ _('settings.tab_language') }}
+    </button>
+    <button class="settings-tab" data-tab="tab-config" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
+        {{ _('settings.tab_config') }}
+    </button>
+    <button class="settings-tab" data-tab="tab-health" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
+        {{ _('settings.tab_health') }}
+    </button>
+    <button class="settings-tab" data-tab="tab-update" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
+        {{ _('settings.tab_update') }}
+    </button>
+</div>
+
+<!-- Tab 1: Language -->
+<div id="tab-language" class="settings-tab-content active">
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 600px;">
+        <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.3rem;">{{ _('settings.language_heading') }}</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            {{ _('settings.language_subtitle') }}
+        </p>
+        <p style="margin-bottom: 1rem;">
+            <strong>{{ _('settings.language_current') }}</strong>
+            <span style="font-weight: 600; color: var(--accent); margin-left: 0.5rem;">{{ available_languages.get(current_lang, current_lang) }}</span>
+        </p>
+        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+            {% for code, name in available_languages.items() %}
+            <a href="/lang/{{ code }}"
+               class="btn {% if current_lang == code %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="text-decoration: none; padding: 0.6rem 1.5rem; font-size: 1rem;">
+                {{ name }} {% if current_lang == code %}✓{% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Tab 2: Email Config -->
+<div id="tab-config" class="settings-tab-content" style="display: none;">
+    {% if config_error_msg %}
+    <div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
+        <strong>{{ _('config.error_prefix') }}</strong> {{ config_error_msg }}
+    </div>
+    {% endif %}
+    {% if config_success_msg %}
+    <div class="admonition admonition-tip" style="margin-bottom: 1.5rem;">
+        <strong>{{ _('config.success_prefix') }}</strong> {{ config_success_msg }}
+    </div>
+    {% endif %}
+
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 650px;">
+        <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
+            {{ _('config.smtp_heading') }}
+        </h2>
+
+        <div style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius);">
+            <span style="font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 0.6rem;">{{ _('config.presets_label') }}</span>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
+            </div>
+        </div>
+
+        <form action="/settings?tab=config" method="post" style="display: flex; flex-direction: column; gap: 1.2rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="smtp_host" style="font-weight: 500;">{{ _('config.smtp_host_label') }}</label>
+                    <input type="text" name="smtp_host" id="smtp_host" class="form-control" value="{{ smtp_config.smtp_host }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="smtp_port" style="font-weight: 500;">{{ _('config.smtp_port_label') }}</label>
+                    <input type="number" name="smtp_port" id="smtp_port" class="form-control" value="{{ smtp_config.smtp_port }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="smtp_user" style="font-weight: 500;">{{ _('config.smtp_user_label') }}</label>
+                <input type="text" name="smtp_user" id="smtp_user" class="form-control" value="{{ smtp_config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
+                {% if env_user %}
+                <span style="font-size: 0.75rem; color: var(--accent-green);">✔ {{ _('config.smtp_user_env_ok') }}</span>
+                {% else %}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_user_env_hint') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="smtp_pass" style="font-weight: 500;">{{ _('config.smtp_pass_label') }}</label>
+                <input type="password" name="smtp_pass" id="smtp_pass" class="form-control" value="{{ smtp_config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
+                {% if env_pass_exists %}
+                <span style="font-size: 0.75rem; color: var(--accent-green);">✔ {{ _('config.smtp_pass_env_ok') }}</span>
+                {% else %}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_pass_env_hint') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if smtp_config.use_tls %}checked{% endif %}>
+                <label for="use_tls" style="cursor: pointer; font-size: 0.95rem;">{{ _('config.tls_label') }}</label>
+            </div>
+
+            <div class="form-group">
+                <label for="recipients" style="font-weight: 500;">{{ _('config.recipients_label') }}</label>
+                <input type="text" name="recipients" id="recipients" class="form-control" value="{{ smtp_config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.recipients_hint') }}</span>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.7rem 2rem;">{{ _('config.save_button') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tab 3: Health Check -->
+<div id="tab-health" class="settings-tab-content" style="display: none;">
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.3rem;">{{ _('settings.health_heading') }}</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 0;">{{ _('settings.health_subtitle') }}</p>
+            </div>
+            <a href="/settings?tab=health&run=1" class="btn btn-primary">{{ _('settings.health_run_button') }}</a>
+        </div>
+    </div>
+
+    {% if health_run_check %}
+    <div class="status-summary" style="margin-bottom: 2rem; margin-top: 1.5rem; padding: 1rem; border-radius: var(--radius); background: {% if health_issue_count == 0 %}rgba(74, 222, 128, 0.12){% else %}rgba(251, 191, 36, 0.12){% endif %}; border: 1px solid {% if health_issue_count == 0 %}var(--accent-green){% else %}var(--accent-yellow){% endif %};">
+        {% if health_issue_count == 0 %}
+        <strong style="color: var(--accent-green);">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
+        {% else %}
+        <strong style="color: var(--accent-yellow);">⚠ {{ health_issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}
+        {% endif %}
+    </div>
+
+    <!-- Orphans -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.orphans_heading') }}</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.orphans_desc') }}</p>
+        {% if health_orphans %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for orphan in health_orphans %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.6rem 1rem; background: var(--bg-card);">
+                    <a href="/wiki/{{ orphan.slug }}" style="color: var(--accent-red); font-weight: 500; text-decoration: none;">📄 {{ orphan.title }}</a>
+                    <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); margin-left: 0.5rem;">{{ orphan.filename }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.orphans_empty') }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Missing pages -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.missing_heading') }}</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.missing_desc') }}</p>
+        {% if health_missing %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for ref in health_missing %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.8rem 1.2rem; background: var(--bg-card);">
+                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                        <a href="/ingest?title={{ ref.title }}" style="color: var(--accent-yellow); font-weight: 600; text-decoration: none;">🔗 [[{{ ref.title }}]]</a>
+                        <span class="score-badge" style="font-size: 0.75rem; background: rgba(255, 169, 64, 0.15); color: var(--accent-yellow); padding: 0.15rem 0.6rem; border-radius: 10px;">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                        {{ _('lint.missing_referenced_by') }}
+                        {% for src_title, src_slug in ref.sources %}
+                        <a href="/wiki/{{ src_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link); margin-right: 0.5rem;">{{ src_title }}</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.missing_empty') }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Stale pages -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.stale_heading') }}</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.stale_desc') }}</p>
+        {% if health_stale %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for page in health_stale %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card);">
+                    <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary); display: flex; justify-content: space-between; width: 100%; text-decoration: none;">
+                        <span>📄 {{ page.title }}</span>
+                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.stale_empty') }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Missing raw refs -->
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-red);">{{ _('lint.raw_refs_heading') }}</h2>
+        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.raw_refs_desc') }}</p>
+        {% if health_missing_raw %}
+            <ul class="page-list" style="list-style: none; padding: 0;">
+                {% for ref in health_missing_raw %}
+                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); display: flex; justify-content: space-between; align-items: center;">
+                    <span>
+                        Seite <a href="/wiki/{{ ref.page_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}
+                    </span>
+                    <code style="color: var(--accent-red); font-size: 0.85rem; background: rgba(248, 113, 113, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ ref.raw_file }}</code>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.raw_refs_empty') }}</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="search-no-results" style="margin-top: 2rem;">
+        <p style="font-size: 2rem; margin-bottom: 0.5rem;">🏥</p>
+        <p>{{ _('settings.health_idle_hint') }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tab 4: Update -->
+<div id="tab-update" class="settings-tab-content" style="display: none;">
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.card_heading') }}</h2>
+        <p>{{ _('update.intro') }}</p>
+
+        <table style="width: 100%; border: none; margin-bottom: 1rem;">
+            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.repo_label') }}</td>
+                <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
+            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.method_label') }}</td>
+                <td><code>curl</code> + <code>unzip</code> (main.zip)</td></tr>
+            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.local_version_label') }}</td>
+                <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
+        </table>
+
+        <div id="checkResult" style="margin-bottom: 1rem; display: none;"></div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button id="checkUpdateBtn" class="btn btn-primary"
+                    style="background: var(--accent-hover);"
+                    onclick="checkUpdate()">
+                {{ _('update.check_button') }}
+            </button>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ _('update.sections_heading') }}</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius); padding: 1rem;">
+                <strong style="color: var(--accent-green);">{{ _('update.section_replaced_heading') }}</strong>
+                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+                    <li><strong>llmWiki.py</strong> (Webserver)</li>
+                    <li><strong>email_sender.py</strong> (E-Mail)</li>
+                    <li>wiki.sh, start.sh, update.sh</li>
+                    <li>prompts/ (System-Prompts)</li>
+                    <li>templates/ (HTML-Vorlagen)</li>
+                    <li>static/ (CSS, JS)</li>
+                    <li>tools/ (Hilfsskripte)</li>
+                    <li>VERSION, CHANGELOG, README</li>
+                </ul>
+            </div>
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius); padding: 1rem;">
+                <strong style="color: var(--accent-red);">{{ _('update.section_preserved_heading') }}</strong>
+                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+                    <li>wiki/ (Deine Wiki-Seiten)</li>
+                    <li>raw/ (Deine Rohquellen)</li>
+                    <li>output_docs/ (Deine Exporte)</li>
+                    <li>config.json (SMTP-Einstellungen)</li>
+                    <li>.agy.yaml (LLM-Konfiguration)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.run_heading') }}</h2>
+
+        {% if update_available %}
+        <p>{{ _('update.run_intro') }}</p>
+
+        <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <form action="/settings?tab=update" method="post" style="display: inline;">
+                <input type="hidden" name="action" value="run_update">
+                <button type="submit" class="btn btn-primary"
+                        style="background: var(--accent-green); font-size: 1.1rem; padding: 0.8rem 2rem;"
+                        onclick="return confirm('{{ _('update.run_confirm') }}');">
+                    {{ _('update.run_button') }}
+                </button>
+            </form>
+            <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
+               style="background: var(--bg-hover); border: 1px solid var(--border);">
+                {{ _('update.github_button') }}
+            </a>
+        </div>
+        {% else %}
+        <div class="admonition admonition-warning">
+            <strong>{{ _('update.not_available_title') }}</strong><br>
+            {{ _('update.not_available_desc') }}
+            <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">curl -sL https://github.com/ZeroDot1/LLMWikiNG/raw/main/update.sh -o update.sh && chmod +x update.sh</pre>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if update_log %}
+    <div class="card" style="background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">{{ _('update.log_heading') }}</h2>
+        <pre style="white-space: pre-wrap; font-size: 0.85rem; margin: 0;">{{ update_log }}</pre>
+        <p style="margin-top: 1rem; padding: 0.8rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius);">
+            <strong style="color: var(--accent-yellow);">{{ _('update.restart_warning') }}</strong><br>
+            <code style="background: var(--bg-code); padding: 0.2rem 0.5rem; border-radius: 4px;">./start.sh</code>
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.terminal_heading') }}</h2>
+        <p>{{ _('update.terminal_desc') }}</p>
+        <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh          # Update ausführen
+./update.sh --check  # Nur prüfen
+# oder
+./wiki.sh update</pre>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.settings-tab');
+    const contents = {
+        'tab-language': document.getElementById('tab-language'),
+        'tab-config': document.getElementById('tab-config'),
+        'tab-health': document.getElementById('tab-health'),
+        'tab-update': document.getElementById('tab-update')
+    };
+
+    // Open tab from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab') || 'language';
+    const tabMap = { 'language': 'tab-language', 'config': 'tab-config', 'health': 'tab-health', 'update': 'tab-update' };
+    const initialTab = tabMap[activeTab] || 'tab-language';
+
+    function switchTab(tabId) {
+        Object.values(contents).forEach(c => { if (c) c.style.display = 'none'; });
+        tabs.forEach(t => {
+            t.style.color = 'var(--text-secondary)';
+            t.style.fontWeight = '500';
+            t.style.borderBottomColor = 'transparent';
+            t.classList.remove('active');
+        });
+        if (contents[tabId]) {
+            contents[tabId].style.display = 'block';
+        }
+        tabs.forEach(t => {
+            if (t.dataset.tab === tabId) {
+                t.style.color = 'var(--text-primary)';
+                t.style.fontWeight = '600';
+                t.style.borderBottomColor = 'var(--accent)';
+                t.classList.add('active');
+            }
+        });
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+        });
+    });
+
+    switchTab(initialTab);
+
+    // SMTP preset function
+    window.applyPreset = function(host, port, useTls, placeholder) {
+        const hostEl = document.getElementById('smtp_host');
+        const portEl = document.getElementById('smtp_port');
+        const tlsEl = document.getElementById('use_tls');
+        const userEl = document.getElementById('smtp_user');
+        if (hostEl) hostEl.value = host;
+        if (portEl) portEl.value = port;
+        if (tlsEl) tlsEl.checked = useTls;
+        if (userEl) userEl.placeholder = '{{ _('config.preset_placeholder') }} ' + placeholder;
+    };
+
+    // Update check function
+    window.checkUpdate = function() {
+        var btn = document.getElementById('checkUpdateBtn');
+        var result = document.getElementById('checkResult');
+        btn.disabled = true;
+        btn.innerHTML = '{{ _('update.checking') }}';
+        result.style.display = 'block';
+        result.innerHTML = '<p style="color: var(--text-muted);">{{ _('update.checking_text') }}</p>';
+
+        fetch('/admin/update/check')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) {
+                    result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + data.error + '</div>';
+                    return;
+                }
+                if (data.up_to_date) {
+                    result.innerHTML = '<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius); padding: 1rem;">' +
+                        '<strong style="color: var(--accent-green);">{{ _('update.up_to_date') }}</strong><br>' +
+                        '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> – {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span></div>';
+                } else {
+                    result.innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 1rem;">' +
+                        '<strong style="color: var(--accent-yellow);">{{ _('update.update_available') }}</strong><br>' +
+                        '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> → {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span>' +
+                        '<br><br><a href="/settings?tab=update" class="btn btn-primary" style="background: var(--accent-green);">{{ _('update.run_button') }}</a></div>';
+                }
+            })
+            .catch(function(err) {
+                result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + err.message + '</div>';
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.innerHTML = '{{ _('update.check_button') }}';
+            });
+    };
+})();
+</script>
+{% endblock %}

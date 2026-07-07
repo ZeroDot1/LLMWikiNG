@@ -1,3 +1,11 @@
+---
+type: Concept
+title: "LLM Wiki"
+description: "A pattern for building personal knowledge bases using LLMs – incrementally built and maintained by an LLM agent as a persistent, interlinked wiki."
+tags: [pattern, llm, knowledge-base, karpathy]
+timestamp: 2026-07-07T00:00:00Z
+---
+
 # LLM Wiki
 
 A pattern for building personal knowledge bases using LLMs.

@@ -184,7 +184,7 @@
             // Wenn Markdown-Feld leer war, Frontmatter anfügen
             if (!editorMarkdown.value.trim() && mdContent) {
                 const today = new Date().toISOString().split('T')[0];
-                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
+                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\nresource: ""\ntags: []\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
             } else if (mdContent) {
                 // Vorhandenes Frontmatter beibehalten, falls vorhanden
                 const fmMatch = editorMarkdown.value.match(/^---.*?---\s*/s);
@@ -252,7 +252,7 @@
                 editorMarkdown.value = fmMatch[0] + mdContent;
             } else {
                 const today = new Date().toISOString().split('T')[0];
-                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
+                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\nresource: ""\ntags: []\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
             }
         }
     });

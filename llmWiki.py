@@ -704,15 +704,9 @@ def do_sync():
 
 
 def append_okf_log(action, title, details=""):
-    """Schreibt einen OKF-konformen Logbucheintrag."""
+    """Schreibt einen OKF-konformen Logbucheintrag (## YYYY-MM-DD mit Bullet-Points)."""
     log_path = WIKI_DIR / "log.md"
     today_str = datetime.now().strftime("%Y-%m-%d")
-    
-    # log.md erstellen falls fehlt
-    if not log_path.exists():
-        log_path.write_text("# Directory Update Log\n", encoding="utf-8")
-        
-    content = log_path.read_text(encoding="utf-8")
     
     # Baue den Eintrag
     action_type = "Update"
@@ -724,6 +718,31 @@ def append_okf_log(action, title, details=""):
     log_entry = f"* **{action_type}**: {title}"
     if details:
         log_entry += f" - {details}"
+    
+    # log.md erstellen falls fehlt
+    if not log_path.exists():
+        log_path.write_text(
+            f"---\n"
+            f"okf_version: \"0.1\"\n"
+            f"---\n"
+            f"# Wiki-Aktivitätslogbuch\n\n"
+            f"## {today_str}\n"
+            f"{log_entry}\n",
+            encoding="utf-8"
+        )
+        return
+        
+    content = log_path.read_text(encoding="utf-8")
+    
+    # OKF-Frontmatter sicherstellen falls vorhandener Inhalt keins hat
+    if not content.startswith("---"):
+        content = (
+            f"---\n"
+            f"okf_version: \"0.1\"\n"
+            f"---\n"
+            f"# Wiki-Aktivitätslogbuch\n\n"
+            f"{content.strip()}\n"
+        )
         
     # Checken ob ## YYYY-MM-DD existiert
     header = f"## {today_str}"
@@ -2465,12 +2484,18 @@ def delete_page_route(page_name):
 
 @app.route("/admin/clear-log")
 def clear_log_route():
-    """Leert das Logbuch komplett."""
+    """Leert das Logbuch komplett (OKF-konform mit Datumsgruppierung)."""
     log_path = WIKI_DIR / "log.md"
+    from datetime import date
+    today = date.today().isoformat()
     try:
         template = (
-            f"# Directory Update Log\n\n"
-            f"Protokollierte Wiki-Aktivitäten.\n"
+            f"---\n"
+            f"okf_version: \"0.1\"\n"
+            f"---\n"
+            f"# Wiki-Aktivitätslogbuch\n\n"
+            f"## {today}\n"
+            f"- **Clear**: Logbuch zurückgesetzt\n"
         )
         log_path.write_text(template, encoding="utf-8")
         do_sync()

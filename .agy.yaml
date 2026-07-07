@@ -27,10 +27,12 @@ agent:
     log: "./wiki/log.md"         # Änderungslog
     collection: "my_wiki"        # qmd-Collection-Name
 
-  # Ingest-Konventionen
+  # Ingest-Konventionen (OKF v0.1)
   conventions:
-    frontmatter: true            # YAML-Frontmatter für jede Seite
+    frontmatter: true            # YAML-Frontmatter für jede Seite (OKF-pflicht)
+    okf_type_required: true      # type-Feld im Frontmatter ist OKF-pflicht
     date_format: "%Y-%m-%d"
     tags_required: false         # Optional, aber empfohlen
-    cross_references: true       # Immer Querverweise einbauen
+    cross_references: true       # Immer Querverweise einbauen (OKF: Standard-Markdown-Links)
     source_archive: true         # Quellen in raw/ archivieren
+    link_format: markdown        # Standard-Markdown-Links [text](slug.md), nicht [[wikilinks]]

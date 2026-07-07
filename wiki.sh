@@ -183,9 +183,12 @@ init_wiki() {
     echo "   • $RAW_DIR       – Rohquellen (immutable)"
     echo "   • $EXPORT_DIR    – Exportierte Dokumente"
 
-    # index.md anlegen falls nicht vorhanden
+    # index.md anlegen falls nicht vorhanden (OKF-konform)
     if [ ! -f "$WIKI_DIR/index.md" ]; then
         cat > "$WIKI_DIR/index.md" <<-EOF
+---
+okf_version: "0.1"
+---
 # Wiki-Index
 
 > Automatisch gepflegtes Inhaltsverzeichnis.
@@ -196,21 +199,21 @@ init_wiki() {
 - **Seiten gesamt:** 0
 - **Letzte Aktualisierung:** $(today)
 EOF
-        echo -e "${GREEN}✓ index.md angelegt${NC}"
+        echo -e "${GREEN}✓ index.md angelegt (OKF-konform)${NC}"
     fi
 
-    # log.md anlegen falls nicht vorhanden
+    # log.md anlegen falls nicht vorhanden (OKF-konform)
     if [ ! -f "$WIKI_DIR/log.md" ]; then
         cat > "$WIKI_DIR/log.md" <<-EOF
-# Wiki-Log
+---
+okf_version: "0.1"
+---
+# Wiki-Aktivitätslogbuch
 
-> Chronologische Übersicht aller Änderungen.
-> Format: \`## [YYYY-MM-DD] Aktion | Titel\`
-
-## [$(today)] init | LLM-Wiki eingerichtet
-- Initiales Setup mit wiki.sh, qmd-Integration, raw/- und output_docs/-Ordnern
+## $(today)
+- **Init**: LLM-Wiki eingerichtet — Initiales Setup mit wiki.sh, qmd-Integration, raw/- und output_docs/-Ordnern
 EOF
-        echo -e "${GREEN}✓ log.md angelegt${NC}"
+        echo -e "${GREEN}✓ log.md angelegt (OKF-konform)${NC}"
     fi
 
     # qmd-Collection
@@ -675,8 +678,8 @@ okf_version: "0.1"
 ---
 # Wiki-Aktivitätslogbuch
 
-| Datum & Zeit | Aktion | Datei | Beschreibung |
-| --- | --- | --- | --- |
+## $(today)
+- **Reset**: Wiki vollständig zurückgesetzt
 EOF
 
     # qmd Collection zurücksetzen falls qmd installiert ist

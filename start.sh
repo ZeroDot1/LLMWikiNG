@@ -161,8 +161,8 @@ okf_version: "0.1"
 ---
 # Wiki-Aktivitätslogbuch
 
-| Datum & Zeit | Aktion | Datei | Beschreibung |
-| --- | --- | --- | --- |
+## $(date +%Y-%m-%d)
+- **Reset**: Wiki vollständig zurückgesetzt
 EOF
 
     # qmd-Collection zurücksetzen falls installiert

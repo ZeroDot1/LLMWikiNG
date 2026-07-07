@@ -249,7 +249,7 @@
     "orphans_desc": "These pages exist, but no other page in the wiki links to them. Add links in other articles to make them discoverable.",
     "orphans_empty": "✅ No orphaned pages found.",
     "missing_heading": "🔗 Referenced but Missing Pages",
-    "missing_desc": "These pages are linked via [[PageName]] in articles, but no wiki page has been created for them yet. Click the links to create them via Ingest.",
+    "missing_desc": "These pages are linked via [PageName]() in articles, but no wiki page has been created for them yet. Click the links to create them via Ingest.",
     "missing_referenced_by": "Referenced by:",
     "missing_refs": "References",
     "missing_empty": "✅ All linked pages exist.",

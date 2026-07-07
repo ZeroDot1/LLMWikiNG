@@ -2,13 +2,49 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import markdown
+import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 WIKI_DIR = PROJECT_ROOT / "wiki"
 RAW_DIR = PROJECT_ROOT / "raw"
 APP_VERSION = "1.8.0"
+
+
+def ensure_okf_frontmatter(content: str, title: str | None = None) -> str:
+    """Stellt sicher, dass der Inhalt OKF-konformes YAML-Frontmatter mit type-Feld hat.
+    
+    Wenn Frontmatter fehlt oder kein type-Feld enthält, wird es hinzugefügt.
+    """
+    fm_match = re.match(r'^---\s*\n(.*?)\n(?:---|\.\.\.)\s*\n', content, re.DOTALL)
+    if fm_match:
+        fm_text = fm_match.group(1)
+        try:
+            fm_data = yaml.safe_load(fm_text)
+            if isinstance(fm_data, dict) and 'type' in fm_data:
+                return content  # Bereits OKF-konform
+        except yaml.YAMLError:
+            pass
+        # Frontmatter vorhanden aber kein type -> entfernen und neu aufbauen
+        body = content[fm_match.end():]
+    else:
+        body = content
+
+    today = date.today().isoformat()
+    page_title = title or "Neue Seite"
+    new_fm = (
+        f"---\n"
+        f'type: Concept\n'
+        f'title: "{page_title}"\n'
+        f'description: ""\n'
+        f'resource: ""\n'
+        f'tags: []\n'
+        f'timestamp: {today}T00:00:00Z\n'
+        f"---\n\n"
+    )
+    return new_fm + body.lstrip('\n')
 
 # Blueprint initialisieren
 editor_bp = Blueprint("editor", __name__)
@@ -101,6 +137,11 @@ def save_file():
     filepath = target_dir / filename
     
     try:
+        # Wiki-Seiten: OKF-Frontmatter sicherstellen
+        if folder == "wiki":
+            page_title = filename[:-3]  # .md entfernen
+            content = ensure_okf_frontmatter(content, title=page_title)
+        
         filepath.write_text(content, encoding="utf-8")
         
         # Logbuch und Index eintragen bzw. Sync anstoßen

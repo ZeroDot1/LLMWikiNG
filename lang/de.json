@@ -249,7 +249,7 @@
     "orphans_desc": "Diese Seiten existieren zwar, aber keine andere Seite im Wiki verweist auf sie. Füge Links in anderen Artikeln hinzu, um sie auffindbar zu machen.",
     "orphans_empty": "✅ Keine verwaisten Seiten gefunden.",
     "missing_heading": "🔗 Erwähnte aber fehlende Seiten",
-    "missing_desc": "Diese Seiten wurden in Artikeln per [[Seitenname]] verlinkt, aber es wurde noch keine Wiki-Seite dafür angelegt. Du kannst auf die Links klicken, um sie über den Ingest anzulegen.",
+    "missing_desc": "Diese Seiten wurden in Artikeln per [Seitenname]() verlinkt, aber es wurde noch keine Wiki-Seite dafür angelegt. Du kannst auf die Links klicken, um sie über den Ingest anzulegen.",
     "missing_referenced_by": "Referenziert von:",
     "missing_refs": "Verweise",
     "missing_empty": "✅ Alle verlinkten Seiten existieren.",

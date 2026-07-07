@@ -54,7 +54,7 @@
                 <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 0.8rem 1.2rem; background: var(--bg-card);">
                     <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                         <a href="/ingest?title={{ ref.title }}" style="color: var(--accent-yellow); font-weight: 600; text-decoration: none; font-size: 1.05rem;">
-                            <span>🔗 [[{{ ref.title }}]]</span>
+                            <span>🔗 [{{ ref.title }}]()</span>
                         </a>
                         <span class="score-badge" style="font-size: 0.75rem; background: rgba(255, 169, 64, 0.15); color: var(--accent-yellow); padding: 0.15rem 0.6rem; border-radius: 10px; font-weight: 500;">
                             {{ ref.count }} {{ _('lint.missing_refs') }}

@@ -5,10 +5,9 @@
 <h1>{{ _('about.heading') }}</h1>
 
 <p>
-    <strong>LLMWikiNG</strong> ist eine von <strong>ZeroDot1</strong> entwickelte, lokale und datenschutzfreundliche Wiki-Plattform,
-    die auf dem <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f" target="_blank">Karpathy LLM-Wiki-Pattern</a>
-    basiert. Das Wiki wird von KI-Assistenten gepflegt und erweitert – und du kannst es
-    bequem im Browser lesen, durchsuchen und verwalten.
+    <strong>LLMWikiNG (OKF Edition)</strong> ist eine von <strong>ZeroDot1</strong> entwickelte, lokale und datenschutzfreundliche Wiki-Plattform,
+    die auf dem standardisierten **Open Knowledge Format (OKF) v0.1** basiert und vom Karpathy LLM-Wiki-Pattern inspiriert wurde. 
+    Das Wiki wird von intelligenten KI-Assistenten gepflegt und erweitert – und du kannst es bequem im Browser lesen, durchsuchen und verwalten.
 </p>
 
 <p>
@@ -17,9 +16,10 @@
 
 <h2>{{ _('about.features_heading') }}</h2>
 <ul>
-    <li>📄 <strong>Markdown-Rendering</strong> – Alle Wiki-Seiten werden als schönes HTML dargestellt</li>
+    <li>📦 <strong>Open Knowledge Format (OKF)</strong> – Vollständig konform mit der OKF v0.1-Spezifikation (YAML-Frontmatter, Typen, Ressourcen und strukturierte Pfade).</li>
+    <li>🔗 <strong>Native Markdown Links</strong> – Verwendet standardisierte Markdown-Verknüpfungen (`[Anzeige](/pfad/zur/seite.md)`) anstelle proprietärer Wikilinks.</li>
     <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (offline betrieben via Vis.js). Widersprüche und Spannungen werden rot gestrichelt dargestellt.</li>
-    <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite.</li>
+    <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite im OKF-Logformat.</li>
     <li>📰 <strong>Wochenberichte & E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen zu Wochenberichten und verschickt sie sicher über einen integrierten SMTP-Client. Inklusive Schnell-Presets für <strong>Gmail</strong>, <strong>ProtonMail Bridge</strong> und <strong>Mail.ru</strong>.</li>
     <li>🔍 <strong>Volltextsuche</strong> – Superschnelle BM25-Suche im Wiki, in Rohquellen und exportierten Dokumenten mit Treffer-Hervorhebung.</li>
     <li>⏳ <strong>Ausstehender Ingest</strong> – Manuell abgelegte Dateien per Knopfdruck einzeln oder im Stapel („Ingest All“) ins Wiki überführen.</li>
@@ -46,15 +46,16 @@
 
 <h2>{{ _('about.project_structure_heading') }}</h2>
 <pre style="font-size: 0.85rem;">
-Recht/
+LLMWikiNG/
 ├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint, Update)
 ├── llmWiki.py           # 🌐 Webserver
 ├── email_sender.py      # 📧 SMTP E-Mail Sender Modul
 ├── update.sh            # ⬇️ Selbstupdate-Skript (Git-basiert, via GitHub)
 ├── config.json          # ⚙️ SMTP-Konfiguration & Spracheinstellung
 ├── start.sh             # Starter-Skript
-├── wiki/                # Wiki-Seiten (Markdown)
+├── wiki/                # Wiki-Seiten (Markdown, OKF Concepts)
 ├── raw/                 # Archivierte Rohquellen
+├── tools/               # Hilfswerkzeuge (z.B. migrate_to_okf.py)
 ├── templates/           # HTML-Templates (update.html, about.html, …)
 ├── static/              # CSS, Assets (z.B. vis-network.min.js)
 ├── output_docs/         # Exportierte Dokumente

@@ -7,6 +7,7 @@ import re
 import sys
 import json
 import subprocess
+import yaml
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
@@ -14,7 +15,7 @@ import flask
 from flask import Flask, render_template, request, abort, redirect, url_for
 import markdown
 from markdown.extensions import Extension
-from markdown.preprocessors import Preprocessor
+from markdown.treeprocessors import Treeprocessor
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Konfiguration
@@ -29,7 +30,7 @@ COLLECTION_NAME = "my_wiki"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 
@@ -147,54 +148,61 @@ MD_EXTENSIONS = [
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Custom Markdown Extension: Wikilinks mit Seitenerkennung
+# Custom Markdown Extension: OKF Markdown-Links mit Seitenerkennung
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class LLMWikiLinkExtension(Extension):
-    """Wandelt [[Seitenname]] in Links um.
-    Existiert die Seite, wird sie blau/gruen verlinkt.
-    Existiert sie nicht, wird sie rot markiert (missing)."""
+def extract_links_from_content(content):
+    """Extrahiert alle lokalen Wiki-Verknüpfungen aus dem Markdown-Body."""
+    # YAML-Frontmatter entfernen
+    body = re.sub(r'^---.*?---\s*', '', content, flags=re.DOTALL)
+    # Findet alle Standard-Markdown-Links: [Text](Ziel)
+    raw_links = re.findall(r'\[.*?\]\((/.*?\.md|\./.*?\.md|.*?\.md|[^#:\s\)]+)\)', body)
+    
+    slugs = []
+    for link in raw_links:
+        if link.startswith(("http://", "https://", "mailto:", "#")):
+            continue
+        # Bereinigen: z.B. /concepts/orders.md -> concepts/orders
+        clean = link.lstrip("/")
+        clean = re.sub(r'\.md$', '', clean)
+        slug = clean.lower().replace(" ", "-").replace("_", "-")
+        slugs.append(slug)
+    return slugs
 
-    def extendMarkdown(self, md):
-        md.preprocessors.register(WikiLinkPreprocessor(md), "llm_wikilinks", 175)
-
-class WikiLinkPreprocessor(Preprocessor):
-    def __init__(self, md):
+class OKFLinkTreeprocessor(Treeprocessor):
+    def __init__(self, md, page_cache):
         super().__init__(md)
-        self.page_cache = self._build_page_cache()
+        self.page_cache = page_cache
 
-    def _build_page_cache(self):
-        """Baut einen Set aller existierenden Wiki-Seiten (ohne .md) auf."""
-        cache = set()
+    def run(self, root):
+        for el in root.iter("a"):
+            href = el.get("href", "")
+            if href.startswith(("http://", "https://", "mailto:", "#")):
+                continue
+            
+            clean_href = href.lstrip("/")
+            clean_href = re.sub(r'\.md$', '', clean_href)
+            slug = clean_href.lower().replace(" ", "-").replace("_", "-")
+            
+            exists = slug in self.page_cache
+            css_class = "wikilink" if exists else "wikilink-missing"
+            
+            # Ziel-Link für Uvicorn/Flask umschreiben
+            el.set("href", f"/wiki/{slug}")
+            el.set("class", css_class)
+        return root
+
+class LLMWikiLinkExtension(Extension):
+    """Wandelt lokale Markdown-Links um und prüft ihre Existenz."""
+    def extendMarkdown(self, md):
+        page_cache = set()
         if WIKI_DIR.exists():
-            for f in WIKI_DIR.iterdir():
-                if f.suffix == ".md":
-                    cache.add(f.stem)  # z.B. "llm-wiki" aus "llm-wiki.md"
-        return cache
-
-    def run(self, lines):
-        new_lines = []
-        for line in lines:
-            # [[Seitenname]] -> <a href="/wiki/seitenname" class="wikilink">
-            # [[Seitenname|Anzeigetext]] -> mit alternativem Text
-            def replace_link(match):
-                full = match.group(1)
-                if "|" in full:
-                    target, display = full.split("|", 1)
-                else:
-                    target = display = full
-                target = target.strip()
-                display = display.strip()
-                slug = target.lower().replace(" ", "-").replace("_", "-")
-                # Entferne .md falls vorhanden
-                slug = re.sub(r'\.md$', '', slug)
-                exists = slug in self.page_cache
-                css_class = "wikilink" if exists else "wikilink-missing"
-                return f'<a href="/wiki/{slug}" class="{css_class}">{display}</a>'
-
-            line = re.sub(r'\[\[([^\]]+)\]\]', replace_link, line)
-            new_lines.append(line)
-        return new_lines
+            for f in WIKI_DIR.rglob("*.md"):
+                if f.name not in ("index.md", "log.md", "ingestlater.md"):
+                    rel_path = f.relative_to(WIKI_DIR)
+                    slug = str(rel_path.with_suffix("")).lower().replace("\\", "/").replace(" ", "-").replace("_", "-")
+                    page_cache.add(slug)
+        md.treeprocessors.register(OKFLinkTreeprocessor(md, page_cache), "okf_links", 15)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -213,36 +221,41 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # ─── Hilfsfunktionen ────────────────────────────────────────────────────────
 
 def get_all_wiki_pages():
-    """Listet alle Markdown-Seiten im Wiki auf (ohne index.md, log.md)."""
+    """Listet alle Markdown-Seiten im Wiki auf (ohne index.md, log.md, ingestlater.md)."""
     pages = []
     if not WIKI_DIR.exists():
         return pages
-    for f in sorted(WIKI_DIR.iterdir()):
-        if f.suffix != ".md":
+    for f in sorted(WIKI_DIR.rglob("*.md")):
+        if f.name in ("index.md", "log.md", "ingestlater.md"):
             continue
-        if f.name in ("index.md", "log.md"):
-            continue
-        # Erste Überschrift als Titel
+        rel_path = f.relative_to(WIKI_DIR)
+        slug = str(rel_path.with_suffix("")).lower().replace("\\", "/").replace(" ", "-").replace("_", "-")
+        
         content = f.read_text(encoding="utf-8", errors="replace")
         title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
         title = title_match.group(1) if title_match else f.stem.replace("-", " ").title()
         
-        # Ersten Satz als Beschreibung
-        desc_match = re.search(r'^([^.]+\.)', content.replace("#", "", 1).strip(), re.MULTILINE)
-        desc = desc_match.group(1)[:120] if desc_match else title
+        desc = ""
+        page_type = "concept"
         
-        # YAML-Frontmatter parsen für 'type'
-        page_type = "page"
         fm_match = re.search(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
         if fm_match:
-            for line in fm_match.group(1).split("\n"):
-                if line.startswith("type:"):
-                    page_type = line.split(":", 1)[1].strip().lower().strip('"\'')
-                    break
-                    
+            try:
+                fm = yaml.safe_load(fm_match.group(1)) or {}
+                if isinstance(fm, dict):
+                    page_type = fm.get("type", "concept").lower()
+                    desc = fm.get("description", "")
+                    title = fm.get("title", title)
+            except Exception:
+                pass
+                
+        if not desc:
+            desc_match = re.search(r'^([^.]+\.)', content.replace("#", "", 1).strip(), re.MULTILINE)
+            desc = desc_match.group(1)[:120] if desc_match else title
+            
         pages.append({
-            "slug": f.stem,
-            "name": f.stem,
+            "slug": slug,
+            "name": slug,
             "title": title,
             "desc": desc,
             "filename": f.name,
@@ -260,8 +273,8 @@ def get_wiki_stats():
     export_count = 0
 
     if WIKI_DIR.exists():
-        for f in WIKI_DIR.iterdir():
-            if f.suffix == ".md" and f.name not in ("index.md", "log.md"):
+        for f in WIKI_DIR.rglob("*.md"):
+            if f.name not in ("index.md", "log.md", "ingestlater.md"):
                 page_count += 1
                 word_count += len(f.read_text(encoding="utf-8", errors="replace").split())
 
@@ -556,8 +569,8 @@ def is_sync_needed():
         return True
     if not WIKI_DIR.exists():
         return False
-    for f in WIKI_DIR.iterdir():
-        if f.suffix == ".md" and f.name not in ("index.md", "log.md"):
+    for f in WIKI_DIR.rglob("*.md"):
+        if f.name not in ("index.md", "log.md", "ingestlater.md"):
             mtime = datetime.fromtimestamp(f.stat().st_mtime)
             if mtime > LAST_SYNC_TIME:
                 return True
@@ -597,16 +610,30 @@ def regenerate_index():
     pages = get_all_wiki_pages()
 
     lines = [
+        "---",
+        "okf_version: \"0.1\"",
+        "---",
         "# Wiki-Index",
         "",
         "> Automatisch gepflegtes Inhaltsverzeichnis.",
         f"> Aktualisiert am {datetime.now().strftime('%Y-%m-%d')}",
         "",
-        "## Seiten",
+        "## Concepts",
         "",
     ]
+    
+    # Nach Typ gruppieren
+    pages_by_type = {}
     for p in pages:
-        lines.append(f"- [[{p['slug']}.md]] – {p['title']}")
+        ptype = p["type"].title()
+        pages_by_type.setdefault(ptype, []).append(p)
+        
+    for ptype, type_pages in sorted(pages_by_type.items()):
+        lines.append(f"### {ptype}")
+        lines.append("")
+        for p in type_pages:
+            lines.append(f"* [{p['title']}]({p['slug']}.md) - {p['desc']}")
+        lines.append("")
 
     if not pages:
         lines.append("_Noch keine Seiten im Wiki._")
@@ -647,14 +674,50 @@ def do_sync():
 
     # 4. Auch wiki/log.md aktualisieren
     try:
-        log_path = WIKI_DIR / "log.md"
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"\n## [{datetime.now().strftime('%Y-%m-%d')}] sync | Webserver-Sync\n")
-            f.write(f"- qmd: {'✅' if qmd_ok else '❌'} | index: {'✅' if results['index'] else '❌'}\n")
+        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}")
     except Exception:
         pass
 
     return results
+
+
+def append_okf_log(action, title, details=""):
+    """Schreibt einen OKF-konformen Logbucheintrag."""
+    log_path = WIKI_DIR / "log.md"
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # log.md erstellen falls fehlt
+    if not log_path.exists():
+        log_path.write_text("# Directory Update Log\n", encoding="utf-8")
+        
+    content = log_path.read_text(encoding="utf-8")
+    
+    # Baue den Eintrag
+    action_type = "Update"
+    if action.lower() in ("ingest", "create", "creation"):
+        action_type = "Creation"
+    elif action.lower() in ("delete", "remove", "deprecation"):
+        action_type = "Deprecation"
+        
+    log_entry = f"* **{action_type}**: {title}"
+    if details:
+        log_entry += f" - {details}"
+        
+    # Checken ob ## YYYY-MM-DD existiert
+    header = f"## {today_str}"
+    if header in content:
+        # Nach dem Header einfügen
+        pos = content.find(header) + len(header)
+        # Suche das Ende der Zeile
+        eol = content.find("\n", pos)
+        if eol == -1:
+            eol = len(content)
+        new_content = content[:eol] + f"\n{log_entry}" + content[eol:]
+    else:
+        # Neue Datumssektion am Ende anfügen
+        new_content = content.rstrip() + f"\n\n{header}\n{log_entry}\n"
+        
+    log_path.write_text(new_content, encoding="utf-8")
 
 
 @app.context_processor
@@ -696,34 +759,24 @@ def get_recent_logs(limit=5):
     if log_path.exists():
         try:
             content = log_path.read_text(encoding="utf-8")
-            # Finde alle H2-Einträge im Format: ## [Datum] Aktion | Details
-            matches = re.finditer(r'^##\s+\[([^\]]+)\]\s+([^|\n]+)(?:\|\s*([^\n]+))?', content, re.MULTILINE)
-            all_matches = list(matches)
-            # Neueste zuerst (stehen meistens unten, also rückwärts durchgehen)
-            for i, m in enumerate(reversed(all_matches)):
-                date_str = m.group(1).strip()
-                action = m.group(2).strip()
-                details = m.group(3).strip() if m.group(3) else ""
-                
-                # Finde den Textkörper bis zum nächsten Match
-                # Da we reversed all_matches, let's find the original index
-                orig_idx = len(all_matches) - 1 - i
-                start_pos = m.end()
-                end_pos = all_matches[orig_idx + 1].start() if orig_idx + 1 < len(all_matches) else len(content)
-                body = content[start_pos:end_pos].strip()
-                # Nur die ersten 3 Aufzählungspunkte anzeigen
-                body_lines = [line.strip() for line in body.split("\n") if line.strip()]
-                if len(body_lines) > 3:
-                    body = "\n".join(body_lines[:3]) + "\n- ..."
-                
-                logs.append({
-                    "date": date_str,
-                    "action": action,
-                    "details": details,
-                    "body": body
-                })
-                if len(logs) >= limit:
-                    break
+            # Parse Date sections ## YYYY-MM-DD
+            sections = re.split(r'^##\s+(\d{4}-\d{2}-\d{2})', content, flags=re.MULTILINE)
+            if len(sections) > 1:
+                # Iterate in reverse order
+                for i in range(len(sections) - 2, 0, -2):
+                    date_str = sections[i].strip()
+                    section_body = sections[i+1].strip()
+                    
+                    items = re.findall(r'^\*\s+\*\*([^*]+)\*\*:\s*([^-\n]+)(?:-\s*([^\n]+))?', section_body, re.MULTILINE)
+                    for action, title, details in items:
+                        logs.append({
+                            "date": date_str,
+                            "action": action.strip(),
+                            "details": details.strip() if details else "",
+                            "body": title.strip()
+                        })
+                        if len(logs) >= limit:
+                            return logs
         except Exception:
             pass
     return logs
@@ -785,14 +838,11 @@ def get_wiki_trails():
                             nxt = re.search(r'^##\s+', content[start:], re.MULTILINE)
                             path_section = content[start:start+nxt.start()] if nxt else content[start:]
                             
-                        matches = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', path_section)
+                        matches = re.findall(r'\[(.*?)\]\((/.*?\.md|\./.*?\.md|.*?\.md|[^#:\s\)]+)\)', path_section)
                         path_slugs = []
-                        for target_raw in matches:
-                            t_slug = target_raw.strip().lower()
-                            t_slug = t_slug.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                            t_slug = re.sub(r'[^a-z0-9]', '-', t_slug)
-                            t_slug = re.sub(r'-+', '-', t_slug).strip('-')
-                            path_slugs.append((target_raw.strip(), t_slug))
+                        for display, target in matches:
+                            t_slug = target.lstrip("/").replace(".md", "").lower().replace(" ", "-").replace("_", "-")
+                            path_slugs.append((display.strip(), t_slug))
                             
                         trails.append({
                             "slug": page["slug"],
@@ -829,13 +879,7 @@ def wiki_page(page_name):
 
     # Wikilinks erkennen (für missing-Links-Warnung)
     all_page_slugs = {p["slug"] for p in get_all_wiki_pages()}
-    wikilinks_found = set(re.findall(r'\[\[([^\]]+)\]\]', data["content"]))
-    # Nur den Dateinamen-Teil
-    wikilinks_slugs = set()
-    for link in wikilinks_found:
-        target = link.split("|")[0].strip().lower().replace(" ", "-")
-        target = re.sub(r'\.md$', '', target)
-        wikilinks_slugs.add(target)
+    wikilinks_slugs = set(extract_links_from_content(data["content"]))
     missing_links = sorted(wikilinks_slugs - all_page_slugs)
 
     is_index = (page_name == "index")
@@ -843,12 +887,12 @@ def wiki_page(page_name):
 
     raw_content = data["content"]
     if is_log:
-        first_h2 = re.search(r'^##\s+\[', raw_content, re.MULTILINE)
+        first_h2 = re.search(r'^##\s+\d{4}-\d{2}-\d{2}', raw_content, re.MULTILINE)
         if first_h2:
             header_part = raw_content[:first_h2.start()]
             body_part = raw_content[first_h2.start():]
             
-            matches = list(re.finditer(r'^##\s+\[', body_part, re.MULTILINE))
+            matches = list(re.finditer(r'^##\s+\d{4}-\d{2}-\d{2}', body_part, re.MULTILINE))
             log_entries = []
             for i, m in enumerate(matches):
                 start = m.start()
@@ -1221,13 +1265,11 @@ def graph_data():
                         elif line.startswith("source:"):
                             group = "source"
                 
-                # Sucht nach [[Zielseite]] mit Kontext-Analyse (Widersprüche finden)
+                # Sucht nach standardmäßigen Markdown-Links mit Kontext-Analyse (Widersprüche finden)
                 seen = set()
-                for m in re.finditer(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content):
-                    target_raw = m.group(1).strip()
-                    t_slug = target_raw.lower().replace(" ", "-").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                    t_slug = re.sub(r'[^a-z0-9]', '-', t_slug)
-                    t_slug = re.sub(r'-+', '-', t_slug).strip('-')
+                for m in re.finditer(r'\[.*?\]\((/.*?\.md|\./.*?\.md|.*?\.md|[^#:\s\)]+)\)', content):
+                    target = m.group(1).lstrip("/").replace(".md", "")
+                    t_slug = target.lower().replace(" ", "-").replace("_", "-")
                     
                     # Zeilen-Kontext extrahieren für Widerspruchs-Suche
                     line_start = content.rfind("\n", 0, m.start()) + 1
@@ -1713,12 +1755,8 @@ def get_wiki_analytics():
                                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
                                     
                 # Links
-                matches = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content)
-                for target_raw in matches:
-                    t_slug = target_raw.strip().lower()
-                    t_slug = t_slug.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                    t_slug = re.sub(r'[^a-z0-9]', '-', t_slug)
-                    t_slug = re.sub(r'-+', '-', t_slug).strip('-')
+                matches = extract_links_from_content(content)
+                for t_slug in matches:
                     
                     if t_slug in inbound_links:
                         inbound_links[t_slug] += 1
@@ -1772,13 +1810,9 @@ def get_wiki_analytics():
         if filepath.exists():
             try:
                 content = filepath.read_text(encoding="utf-8", errors="replace")
-                matches = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content)
+                matches = extract_links_from_content(content)
                 seen_tags = set()
-                for target_raw in matches:
-                    t_slug = target_raw.strip().lower()
-                    t_slug = t_slug.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                    t_slug = re.sub(r'[^a-z0-9]', '-', t_slug)
-                    t_slug = re.sub(r'-+', '-', t_slug).strip('-')
+                for t_slug in matches:
                     if t_slug in slug_tags:
                         seen_tags.update(slug_tags[t_slug])
                 if len(seen_tags) > 1:
@@ -1857,15 +1891,16 @@ def lint_dashboard():
             if p["slug"] in ("index", "log", "ingestlater"):
                 continue
             
-            # Suche nach [[slug]] in allen anderen Seiten
+            # Suche nach OKF-Link in allen anderen Seiten
             has_backlink = False
             for other in pages:
                 if other["slug"] == p["slug"]:
                     continue
                 other_file = WIKI_DIR / f"{other['slug']}.md"
                 try:
-                    other_content = other_file.read_text(encoding="utf-8", errors="replace").lower()
-                    if f"[[{p['slug'].replace('-', ' ')}]]" in other_content or f"[[{p['slug']}]]" in other_content:
+                    other_content = other_file.read_text(encoding="utf-8", errors="replace")
+                    other_links = extract_links_from_content(other_content)
+                    if p['slug'] in other_links:
                         has_backlink = True
                         break
                 except Exception:
@@ -1881,17 +1916,12 @@ def lint_dashboard():
             file_path = WIKI_DIR / f"{p['slug']}.md"
             try:
                 content = file_path.read_text(encoding="utf-8", errors="replace")
-                refs = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content)
-                for ref in refs:
-                    target_raw = ref.strip()
-                    target_slug = target_raw.lower().replace(" ", "-").replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                    target_slug = re.sub(r'[^a-z0-9-]', '', target_slug)
-                    target_slug = re.sub(r'-+', '-', target_slug).strip('-')
-                    
+                refs = extract_links_from_content(content)
+                for target_slug in refs:
                     if target_slug and target_slug not in all_slugs and target_slug not in ("index", "log", "ingestlater"):
                         if target_slug not in missing_map:
                             missing_map[target_slug] = {
-                                "title": target_raw,
+                                "title": target_slug.replace("-", " ").title(),
                                 "sources": set()
                             }
                         missing_map[target_slug]["sources"].add((p["title"], p["slug"]))
@@ -2099,8 +2129,9 @@ def settings_page():
                     continue
                 other_file = WIKI_DIR / f"{other['slug']}.md"
                 try:
-                    other_content = other_file.read_text(encoding="utf-8", errors="replace").lower()
-                    if f"[[{p['slug'].replace('-', ' ')}]]" in other_content or f"[[{p['slug']}]]" in other_content:
+                    other_content = other_file.read_text(encoding="utf-8", errors="replace")
+                    other_links = extract_links_from_content(other_content)
+                    if p['slug'] in other_links:
                         has_backlink = True
                         break
                 except Exception:
@@ -2115,16 +2146,11 @@ def settings_page():
             file_path = WIKI_DIR / f"{p['slug']}.md"
             try:
                 content = file_path.read_text(encoding="utf-8", errors="replace")
-                refs = re.findall(r'\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]', content)
-                for ref in refs:
-                    target_raw = ref.strip()
-                    target_slug = target_raw.lower().replace(" ", "-")
-                    target_slug = target_slug.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-                    target_slug = re.sub(r'[^a-z0-9-]', '', target_slug)
-                    target_slug = re.sub(r'-+', '-', target_slug).strip('-')
+                refs = extract_links_from_content(content)
+                for target_slug in refs:
                     if target_slug and target_slug not in all_slugs and target_slug not in ("index", "log", "ingestlater"):
                         if target_slug not in missing_map:
-                            missing_map[target_slug] = {"title": target_raw, "sources": set()}
+                            missing_map[target_slug] = {"title": target_slug.replace("-", " ").title(), "sources": set()}
                         missing_map[target_slug]["sources"].add((p["title"], p["slug"]))
             except Exception:
                 pass
@@ -2235,7 +2261,7 @@ def briefings_dashboard():
                 fm_match = re.search(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
                 if fm_match:
                     for line in fm_match.group(1).split("\n"):
-                        if line.startswith("created:"):
+                        if line.startswith("timestamp:"):
                             created_str = line.split(":", 1)[1].strip().strip('"\'')
                             try:
                                 created_date = date.fromisoformat(created_str[:10])
@@ -2268,14 +2294,15 @@ def briefings_dashboard():
             
             list_items = []
             for wp in week_pages:
-                list_items.append(f"- **[[{wp['title']}]]** — {wp['desc']}")
+                list_items.append(f"- **[{wp['title']}](/{wp['slug']}.md)** — {wp['desc']}")
             list_text = "\n".join(list_items) if list_items else "- Keine neuen Einträge in dieser Woche."
             
             template = (
                 f"---\n"
-                f"title: \"Wochenbericht: {year}-W{week_num:02d}\"\n"
                 f"type: timeline\n"
-                f"created: {today.isoformat()}\n"
+                f"title: \"Wochenbericht: {year}-W{week_num:02d}\"\n"
+                f"description: \"Wochenbericht für die Kalenderwoche {week_num:02d} im Jahr {year}\"\n"
+                f"timestamp: {today.isoformat()}T00:00:00Z\n"
                 f"---\n\n"
                 f"# 📰 Wochenbericht: {year}-W{week_num:02d}\n\n"
                 f"Zusammenfassung des Wissenszuwachses vom {start_date.strftime('%d.%m.%Y')} bis zum {end_date.strftime('%d.%m.%Y')}.\n\n"
@@ -2373,10 +2400,7 @@ def export_page_route(page_name):
         
         # Logbuch eintragen
         try:
-            log_path = WIKI_DIR / "log.md"
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(f"\n## [{datetime.now().strftime('%Y-%m-%d')}] export | {page_name}\n")
-                f.write(f"- Seite exportiert nach {dest_file.relative_to(PROJECT_ROOT)}\n")
+            append_okf_log("export", page_name, f"Seite exportiert nach {dest_file.relative_to(PROJECT_ROOT)}")
         except Exception:
             pass
             
@@ -2404,10 +2428,7 @@ def delete_page_route(page_name):
         
         # Logbuch eintragen
         try:
-            log_path = WIKI_DIR / "log.md"
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(f"\n## [{datetime.now().strftime('%Y-%m-%d')}] delete | {page_name}\n")
-                f.write(f"- Seite gelöscht\n")
+            append_okf_log("delete", page_name, "Seite gelöscht")
         except Exception:
             pass
             
@@ -2426,12 +2447,7 @@ def clear_log_route():
     log_path = WIKI_DIR / "log.md"
     try:
         template = (
-            f"---\n"
-            f"title: \"Logbuch\"\n"
-            f"type: timeline\n"
-            f"created: {datetime.now().strftime('%Y-%m-%d')}\n"
-            f"---\n\n"
-            f"# 📜 Logbuch\n\n"
+            f"# Directory Update Log\n\n"
             f"Protokollierte Wiki-Aktivitäten.\n"
         )
         log_path.write_text(template, encoding="utf-8")

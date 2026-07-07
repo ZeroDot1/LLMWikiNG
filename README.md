@@ -1,6 +1,6 @@
-# LLMWikiNG
+# LLMWikiNG (OKF Edition)
 
-Ein vollständiges Pattern zum Aufbau und zur Pflege einer persönlichen Wissensdatenbank (Wiki) mithilfe von lokalen LLMs und Agenten. Inspiriert durch das LLM-Wiki-Pattern von Andrej Karpathy.
+Ein vollständiges Pattern zum Aufbau und zur Pflege einer persönlichen Wissensdatenbank (Wiki) nach dem standardisierten **Open Knowledge Format (OKF) v0.1** mithilfe von lokalen LLMs und Agenten. Inspiriert durch das LLM-Wiki-Pattern von Andrej Karpathy.
 
 **Autor:** ZeroDot1
 

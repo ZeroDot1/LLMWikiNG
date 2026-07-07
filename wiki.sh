@@ -21,7 +21,7 @@ set -euo pipefail
 # ═══════════════════════════════════════════════════════════════════════════════
 # VERSION
 # ═══════════════════════════════════════════════════════════════════════════════
-VERSION="1.2.0"
+VERSION="1.3.0"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KONFIGURATION
@@ -117,53 +117,8 @@ $text" 2>/dev/null || echo "_Zusammenfassung nicht verfügbar (ollama nicht erre
 
 # ─── Index updaten ────────────────────────────────────────────────────────────
 update_index() {
-    local idx_file="$WIKI_DIR/index.md"
-    local tmp_file=$(mktemp)
-
-    echo "# Wiki-Index" > "$tmp_file"
-    echo "" >> "$tmp_file"
-    echo "> Automatisch gepflegtes Inhaltsverzeichnis." >> "$tmp_file"
-    echo "> Aktualisiert am $(today)." >> "$tmp_file"
-    echo "" >> "$tmp_file"
-
-    # Alle .md-Dateien ausser index.md und log.md auflisten
-    local pages=$(find "$WIKI_DIR" -maxdepth 1 -name "*.md" \
-        ! -name "index.md" ! -name "log.md" | sort)
-
-    if [ -n "$pages" ]; then
-        echo "## Seiten" >> "$tmp_file"
-        echo "" >> "$tmp_file"
-        while IFS= read -r page; do
-            local name=$(basename "$page" .md)
-            # Erste Überschrift als Beschreibung extrahieren (YAML-Frontmatter überspringen)
-            local desc=$(sed -n '/^# /{s/^# //p;q}' "$page" 2>/dev/null || echo "$name")
-            echo "- [[${name}.md]] – $desc" >> "$tmp_file"
-        done <<< "$pages"
-    fi
-
-    # Kategorien / Entities (Unterordner)
-    local subdirs=$(find "$WIKI_DIR" -mindepth 2 -type d 2>/dev/null | sort)
-    if [ -n "$subdirs" ]; then
-        echo "" >> "$tmp_file"
-        echo "## Kategorien" >> "$tmp_file"
-        echo "" >> "$tmp_file"
-        while IFS= read -r dir; do
-            local dirname=$(basename "$dir")
-            local count=$(find "$dir" -name "*.md" | wc -l)
-            echo "- **$dirname/** – $count Seite(n)" >> "$tmp_file"
-        done <<< "$subdirs"
-    fi
-
-    # Statistik
-    local total=$(find "$WIKI_DIR" -maxdepth 1 -name "*.md" ! -name "index.md" | wc -l)
-    echo "" >> "$tmp_file"
-    echo "## Statistik" >> "$tmp_file"
-    echo "" >> "$tmp_file"
-    echo "- **Seiten gesamt:** $total" >> "$tmp_file"
-    echo "- **Letzte Aktualisierung:** $(today)" >> "$tmp_file"
-
-    mv "$tmp_file" "$idx_file"
-    echo -e "${GREEN}✓ index.md aktualisiert${NC}"
+    python3 -c "import sys; sys.path.insert(0, '.'); from llmWiki import regenerate_index; regenerate_index()"
+    echo -e "${GREEN}✓ index.md aktualisiert (via Python/OKF)${NC}"
 }
 
 # ─── Log updaten ──────────────────────────────────────────────────────────────
@@ -171,14 +126,8 @@ append_log() {
     local action="$1"    # z. B. "ingest", "lint", "query"
     local title="$2"
     local details="${3:-}"
-
-    local log_file="$WIKI_DIR/log.md"
-    local entry="## [$(today)] $action | $title"
-    [ -n "$details" ] && entry+="\n- $details"
-
-    echo "" >> "$log_file"
-    echo "$entry" >> "$log_file"
-    echo -e "${GREEN}✓ log.md aktualisiert${NC}"
+    python3 -c "import sys; sys.path.insert(0, '.'); from llmWiki import append_okf_log; append_okf_log('$action', '$title', '$details')"
+    echo -e "${GREEN}✓ log.md aktualisiert (via Python/OKF)${NC}"
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -378,7 +327,7 @@ export_wiki() {
 list_wiki() {
     local files=$(find "$WIKI_DIR" -type f -name "*.md" \
         ! -name "index.md" ! -name "log.md" \
-        | sed "s|^$WIKI_DIR/||" | sort)
+        | sed "s%^$WIKI_DIR/%%" | sort)
     local index_only=$(find "$WIKI_DIR" -maxdepth 1 -name "index.md" | wc -l)
     local log_only=$(find "$WIKI_DIR" -maxdepth 1 -name "log.md" | wc -l)
 
@@ -462,10 +411,12 @@ ingest_wiki() {
     # Wiki-Seite schreiben
     cat > "$PAGE_FILE" <<-PAGEEOF
 ---
+type: Concept
 title: "$PAGE_TITLE"
-source: "$RAW_NAME"
-created: $(today)
+description: "Ingested source from $RAW_NAME"
+resource: "file://raw/$RAW_NAME"
 tags: []
+timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 ---
 
 # $PAGE_TITLE
@@ -487,7 +438,7 @@ $(cat "$SOURCE_FILE")
 
 ## Querverweise
 
-- Siehe auch: [[index.md]]
+- Siehe auch: [Index](/index.md)
 
 PAGEEOF
 
@@ -522,17 +473,19 @@ lint_wiki() {
     echo -e "${YELLOW}📄 Orphan-Seiten (keine eingehenden Links):${NC}"
     while IFS= read -r page; do
         local pagename=$(basename "$page")
+        local rel_page=$(realpath --relative-to="$WIKI_DIR" "$page")
+        local page_slug="${rel_page%.*}"
         # Ignoriere index.md und log.md
-        [[ "$pagename" == "index.md" || "$pagename" == "log.md" ]] && continue
+        [[ "$pagename" == "index.md" || "$pagename" == "log.md" || "$pagename" == "ingestlater.md" ]] && continue
 
-        # Suche nach [[pagename]] in allen anderen Seiten
-        local backlinks=$(rg -l "\[\[${pagename%%.*}\]\]" "$WIKI_DIR" 2>/dev/null \
-            | grep -v "$pagename" || true)
+        # Suche nach Markdown-Link in allen anderen Seiten
+        local backlinks=$(rg -l "\]\((/|\./|\.\./)?${page_slug}(\.md)?\)" "$WIKI_DIR" 2>/dev/null \
+            | grep -v "$rel_page" || true)
         if [ -z "$backlinks" ]; then
-            echo -e "   ${RED}⚠ $pagename${NC}"
+            echo -e "   ${RED}⚠ $rel_page${NC}"
             issues=$((issues + 1))
         fi
-    done < <(find "$WIKI_DIR" -maxdepth 1 -name "*.md" | sort)
+    done < <(find "$WIKI_DIR" -type f -name "*.md" | sort)
 
     if [ "$issues" -eq 0 ]; then
         echo -e "   ${GREEN}✓ Keine verwaisten Seiten gefunden${NC}"
@@ -542,15 +495,17 @@ lint_wiki() {
     echo ""
     echo -e "${YELLOW}🔗 Erwähnte aber fehlende Seiten:${NC}"
     local missing=0
-    local refs=$(rg -o '\[\[([^\]]+)\]\]' "$WIKI_DIR" 2>/dev/null \
-        | sed 's/.*\[\[\([^]]*\)\]\].*/\1/' \
-        | sed 's/\.md$//' | sort -u || true)
+    local refs=$(rg -o '\]\((/|\./|\.\./)?([^):#\s)]+)\)' "$WIKI_DIR" 2>/dev/null \
+        | sed -E 's%.*\]\((/|\./|\.\./)?([^)]*)\)%\2%' \
+        | sed 's%\.md$%%' | sed 's%^/%%' | sort -u || true)
 
     while IFS= read -r ref; do
         [ -z "$ref" ] && continue
+        # Ignore external links / anchors / special pages
+        [[ "$ref" =~ ^http || "$ref" =~ ^mailto || "$ref" =~ ^# || "$ref" == "index" || "$ref" == "log" || "$ref" == "ingestlater" ]] && continue
         local ref_page="$WIKI_DIR/${ref}.md"
         if [ ! -f "$ref_page" ]; then
-            echo -e "   ${YELLOW}🔗 [[${ref}]] – erwähnt, aber keine Seite vorhanden${NC}"
+            echo -e "   ${YELLOW}🔗 [$ref] – erwähnt, aber keine Seite vorhanden${NC}"
             missing=$((missing + 1))
         fi
     done <<< "$refs"
@@ -562,10 +517,10 @@ lint_wiki() {
     # ─── 7c. Allgemeine Statistik ─────────────────────────────────────────
     echo ""
     echo -e "${YELLOW}📊 Statistik:${NC}"
-    local total_files=$(find "$WIKI_DIR" -maxdepth 1 -name "*.md" \
-        ! -name "index.md" ! -name "log.md" | wc -l)
+    local total_files=$(find "$WIKI_DIR" -type f -name "*.md" \
+        ! -name "index.md" ! -name "log.md" ! -name "ingestlater.md" | wc -l)
     local raw_files=$(find "$RAW_DIR" -type f 2>/dev/null | wc -l)
-    local total_words=$(find "$WIKI_DIR" -maxdepth 1 -name "*.md" \
+    local total_words=$(find "$WIKI_DIR" -type f -name "*.md" \
         -exec wc -w {} + 2>/dev/null | tail -1 | awk '{print $1}')
 
     echo "   • Wiki-Seiten: $total_files"

@@ -19,6 +19,7 @@
     "index": "📑 Index",
     "logbook": "📜 Logbuch",
     "raw_sources": "📦 Rohquellen",
+    "raw_editor": "✍️ Rohquellen-Editor",
     "pending": "⏳ Ausstehendes",
     "exported": "📤 Exportiertes",
     "knowledge_graph": "🕸️ Wissensgraph",
@@ -524,5 +525,18 @@
     "read_export_status_ok": "STATUS: ✅ Erfolgreich nach {dest} kopiert",
     "read_export_content_start": "--- INHALT START ---",
     "read_export_content_end": "--- INHALT ENDE ---"
+  },
+  "raw_editor": {
+    "page_title": "Rohquellen-Editor",
+    "heading": "✍️ Rohquellen-Editor",
+    "intro_text": "Schreibe oder bearbeite Dokumente direkt im Browser. Nach dem Speichern liegen sie im raw/ Ordner für einen späteren Ingest bereit.",
+    "filename_label": "Dateiname (.md)",
+    "filename_placeholder": "z.B. neue-seite.md",
+    "wysiwyg_tab": "WYSIWYG-Editor (Vorschau)",
+    "markdown_tab": "Markdown (Quellcode)",
+    "wysiwyg_bold": "Fett",
+    "wysiwyg_italic": "Kursiv",
+    "wysiwyg_list": "Aufzählung",
+    "save_btn": "In raw/ speichern"
   }
 }

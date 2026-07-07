@@ -19,6 +19,7 @@
     "index": "📑 Index",
     "logbook": "📜 Logbook",
     "raw_sources": "📦 Raw Sources",
+    "raw_editor": "✍️ Raw Editor",
     "pending": "⏳ Pending",
     "exported": "📤 Exported",
     "knowledge_graph": "🕸️ Knowledge Graph",
@@ -524,5 +525,18 @@
     "read_export_status_ok": "STATUS: ✅ Successfully copied to {dest}",
     "read_export_content_start": "--- CONTENT START ---",
     "read_export_content_end": "--- CONTENT END ---"
+  },
+  "raw_editor": {
+    "page_title": "Raw Editor",
+    "heading": "✍️ Raw Source Editor",
+    "intro_text": "Write or edit raw files directly in your browser. After saving, they will be stored in the raw/ folder for later ingestion.",
+    "filename_label": "Filename (.md)",
+    "filename_placeholder": "e.g. new-page.md",
+    "wysiwyg_tab": "WYSIWYG Editor (Preview)",
+    "markdown_tab": "Markdown (Source)",
+    "wysiwyg_bold": "Bold",
+    "wysiwyg_italic": "Italic",
+    "wysiwyg_list": "Bullet List",
+    "save_btn": "Save in raw/"
   }
 }

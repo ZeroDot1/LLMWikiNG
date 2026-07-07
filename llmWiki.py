@@ -235,6 +235,10 @@ app = Flask(APP_NAME,
 # Templates immer neu laden (auch im Produktionsmodus)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
+# Registrierung des Raw-Editors
+from raw_editor import raw_editor_bp
+app.register_blueprint(raw_editor_bp)
+
 
 # ─── Hilfsfunktionen ────────────────────────────────────────────────────────
 

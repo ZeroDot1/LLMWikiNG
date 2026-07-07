@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}{{ _('raw_editor.page_title') }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/raw_editor.css">
+<div class="editor-container">
+    <div class="editor-header">
+        <h1>{{ _('raw_editor.heading') }}</h1>
+        <p class="subtitle">{{ _('raw_editor.intro_text') }}</p>
+    </div>
+
+    {% if request.args.get('error_msg') %}
+    <div class="alert alert-danger" style="margin-bottom: 1.5rem; padding: 0.75rem 1rem; border-radius: 4px; background: rgba(247, 118, 142, 0.1); border: 1px solid var(--red); color: var(--red);">
+        ⚠️ {{ request.args.get('error_msg') }}
+    </div>
+    {% endif %}
+
+    <form id="editor-form" action="{{ url_for('raw_editor.save_raw') }}" method="POST">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="filename-input" style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--foreground-light);">
+                {{ _('raw_editor.filename_label') }}
+            </label>
+            <input type="text" id="filename-input" name="filename" value="{{ filename }}" placeholder="{{ _('raw_editor.filename_placeholder') }}" required 
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--foreground); font-family: var(--font-mono); font-size: 1rem;">
+        </div>
+
+        <div class="editor-tabs-container" style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1rem;">
+            <button type="button" id="tab-wysiwyg" class="editor-tab active" onclick="switchTab('wysiwyg')"
+                    style="background: none; border: none; padding: 0.75rem 1.5rem; color: var(--foreground-light); font-weight: bold; cursor: pointer; border-bottom: 2px solid var(--blue); margin-bottom: -2px;">
+                {{ _('raw_editor.wysiwyg_tab') }}
+            </button>
+            <button type="button" id="tab-markdown" class="editor-tab" onclick="switchTab('markdown')"
+                    style="background: none; border: none; padding: 0.75rem 1.5rem; color: var(--comment); font-weight: bold; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;">
+                {{ _('raw_editor.markdown_tab') }}
+            </button>
+        </div>
+
+        <!-- Toolbar (WYSIWYG-spezifisch) -->
+        <div id="editor-toolbar" class="wysiwyg-toolbar" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-panel); border: 1px solid var(--border); border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; flex-wrap: wrap;">
+            <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="{{ _('raw_editor.wysiwyg_bold') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-weight: bold;">B</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="{{ _('raw_editor.wysiwyg_italic') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-style: italic;">I</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="{{ _('raw_editor.wysiwyg_list') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">• List</button>
+            <span style="border-left: 1px solid var(--border); margin: 0 0.25rem;"></span>
+            <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<h1>')" title="H1" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">H1</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<h2>')" title="H2" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">H2</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<h3>')" title="H3" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">H3</button>
+        </div>
+
+        <!-- WYSIWYG Editor Bereich -->
+        <div id="wysiwyg-editor-wrapper" class="editor-wrapper" style="display: block;">
+            <div id="editor-wysiwyg" contenteditable="true" class="wysiwyg-content" 
+                 style="min-height: 400px; padding: 1rem; border: 1px solid var(--border); border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; background: var(--bg-dark); color: var(--foreground); outline: none; overflow-y: auto; line-height: 1.6;">
+            </div>
+        </div>
+
+        <!-- Markdown Editor Bereich -->
+        <div id="markdown-editor-wrapper" class="editor-wrapper" style="display: none;">
+            <textarea id="editor-markdown" name="content" class="markdown-content" placeholder="Schreibe hier dein Markdown... (z.B. Frontmatter und Body)"
+                      style="width: 100%; min-height: 400px; padding: 1rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--foreground); font-family: var(--font-mono); font-size: 0.95rem; line-height: 1.6; resize: vertical; outline: none;">{{ content }}</textarea>
+        </div>
+
+        <div class="editor-actions" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="background: var(--blue); border: none; color: #fff; padding: 0.75rem 2rem; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+                {{ _('raw_editor.save_btn') }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let currentMode = 'wysiwyg';
+
+    // Toolbar Command ausführen
+    function execCmd(command, arg = null) {
+        document.execCommand(command, false, arg);
+        document.getElementById('editor-wysiwyg').focus();
+    }
+
+    // HTML zu Markdown Konvertierung (Clientseitig)
+    function htmlToMarkdown(html) {
+        let md = html;
+        md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
+        md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
+        md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+        md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+        md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+        md = md.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+        md = md.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+        md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '* $1\n');
+        md = md.replace(/<ul[^>]*>/gi, '');
+        md = md.replace(/<\/ul>/gi, '\n');
+        md = md.replace(/<ol[^>]*>/gi, '');
+        md = md.replace(/<\/ol>/gi, '\n');
+        md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n');
+        md = md.replace(/<br\s*\/?>/gi, '\n');
+        
+        // Tabellen, Code-Blöcke und sonstige Tags entfernen/normalisieren
+        md = md.replace(/<[^>]+>/g, '');
+        
+        // HTML Entities decodieren
+        const txt = document.createElement("textarea");
+        txt.innerHTML = md;
+        return txt.value.trim();
+    }
+
+    // Tab-Wechsel (WYSIWYG <=> Markdown)
+    function switchTab(mode) {
+        if (mode === currentMode) return;
+
+        const tabWysiwyg = document.getElementById('tab-wysiwyg');
+        const tabMarkdown = document.getElementById('tab-markdown');
+        const wrapperWysiwyg = document.getElementById('wysiwyg-editor-wrapper');
+        const wrapperMarkdown = document.getElementById('markdown-editor-wrapper');
+        const toolbar = document.getElementById('editor-toolbar');
+
+        const editorWysiwyg = document.getElementById('editor-wysiwyg');
+        const editorMarkdown = document.getElementById('editor-markdown');
+
+        if (mode === 'markdown') {
+            // HTML -> Markdown synchronisieren
+            const mdContent = htmlToMarkdown(editorWysiwyg.innerHTML);
+            
+            // Wenn Markdown-Feld leer war, Frontmatter anfügen
+            if (!editorMarkdown.value.trim() && mdContent) {
+                const today = new Date().toISOString().split('T')[0];
+                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
+            } else if (mdContent) {
+                // Vorhandenes Frontmatter beibehalten, falls vorhanden
+                const fmMatch = editorMarkdown.value.match(/^---.*?---\s*/s);
+                if (fmMatch) {
+                    editorMarkdown.value = fmMatch[0] + mdContent;
+                } else {
+                    editorMarkdown.value = mdContent;
+                }
+            }
+
+            wrapperWysiwyg.style.display = 'none';
+            toolbar.style.display = 'none';
+            wrapperMarkdown.style.display = 'block';
+
+            tabWysiwyg.classList.remove('active');
+            tabWysiwyg.style.color = 'var(--comment)';
+            tabWysiwyg.style.borderBottomColor = 'transparent';
+
+            tabMarkdown.classList.add('active');
+            tabMarkdown.style.color = 'var(--foreground-light)';
+            tabMarkdown.style.borderBottomColor = 'var(--blue)';
+
+            currentMode = 'markdown';
+        } else {
+            // Markdown -> HTML über Server-Vorschau rendern
+            const content = editorMarkdown.value;
+            
+            fetch("{{ url_for('raw_editor.preview_markdown') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "content=" + encodeURIComponent(content)
+            })
+            .then(res => res.text())
+            .then(html => {
+                editorWysiwyg.innerHTML = html;
+            });
+
+            wrapperMarkdown.style.display = 'none';
+            wrapperWysiwyg.style.display = 'block';
+            toolbar.style.display = 'flex';
+
+            tabMarkdown.classList.remove('active');
+            tabMarkdown.style.color = 'var(--comment)';
+            tabMarkdown.style.borderBottomColor = 'transparent';
+
+            tabWysiwyg.classList.add('active');
+            tabWysiwyg.style.color = 'var(--foreground-light)';
+            tabWysiwyg.style.borderBottomColor = 'var(--blue)';
+
+            currentMode = 'wysiwyg';
+        }
+    }
+
+    // Beim Absenden des Formulars Daten synchronisieren
+    document.getElementById('editor-form').addEventListener('submit', function(e) {
+        const editorWysiwyg = document.getElementById('editor-wysiwyg');
+        const editorMarkdown = document.getElementById('editor-markdown');
+
+        if (currentMode === 'wysiwyg') {
+            const mdContent = htmlToMarkdown(editorWysiwyg.innerHTML);
+            const fmMatch = editorMarkdown.value.match(/^---.*?---\s*/s);
+            if (fmMatch) {
+                editorMarkdown.value = fmMatch[0] + mdContent;
+            } else {
+                const today = new Date().toISOString().split('T')[0];
+                editorMarkdown.value = `---\ntype: Concept\ntitle: "Neue Seite"\ndescription: "Beschreibung"\ntimestamp: ${today}T00:00:00Z\n---\n\n` + mdContent;
+            }
+        }
+    });
+
+    // Initialisierung des WYSIWYG Editors mit vorhandenem Content (über Server-Preview)
+    window.addEventListener('DOMContentLoaded', () => {
+        const editorMarkdown = document.getElementById('editor-markdown');
+        const editorWysiwyg = document.getElementById('editor-wysiwyg');
+        if (editorMarkdown.value.trim()) {
+            fetch("{{ url_for('raw_editor.preview_markdown') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "content=" + encodeURIComponent(editorMarkdown.value)
+            })
+            .then(res => res.text())
+            .then(html => {
+                editorWysiwyg.innerHTML = html;
+            });
+        }
+    });
+</script>
+{% endblock %}

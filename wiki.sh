@@ -495,20 +495,41 @@ lint_wiki() {
     echo ""
     echo -e "${YELLOW}🔗 Erwähnte aber fehlende Seiten:${NC}"
     local missing=0
-    local refs=$(rg -o '\]\((/|\./|\.\./)?([^):#\s)]+)\)' "$WIKI_DIR" 2>/dev/null \
-        | sed -E 's%.*\]\((/|\./|\.\./)?([^)]*)\)%\2%' \
-        | sed 's%\.md$%%' | sed 's%^/%%' | sort -u || true)
+    local missing_list=$(python3 -c '
+import os, re
+from pathlib import Path
+wiki_dir = Path("wiki")
+all_files = set()
+for f in wiki_dir.rglob("*.md"):
+    if f.name not in ("index.md", "log.md", "ingestlater.md"):
+        all_files.add(str(f.relative_to(wiki_dir).with_suffix("")).lower().replace("\\", "/").replace(" ", "-").replace("_", "-"))
+missing = set()
+for f in wiki_dir.rglob("*.md"):
+    parent_slug = ""
+    rel_parent = f.relative_to(wiki_dir).parent
+    if str(rel_parent) != ".":
+        parent_slug = str(rel_parent).lower().replace("\\", "/").replace(" ", "-").replace("_", "-")
+    content = f.read_text(encoding="utf-8", errors="replace")
+    links = re.findall(r"\]\(([^):#\s)]+)\)", content)
+    for link in links:
+        if link.startswith(("http://", "https://", "mailto:", "#")): continue
+        link_path = link.split("#")[0]
+        if link_path.endswith(".md"): link_path = link_path[:-3]
+        if not link_path or link_path in ("index", "log", "ingestlater"): continue
+        resolved = f"{parent_slug}/{link_path}" if (not link_path.startswith("/") and parent_slug) else link_path.lstrip("/")
+        resolved = os.path.normpath(resolved).lower().replace("\\", "/").replace(" ", "-").replace("_", "-")
+        if resolved not in all_files:
+            missing.add(resolved)
+for m in sorted(missing): print(m)
+' 2>/dev/null)
 
-    while IFS= read -r ref; do
-        [ -z "$ref" ] && continue
-        # Ignore external links / anchors / special pages
-        [[ "$ref" =~ ^http || "$ref" =~ ^mailto || "$ref" =~ ^# || "$ref" == "index" || "$ref" == "log" || "$ref" == "ingestlater" ]] && continue
-        local ref_page="$WIKI_DIR/${ref}.md"
-        if [ ! -f "$ref_page" ]; then
+    if [ -n "$missing_list" ]; then
+        while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
             echo -e "   ${YELLOW}🔗 [$ref] – erwähnt, aber keine Seite vorhanden${NC}"
             missing=$((missing + 1))
-        fi
-    done <<< "$refs"
+        done <<< "$missing_list"
+    fi
 
     if [ "$missing" -eq 0 ]; then
         echo -e "   ${GREEN}✓ Alle verlinkten Seiten existieren${NC}"

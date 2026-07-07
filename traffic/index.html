@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Traffic Dashboard – LLMWikiNG</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-sub: #a0a0a0;
+            --border-color: #2d2d2d;
+            /* Google Brand Colors */
+            --g-blue: #4285F4;
+            --g-red: #EA4335;
+            --g-yellow: #FBBC05;
+            --g-green: #34A853;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 { margin: 0; font-size: 28px; font-weight: 400; color: #fff; }
+        p.subtitle { margin: 5px 0 0 0; color: var(--text-sub); font-size: 14px; }
+        .last-update {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+        }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 18px 20px;
+            text-align: center;
+        }
+        .stat-box .value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .stat-box .label {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+        .stat-box.views .value { color: var(--g-blue); }
+        .stat-box.uniques .value { color: var(--g-green); }
+        .stat-box.clones .value { color: var(--g-red); }
+        .stat-box.referrers .value { color: var(--g-yellow); }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-sub);
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Traffic Control Room</h1>
+        <p class="subtitle">Sämtliche verfügbaren GitHub-Metriken im Google Dark Material Design</p>
+        <div class="last-update" id="updateTime">Lade Daten…</div>
+    </header>
+
+    <!-- Zusammenfassung -->
+    <div class="summary-stats" id="summaryStats">
+        <div class="stat-box views">
+            <div class="value" id="totalViews">—</div>
+            <div class="label">Gesamt-Views</div>
+        </div>
+        <div class="stat-box uniques">
+            <div class="value" id="totalUniques">—</div>
+            <div class="label">Eindeutige Besucher</div>
+        </div>
+        <div class="stat-box clones">
+            <div class="value" id="totalClones">—</div>
+            <div class="label">Git-Klone</div>
+        </div>
+        <div class="stat-box referrers">
+            <div class="value" id="totalReferrers">—</div>
+            <div class="label">Verweis-Quellen</div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- 1. SEITENAUFRUFE -->
+        <div class="card">
+            <h2>Seitenaufrufe (Views)</h2>
+            <div class="chart-container">
+                <canvas id="viewsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. GIT-KLONE -->
+        <div class="card">
+            <h2>Git-Klone (Clones)</h2>
+            <div class="chart-container">
+                <canvas id="clonesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. TOP-VERWEISE -->
+        <div class="card">
+            <h2>Top-Verweis-Quellen (Referrers)</h2>
+            <div class="chart-container">
+                <canvas id="referrersChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 4. BELIEBTE INHALTE -->
+        <div class="card">
+            <h2>Meistaufgerufene Pfade (Paths)</h2>
+            <div class="chart-container">
+                <canvas id="pathsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Generiert von GitHub Actions &bull; Daten aus <code>traffic/</code> &bull; Dashboard aktualisiert sich täglich
+    </footer>
+</div>
+
+<script>
+    // Globale Chart.js Defaults für Dark Mode
+    Chart.defaults.color = '#a0a0a0';
+    Chart.defaults.borderColor = '#2d2d2d';
+
+    const googleBlue = '#4285F4';
+    const googleRed = '#EA4335';
+    const googleYellow = '#FBBC05';
+    const googleGreen = '#34A853';
+
+    const optionsTemplate = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: '#e0e0e0' }
+            }
+        },
+        scales: {
+            x: {
+                grid: { color: '#2d2d2d' },
+                ticks: { color: '#a0a0a0' }
+            },
+            y: {
+                grid: { color: '#2d2d2d' },
+                ticks: { color: '#a0a0a0' },
+                beginAtZero: true
+            }
+        }
+    };
+
+    // Daten laden (relative Pfade zu den JSON-Dateien)
+    Promise.all([
+        fetch('views.json').then(r => r.ok ? r.json() : []),
+        fetch('clones.json').then(r => r.ok ? r.json() : []),
+        fetch('referrers.json').then(r => r.ok ? r.json() : []),
+        fetch('paths.json').then(r => r.ok ? r.json() : [])
+    ]).then(([views, clones, referrers, paths]) => {
+
+        // Letzte Aktualisierung anzeigen
+        if (views.length > 0) {
+            const lastDate = views[views.length - 1].timestamp.substring(0, 10);
+            document.getElementById('updateTime').textContent =
+                'Letzte Aktualisierung: ' + lastDate;
+        }
+
+        // Zusammenfassungs-Statistiken berechnen
+        const totalViews = views.reduce((sum, v) => sum + (v.count || 0), 0);
+        const totalUniques = views.reduce((sum, v) => sum + (v.uniques || 0), 0);
+        const totalClones = clones.reduce((sum, c) => sum + (c.count || 0), 0);
+        const totalRefs = referrers.reduce((sum, r) => sum + (r.count || 0), 0);
+
+        document.getElementById('totalViews').textContent =
+            totalViews.toLocaleString('de-DE');
+        document.getElementById('totalUniques').textContent =
+            totalUniques.toLocaleString('de-DE');
+        document.getElementById('totalClones').textContent =
+            totalClones.toLocaleString('de-DE');
+        document.getElementById('totalReferrers').textContent =
+            totalRefs.toLocaleString('de-DE');
+
+        // 1. Views-Chart (Linie)
+        new Chart(document.getElementById('viewsChart'), {
+            type: 'line',
+            data: {
+                labels: views.map(v => v.timestamp.substring(0, 10)),
+                datasets: [
+                    {
+                        label: 'Gesamt-Views',
+                        data: views.map(v => v.count),
+                        borderColor: googleBlue,
+                        backgroundColor: 'rgba(66,133,244,0.1)',
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Eindeutige Besucher',
+                        data: views.map(v => v.uniques),
+                        borderColor: googleGreen,
+                        backgroundColor: 'rgba(52,168,83,0.1)',
+                        fill: true,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: optionsTemplate
+        });
+
+        // 2. Clones-Chart (Linie)
+        new Chart(document.getElementById('clonesChart'), {
+            type: 'line',
+            data: {
+                labels: clones.map(c => c.timestamp.substring(0, 10)),
+                datasets: [
+                    {
+                        label: 'Git-Klone',
+                        data: clones.map(c => c.count),
+                        borderColor: googleRed,
+                        backgroundColor: 'rgba(234,67,53,0.1)',
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Eindeutige Kloner',
+                        data: clones.map(c => c.uniques),
+                        borderColor: googleYellow,
+                        backgroundColor: 'rgba(251,188,5,0.1)',
+                        fill: true,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: optionsTemplate
+        });
+
+        // 3. Referrers-Chart (Balken)
+        new Chart(document.getElementById('referrersChart'), {
+            type: 'bar',
+            data: {
+                labels: referrers.slice(0, 7).map(r => r.referrer),
+                datasets: [
+                    {
+                        label: 'Klicks',
+                        data: referrers.slice(0, 7).map(r => r.count),
+                        backgroundColor: googleBlue
+                    },
+                    {
+                        label: 'Eindeutige Nutzer',
+                        data: referrers.slice(0, 7).map(r => r.uniques),
+                        backgroundColor: googleGreen
+                    }
+                ]
+            },
+            options: optionsTemplate
+        });
+
+        // 4. Paths-Chart (horizontaler Balken für bessere Lesbarkeit)
+        new Chart(document.getElementById('pathsChart'), {
+            type: 'bar',
+            data: {
+                labels: paths.slice(0, 7).map(p => p.path),
+                datasets: [
+                    {
+                        label: 'Aufrufe',
+                        data: paths.slice(0, 7).map(p => p.count),
+                        backgroundColor: googleRed
+                    },
+                    {
+                        label: 'Eindeutige Besucher',
+                        data: paths.slice(0, 7).map(p => p.uniques),
+                        backgroundColor: googleYellow
+                    }
+                ]
+            },
+            options: {
+                ...optionsTemplate,
+                indexAxis: 'y' // Horizontal für Pfadnamen
+            }
+        });
+
+    }).catch(err => {
+        console.error('Fehler beim Verarbeiten der Traffic-Daten:', err);
+        document.getElementById('updateTime').textContent =
+            '⚠️ Fehler beim Laden der Daten – bitte zuerst das GitHub Action-Workflow ausführen.';
+    });
+</script>
+</body>
+</html>

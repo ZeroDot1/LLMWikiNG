@@ -39,7 +39,13 @@
         <div id="editor-toolbar" class="wysiwyg-toolbar" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-panel); border: 1px solid var(--border); border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; flex-wrap: wrap;">
             <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="{{ _('raw_editor.wysiwyg_bold') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-weight: bold;">B</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="{{ _('raw_editor.wysiwyg_italic') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-style: italic;">I</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('strikeThrough')" title="Strikethrough" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; text-decoration: line-through;">S</button>
+            <button type="button" class="toolbar-btn" onclick="insertInlineCode()" title="Code" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-family: var(--font-mono);">&lt;/&gt;</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="{{ _('raw_editor.wysiwyg_list') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">• List</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<blockquote>')" title="Quote" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">❝ Quote</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('insertHorizontalRule')" title="Line" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">― HR</button>
+            <button type="button" class="toolbar-btn" onclick="insertLink()" title="Link" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">🔗 Link</button>
+            <button type="button" class="toolbar-btn" onclick="insertImage()" title="Image" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">🖼️ Image</button>
             <span style="border-left: 1px solid var(--border); margin: 0 0.25rem;"></span>
             <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<h1>')" title="H1" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">H1</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<h2>')" title="H2" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">H2</button>
@@ -76,21 +82,75 @@
         document.getElementById('editor-wysiwyg').focus();
     }
 
+    function insertLink() {
+        const url = prompt("URL eingeben / Enter URL:");
+        if (url) {
+            execCmd('createLink', url);
+        }
+    }
+
+    function insertImage() {
+        const url = prompt("Bild-URL eingeben / Enter Image URL:");
+        if (url) {
+            execCmd('insertImage', url);
+        }
+    }
+
+    function insertInlineCode() {
+        const selection = window.getSelection();
+        if (!selection.isCollapsed) {
+            const range = selection.getRangeAt(0);
+            const codeNode = document.createElement('code');
+            codeNode.textContent = selection.toString();
+            range.deleteContents();
+            range.insertNode(codeNode);
+        } else {
+            const codeNode = document.createElement('code');
+            codeNode.textContent = "code";
+            const range = selection.getRangeAt(0);
+            range.insertNode(codeNode);
+        }
+        document.getElementById('editor-wysiwyg').focus();
+    }
+
     // HTML zu Markdown Konvertierung (Clientseitig)
     function htmlToMarkdown(html) {
         let md = html;
+
+        // Blockquotes
+        md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, function(match, content) {
+            return '\n' + content.trim().split(/<br\s*\/?>|\n/gi).map(line => '> ' + line.replace(/<[^>]+>/g, '').trim()).join('\n') + '\n\n';
+        });
+
+        // Überschriften
         md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
         md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
         md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+
+        // Formtierungen
         md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
         md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
         md = md.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
         md = md.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+        md = md.replace(/<(strike|s|del)[^>]*>(.*?)<\/\1>/gi, '~~$2~~');
+        md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+
+        // Links und Bilder
+        md = md.replace(/<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+        md = md.replace(/<img[^>]+src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
+        md = md.replace(/<img[^>]+src="([^"]+)"[^>]*>/gi, '![]($1)');
+
+        // Trennlinie
+        md = md.replace(/<hr[^>]*>/gi, '\n---\n\n');
+
+        // Listen
         md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '* $1\n');
         md = md.replace(/<ul[^>]*>/gi, '');
         md = md.replace(/<\/ul>/gi, '\n');
         md = md.replace(/<ol[^>]*>/gi, '');
         md = md.replace(/<\/ol>/gi, '\n');
+
+        // Absätze & Zeilenumbrüche
         md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n');
         md = md.replace(/<br\s*\/?>/gi, '\n');
         

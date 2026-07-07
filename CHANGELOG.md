@@ -7,6 +7,15 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.5.0] – 2026-07-07
+
+### Erweiterter WYSIWYG Rohquellen-Editor
+
+#### Added
+- **Markdown-Formatierungen im WYSIWYG-Editor**: Unterstützung für Links (Prompt-Eingabe), Bilder (Prompt-Eingabe), Inline-Code (`<code>`), Blockquotes (`<blockquote>`), Trennlinien (`<hr>`) und Durchstreichen (`~~`).
+- **Erweiterte Toolbar**: Neue interaktive Symbole und Buttons zur schnellen Formatierung.
+- **Optimierte HTML-to-Markdown-Konvertierung**: Clientseitiges Scripting wurde erweitert, um all diese neuen Tags nativ in korrektes Markdown umzuwandeln.
+
 ## [1.4.0] – 2026-07-07
 
 ### Browser-basierter Rohquellen-Editor

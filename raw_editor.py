@@ -7,7 +7,7 @@ import markdown
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 RAW_DIR = PROJECT_ROOT / "raw"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 
 # Blueprint initialisieren
 raw_editor_bp = Blueprint("raw_editor", __name__)

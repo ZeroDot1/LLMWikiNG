@@ -116,7 +116,7 @@ Das Web-Interface stellt folgende Routen bereit:
 *   `/export/<filename>` – Lädt ein exportiertes Dokument herunter.
 *   `/raw` – Übersicht aller archivierten Rohquellen.
 *   `/raw/<filename>` – Zeigt eine Rohquelle an.
-*   `/raw/edit` – ✍️ Rohquellen-Editor (WYSIWYG & Markdown-Dualmodus).
+*   `/edit` – ✍️ Universeller Editor (WYSIWYG & Markdown-Dualmodus für Wiki-Seiten und Rohquellen).
 *   `/about` – Über-Seite mit Version und Projektinformationen.
 
 ---

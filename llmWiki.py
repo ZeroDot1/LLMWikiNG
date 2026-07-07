@@ -30,7 +30,7 @@ COLLECTION_NAME = "my_wiki"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.6.0"
 DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 
@@ -235,9 +235,9 @@ app = Flask(APP_NAME,
 # Templates immer neu laden (auch im Produktionsmodus)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Registrierung des Raw-Editors
-from raw_editor import raw_editor_bp
-app.register_blueprint(raw_editor_bp)
+# Registrierung des Editors
+from editor import editor_bp
+app.register_blueprint(editor_bp)
 
 
 # ─── Hilfsfunktionen ────────────────────────────────────────────────────────

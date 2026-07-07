@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ _('raw_editor.page_title') }}{% endblock %}
+{% block title %}{{ _('editor.page_title') }}{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="/static/raw_editor.css">
+<link rel="stylesheet" href="/static/editor.css">
 <div class="editor-container">
     <div class="editor-header">
-        <h1>{{ _('raw_editor.heading') }}</h1>
-        <p class="subtitle">{{ _('raw_editor.intro_text') }}</p>
+        <h1>{{ _('editor.heading') }}</h1>
+        <p class="subtitle">{{ _('editor.intro_text') }}</p>
     </div>
 
     {% if request.args.get('error_msg') %}
@@ -15,33 +15,34 @@
     </div>
     {% endif %}
 
-    <form id="editor-form" action="{{ url_for('raw_editor.save_raw') }}" method="POST">
+    <form id="editor-form" action="{{ url_for('editor.save_file') }}" method="POST">
+        <input type="hidden" name="folder" value="{{ folder }}">
         <div class="form-group" style="margin-bottom: 1.5rem;">
             <label for="filename-input" style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--foreground-light);">
-                {{ _('raw_editor.filename_label') }}
+                {{ _('editor.filename_label') }}
             </label>
-            <input type="text" id="filename-input" name="filename" value="{{ filename }}" placeholder="{{ _('raw_editor.filename_placeholder') }}" required 
+            <input type="text" id="filename-input" name="filename" value="{{ filename }}" placeholder="{{ _('editor.filename_placeholder') }}" required 
                    style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--foreground); font-family: var(--font-mono); font-size: 1rem;">
         </div>
 
         <div class="editor-tabs-container" style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1rem;">
             <button type="button" id="tab-wysiwyg" class="editor-tab active" onclick="switchTab('wysiwyg')"
                     style="background: none; border: none; padding: 0.75rem 1.5rem; color: var(--foreground-light); font-weight: bold; cursor: pointer; border-bottom: 2px solid var(--blue); margin-bottom: -2px;">
-                {{ _('raw_editor.wysiwyg_tab') }}
+                {{ _('editor.wysiwyg_tab') }}
             </button>
             <button type="button" id="tab-markdown" class="editor-tab" onclick="switchTab('markdown')"
                     style="background: none; border: none; padding: 0.75rem 1.5rem; color: var(--comment); font-weight: bold; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;">
-                {{ _('raw_editor.markdown_tab') }}
+                {{ _('editor.markdown_tab') }}
             </button>
         </div>
 
         <!-- Toolbar (WYSIWYG-spezifisch) -->
         <div id="editor-toolbar" class="wysiwyg-toolbar" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-panel); border: 1px solid var(--border); border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; flex-wrap: wrap;">
-            <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="{{ _('raw_editor.wysiwyg_bold') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-weight: bold;">B</button>
-            <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="{{ _('raw_editor.wysiwyg_italic') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-style: italic;">I</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="{{ _('editor.wysiwyg_bold') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-weight: bold;">B</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="{{ _('editor.wysiwyg_italic') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-style: italic;">I</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('strikeThrough')" title="Strikethrough" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; text-decoration: line-through;">S</button>
             <button type="button" class="toolbar-btn" onclick="insertInlineCode()" title="Code" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer; font-family: var(--font-mono);">&lt;/&gt;</button>
-            <button type="button" class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="{{ _('raw_editor.wysiwyg_list') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">• List</button>
+            <button type="button" class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="{{ _('editor.wysiwyg_list') }}" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">• List</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', '<blockquote>')" title="Quote" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">❝ Quote</button>
             <button type="button" class="toolbar-btn" onclick="execCmd('insertHorizontalRule')" title="Line" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">― HR</button>
             <button type="button" class="toolbar-btn" onclick="insertLink()" title="Link" style="background: var(--bg-dark); border: 1px solid var(--border); color: var(--foreground); padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;">🔗 Link</button>
@@ -67,7 +68,7 @@
 
         <div class="editor-actions" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
             <button type="submit" class="btn btn-primary" style="background: var(--blue); border: none; color: #fff; padding: 0.75rem 2rem; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
-                {{ _('raw_editor.save_btn') }}
+                {{ _('editor.save_btn') }}
             </button>
         </div>
     </form>
@@ -211,7 +212,7 @@
             // Markdown -> HTML über Server-Vorschau rendern
             const content = editorMarkdown.value;
             
-            fetch("{{ url_for('raw_editor.preview_markdown') }}", {
+            fetch("{{ url_for('editor.preview_markdown') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
@@ -261,7 +262,7 @@
         const editorMarkdown = document.getElementById('editor-markdown');
         const editorWysiwyg = document.getElementById('editor-wysiwyg');
         if (editorMarkdown.value.trim()) {
-            fetch("{{ url_for('raw_editor.preview_markdown') }}", {
+            fetch("{{ url_for('editor.preview_markdown') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"

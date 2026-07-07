@@ -19,7 +19,7 @@
     "index": "📑 Index",
     "logbook": "📜 Logbuch",
     "raw_sources": "📦 Rohquellen",
-    "raw_editor": "✍️ Rohquellen-Editor",
+    "editor": "✍️ Editor",
     "pending": "⏳ Ausstehendes",
     "exported": "📤 Exportiertes",
     "knowledge_graph": "🕸️ Wissensgraph",
@@ -83,6 +83,7 @@
     "source_label": "📄 Rohquelle:",
     "view_raw_file": "Rohdatei anzeigen",
     "share_link": "🔗 Link teilen",
+    "edit_page": "✍️ Bearbeiten",
     "export_page": "📤 Exportieren",
     "delete_page": "🗑️ Löschen",
     "delete_confirm": "Möchtest du diese Wiki-Seite wirklich unwiderruflich löschen?",
@@ -362,6 +363,7 @@
     "page_title_prefix": "Rohquelle:",
     "heading_prefix": "📄 Rohquelle:",
     "back_button": "Zurück zur Übersicht",
+    "edit_button": "✍️ Bearbeiten",
     "wiki_page_button": "Wiki-Seite anzeigen",
     "path_label": "Pfad:",
     "size_label": "Größe:",
@@ -526,10 +528,10 @@
     "read_export_content_start": "--- INHALT START ---",
     "read_export_content_end": "--- INHALT ENDE ---"
   },
-  "raw_editor": {
-    "page_title": "Rohquellen-Editor",
-    "heading": "✍️ Rohquellen-Editor",
-    "intro_text": "Schreibe oder bearbeite Dokumente direkt im Browser. Nach dem Speichern liegen sie im raw/ Ordner für einen späteren Ingest bereit.",
+  "editor": {
+    "page_title": "Editor",
+    "heading": "✍️ Editor",
+    "intro_text": "Schreibe oder bearbeite Dokumente direkt im Browser. Nach dem Speichern werden sie im entsprechenden Verzeichnis abgelegt.",
     "filename_label": "Dateiname (.md)",
     "filename_placeholder": "z.B. neue-seite.md",
     "wysiwyg_tab": "WYSIWYG-Editor (Vorschau)",
@@ -537,6 +539,6 @@
     "wysiwyg_bold": "Fett",
     "wysiwyg_italic": "Kursiv",
     "wysiwyg_list": "Aufzählung",
-    "save_btn": "In raw/ speichern"
+    "save_btn": "Speichern"
   }
 }

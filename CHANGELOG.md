@@ -7,6 +7,17 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.0] – 2026-07-07
+
+### Universeller Editor & Bearbeitungs-Buttons
+
+#### Added
+- **Universeller Editor** (`editor.py` / `editor.html`): Der Rohquellen-Editor wurde in einen allgemeinen, mächtigen „Editor“ umbenannt und erweitert.
+- **Wiki-Seiten bearbeiten**: Jede Wiki-Seite hat jetzt einen „Bearbeiten“-Button erhalten, welcher die Seite direkt im Editor öffnet.
+- **Rohquellen bearbeiten**: Jede Text-Rohquelle besitzt einen „Bearbeiten“-Button, um sie im Browser zu verändern, bevor sie eingespielt wird.
+- **Ordner-Weiche**: Der Editor lädt und speichert Dokumente dynamisch im korrekten Verzeichnis (`wiki/` oder `raw/`), basierend auf dem Modus.
+- **Aktualisierte Lokalisierung**: Alle Begriffe wurden von „Rohquellen-Editor“ auf „Editor“ vereinheitlicht und angepasst.
+
 ## [1.5.0] – 2026-07-07
 
 ### Erweiterter WYSIWYG Rohquellen-Editor

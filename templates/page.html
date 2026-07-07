@@ -65,6 +65,7 @@
                 onclick="copyPageLink(this)" title="{{ _('page.share_link') }}">
             {{ _('page.share_link') }}
         </button>
+        <a href="/edit?filename={{ raw_page_name }}&folder=wiki" class="btn btn-sm btn-primary" style="font-weight: 500;">{{ _('page.edit_page') }}</a>
         <a href="/wiki/{{ raw_page_name }}/export" class="btn btn-sm btn-secondary" style="font-weight: 500;">{{ _('page.export_page') }}</a>
         {% if raw_page_name not in ("index", "log", "ingestlater") %}
         <a href="/wiki/{{ raw_page_name }}/delete" class="btn btn-sm btn-danger" style="font-weight: 500;" onclick="return confirm('{{ _('page.delete_confirm') }}');">{{ _('page.delete_page') }}</a>

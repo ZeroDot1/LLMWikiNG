@@ -4,8 +4,11 @@
 {% block content %}
 <div class="header-action">
     <h1>{{ _('raw_view.heading_prefix') }} {{ filename }}</h1>
-    <div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
         <a href="/raw" class="btn btn-secondary">{{ _('raw_view.back_button') }}</a>
+        {% if is_text %}
+        <a href="/edit?filename={{ filename }}&folder=raw" class="btn btn-primary">{{ _('raw_view.edit_button') }}</a>
+        {% endif %}
         {% if wiki_slug %}
         <a href="/wiki/{{ wiki_slug }}" class="btn btn-accent">{{ _('raw_view.wiki_page_button') }}</a>
         {% endif %}

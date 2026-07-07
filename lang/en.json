@@ -19,7 +19,7 @@
     "index": "📑 Index",
     "logbook": "📜 Logbook",
     "raw_sources": "📦 Raw Sources",
-    "raw_editor": "✍️ Raw Editor",
+    "editor": "✍️ Editor",
     "pending": "⏳ Pending",
     "exported": "📤 Exported",
     "knowledge_graph": "🕸️ Knowledge Graph",
@@ -83,6 +83,7 @@
     "source_label": "📄 Raw Source:",
     "view_raw_file": "View raw file",
     "share_link": "🔗 Share Link",
+    "edit_page": "✍️ Edit",
     "export_page": "📤 Export",
     "delete_page": "🗑️ Delete",
     "delete_confirm": "Do you really want to permanently delete this wiki page?",
@@ -362,6 +363,7 @@
     "page_title_prefix": "Raw Source:",
     "heading_prefix": "📄 Raw Source:",
     "back_button": "Back to Overview",
+    "edit_button": "✍️ Edit",
     "wiki_page_button": "View Wiki Page",
     "path_label": "Path:",
     "size_label": "Size:",
@@ -526,10 +528,10 @@
     "read_export_content_start": "--- CONTENT START ---",
     "read_export_content_end": "--- CONTENT END ---"
   },
-  "raw_editor": {
-    "page_title": "Raw Editor",
-    "heading": "✍️ Raw Source Editor",
-    "intro_text": "Write or edit raw files directly in your browser. After saving, they will be stored in the raw/ folder for later ingestion.",
+  "editor": {
+    "page_title": "Editor",
+    "heading": "✍️ Editor",
+    "intro_text": "Write or edit documents directly in your browser. After saving, they will be stored in the respective directory.",
     "filename_label": "Filename (.md)",
     "filename_placeholder": "e.g. new-page.md",
     "wysiwyg_tab": "WYSIWYG Editor (Preview)",
@@ -537,6 +539,6 @@
     "wysiwyg_bold": "Bold",
     "wysiwyg_italic": "Italic",
     "wysiwyg_list": "Bullet List",
-    "save_btn": "Save in raw/"
+    "save_btn": "Save"
   }
 }

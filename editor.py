@@ -8,7 +8,7 @@ import markdown
 PROJECT_ROOT = Path(__file__).resolve().parent
 WIKI_DIR = PROJECT_ROOT / "wiki"
 RAW_DIR = PROJECT_ROOT / "raw"
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.8.0"
 
 # Blueprint initialisieren
 editor_bp = Blueprint("editor", __name__)

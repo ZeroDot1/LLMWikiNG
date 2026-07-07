@@ -21,7 +21,7 @@ set -euo pipefail
 # ═══════════════════════════════════════════════════════════════════════════════
 # VERSION
 # ═══════════════════════════════════════════════════════════════════════════════
-VERSION="1.6.0"
+VERSION="1.8.0"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KONFIGURATION
@@ -155,6 +155,7 @@ show_help() {
     echo "  list                   📋  Alle Wiki-Dokumente anzeigen"
     echo "  status                 📊  Wiki-Statistiken"
     echo "  config                 ⚙️   Konfiguration anzeigen"
+    echo "  reset|--reset          ⚠️   Setzt das Wiki zurück (löscht alle User-Dokumente)"
     echo "  update                 ⬇️  LLMWikiNG via GitHub aktualisieren (curl)"
     echo "  help                   ❓  Diese Hilfe"
     echo ""
@@ -630,7 +631,68 @@ status_wiki() {
     append_log "status" "Wiki-Status abgefragt" "wiki=$wiki_pages, raw=$raw_sources, export=$exported"
 }
 
-# ─── 9. CONFIG ────────────────────────────────────────────────────────────────
+# ─── 9. RESET ─────────────────────────────────────────────────────────────────
+reset_wiki() {
+    echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║   ⚠️   WARNUNG: WIKI ZURÜCKSETZEN                     ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}Dieser Vorgang löscht unwiderruflich all deine Seiten, Rohquellen und Exporte!${NC}"
+    
+    local bypass_confirm=false
+    if [ "${1:-}" = "--yes" ] || [ "${1:-}" = "-y" ] || [ "${1:-}" = "-yes" ]; then
+        bypass_confirm=true
+    fi
+    
+    if [ "$bypass_confirm" = false ]; then
+        echo -n "Bestätige das Zurücksetzen durch Eingabe von 'RESET': "
+        read -r confirm
+        if [ "$confirm" != "RESET" ]; then
+            echo -e "${YELLOW}❌ Vorgang abgebrochen.${NC}"
+            return 1
+        fi
+    fi
+
+    echo -e "${YELLOW}🔄 Setze Datenverzeichnisse zurück...${NC}"
+    
+    # Verzeichnisse leeren
+    rm -rf "$WIKI_DIR"/*
+    rm -rf "$RAW_DIR"/*
+    rm -rf "$EXPORT_DIR"/*
+    
+    # index.md und log.md OKF-konform neu aufbauen
+    cat > "$WIKI_DIR/index.md" <<-EOF
+---
+okf_version: "0.1"
+---
+# Wiki-Index
+
+> Automatisch gepflegtes Inhaltsverzeichnis.
+EOF
+
+    cat > "$WIKI_DIR/log.md" <<-EOF
+---
+okf_version: "0.1"
+---
+# Wiki-Aktivitätslogbuch
+
+| Datum & Zeit | Aktion | Datei | Beschreibung |
+| --- | --- | --- | --- |
+EOF
+
+    # qmd Collection zurücksetzen falls qmd installiert ist
+    if command -v qmd &>/dev/null; then
+        echo -e "${YELLOW}🔄 Bereinige qmd-Suchindex...${NC}"
+        qmd collection remove "$COLLECTION_NAME" --yes 2>/dev/null || true
+        qmd collection add "$WIKI_DIR" --name "$COLLECTION_NAME" 2>/dev/null || true
+    fi
+
+    # Index neu aufbauen
+    update_index
+
+    echo -e "${GREEN}✅ Wiki wurde erfolgreich in den Werkszustand zurückgesetzt!${NC}"
+}
+
+# ─── 10. CONFIG ───────────────────────────────────────────────────────────────
 show_config() {
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║   ⚙️  Konfiguration                   ║${NC}"
@@ -688,6 +750,9 @@ case "${1:-help}" in
         ;;
     config)
         show_config
+        ;;
+    reset|--reset)
+        reset_wiki "${2:-}"
         ;;
     update)
         if [ -f "./update.sh" ]; then

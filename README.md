@@ -45,6 +45,7 @@ Das CLI-Skript `wiki.sh` bündelt alle Operationen zur Verwaltung des Wikis:
 Zusätzlich zur CLI bietet das Projekt ein voll ausgestattetes, extrem performantes Web-Interface im modernen **Tokyo-Night/Newsroom-Design**:
 
 *   **🏠 Dashboard & Navigation**: Übersicht über alle aktuellen Wiki-Seiten, Statistiken und den Systemzustand.
+*   **✍️ Universeller Editor (WYSIWYG & Markdown)**: Integrierter Dual-Mode-Editor zum Erstellen und Bearbeiten von Wiki-Seiten und Rohquellen direkt im Browser – mit WYSIWYG-Formatierung (Fett, Kursiv, Listen, Zitate, Code, Links, Bilder) und rohem Markdown-Quellcode-Modus inklusive YAML-Frontmatter.
 *   **🕸️ Interaktiver Wissensgraph**: Visualisiert alle Beziehungen deiner Seiten in einem farbcodierten, dynamischen 2D-Netzwerk (offline betrieben über `vis-network.min.js`). Widersprüche/Konflikte werden rot-gestrichelt dargestellt.
 *   **📰 Wochenberichte & E-Mail-Briefings**: Aggregiere wöchentliche Änderungen, generiere neue Briefing-Dateien im Wiki und versende diese sicher über den integrierten SMTP-Client an deine Empfänger. Die Konfiguration erfolgt über die Weboberfläche (gespeichert in `config.json`) mit integrierten Schnell-Presets für **Gmail**, **ProtonMail Bridge** und **Mail.ru**.
 *   **⏳ Ausstehender Ingest**: Zeigt un-ingestierte Dateien in `raw/` an und ermöglicht das Einspielen einzeln oder als Stapel („Ingest All“) über die Web-Oberfläche.
@@ -53,6 +54,7 @@ Zusätzlich zur CLI bietet das Projekt ein voll ausgestattetes, extrem performan
 *   **🔍 Suche mit Term-Highlighting**: Blitzschnelle BM25-Suche im gesamten Wiki, in den Rohdateien sowie den Exporten mit farblichen Markierungen im Text.
 *   **🏥 Web-Linter**: Zeigt verwaiste Seiten, veraltete Seiten (Staleness), defekte Rohquellen-Referenzen (Raw File Refs) und offene Link-Verweise sortiert nach ihrer Wichtigkeit (Häufigkeit) an.
 *   **⬇️ Selbstupdate**: Integrierte Update-Funktion – prüft auf neue GitHub-Versionen und aktualisiert sich selbst per Klick. Schützt Wiki-Seiten, Rohquellen und Konfiguration.
+*   **⚙️ Einstellungen (Settings)**: Zentrale Konfigurationsseite mit Tabs für Sprachauswahl, SMTP-E-Mail-Konfiguration, Gesundheitscheck und Update-Funktion.
 
 ### Web-Interface starten:
 Der Webserver läuft standardmäßig auf einem modernen **Uvicorn ASGI-Server** (Standard post-2026 für maximale Performance und Konkurrenzfähigkeit).
@@ -77,6 +79,8 @@ Der Webserver (`llmWiki.py`) kann direkt oder via `start.sh` mit folgenden Param
 | `--host, -H HOST` | — (immer `0.0.0.0`) | Binde-Adresse (Standard: `0.0.0.0`) |
 | `--debug, -d` | `./start.sh -d` | Debug-Modus (Flask-interner Server statt Uvicorn, Live-Reload) |
 | `--lang, -l CODE` | `./start.sh --lang en` | Startsprache (z. B. `de`, `en`). Überschreibt den Wert aus `config.json`. |
+| `--reset` | `./start.sh --reset` | **Server zurücksetzen:** Löscht unwiderruflich alle Wiki-Seiten, Rohquellen und Exporte. Setzt das Wiki auf den Werkszustand zurück. |
+| `--reset -y` | `./start.sh --reset -y` | Reset non-interaktiv (ohne Nachfrage) ausführen. |
 
 Alle Parameter können auch direkt an `llmWiki.py` übergeben werden:
 ```bash
@@ -119,6 +123,12 @@ Das Web-Interface stellt folgende Routen bereit:
 *   `/edit` – ✍️ Universeller Editor (WYSIWYG & Markdown-Dualmodus für Wiki-Seiten und Rohquellen).
 *   `/about` – Über-Seite mit Version und Projektinformationen.
 
+### ✍️ Integrierter Editor
+Der Webserver besitzt einen integrierten, zweigeteilten Editor:
+*   **WYSIWYG-Modus**: Ermöglicht komfortables Schreiben mit direkter visueller Formatierung (Fett, Kursiv, Listen, Zitate, Trennlinien, Links, Bilder, inline-Code) komplett ohne externe JS-Bibliotheken (reines HTML5 ContentEditable).
+*   **Markdown-Modus**: Bietet die Möglichkeit, den Markdown-Quelltext inklusive YAML-Frontmatter direkt zu bearbeiten.
+*   **Ordner-Weiche**: Der Editor lädt und speichert Dateien automatisch im passenden Verzeichnis (entweder `wiki/` für aktive Seiten oder `raw/` für Entwürfe), basierend auf dem aktuellen Modus.
+
 ---
 
 ## 🚀 Erste Schritte
@@ -140,6 +150,23 @@ chmod +x wiki.sh
 ```bash
 ./wiki.sh ingest pfad/zu/deiner/notiz.md
 ```
+
+### 4. Server & Workspace zurücksetzen (Werkszustand)
+Um das gesamte Wiki in den Auslieferungszustand zurückzusetzen und alle persönlichen Seiten, Rohdaten sowie Exporte unwiderruflich zu löschen:
+
+**Via CLI (wiki.sh):**
+```bash
+./wiki.sh reset              # Erfordert die manuelle Eingabe von 'RESET' zur Bestätigung
+./wiki.sh reset --yes        # Führt das Zurücksetzen non-interaktiv (ohne Nachfrage) durch
+```
+
+**Via Server-Starter (start.sh):**
+```bash
+./start.sh --reset           # Erfordert die manuelle Eingabe von 'RESET' zur Bestätigung
+./start.sh --reset -y        # Führt das Zurücksetzen non-interaktiv (ohne Nachfrage) durch
+```
+
+Der Reset löscht alle Dateien in `wiki/`, `raw/` und `output_docs/` und legt `index.md` sowie `log.md` OKF-konform neu an. Die qmd-Such-Collection wird ebenfalls zurückgesetzt.
 
 ---
 

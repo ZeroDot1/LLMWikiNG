@@ -18,6 +18,7 @@
 <ul>
     <li>📦 <strong>Open Knowledge Format (OKF)</strong> – Vollständig konform mit der OKF v0.1-Spezifikation (YAML-Frontmatter, Typen, Ressourcen und strukturierte Pfade).</li>
     <li>🔗 <strong>Native Markdown Links</strong> – Verwendet standardisierte Markdown-Verknüpfungen (`[Anzeige](/pfad/zur/seite.md)`) anstelle proprietärer Wikilinks.</li>
+    <li>✍️ <strong>Universeller Editor (WYSIWYG & Markdown)</strong> – Integrierter Dual-Mode-Editor zum Erstellen und Bearbeiten von Wiki-Seiten und Rohquellen direkt im Browser. Bietet WYSIWYG-Formatierung (Fett, Kursiv, Listen, Zitate, Code, Links, Bilder) und einen rohen Markdown-Modus mit YAML-Frontmatter-Unterstützung.</li>
     <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (offline betrieben via Vis.js). Widersprüche und Spannungen werden rot gestrichelt dargestellt.</li>
     <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite im OKF-Logformat.</li>
     <li>📰 <strong>Wochenberichte & E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen zu Wochenberichten und verschickt sie sicher über einen integrierten SMTP-Client. Inklusive Schnell-Presets für <strong>Gmail</strong>, <strong>ProtonMail Bridge</strong> und <strong>Mail.ru</strong>.</li>
@@ -28,6 +29,7 @@
     <li>🩹 <strong>Gesundheitscheck (Lint)</strong> – Spürt verwaiste Seiten, nicht existierende Link-Ziele (priorisiert nach Häufigkeit) und veraltete Seiten (Stale Pages) auf.</li>
     <li>🌙 <strong>Tokyo-Night Theme</strong> – Extrem edles, kontrastreiches Dark-Theme für augenschonendes Arbeiten.</li>
     <li>⬇️ <strong>Selbstupdate</strong> – Integrierte Update-Funktion: Prüft auf neue GitHub-Versionen und aktualisiert sich selbst per Klick. Schützt Wiki, Rohquellen und Konfiguration.</li>
+    <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprachauswahl, SMTP-E-Mail-Konfiguration, Gesundheitscheck und Update.</li>
 </ul>
 
 <h2>{{ _('about.version_heading') }}</h2>
@@ -101,8 +103,33 @@ LLMWikiNG/
     <tr><td><code>--host, -H HOST</code></td><td>—</td><td>Binde-Adresse (Standard: <code>0.0.0.0</code>)</td></tr>
     <tr><td><code>--debug, -d</code></td><td><code>./start.sh -d</code></td><td>Debug-Modus (Flask-interner Server statt Uvicorn, Live-Reload)</td></tr>
     <tr><td><code>--lang, -l CODE</code></td><td><code>./start.sh --lang en</code></td><td>Startsprache (<code>de</code>, <code>en</code>, …). Überschreibt den Wert aus <code>config.json</code></td></tr>
+    <tr><td><code>--reset</code></td><td><code>./start.sh --reset</code></td><td>⚠️ <strong>Server zurücksetzen:</strong> Löscht unwiderruflich alle Wiki-Seiten, Rohquellen und Exporte. Setzt das Wiki auf den Werkszustand zurück (erfordert Bestätigung).</td></tr>
+    <tr><td><code>--reset -y</code></td><td><code>./start.sh --reset -y</code></td><td>⚡ Non-interaktiver Reset ohne Nachfrage.</td></tr>
 </table>
 <p>Die Standard-Sprache wird in <code>config.json</code> unter <code>"language"</code> gespeichert. Wird kein <code>--lang</code> übergeben, gilt der Config-Wert; danach Deutsch als Fallback.</p>
+
+<h2>🛠️ CLI-Befehle & Wiki-Reset</h2>
+<p>Das Skript <code>wiki.sh</code> bietet verschiedene Steuerungs- und Wartungsbefehle auf der Kommandozeile an:</p>
+<table>
+    <tr><th>Befehl</th><th>Beschreibung</th></tr>
+    <tr><td><code>./wiki.sh init</code></td><td>Initialisiert die Ordnerstruktur, qmd-Collection, index.md und log.md</td></tr>
+    <tr><td><code>./wiki.sh search "Text"</code></td><td>Führt eine BM25- und Vektor-Hybridsuche über qmd aus</td></tr>
+    <tr><td><code>./wiki.sh ingest &lt;datei&gt;</code></td><td>Spielt eine neue Quelle in das Wiki ein</td></tr>
+    <tr><td><code>./wiki.sh export &lt;seite&gt;</code></td><td>Exportiert eine Wiki-Seite nach <code>output_docs/</code></td></tr>
+    <tr><td><code>./wiki.sh list</code></td><td>Listet alle Wiki-Dokumente auf</td></tr>
+    <tr><td><code>./wiki.sh lint</code></td><td>Führt einen Gesundheitscheck durch (Statistiken & Link-Prüfung)</td></tr>
+    <tr><td><code>./wiki.sh sync</code></td><td>Aktualisiert Vektor-Embeddings über qmd</td></tr>
+    <tr><td><code>./wiki.sh reindex</code></td><td>Baut das Inhaltsverzeichnis (<code>index.md</code>) und Logbuch neu auf</td></tr>
+    <tr><td><code>./wiki.sh status</code></td><td>Zeigt Wiki-Statistiken, Tool-Verfügbarkeit und Systemzustand an</td></tr>
+    <tr><td><code>./wiki.sh config</code></td><td>Zeigt die aktuelle Konfiguration (Verzeichnisse, LLM-Backend) an</td></tr>
+    <tr><td><code>./wiki.sh reset</code></td><td>⚠️ <strong>Zurücksetzen:</strong> Löscht unwiderruflich alle Wiki-Seiten, Rohdateien und Exporte (fordert manuelle Bestätigung <code>RESET</code>)</td></tr>
+    <tr><td><code>./wiki.sh reset --yes</code></td><td>⚠️ Führt das Zurücksetzen ohne Nachfrage direkt aus (non-interaktiv)</td></tr>
+    <tr><td><code>./wiki.sh update</code></td><td>⬇️ Führt ein Selbstupdate via GitHub aus</td></tr>
+    <tr><td><code>./wiki.sh --version</code></td><td>Zeigt die aktuelle Versionsnummer an</td></tr>
+    <tr><td><code>./wiki.sh help</code></td><td>Zeigt diese Hilfe an</td></tr>
+</table>
+<p>Zusätzlich kann der Reset auch über den Webserver-Starter ausgeführt werden:<br>
+<code>./start.sh --reset</code> &nbsp;|&nbsp; <code>./start.sh --reset -y</code></p>
 
 <h2>📦 Drittanbieter-Lizenzen</h2>
 <p>Dieses Projekt nutzt folgende externe Komponenten:</p>

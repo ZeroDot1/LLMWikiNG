@@ -30,7 +30,7 @@ COLLECTION_NAME = "my_wiki"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.8.0"
 DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 

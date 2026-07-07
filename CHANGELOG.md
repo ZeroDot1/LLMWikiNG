@@ -7,6 +7,28 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.8.0] – 2026-07-07
+
+### Server-Reset, vollständige Dokumentation & Editor-Feature
+
+#### Added
+- **Server-Reset über `start.sh`**: Neuer `--reset`-Parameter für `start.sh` zum Zurücksetzen des Servers auf Werkseinstellungen. Löscht unwiderruflich alle Wiki-Seiten (`wiki/`), Rohquellen (`raw/`) und Exporte (`output_docs/`). Legt `index.md` und `log.md` OKF-konform neu an und setzt die qmd-Such-Collection zurück.
+- **Non-interaktiver Reset**: `./start.sh --reset -y` bzw. `./start.sh --reset --yes` führt den Reset ohne manuelle Bestätigung aus.
+- **Dokumentation vervollständigt (README & Über-Seite)**: Fehlende Features (Editor, Einstellungen) in den Feature-Listen ergänzt. `--reset` in Server-Parametern dokumentiert. CLI-Befehlsreferenz auf der Über-Seite komplettiert (init, list, status, config, update, version, reset mit start.sh).
+
+#### Changed
+- **Version auf 1.8.0 angehoben** (VERSION, wiki.sh, editor.py, llmWiki.py)
+- **start.sh-Banner**: Version wird nun dynamisch aus der `VERSION`-Datei gelesen
+
+## [1.7.0] – 2026-07-07
+
+### Editor-Bearbeitungs-Buttons & Universeller Editor
+
+#### Added
+- **Bearbeiten-Buttons**: Jede Wiki-Seite und jede Rohquelle hat jetzt einen „Bearbeiten“-Button, der die Seite direkt im Editor öffnet.
+- **Universeller Editor**: Der Rohquellen-Editor wurde in einen allgemeinen Editor umbenannt (`editor.py` / `editor.html`) und unterstützt nun sowohl Wiki-Seiten (`wiki/`) als auch Rohquellen (`raw/`).
+- **Ordner-Weiche**: Automatische Erkennung des Zielverzeichnisses basierend auf dem gewählten Modus.
+
 ## [1.6.0] – 2026-07-07
 
 ### Universeller Editor & Bearbeitungs-Buttons

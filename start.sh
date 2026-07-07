@@ -9,6 +9,8 @@
 #   ./start.sh 9090 -d          → Port 9090 + Debug
 #   ./start.sh --lang en        → Englisch als Startsprache
 #   ./start.sh 9090 --lang de   → Port 9090 + Deutsch
+#   ./start.sh --reset          → Server zurücksetzen (alle User-Daten löschen)
+#   ./start.sh --reset -y       → Reset ohne Nachfrage ausführen
 #   ./start.sh --help           → Hilfe
 
 set -euo pipefail
@@ -19,6 +21,8 @@ SERVER_SCRIPT="$SCRIPT_DIR/llmWiki.py"
 WANTED_PORT=""
 DEBUG=""
 LANG_ARG=""
+RESET_MODE=""
+RESET_FORCE=""
 
 # ═══════════════════════════════════════════════════════════
 # Argumente parsen
@@ -36,6 +40,8 @@ while [[ $# -gt 0 ]]; do
             echo "  ./start.sh 9090 -d              Debug-Modus ab Port 9090"
             echo "  ./start.sh --lang en            Startsprache (z.B. de, en)"
             echo "  ./start.sh 9090 --lang de       Port 9090 + Deutsch"
+            echo "  ./start.sh --reset              Server zurücksetzen (alle User-Daten löschen)"
+            echo "  ./start.sh --reset -y           Reset ohne Nachfrage ausführen"
             echo ""
             echo "Weitere Parameter werden direkt an llmWiki.py durchgereicht."
             echo "Der Server sucht automatisch den nächsten freien Port."
@@ -53,6 +59,20 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d|--debug)
             DEBUG="--debug"
+            shift
+            ;;
+        --reset)
+            RESET_MODE="yes"
+            shift
+            # Prüfe auf direkt folgendes -y/--yes
+            if [[ "${1:-}" == "-y" || "${1:-}" == "--yes" || "${1:-}" == "-yes" ]]; then
+                RESET_FORCE="yes"
+                shift
+            fi
+            ;;
+        -y|--yes|-yes)
+            # Kann vor oder nach --reset stehen
+            RESET_FORCE="yes"
             shift
             ;;
         -*)
@@ -73,6 +93,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Prüfen, ob -y/--yes vor --reset kam (z.B. ./start.sh -y --reset)
+if [[ -z "$RESET_MODE" && -n "$RESET_FORCE" ]]; then
+    # RESET_FORCE ohne RESET_MODE ist ungültig → ignorieren
+    RESET_FORCE=""
+fi
+
 # Port default setzen falls nicht gesetzt
 WANTED_PORT="${WANTED_PORT:-8080}"
 
@@ -81,6 +107,81 @@ if [ "${2:-}" = "-d" ] || [ "${1:-}" = "-d" ]; then
     if [ "${1:-}" = "-d" ]; then
         WANTED_PORT=8080
     fi
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# RESET-Funktion: Setzt den Server auf Werkseinstellungen zurück
+# ═══════════════════════════════════════════════════════════════
+
+reset_server() {
+    local force="${1:-}"
+
+    echo ""
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║   ⚠️   SERVER ZURÜCKSETZEN                           ║"
+    echo "╚══════════════════════════════════════════════════════╝"
+    echo ""
+    echo "${RED}⚠  ACHTUNG: Dieser Vorgang löscht unwiderruflich alle${NC}"
+    echo "${RED}   Benutzerdaten: Wiki-Seiten, Rohquellen und Exporte!${NC}"
+    echo ""
+
+    if [[ "$force" != "yes" ]]; then
+        echo -n "Bestätige mit 'RESET': "
+        read -r confirm
+        if [[ "$confirm" != "RESET" ]]; then
+            echo "❌ Reset abgebrochen."
+            exit 0
+        fi
+    fi
+
+    echo ""
+    echo "🔄 Lösche Wiki-Seiten (wiki/) …"
+    rm -rf "$SCRIPT_DIR/wiki"/*
+    echo "🔄 Lösche Rohquellen (raw/) …"
+    rm -rf "$SCRIPT_DIR/raw"/*
+    echo "🔄 Lösche Exporte (output_docs/) …"
+    rm -rf "$SCRIPT_DIR/output_docs"/*
+
+    # index.md und log.md OKF-konform neu anlegen
+    echo "🔄 Erstelle leeres Wiki-Grundgerüst …"
+    mkdir -p "$SCRIPT_DIR/wiki" "$SCRIPT_DIR/raw" "$SCRIPT_DIR/output_docs"
+
+    cat > "$SCRIPT_DIR/wiki/index.md" <<-EOF
+---
+okf_version: "0.1"
+---
+# Wiki-Index
+
+> Automatisch gepflegtes Inhaltsverzeichnis.
+EOF
+
+    cat > "$SCRIPT_DIR/wiki/log.md" <<-EOF
+---
+okf_version: "0.1"
+---
+# Wiki-Aktivitätslogbuch
+
+| Datum & Zeit | Aktion | Datei | Beschreibung |
+| --- | --- | --- | --- |
+EOF
+
+    # qmd-Collection zurücksetzen falls installiert
+    if command -v qmd &>/dev/null; then
+        echo "🔄 Setze qmd-Suchindex zurück …"
+        qmd collection remove "my_wiki" --yes 2>/dev/null || true
+        qmd collection add "$SCRIPT_DIR/wiki" --name "my_wiki" 2>/dev/null || true
+    fi
+
+    echo ""
+    echo "✅ Server erfolgreich zurückgesetzt!"
+    echo "   Alle Benutzerdaten wurden gelöscht."
+    echo "   Du kannst den Server jetzt neu starten: ./start.sh"
+    exit 0
+}
+
+# --reset wurde angefordert
+if [[ -n "$RESET_MODE" ]]; then
+    reset_server "$RESET_FORCE"
 fi
 
 # ═══════════════════════════════════════════════════════════════
@@ -169,7 +270,7 @@ echo ""
 echo "╔════════════════════════════════════════════════╗"
 echo "║  $APP_NAME"
 echo "║  edition by ZeroDot1"
-echo "║  Version 1.2.0"
+echo "║  Version $(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo '1.8.0')"
 echo "╠════════════════════════════════════════════════╣"
 echo "║  📂 Wiki:     $SCRIPT_DIR/wiki"
 echo "║  🌐 URL:      http://localhost:${PORT}"

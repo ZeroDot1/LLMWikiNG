@@ -1075,6 +1075,21 @@ async def settings_post(request: Request):
                 update_log_output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
             except Exception as e:
                 update_log_output = f"FEHLER: {e}"
+    elif action == "restart_server":
+        # Startet den Server neu, indem der Hauptprozess beendet wird.
+        # Im Docker-Container (restart: always) oder via Systemd wird der Prozess sofort neu gestartet.
+        import sys
+        import signal
+        import time
+        
+        def kill_server():
+            time.sleep(1) # Ermöglicht dem Browser, die Response noch zu empfangen
+            os.kill(os.getpid(), signal.SIGTERM)
+            
+        import threading
+        threading.Thread(target=kill_server).start()
+        
+        config_success_msg = "Server-Neustart wurde initiiert. Bitte lade die Seite in 5 Sekunden neu."
     else:
         smtp_host = form.get("smtp_host", "smtp.gmail.com")
         try:

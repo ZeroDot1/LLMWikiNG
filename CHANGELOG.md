@@ -5,6 +5,18 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] – 2026-07-16
+
+### WebUI-Server-Neustart & Robusterer Daten-Erhalt bei Updates
+
+#### Added
+- **Webserver-Neustart in WebUI**: Nach einem Update wird im Log-Bereich der Settings ein Button angezeigt, mit dem der Webserver direkt aus der GUI heraus neu gestartet werden kann (beendet den Python-Prozess sauber; im Docker-Container führt `restart: always` zum automatischen Booten).
+
+#### Fixed
+- **Robusterer Daten-Erhalt bei Updates**: Die Benutzer-Datenbanken (`data/users.json`, `data/api_keys.json`) und die `config.json` werden nun vor Git-Operationen im Update-Skript explizit in das Backup gesichert und danach wiederhergestellt, um Datenverlust beim Überschreiben oder Stashen vollkommen auszuschließen.
+
+---
+
 ## [2.4.2] – 2026-07-16
 
 ### Custom Scrollbars & Erweiterte Netzwerk-Ingest Dokumentation

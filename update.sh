@@ -104,8 +104,8 @@ echo ""
 echo -e "  Erstelle Backup in ${YELLOW}${BACKUP_DIR}${NC}..."
 mkdir -p "$BACKUP_DIR"
 
-# Nur Programmdateien und Konfiguration sichern (nicht wiki/, raw/, output_docs/ oder data/)
-for item in backend frontend lang requirements.txt run.py clean_release.sh Dockerfile docker-compose.yml wiki.sh start.sh update.sh VERSION CHANGELOG.md README.md LICENSE .gitignore .agy.yaml prompts templates static tools; do
+# Sichert den gesamten aktuellen Daten- und Config-Stand (inklusive user/key DB) vor dem Git-Reset
+for item in backend frontend lang requirements.txt run.py clean_release.sh Dockerfile docker-compose.yml wiki.sh start.sh update.sh VERSION CHANGELOG.md README.md LICENSE .gitignore .agy.yaml prompts templates static tools data config.json; do
     if [ -e "$item" ]; then
         cp -r "$item" "$BACKUP_DIR/" 2>/dev/null || true
     fi
@@ -118,10 +118,10 @@ echo ""
 
 echo -e "  ${CYAN}Hole neueste Änderungen von GitHub...${NC}"
 
-# Lokale Änderungen stashen (Benutzer-Configs bleiben durch .gitignore geschützt)
-if ! git diff --quiet; then
+# Lokale Änderungen stashen (Benutzer-Configs und DBs temporär sichern)
+if ! git diff --quiet || ! git diff --cached --quiet; then
     echo -e "  ${YELLOW}→ Lokale Änderungen wurden gestashed (bei Bedarf: git stash pop)${NC}"
-    git stash push -m "Auto-Stash vor Update $(date '+%Y-%m-%d %H:%M:%S')"
+    git stash push --keep-index -m "Auto-Stash vor Update $(date '+%Y-%m-%d %H:%M:%S')"
 fi
 
 # Fetch vom Remote
@@ -137,10 +137,23 @@ echo -e "  Neue Version:       ${YELLOW}${NEW_VERSION}${NC}"
 # Reset auf den aktuellsten Stand
 echo ""
 echo -e "  ${CYAN}Aktualisiere Dateien...${NC}"
+
+# Führe den Reset nur für Programmdateien aus und schütze die Benutzerdaten
 git reset --hard origin/main
 
+# Benutzerdaten (data/ und config.json) aus dem Backup wiederherstellen, falls sie verändert/gelöscht wurden
+if [ -d "$BACKUP_DIR/data" ]; then
+    echo -e "  ${GREEN}→ Stellt Benutzerdatenbanken aus Backup wieder her...${NC}"
+    mkdir -p data
+    cp -rf "$BACKUP_DIR/data/"* data/ 2>/dev/null || true
+fi
+if [ -f "$BACKUP_DIR/config.json" ]; then
+    echo -e "  ${GREEN}→ Stellt config.json aus Backup wieder her...${NC}"
+    cp -f "$BACKUP_DIR/config.json" config.json 2>/dev/null || true
+fi
+
 # Ausführbare Berechtigungen setzen
-chmod +x wiki.sh start.sh tools/*.sh update.sh 2>/dev/null || true
+chmod +x wiki.sh start.sh tools/*.sh update.sh change_secret.sh clean_release.sh 2>/dev/null || true
 
 # ─── Fertig ───────────────────────────────────────────────────────────────────
 

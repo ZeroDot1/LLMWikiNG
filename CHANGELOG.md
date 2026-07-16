@@ -5,6 +5,16 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] – 2026-07-16
+
+### Custom Scrollbars & Erweiterte Netzwerk-Ingest Dokumentation
+
+#### Added
+- **Custom Scrollbar Styling**: CSS-Scrollbars wurden global für das gesamte Web-Interface (inklusive Codeblöcken und Pre-Elementen) hinzugefügt, um ein einheitliches Tokyo-Night/Blue-Violet Design über alle Browser (Chrome, Safari, Firefox) hinweg zu gewährleisten.
+- **Erweiterte Ingest-Dokumentation**: README.md, about.html und about_de.html wurden um detaillierte Erklärungen zum direkten Netzwerk-Ingest über die HTTP-API (mit curl-Beispiel) und der sicheren API-Key-Recovery-Modalitäten erweitert.
+
+---
+
 ## [2.4.1] – 2026-07-16
 
 ### Lizenz-Refactoring & API-Key Recovery unter Settings

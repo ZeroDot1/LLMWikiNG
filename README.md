@@ -57,12 +57,14 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 *   **🕸️ Interactive Knowledge Graph**: Visualizes all relationships of your pages in a color-coded, dynamic 2D network (fully offline — custom dependency-free Canvas engine, no external libraries). Contradictions/conflicts are shown in red dashed lines.
 *   **📰 Weekly Reports & Email Briefings**: Aggregate weekly changes, generate new briefing files in the wiki, and send them securely via the integrated SMTP client to your recipients. Configuration is done via the web interface (saved in `config.json`) with integrated quick presets for **Gmail**, **ProtonMail Bridge**, and **Mail.ru**.
 *   **⏳ Pending Ingest**: Shows un-ingested files in `raw/` and allows ingesting them individually or as a batch ("Ingest All") via the web interface.
-*   **📥 Web Ingest & Ingest Later**: Convenient upload and text paste, as well as remembering URLs and notes in `ingestlater.md`.
+*   **📥 Netzwerk- & Web-Ingest**: 
+    - **Web-Interface**: Bequemer Upload, URL-Import, Text-Paste oder URL-Merkzettel in `ingestlater.md`.
+    - **Direkter Netzwerk-Ingest (API)**: Ermöglicht das vollautomatische Hochladen und sofortige Verarbeiten von Quelltexten, URLs oder Dateien aus der Ferne direkt über das Netzwerk. Du kannst Dokumente via curl oder Client-Skript einsenden, die dann sofort KI-Zusammenfassungen erhalten und OKF-konform in das gewünschte Wiki integriert werden.
 *   **📤 Export Management**: View all exported documents in the browser, read them rendered, or download them directly.
 *   **🔍 Search with Term Highlighting**: Lightning-fast BM25 search across the entire wiki, raw files, and exports with colored highlights in the text.
 *   **🏥 Web Linter**: Shows orphaned pages, stale pages (staleness), broken raw-source references (Raw File Refs), and open link references sorted by their importance (frequency).
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Protects wiki pages, raw sources, and configuration.
-*   **⚙️ Settings**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **User Management**, **API-Key Management**, SMTP email configuration, health check, and update function.
+*   **⚙️ Settings**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **User Management**, **API-Key Management** (mit sicherer **API-Key Recovery** nach Passwortverifizierung), SMTP email configuration, health check, and update function.
 *   **🌗 Appearance**: The theme (Dark/Light) is changed exclusively in the settings (`/settings?tab=theme`) and persisted in `config.json`. Dark mode is the default and is loaded server-side — without a toggle in the sidebar.
 
 ### Starting the Web Interface:
@@ -116,6 +118,7 @@ is automatically moved to `wikis/main/` on first start.
 *   `/register` – User registration (called on first start for setup).
 *   `/users`, `/users/<id>/delete` – User management (admin only).
 *   `/api-keys`, `/api-keys/<id>/delete` – API-key management (admin only).
+*   `/api-keys/reveal` – **API-Key Recovery**: Sichert nach Passworteingabe die Entschlüsselung und Anzeige existierender Keys im Web-Interface.
 *   `/wikis/new` – Create a new wiki via the web UI.
 *   `/wiki/<name>/` – Wiki home page (`index.md` of the wiki).
 *   `/wiki/<name>/<page>` – Rendered Markdown view of a wiki page with backlinks/trail.
@@ -144,6 +147,16 @@ After initial setup, self-registration is automatically disabled to protect the 
 All functions are also accessible via a **JSON API** under `/LLMWikiNG/api/v1`,
 protected by **API keys** (`X-API-Key` header). A key can optionally
 require that an additional password (`X-API-Password`) is sent:
+
+#### Direkter Netzwerk-Ingest per curl:
+Um ein Dokument aus der Ferne in das Wiki `main` zu ingestieren und per Vektor-Index zu synchronisieren:
+```bash
+# Hochladen einer Markdown-Datei ohne Passwort-Erzwingung:
+curl -X POST \
+  -H "X-API-Key: llmw_dein_api_key_hier" \
+  -F "file=@/pfad/zu/dokument.md" \
+  "http://192.168.2.170:8082/LLMWikiNG/wiki/main/api/ingest"
+```
 
 | Method | Path | Protection |
 |---------|------|--------|

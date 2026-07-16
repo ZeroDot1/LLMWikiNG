@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ _('about.page_title') }}{% endblock %}
+
+{% block content %}
+<div class="wiki-content">
+    <h1>{{ _('about.heading') }}</h1>
+    <p><strong>LLMWikiNG (OKF Edition)</strong> ist eine von <strong>ZeroDot1</strong> entwickelte, lokale und datenschutzfreundliche Wiki-Plattform, die auf dem standardisierten <strong>Open Knowledge Format (OKF) v0.1</strong> basiert und vom Karpathy LLM-Wiki-Pattern inspiriert wurde. Das Wiki wird von intelligenten KI-Assistenten gepflegt und erweitert – und du kannst es bequem im Browser lesen, durchsuchen und verwalten.</p>
+    
+    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 my-6 text-sm text-text-secondary">
+        💛 <strong>Unterstütze das Projekt:</strong> Ich stecke sehr viel Zeit, Geld und Herzblut in die Entwicklung dieses Projekts, um eine freie und datenschutzfreundliche Wissensdatenbank anzubieten. Jede noch so kleine Unterstützung hilft mir enorm, LLMWikiNG weiter zu verbessern! Wenn du mir helfen möchtest, kannst du gerne einen Blick auf meine <a href="https://www.amazon.de/hz/wishlist/ls/WRMQJT0MKFEL/" target="_blank" class="text-primary font-semibold hover:underline">Amazon-Wunschliste</a> werfen. Vielen Dank!
+    </div>
+
+    <p>Ein ganz besonderer Dank geht an <a href="https://github.com/tevsa" target="_blank">https://github.com/tevsa</a> für die großartige Idee und hervorragende Unterstützung bei der Umsetzung dieses Projekts!</p>
+
+    <h2>{{ _('about.features_heading') }}</h2>
+    <ul>
+        <li>📦 <strong>Open Knowledge Format (OKF)</strong> – Vollständig konform mit der OKF v0.1-Spezifikation (YAML-Frontmatter, Typen, Ressourcen und strukturierte Pfade).</li>
+        <li>🔗 <strong>Native Markdown Links</strong> – Verwendet standardisierte Markdown-Verknüpfungen (<code>[Anzeige](/pfad/zur/seite.md)</code>) anstelle proprietärer Wikilinks.</li>
+        <li>🗂️ <strong>Mehrere Wikis (Multi-Wiki)</strong> – Beliebig viele, voneinander getrennte Wikis unter <code>wikis/&lt;Name&gt;/</code>, verwaltet über die WebUI.</li>
+        <li>✍️ <strong>Universeller Editor (WYSIWYG &amp; Markdown)</strong> – Integrierter Dual-Mode-Editor zum Erstellen und Bearbeiten von Wiki-Seiten und Rohquellen direkt im Browser.</li>
+        <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (vollständig offline – eigene abhängigkeitsfreie Canvas-Engine, keine externen Bibliotheken).</li>
+        <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite.</li>
+        <li>📰 <strong>Wochenberichte &amp; E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen und versendet sie sicher über einen integrierten SMTP-Client.</li>
+        <li>🔍 <strong>Volltextsuche</strong> – Superschnelle BM25-Suche im Wiki, in Rohquellen und exportierten Dokumenten mit Treffer-Hervorhebung.</li>
+        <li>⏳ <strong>Ausstehender Ingest</strong> – Manuell abgelegte Dateien per Knopfdruck einzeln oder im Stapel ins Wiki überführen.</li>
+        <li>📤 <strong>Export &amp; Verwaltung</strong> – Wiki-Seiten in den Exportordner kopieren und dort ansehen oder herunterladen.</li>
+        <li>📝 <strong>Später einspielen</strong> – Notieren von Web-URLs und Texten zum späteren Import.</li>
+        <li>🩹 <strong>Gesundheitscheck (Lint)</strong> – Spürt verwaiste Seiten, nicht existierende Link-Ziele und veraltete Seiten auf.</li>
+        <li>🌗 <strong>Erscheinungsbild (Theme)</strong> – Dunkles oder helles Design, dauerhaft in <code>config.json</code> gespeichert (Standard: Dunkel).</li>
+        <li>🔐 <strong>Authentifizierung &amp; API</strong> – Login mit Argon2-Hashes, automatischer Setup-Umleitung, selbsttätiger API-Key-Generierung auf der Registrierungsseite sowie API-Key-Verwaltung und JSON-API unter <code>/api/v1</code>.</li>
+        <li>⬇️ <strong>Self-Update</strong> – Integrierte Update-Funktion per Klick.</li>
+        <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprache, Erscheinungsbild, SMTP, Benutzerverwaltung, API-Schlüssel, Registrierungssteuerung, Gesundheitscheck und Update.</li>
+    </ul>
+
+    <h2>{{ _('about.version_heading') }}</h2>
+    <p><strong>{{ _('about.version_text') }} {{ app_version }}</strong></p>
+
+    <h2>{{ _('about.tech_heading') }}</h2>
+    <table>
+        <tr><th>{{ _('about.tech_table_component') }}</th><th>{{ _('about.tech_table_version') }}</th></tr>
+        <tr><td>Python</td><td>{{ python_version }}</td></tr>
+        <tr><td>FastAPI (ASGI Framework)</td><td>{{ fastapi_version }}</td></tr>
+        <tr><td>Uvicorn (ASGI Server)</td><td>{{ uvicorn_version }}</td></tr>
+        <tr><td>Python-Markdown</td><td>{{ markdown_version }}</td></tr>
+        <tr><td>qmd</td><td>{{ qmd_version }}</td></tr>
+        <tr><td>Jinja2</td><td>{{ jinja_version }}</td></tr>
+    </table>
+
+    <h2>{{ _('about.project_structure_heading') }}</h2>
+    <pre>LLMWikiNG/
+50: ├── run.py               # 🚀 Einstiegspunkt (startet den FastAPI-Server)
+├── change_secret.sh     # 🔑 Generiert ein neues kryptografisches Geheimnis (Secret)
+├── backend/             # FastAPI-Backend (core/, api/, services/)
+52: │   ├── main.py          # create_app(), uvicorn-Einstieg
+53: │   ├── web.py           # Jinja2Templates, base_context()
+54: │   ├── core/            # config, security (Argon2), storage
+55: │   ├── api/routes/      # pages.py, auth.py, api.py
+56: │   └── services/        # wiki, markdown, search, graph, lint, …
+57: ├── frontend/            # Tailwind-CSS-v4-Pipeline
+58: ├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint, Update)
+59: ├── update.sh            # ⬇️ Selbstupdate-Skript (Git-basiert)
+60: ├── config.json          # ⚙️ Theme, SMTP &amp; Sprache
+61: ├── start.sh             # Starter-Skript
+62: ├── wikis/               # Multi-Wiki-Speicher (wiki/ → wikis/main/)
+63: ├── raw/                 # Archivierte Rohquellen
+64: ├── tools/               # Hilfswerkzeuge
+65: ├── templates/           # HTML-Templates (Jinja2)
+66: ├── static/              # CSS (Tailwind), JS-Module, Graph-Engine (Vanilla JS)
+67: ├── output_docs/         # Exportierte Dokumente
+68: └── .agy.yaml            # Agent-Konfiguration</pre>
+
+    <h2>{{ _('about.endpoints_heading') }}</h2>
+    <table>
+        <tr><th>{{ _('about.endpoints_table_route') }}</th><th>{{ _('about.endpoints_table_desc') }}</th></tr>
+        <tr><td><code>/</code></td><td>Dashboard (Wiki-Übersicht, Statistiken &amp; Aktivitäts-Timeline)</td></tr>
+        <tr><td><code>/login</code>, <code>/logout</code></td><td>Anmeldung (Benutzername + Passwort)</td></tr>
+        <tr><td><code>/users</code>, <code>/api-keys</code></td><td>Benutzer- &amp; API-Key-Verwaltung (nur Admin)</td></tr>
+        <tr><td><code>/wikis/new</code></td><td>Neues Wiki über die WebUI anlegen</td></tr>
+        <tr><td><code>/wiki/&lt;name&gt;/</code></td><td>Wiki-Startseite (<code>index.md</code>)</td></tr>
+        <tr><td><code>/wiki/&lt;name&gt;/&lt;page&gt;</code></td><td>Rendert eine Wiki-Seite (inkl. Backlinks/Trail)</td></tr>
+        <tr><td><code>/wiki/&lt;name&gt;/&lt;page&gt;/export</code></td><td>Kopiert die Seite als Markdown nach <code>output_docs/</code></td></tr>
+        <tr><td><code>/wiki/&lt;name&gt;/&lt;page&gt;/delete</code></td><td>Löscht die Seite und aktualisiert den Suchindex</td></tr>
+        <tr><td><code>/search</code></td><td>BM25-Volltextsuche</td></tr>
+        <tr><td><code>/lint</code></td><td>Web-Linter (Gesundheitscheck)</td></tr>
+        <tr><td><code>/status</code></td><td>Systemstatus, Konfiguration und Analyse</td></tr>
+        <tr><td><code>/briefings</code></td><td>Generiert Wochenberichte und versendet sie per E-Mail</td></tr>
+        <tr><td><code>/config</code></td><td>SMTP-Konfiguration</td></tr>
+        <tr><td><code>/ingest</code></td><td>Datei-Upload, Textpaste oder Merkzettel-Import</td></tr>
+        <tr><td><code>/graph</code></td><td>🕸️ Interaktiver Wissensgraph</td></tr>
+        <tr><td><code>/pending</code></td><td>⏳ Ausstehende Ingests</td></tr>
+        <tr><td><code>/raw</code></td><td>📦 Rohquellen-Übersicht</td></tr>
+        <tr><td><code>/edit</code></td><td>✍️ Universeller Editor</td></tr>
+        <tr><td><code>/settings</code></td><td>⚙️ Einstellungen (Sprache, Erscheinungsbild, SMTP, Benutzer, API-Schlüssel, Health, Update)</td></tr>
+        <tr><td><code>/docs</code></td><td>📚 Dokumentation</td></tr>
+        <tr><td><code>/about</code></td><td>ℹ️ Über-Seite</td></tr>
+        <tr><td><code>/api/v1/*</code></td><td>🔌 JSON-API (Key-geschützt): Wikis, Seiten, Suche, Graph, Stats, Lint, Status, User, API-Keys, Ingest, Export, System</td></tr>
+    </table>
+
+    <h2>🚀 Server-Parameter</h2>
+    <p>Der Webserver kann mit folgenden Parametern gestartet werden (direkt oder via <code>start.sh</code>):</p>
+    <table>
+        <tr><th>Parameter</th><th>Via start.sh</th><th>Beschreibung</th></tr>
+        <tr><td><code>--port, -p PORT</code></td><td><code>./start.sh 9090</code></td><td>Port (Standard: <code>8080</code>)</td></tr>
+        <tr><td><code>--host, -H HOST</code></td><td>—</td><td>Binde-Adresse (Standard: <code>0.0.0.0</code>)</td></tr>
+        <tr><td><code>--debug, -d</code></td><td><code>./start.sh -d</code></td><td>Debug-Modus (Live-Reload)</td></tr>
+        <tr><td><code>--lang, -l CODE</code></td><td><code>./start.sh --lang en</code></td><td>Startsprache</td></tr>
+    </table>
+
+    <h2>🛠️ CLI-Befehle &amp; Wiki-Reset</h2>
+    <table>
+        <tr><th>Befehl</th><th>Beschreibung</th></tr>
+        <tr><td><code>./wiki.sh init</code></td><td>Initialisiert die Ordnerstruktur, qmd-Collection, index.md und log.md</td></tr>
+        <tr><td><code>./wiki.sh search "Text"</code></td><td>Führt eine BM25- und Vektor-Hybridsuche über qmd aus</td></tr>
+        <tr><td><code>./wiki.sh ingest &lt;datei&gt;</code></td><td>Spielt eine neue Quelle in das Wiki ein</td></tr>
+        <tr><td><code>./wiki.sh export &lt;seite&gt;</code></td><td>Exportiert eine Wiki-Seite nach <code>output_docs/</code></td></tr>
+        <tr><td><code>./wiki.sh list</code></td><td>Listet alle Wiki-Dokumente auf</td></tr>
+        <tr><td><code>./wiki.sh lint</code></td><td>Führt einen Gesundheitscheck durch</td></tr>
+        <tr><td><code>./wiki.sh sync</code></td><td>Aktualisiert Vektor-Embeddings über qmd</td></tr>
+        <tr><td><code>./wiki.sh reindex</code></td><td>Baut index.md und log.md neu auf</td></tr>
+        <tr><td><code>./wiki.sh status</code></td><td>Zeigt Wiki-Statistiken und Systemzustand</td></tr>
+        <tr><td><code>./wiki.sh config</code></td><td>Zeigt die aktuelle Konfiguration</td></tr>
+        <tr><td><code>./wiki.sh reset</code></td><td>⚠️ Setzt das Wiki auf den Werkszustand zurück</td></tr>
+        <tr><td><code>./wiki.sh update</code></td><td>⬇️ Selbstupdate via GitHub</td></tr>
+        <tr><td><code>./wiki.sh help</code></td><td>Zeigt die Hilfe an</td></tr>
+    </table>
+
+    <h2>⚖️ Lizenz</h2>
+    <p>
+        Dieses Projekt ist unter der <strong>GNU Affero General Public License v3.0 (AGPL-3.0)</strong> lizenziert.<br>
+        Unter dieser Lizenz müssen alle modifizierten Versionen der Software, die als Dienst über ein Netzwerk bereitgestellt werden, ihren vollständigen Quellcode unter denselben Lizenzbedingungen offenlegen.<br>
+        Siehe die <a href="/LLMWikiNG/LICENSE" class="underline">LICENSE</a>-Datei für den vollständigen Lizenztext.
+    </p>
+
+    <h2>📦 Lizenzen von Drittanbieter-Komponenten</h2>
+    <p>Dieses Projekt nutzt folgende eigene/externe Komponenten:</p>
+    <h3>Canvas-Graph-Engine (Wissensgraph)</h3>
+    <p>
+        Eigene abhängigkeitsfreie Graph-Engine &ndash; Force-Directed-Layout gerendert via Canvas-2D-API (keine externen Bibliotheken).<br>
+        <em>Autor:</em> ZeroDot1 für LLMWikiNG &middot; <em>Lizenz:</em> AGPL-3.0
+    </p>
+
+
+
+    <h2>🔗 Links</h2>
+    <ul>
+        <li><a href="https://github.com/GoogleCloudPlatform/knowledge-catalog" target="_blank">Google Cloud Platform - Knowledge Catalog (OKF Repository)</a></li>
+        <li><a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f" target="_blank">Original Karpathy LLM-Wiki Gist</a></li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+services:
+  llmwiking:
+    build: .
+    container_name: llmwiking_app
+    ports:
+      - "8082:8080" # Mappt Port 8082 des Hosts auf Port 8080 des Containers
+    restart: unless-stopped
+    # HINWEIS: Es sind absichtlich keine Volumes / Mounts konfiguriert. 
+    # Gemäß deiner Anforderung werden alle Dateien (Wikis, Rohquellen, Datenbanken) 
+    # ausschließlich im beschreibbaren Layer innerhalb des Containers gespeichert.
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - LLMWIKI_SECRET=5e5d3fa9de1e6c382217cff17849e7b2b7fb9842272883c576420d605e9f30c6 # Festes, sicheres Secret
+

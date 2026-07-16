@@ -40,3 +40,10 @@ Thumbs.db
 .desktop.ini
 *.bak
 *.orig
+
+# ─── FastAPI-Backend (neu) ──────────────────────────────────
+llmwiki.db
+wikis_data/
+.env
+node_modules/
+frontend/static/css/tailwind-build.css

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Dokumentation{% endblock %}
+
+{% block content %}
+<div class="wiki-content space-y-10">
+
+  <header class="border-b border-border pb-6">
+    <h1 class="text-3xl md:text-4xl font-bold">📚 Dokumentation – LLMWikiNG</h1>
+    <p class="mt-2 text-text-secondary">Version {{ app_version }} ·
+      Vollständiges Handbuch für Einrichtung, Multi-Wiki, Authentifizierung und API.</p>
+  </header>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🚀 Erste Schritte</h2>
+    <ol class="list-decimal list-inside space-y-2 text-text-secondary">
+      <li>Abhängigkeiten installieren: <code>pip install -r requirements.txt</code></li>
+      <li>Server starten: <code>./start.sh</code> (oder <code>python3 run.py --port 8080</code>)</li>
+      <li>Beim <strong>ersten Start</strong> (Setup) wirst du automatisch auf <code>/register</code> umgeleitet, um den ersten Benutzer (Administrator) anzulegen.</li>
+      <li>Im Browser öffnen: <code>http://localhost:8080/LLMWikiNG/</code></li>
+    </ol>
+    <p class="mt-3 text-sm text-text-muted">Das ursprüngliche <code>wiki/</code> wird beim ersten Start
+      automatisch nach <code>wikis/main/</code> verschoben (Daten bleiben erhalten).</p>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🗂️ Mehrere Wikis (Unter-Wikis)</h2>
+    <p class="text-text-secondary">Jedes Wiki liegt in <code>wikis/&lt;name&gt;/</code> und hat einen eigenen
+      Namen. Über die WebUI lässt sich ein neues Wiki anlegen:</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><code>/LLMWikiNG/wikis/new</code> – Wiki über das Formular erstellen.</li>
+      <li>Wiki-Startseite: <code>/LLMWikiNG/wiki/&lt;Name&gt;/</code></li>
+      <li>Wiki-Seite: <code>/LLMWikiNG/wiki/&lt;Name&gt;/&lt;Seite&gt;</code></li>
+    </ul>
+    <p class="mt-3 text-sm text-text-muted">Der Basis-Pfad ist über die Umgebungsvariable
+      <code>LLMWIKI_BASE_PATH</code> konfigurierbar (Standard: <code>/LLMWikiNG</code>),
+      z. B. für <code>example.com/LLMWikiNG/wiki/&lt;Name&gt;/</code>.</p>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🔐 Authentifizierung &amp; Benutzerverwaltung</h2>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li>Login mit Benutzername + Passwort (Argon2-Hashes, signierte Sessions).</li>
+      <li>Registrierung über <code>/register</code> (wird nach dem ersten Benutzer automatisch deaktiviert).</li>
+      <li><code>/LLMWikiNG/users</code> – Benutzer anlegen/löschen (nur Admin).</li>
+      <li><code>/LLMWikiNG/api-keys</code> – API-Keys verwalten (nur Admin).</li>
+      <li>Ein API-Key kann optional verlangen, dass zusätzlich ein Passwort
+        (<code>X-API-Password</code>) mitgesendet wird.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">⚙️ Einstellungen (Settings-Tabs)</h2>
+    <p class="text-text-secondary">Die zentrale Konfigurationsseite <code>/LLMWikiNG/settings</code> ist in Tabs unterteilt:</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><strong>Sprache</strong> – Sprachumschaltung (DE/EN, Cookie).</li>
+      <li><strong>Erscheinungsbild</strong> – Theme Dark/Light, persistent in <code>config.json</code> gespeichert.</li>
+      <li><strong>SMTP</strong> – E-Mail-Konfiguration für Wochenberichte/Briefings (in <code>config.json</code>).</li>
+      <li><strong>Benutzerverwaltung</strong> – Benutzer anlegen/löschen, Rollen (Admin/Editor/Viewer).</li>
+      <li><strong>API-Schlüssel</strong> – API-Keys erzeugen/widerrufen, optional mit Passwort-Pflicht.</li>
+      <li><strong>Registrierung</strong> – Einstellen ob die Benutzerregistrierung unter /register aktiv ist.</li>
+      <li><strong>Gesundheitscheck</strong> – Linter (Orphans, fehlende Links, Staleness, Raw-Refs).</li>
+      <li><strong>Update</strong> – Selbstupdate via GitHub.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🌐 API (JSON, Key-geschützt)</h2>
+    <p class="text-text-secondary">Alle Funktionen sind unter <code>/LLMWikiNG/api/v1</code> per
+      <code>X-API-Key</code>-Header erreichbar.</p>
+
+    <!-- Skill Download -->
+    <div class="my-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>
+        <h3 class="font-semibold text-yellow-500">⚙️ Antigravity AI-Skill Fernbedienung</h3>
+        <p class="text-xs text-text-secondary">Nutze die offizielle Fernbedienung (SKILL.md) für deinen Antigravity-Agenten zur automatischen Steuerung des Wikis.</p>
+      </div>
+      <a href="{{ base_path }}/skills/SKILL.md" download class="rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 text-sm whitespace-nowrap shadow-sm">📥 Skill herunterladen</a>
+    </div>
+
+    <div class="overflow-x-auto mt-2">
+      <table class="w-full text-sm border border-border rounded-lg overflow-hidden">
+        <thead class="bg-bg-sunken">
+          <tr><th class="text-left p-2">Methode</th><th class="text-left p-2">Pfad</th><th class="text-left p-2">Beschreibung</th></tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis</code></td><td class="p-2">Alle Wikis</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">Seiten eines Wikis</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;</code></td><td class="p-2">Eine Seite</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">Seite anlegen (Scope <code>write</code>)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;/export</code></td><td class="p-2">Seite exportieren</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/ingest</code></td><td class="p-2">Datei hochladen (raw/)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pending</code></td><td class="p-2">Ausstehende Ingests</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/ingest/process</code></td><td class="p-2">Ingest verarbeiten</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/search?q=&amp;wiki=</code></td><td class="p-2">Volltextsuche</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/graph?wiki=</code></td><td class="p-2">Graph-Daten</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/stats?wiki=</code></td><td class="p-2">Statistik</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/lint?wiki=</code></td><td class="p-2">Linter</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/status</code></td><td class="p-2">Serverstatus</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System &amp; Traffic (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync aller Wikis (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Benutzer (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Benutzer anlegen (Admin)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/users/&lt;id&gt;</code></td><td class="p-2">Benutzer löschen (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">API-Keys (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">Key erzeugen (Admin)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/api-keys/&lt;id&gt;</code></td><td class="p-2">Key widerrufen (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/ingest</code></td><td class="p-2">Direkter Ingest für spezifisches Wiki (API-Key)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/sync</code></td><td class="p-2">Direktes Syncen für spezifisches Wiki (API-Key)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 space-y-4">
+      <h3 class="text-xl font-semibold">📋 cURL-Befehlsbeispiele (Fernbedienung)</h3>
+      <p class="text-sm text-text-secondary">Exportiere deine Variablen, um die Befehle direkt zu kopieren:</p>
+      <pre class="bg-bg-sunken p-3 rounded-lg text-xs"><code>export API_KEY="llmw_dein_key"
+export SERVER_URL="http://localhost:8082/LLMWikiNG"
+export WIKI="main"</code></pre>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <strong>1. Wikis auflisten:</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis"</code></pre>
+        </div>
+        <div>
+          <strong>2. Wiki-Seiten auslesen:</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI/pages"</code></pre>
+        </div>
+        <div>
+          <strong>3. Spezifische Seite abrufen:</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI/pages/llm-wiki"</code></pre>
+        </div>
+        <div>
+          <strong>4. Neue Seite erstellen (YAML-Frontmatter-Pflicht):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"slug":"api-test","content":"---\ntype: Concept\ntitle: API Test\ntimestamp: 2026-07-14T22:00:00Z\n---\n# API Test\nErfolgreich erstellt!"}' \
+  "$SERVER_URL/api/v1/wikis/$WIKI/pages"</code></pre>
+        </div>
+        <div>
+          <strong>5. Direkter Multi-Wiki-Ingest (Datei, URL oder Text):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># URL-Ingest
+curl -X POST -H "X-API-Key: $API_KEY" -d "url=https://de.wikipedia.org/wiki/Google" -d "title=Google" "$SERVER_URL/wiki/$WIKI/api/ingest"
+
+# Datei-Upload
+curl -X POST -H "X-API-Key: $API_KEY" -F "file=@/pfad/zur/datei.txt" "$SERVER_URL/wiki/$WIKI/api/ingest"
+
+# Text-Paste
+curl -X POST -H "X-API-Key: $API_KEY" -d "text=# Mein Text\nInhalt..." -d "title=Text-Paste" "$SERVER_URL/wiki/$WIKI/api/ingest"</code></pre>
+        </div>
+        <div>
+          <strong>6. Volltextsuche:</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/search?q=Suchbegriff&amp;wiki=$WIKI"</code></pre>
+        </div>
+        <div>
+          <strong>7. Wissensgraph-Netzwerk abrufen:</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI/graph"</code></pre>
+        </div>
+        <div>
+          <strong>8. Benutzer anlegen (nur Admin):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"username":"neuer_user","password":"sicheres_passwort","role":"editor"}' \
+  "$SERVER_URL/api/v1/users"</code></pre>
+        </div>
+        <div>
+          <strong>9. API-Keys auflisten &amp; generieren (nur Admin):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># Listen
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/api-keys"
+
+# Erzeugen (optional mit require_password: true)
+curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"name":"Neuer Key","require_password":false,"scopes":["read","write"]}' \
+  "$SERVER_URL/api/v1/api-keys"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🌗 Erscheinungsbild (Theme)</h2>
+    <p class="text-text-secondary">Das Aussehen (Dark/Light) wird ausschließlich in den
+      Einstellungen gesteuert und persistent in <code>config.json</code> gespeichert
+      (<code>"theme": "dark"</code> bzw. <code>"light"</code>). Dark Mode ist Standard
+      und wird server-seitig geladen – es gibt keine Umschalter-Buttons in der Sidebar.</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><code>/LLMWikiNG/settings?tab=theme</code> – Theme über das Tab „Erscheinungsbild“ ändern.</li>
+      <li><code>POST /LLMWikiNG/theme/set</code> – direkt via Form-Feld <code>value=dark|light</code> (Login nötig).</li>
+      <li>Standard wiederherstellen: <code>"theme"</code> in <code>config.json</code> auf <code>dark</code> setzen.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🎨 Frontend (Tailwind CSS v4)</h2>
+    <p class="text-text-secondary">Das CSS wird über eine CSS-First-Pipeline gebaut
+      (<code>@theme</code> mit oklch-Design-Tokens, Dark Mode, responsiv):</p>
+    <pre class="mt-2"><code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code></pre>
+    <p class="mt-2 text-text-secondary"><code>base.html</code> bindet <code>static/css/tailwind-build.css</code> ein;
+      das gesamte JavaScript liegt als ES-Module unter <code>static/js/</code>.</p>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">⌨️ Wichtige Web-Routen</h2>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li><code>/</code> – Dashboard (Wiki-Übersicht)</li>
+      <li><code>/login</code>, <code>/logout</code>, <code>/users</code>, <code>/api-keys</code></li>
+      <li><code>/wikis/new</code>, <code>/wiki/&lt;Name&gt;/</code>, <code>/wiki/&lt;Name&gt;/&lt;Seite&gt;</code></li>
+      <li><code>/graph</code>, <code>/graph/data?wiki=</code>, <code>/search</code>, <code>/ingest</code></li>
+      <li><code>/raw</code>, <code>/pending</code>, <code>/export</code>, <code>/lint</code>, <code>/status</code></li>
+      <li><code>/settings</code>, <code>/briefings</code>, <code>/config</code>, <code>/about</code>, <code>/docs</code></li>
+    </ul>
+  </section>
+
+</div>
+{% endblock %}

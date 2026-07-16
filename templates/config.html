@@ -2,93 +2,77 @@
 {% block title %}{{ _('config.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('config.heading') }}</h1>
-<p class="subtitle">
-    {{ _('config.subtitle') }}
-</p>
+<h1 class="text-2xl font-bold mb-2">{{ _('config.heading') }}</h1>
+<p class="text-text-secondary mb-6">{{ _('config.subtitle') }}</p>
 
 {% if success_msg %}
-<div class="admonition admonition-tip" style="margin-bottom: 1.5rem;">
-    <strong>{{ _('config.success_prefix') }}</strong> {{ success_msg }}
-</div>
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('config.success_prefix') }}</strong> {{ success_msg }}</div>
 {% endif %}
 {% if error_msg %}
-<div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-    <strong>{{ _('config.error_prefix') }}</strong> {{ error_msg }}
-</div>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('config.error_prefix') }}</strong> {{ error_msg }}</div>
 {% endif %}
 
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 650px; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
-        {{ _('config.smtp_heading') }}
-    </h2>
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+    <h2 class="text-lg font-semibold mb-4 border-b border-border pb-2 text-primary">{{ _('config.smtp_heading') }}</h2>
 
-    <div style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius);">
-        <span style="font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 0.6rem;">{{ _('config.presets_label') }}</span>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
+    <div class="mb-4 rounded-lg border border-border bg-bg-sunken p-3">
+        <span class="block text-sm font-medium text-text-secondary mb-2">{{ _('config.presets_label') }}</span>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
+            <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
+            <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
         </div>
     </div>
 
-    <form action="/config" method="post" style="display: flex; flex-direction: column; gap: 1.2rem;">
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-            <div class="form-group">
-                <label for="smtp_host" style="font-weight: 500;">{{ _('config.smtp_host_label') }}</label>
-                <input type="text" name="smtp_host" id="smtp_host" class="form-control" value="{{ config.smtp_host }}" required>
+    <form action="{{ base_path }}/config" method="post" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+                <label for="smtp_host" class="block font-medium mb-1">{{ _('config.smtp_host_label') }}</label>
+                <input type="text" name="smtp_host" id="smtp_host" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ config.smtp_host }}" required>
             </div>
-            <div class="form-group">
-                <label for="smtp_port" style="font-weight: 500;">{{ _('config.smtp_port_label') }}</label>
-                <input type="number" name="smtp_port" id="smtp_port" class="form-control" value="{{ config.smtp_port }}" required>
+            <div>
+                <label for="smtp_port" class="block font-medium mb-1">{{ _('config.smtp_port_label') }}</label>
+                <input type="number" name="smtp_port" id="smtp_port" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ config.smtp_port }}" required>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="smtp_user" style="font-weight: 500;">{{ _('config.smtp_user_label') }}</label>
-            <input type="text" name="smtp_user" id="smtp_user" class="form-control" value="{{ config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
+        <div>
+            <label for="smtp_user" class="block font-medium mb-1">{{ _('config.smtp_user_label') }}</label>
+            <input type="text" name="smtp_user" id="smtp_user" data-ph-prefix="{{ _('config.preset_placeholder') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
             {% if env_user %}
-            <span style="font-size: 0.75rem; color: var(--accent-green);">{{ _('config.smtp_user_env_ok') }}</span>
+            <span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_user_env_ok') }}</span>
             {% else %}
-            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_user_env_hint') }}</span>
+            <span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_user_env_hint') }}</span>
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label for="smtp_pass" style="font-weight: 500;">{{ _('config.smtp_pass_label') }}</label>
-            <input type="password" name="smtp_pass" id="smtp_pass" class="form-control" value="{{ config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
+        <div>
+            <label for="smtp_pass" class="block font-medium mb-1">{{ _('config.smtp_pass_label') }}</label>
+            <input type="password" name="smtp_pass" id="smtp_pass" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
             {% if env_pass_exists %}
-            <span style="font-size: 0.75rem; color: var(--accent-green);">{{ _('config.smtp_pass_env_ok') }}</span>
+            <span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_pass_env_ok') }}</span>
             {% else %}
-            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_pass_env_hint') }}</span>
+            <span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_pass_env_hint') }}</span>
             {% endif %}
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if config.use_tls %}checked{% endif %}>
-            <label for="use_tls" style="cursor: pointer; font-size: 0.95rem;">{{ _('config.tls_label') }}</label>
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if config.use_tls %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
+            <span>{{ _('config.tls_label') }}</span>
+        </label>
+
+        <div>
+            <label for="recipients" class="block font-medium mb-1">{{ _('config.recipients_label') }}</label>
+            <input type="text" name="recipients" id="recipients" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
+            <span class="block mt-1 text-xs text-text-muted">{{ _('config.recipients_hint') }}</span>
         </div>
 
-        <div class="form-group">
-            <label for="recipients" style="font-weight: 500;">{{ _('config.recipients_label') }}</label>
-            <input type="text" name="recipients" id="recipients" class="form-control" value="{{ config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
-            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.recipients_hint') }}</span>
-        </div>
-
-        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.7rem;">{{ _('config.save_button') }}</button>
-            <a href="/briefings" class="btn btn-secondary" style="padding: 0.7rem; text-decoration: none; text-align: center;">{{ _('config.back_button') }}</a>
+        <div class="flex flex-wrap gap-3 pt-2">
+            <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('config.save_button') }}</button>
+            <a href="{{ base_path }}/briefings" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('config.back_button') }}</a>
         </div>
     </form>
 </div>
 
-<script>
-function applyPreset(host, port, useTls, placeholder) {
-    document.getElementById('smtp_host').value = host;
-    document.getElementById('smtp_port').value = port;
-    document.getElementById('use_tls').checked = useTls;
-    const userEl = document.getElementById('smtp_user');
-    userEl.placeholder = "{{ _('config.preset_placeholder') }} " + placeholder;
-}
-</script>
+<script type="module" src="{{ base_path }}/static/js/presets.js?v={{ app_version }}"></script>
 {% endblock %}

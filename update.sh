@@ -48,13 +48,18 @@ if ! git rev-parse --git-dir &>/dev/null; then
     die "❌ Kein Git-Repository gefunden. Bitte klone das Repository: git clone https://github.com/ZeroDot1/LLMWikiNG.git"
 fi
 
-# Remote prüfen
-if ! git remote get-url origin &>/dev/null; then
-    die "❌ Kein Remote 'origin' konfiguriert."
+# Token-Authentifizierung für private Repositories einrichten
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    ORIGINAL_URL=$(git remote get-url origin)
+    CLEAN_URL=$(echo "$ORIGINAL_URL" | sed -E "s|https://[^@]+@|https://|")
+    AUTH_URL=$(echo "$CLEAN_URL" | sed -E "s|https://|https://${GITHUB_TOKEN}@|")
+    git remote set-url origin "$AUTH_URL"
 fi
 
 REMOTE_URL=$(git remote get-url origin)
-echo -e "  Remote: ${YELLOW}${REMOTE_URL}${NC}"
+# Token in der Terminalausgabe maskieren
+MASKED_URL=$(echo "$REMOTE_URL" | sed -E "s|https://[^@]+@|https://***@|")
+echo -e "  Remote: ${YELLOW}${MASKED_URL}${NC}"
 echo -e "  Aktuelle Version: ${YELLOW}${CURRENT_VERSION}${NC}"
 
 # ─── --check-Modus: Nur prüfen, ob ein Update verfügbar ist ───────────────────
@@ -99,8 +104,8 @@ echo ""
 echo -e "  Erstelle Backup in ${YELLOW}${BACKUP_DIR}${NC}..."
 mkdir -p "$BACKUP_DIR"
 
-# Nur Programmdateien und Konfiguration sichern (nicht wiki/, raw/, output_docs/)
-for item in wiki.sh llmWiki.py email_sender.py start.sh update.sh VERSION CHANGELOG.md README.md LICENSE .gitignore .agy.yaml prompts templates static tools; do
+# Nur Programmdateien und Konfiguration sichern (nicht wiki/, raw/, output_docs/ oder data/)
+for item in backend frontend lang requirements.txt run.py clean_release.sh Dockerfile docker-compose.yml wiki.sh start.sh update.sh VERSION CHANGELOG.md README.md LICENSE .gitignore .agy.yaml prompts templates static tools; do
     if [ -e "$item" ]; then
         cp -r "$item" "$BACKUP_DIR/" 2>/dev/null || true
     fi

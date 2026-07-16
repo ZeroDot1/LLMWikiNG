@@ -21,15 +21,15 @@ set -euo pipefail
 # ═══════════════════════════════════════════════════════════════════════════════
 # VERSION
 # ═══════════════════════════════════════════════════════════════════════════════
-VERSION="1.8.0"
+VERSION="2.3.0"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
-WIKI_DIR="./wiki"
-RAW_DIR="./raw"
-EXPORT_DIR="./output_docs"
-COLLECTION_NAME="my_wiki"
+WIKI_DIR="${WIKI_DIR:-./wiki}"
+RAW_DIR="${RAW_DIR:-./raw}"
+EXPORT_DIR="${EXPORT_DIR:-./output_docs}"
+COLLECTION_NAME="${COLLECTION_NAME:-my_wiki}"
 
 # LLM-Backend (erkannt: ollama, agy, opencode)
 # Für Ingest-Zusammenfassungen / Lint-Analysen
@@ -117,7 +117,8 @@ $text" 2>/dev/null || echo "_Zusammenfassung nicht verfügbar (ollama nicht erre
 
 # ─── Index updaten ────────────────────────────────────────────────────────────
 update_index() {
-    python3 -c "import sys; sys.path.insert(0, '.'); from llmWiki import regenerate_index; regenerate_index()"
+    local wiki_name=$(basename "$WIKI_DIR")
+    python3 -c "import sys; sys.path.insert(0, './backend'); from services.sync import regenerate_index; regenerate_index('$wiki_name')"
     echo -e "${GREEN}✓ index.md aktualisiert (via Python/OKF)${NC}"
 }
 
@@ -126,7 +127,8 @@ append_log() {
     local action="$1"    # z. B. "ingest", "lint", "query"
     local title="$2"
     local details="${3:-}"
-    python3 -c "import sys; sys.path.insert(0, '.'); from llmWiki import append_okf_log; append_okf_log('$action', '$title', '$details')"
+    local wiki_name=$(basename "$WIKI_DIR")
+    python3 -c "import sys; sys.path.insert(0, './backend'); from services.sync import append_okf_log; append_okf_log('$action', '$title', '$details', '$wiki_name')"
     echo -e "${GREEN}✓ log.md aktualisiert (via Python/OKF)${NC}"
 }
 

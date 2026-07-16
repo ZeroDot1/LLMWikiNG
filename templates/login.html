@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ _('login.title') }}{% endblock %}
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-10 bg-bg-sunken">
+    <div class="w-full max-w-md rounded-2xl border border-border bg-surface p-8 shadow-lg">
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-2">🔐</div>
+            <h1 class="text-2xl font-bold">{{ _('login.title') }}</h1>
+            <p class="text-text-secondary text-sm">{{ app_name }}{% if app_edition %} {{ app_edition }}{% endif %} · v{{ app_version }}</p>
+        </div>
+
+        {% if setup %}
+        <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm">{{ _('login.setup_hint') }}</div>
+        {% endif %}
+        {% set login_error = request.query_params.get('error') %}
+        {% if login_error %}
+        <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('login.error') }}</strong> {{ login_error }}</div>
+        {% endif %}
+
+        <form id="loginForm" action="{{ base_path }}/login" method="post" class="space-y-4">
+            <div>
+                <label for="username" class="block font-medium mb-1">{{ _('login.username') }}</label>
+                <input type="text" id="username" name="username" required autofocus class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('login.username') }}">
+            </div>
+            <div>
+                <label for="password" class="block font-medium mb-1">{{ _('login.password') }}</label>
+                <input type="password" id="password" name="password" required class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="••••••••">
+            </div>
+            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                <input type="checkbox" data-toggle-password class="rounded border-border text-primary focus:ring-primary-subtle">
+                <span>{{ _('login.show_password') }}</span>
+            </label>
+            <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2.5 text-white hover:bg-primary-hover">{{ _('login.submit') }}</button>
+        </form>
+    </div>
+</section>
+<script type="module" src="{{ base_path }}/static/js/auth.js?v={{ app_version }}"></script>
+{% endblock %}

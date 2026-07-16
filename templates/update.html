@@ -2,38 +2,37 @@
 {% block title %}{{ _('update.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('update.heading') }}</h1>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold mb-1">{{ _('update.heading') }}</h1>
+</div>
 
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.card_heading') }}</h2>
-    <p>
-        {{ _('update.intro') }}
-    </p>
-
-    <table style="width: 100%; border: none; margin-bottom: 1rem;">
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.repo_label') }}</td>
-            <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.method_label') }}</td>
-            <td><code>git pull</code> (via GitHub)</td></tr>
-        <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.local_version_label') }}</td>
-            <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.card_heading') }}</h2>
+    <p>{{ _('update.intro') }}</p>
+    <table class="w-full text-sm mt-3">
+        <tr><td class="py-1.5 text-text-secondary">{{ _('update.repo_label') }}</td><td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="text-primary">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
+        <tr><td class="py-1.5 text-text-secondary">{{ _('update.method_label') }}</td><td><code>git pull</code> (via GitHub)</td></tr>
+        <tr><td class="py-1.5 text-text-secondary">{{ _('update.local_version_label') }}</td><td><strong id="localVersion">{{ app_version }}</strong></td></tr>
     </table>
 
-    <div id="checkResult" style="margin-bottom: 1rem; display: none;"></div>
+    <div id="checkResult" class="hidden mt-3"
+        data-checking-text="{{ _('update.checking_text') }}"
+        data-error-prefix="{{ _('update.error_prefix') }}"
+        data-up-to-date="{{ _('update.up_to_date') }}"
+        data-local-label="{{ _('update.local_label') }}"
+        data-github-label="{{ _('update.github_label') }}"
+        data-update-available="{{ _('update.update_available') }}"
+        data-run-button="{{ _('update.run_button') }}"></div>
 
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        <button id="checkUpdateBtn" class="btn btn-primary"
-                style="background: var(--accent-hover);"
-                onclick="checkUpdate()">
-            {{ _('update.check_button') }}
-        </button>
+    <div class="flex gap-3 flex-wrap mt-3">
+        <button id="checkUpdateBtn" data-checking="{{ _('update.checking') }}" data-label="{{ _('update.check_button') }}" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="checkUpdate()">{{ _('update.check_button') }}</button>
     </div>
 
-    <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ _('update.sections_heading') }}</h3>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius); padding: 1rem;">
-            <strong style="color: var(--accent-green);">{{ _('update.section_replaced_heading') }}</strong>
-            <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+    <h3 class="mt-5 mb-2 font-semibold">{{ _('update.sections_heading') }}</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="rounded-lg border border-success/30 bg-success-subtle p-3">
+            <strong class="text-success">{{ _('update.section_replaced_heading') }}</strong>
+            <ul class="mt-1 ml-4 text-xs list-disc">
                 <li><strong>llmWiki.py</strong> (Webserver)</li>
                 <li><strong>email_sender.py</strong> (E-Mail)</li>
                 <li>wiki.sh, start.sh, update.sh</li>
@@ -44,9 +43,9 @@
                 <li>VERSION, CHANGELOG, README</li>
             </ul>
         </div>
-        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius); padding: 1rem;">
-            <strong style="color: var(--accent-red);">{{ _('update.section_preserved_heading') }}</strong>
-            <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+        <div class="rounded-lg border border-error/30 bg-error-subtle p-3">
+            <strong class="text-error">{{ _('update.section_preserved_heading') }}</strong>
+            <ul class="mt-1 ml-4 text-xs list-disc">
                 <li>wiki/ (Deine Wiki-Seiten)</li>
                 <li>raw/ (Deine Rohquellen)</li>
                 <li>output_docs/ (Deine Exporte)</li>
@@ -57,89 +56,41 @@
     </div>
 </div>
 
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.run_heading') }}</h2>
-
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.run_heading') }}</h2>
     {% if update_available %}
     <p>{{ _('update.run_intro') }}</p>
-
-    <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-        <form action="/settings?tab=update" method="post" style="display: inline;">
+    <div class="flex gap-3 flex-wrap mt-3">
+        <form action="{{ base_path }}/settings?tab=update" method="post" class="inline">
             <input type="hidden" name="action" value="run_update">
-            <button type="submit" class="btn btn-primary"
-                    style="background: var(--accent-green); font-size: 1.1rem; padding: 0.8rem 2rem;"
-                    onclick="return confirm('{{ _('update.run_confirm') }}');">
-                {{ _('update.run_button') }}
-            </button>
+            <button type="submit" class="rounded-lg bg-success px-4 py-2 text-white text-lg hover:opacity-90" onclick="return confirm('{{ _('update.run_confirm') }}');">{{ _('update.run_button') }}</button>
         </form>
-        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
-           style="background: var(--bg-hover); border: 1px solid var(--border);">
-            {{ _('update.github_button') }}
-        </a>
+        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('update.github_button') }}</a>
     </div>
     {% else %}
-    <div class="admonition admonition-warning">
-        <strong>{{ _('update.not_available_title') }}</strong><br>
-        {{ _('update.not_available_desc') }}
-        <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
+    <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 text-sm">
+        <strong>{{ _('update.not_available_title') }}</strong><br>{{ _('update.not_available_desc') }}
+        <pre class="bg-bg-sunken p-2 rounded mt-2">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
     </div>
     {% endif %}
 </div>
 
 {% if update_log %}
-<div class="card" style="background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">{{ _('update.log_heading') }}</h2>
-    <pre style="white-space: pre-wrap; font-size: 0.85rem; margin: 0;">{{ update_log }}</pre>
-    <p style="margin-top: 1rem; padding: 0.8rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius);">
-        <strong style="color: var(--accent-yellow);">{{ _('update.restart_warning') }}</strong><br>
-        <code style="background: var(--bg-code); padding: 0.2rem 0.5rem; border-radius: 4px;">./start.sh</code>
-    </p>
+<div class="rounded-xl border border-border bg-bg-sunken p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3">{{ _('update.log_heading') }}</h2>
+    <pre class="whitespace-pre-wrap text-xs">{{ update_log }}</pre>
+    <p class="mt-3 p-3 bg-error-subtle rounded-lg text-sm"><strong class="text-warning">{{ _('update.restart_warning') }}</strong><br><code class="bg-bg-sunken px-1.5 py-0.5 rounded">./start.sh</code></p>
 </div>
 {% endif %}
 
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.terminal_heading') }}</h2>
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.terminal_heading') }}</h2>
     <p>{{ _('update.terminal_desc') }}</p>
-    <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh          # Update ausführen
+    <pre class="bg-bg-sunken p-3 rounded-lg mt-2">./update.sh          # Update ausführen
 ./update.sh --check  # Nur prüfen
 # oder
 ./wiki.sh update</pre>
 </div>
 
-<script>
-function checkUpdate() {
-    var btn = document.getElementById('checkUpdateBtn');
-    var result = document.getElementById('checkResult');
-    btn.disabled = true;
-    btn.innerHTML = '{{ _('update.checking') }}';
-    result.style.display = 'block';
-    result.innerHTML = '<p style="color: var(--text-muted);">{{ _('update.checking_text') }}</p>';
-
-    fetch('/admin/update/check')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.success) {
-                result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + data.error + '</div>';
-                return;
-            }
-            if (data.up_to_date) {
-                result.innerHTML = '<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                    '<strong style="color: var(--accent-green);">{{ _('update.up_to_date') }}</strong><br>' +
-                    '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> – {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span></div>';
-            } else {
-                result.innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                    '<strong style="color: var(--accent-yellow);">{{ _('update.update_available') }}</strong><br>' +
-                    '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> → {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span>' +
-                    '<br><br><a href="/settings?tab=update" class="btn btn-primary" style="background: var(--accent-green);">{{ _('update.run_button') }}</a></div>';
-            }
-        })
-        .catch(function(err) {
-            result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + err.message + '</div>';
-        })
-        .finally(function() {
-            btn.disabled = false;
-            btn.innerHTML = '{{ _('update.check_button') }}';
-        });
-}
-</script>
+<script type="module" src="{{ base_path }}/static/js/update.js?v={{ app_version }}"></script>
 {% endblock %}

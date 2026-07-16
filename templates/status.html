@@ -2,58 +2,53 @@
 {% block title %}{{ _('status.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('status.heading') }}</h1>
-<p class="subtitle">
-    {{ _('status.subtitle') }}
-</p>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold mb-1">{{ _('status.heading') }}</h1>
+    <p class="text-text-secondary">{{ _('status.subtitle') }}</p>
+</div>
 
-<div class="wiki-stats" style="margin-bottom: 2rem;">
-    <div class="stat-card">
-        <span class="stat-num">{{ stats.page_count }}</span>
-        <span class="stat-label">{{ _('status.stat_wiki_pages') }}</span>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm text-center">
+        <span class="block text-3xl font-bold text-primary">{{ stats.page_count }}</span>
+        <span class="block text-text-secondary text-sm mt-1">{{ _('status.stat_wiki_pages') }}</span>
     </div>
-    <div class="stat-card">
-        <span class="stat-num">{{ stats.raw_count }}</span>
-        <span class="stat-label">{{ _('status.stat_raw_sources') }}</span>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm text-center">
+        <span class="block text-3xl font-bold text-primary">{{ stats.raw_count }}</span>
+        <span class="block text-text-secondary text-sm mt-1">{{ _('status.stat_raw_sources') }}</span>
     </div>
-    <div class="stat-card">
-        <span class="stat-num">{{ stats.word_count }}</span>
-        <span class="stat-label">{{ _('status.stat_total_words') }}</span>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm text-center">
+        <span class="block text-3xl font-bold text-text">{{ stats.word_count }}</span>
+        <span class="block text-text-secondary text-sm mt-1">{{ _('status.stat_total_words') }}</span>
     </div>
-    <div class="stat-card">
-        <span class="stat-num">{{ stats.export_count }}</span>
-        <span class="stat-label">{{ _('status.stat_exported') }}</span>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm text-center">
+        <span class="block text-3xl font-bold text-text">{{ stats.export_count }}</span>
+        <span class="block text-text-secondary text-sm mt-1">{{ _('status.stat_exported') }}</span>
     </div>
 </div>
 
-<div class="status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-    <!-- System-Konfiguration -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.config_heading') }}</h2>
-        <table style="width: 100%; border: none;">
-            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">{{ _('status.config_llm_backend') }}</td><td style="font-weight: 600;">{{ config.backend }}</td></tr>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.config_heading') }}</h2>
+        <table class="w-full text-sm">
+            <tr class="border-b border-border"><td class="py-2 text-text-secondary">{{ _('status.config_llm_backend') }}</td><td class="font-semibold">{{ config.backend }}</td></tr>
             {% if config.backend == 'ollama' %}
-            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">{{ _('status.config_ollama_model') }}</td><td style="font-family: var(--font-mono); font-size: 0.85rem;">{{ config.ollama_model }}</td></tr>
+            <tr class="border-b border-border"><td class="py-2 text-text-secondary">{{ _('status.config_ollama_model') }}</td><td class="font-mono text-xs">{{ config.ollama_model }}</td></tr>
             {% endif %}
-            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">{{ _('status.config_wiki_path') }}</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.wiki_dir }}</td></tr>
-            <tr style="border-bottom: 1px solid var(--border-light);"><td style="padding: 0.5rem 0; color: var(--text-secondary);">{{ _('status.config_raw_dir') }}</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.raw_dir }}</td></tr>
-            <tr><td style="padding: 0.5rem 0; color: var(--text-secondary);">{{ _('status.config_export_dir') }}</td><td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all;">{{ config.export_dir }}</td></tr>
+            <tr class="border-b border-border"><td class="py-2 text-text-secondary">{{ _('status.config_wiki_path') }}</td><td class="font-mono text-xs break-all">{{ config.wiki_dir }}</td></tr>
+            <tr class="border-b border-border"><td class="py-2 text-text-secondary">{{ _('status.config_raw_dir') }}</td><td class="font-mono text-xs break-all">{{ config.raw_dir }}</td></tr>
+            <tr><td class="py-2 text-text-secondary">{{ _('status.config_export_dir') }}</td><td class="font-mono text-xs break-all">{{ config.export_dir }}</td></tr>
         </table>
     </div>
 
-    <!-- Tool-Status -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.tools_heading') }}</h2>
-        <table style="width: 100%;">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.tools_heading') }}</h2>
+        <table class="w-full text-sm">
             {% for tool, status in tools.items() %}
-            <tr style="border-bottom: 1px solid var(--border-light);">
-                <td style="padding: 0.5rem 0; font-weight: 500;">{{ tool }}</td>
-                <td style="text-align: right; padding: 0.5rem 0;">
-                    {% if status %}
-                    <span style="color: var(--accent-green); font-weight: 600;">{{ _('status.tools_installed') }}</span>
-                    {% else %}
-                    <span style="color: var(--accent-red); font-weight: 600;">{{ _('status.tools_missing') }}</span>
-                    {% endif %}
+            <tr class="border-b border-border">
+                <td class="py-2 font-medium">{{ tool }}</td>
+                <td class="text-right py-2">
+                    {% if status %}<span class="text-success font-semibold">{{ _('status.tools_installed') }}</span>
+                    {% else %}<span class="text-error font-semibold">{{ _('status.tools_missing') }}</span>{% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -61,113 +56,79 @@
     </div>
 </div>
 
-<div class="status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-    <!-- Top Hubs -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.hubs_heading') }}</h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('status.hubs_heading') }}</h2>
         {% if analytics.hubs %}
-        <ul style="list-style: none; padding: 0;">
+        <ul class="space-y-1">
             {% for hub in analytics.hubs %}
-            <li style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                <a href="/wiki/{{ hub.slug }}" style="font-weight: 500;">{{ hub.title }}</a>
-                <span class="score-badge" style="font-size: 0.75rem; background: rgba(102, 126, 234, 0.15); color: var(--accent-hover); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ hub.links }} {{ _('status.hubs_links') }}</span>
+            <li class="flex justify-between items-center py-1 border-b border-border">
+                <a href="{{ base_path }}/wiki/{{ hub.slug }}" class="font-medium text-primary no-underline">{{ hub.title }}</a>
+                <span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5">{{ hub.links }} {{ _('status.hubs_links') }}</span>
             </li>
             {% endfor %}
         </ul>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ _('status.hubs_empty') }}</p>
-        {% endif %}
+        {% else %}<p class="text-text-muted text-sm">{{ _('status.hubs_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Top Tags -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.tags_heading') }}</h2>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('status.tags_heading') }}</h2>
         {% if analytics.top_tags %}
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.5rem;">
+        <div class="flex flex-wrap gap-2 pt-1">
             {% for tag, count in analytics.top_tags %}
-            <span style="font-size: 0.8rem; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-primary); padding: 0.25rem 0.6rem; border-radius: 12px;">
-                #{{ tag }} <strong style="color: var(--accent-yellow);">({{ count }})</strong>
-            </span>
+            <span class="text-xs bg-bg-sunken border border-border text-text px-2 py-1 rounded-full">#{{ tag }} <strong class="text-warning">({{ count }})</strong></span>
             {% endfor %}
         </div>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ _('status.tags_empty') }}</p>
-        {% endif %}
+        {% else %}<p class="text-text-muted text-sm">{{ _('status.tags_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Brücken-Seiten (Bridges) -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.bridges_heading') }}</h2>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('status.bridges_heading') }}</h2>
         {% if analytics.bridges %}
-        <ul style="list-style: none; padding: 0;">
+        <ul class="space-y-2">
             {% for bridge in analytics.bridges %}
-            <li style="display: flex; flex-direction: column; padding: 0.5rem 0; border-bottom: 1px solid var(--border-light); gap: 0.2rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <a href="/wiki/{{ bridge.slug }}" style="font-weight: 500;">{{ bridge.title }}</a>
-                    <span class="score-badge" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: var(--accent-green); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ bridge.tags_count }} {{ _('status.bridges_tag_areas') }}</span>
+            <li class="py-2 border-b border-border">
+                <div class="flex justify-between items-center gap-2">
+                    <a href="{{ base_path }}/wiki/{{ bridge.slug }}" class="font-medium text-primary no-underline">{{ bridge.title }}</a>
+                    <span class="text-xs bg-success-subtle text-success rounded-full px-2 py-0.5">{{ bridge.tags_count }} {{ _('status.bridges_tag_areas') }}</span>
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    {{ _('status.bridges_connects') }} {% for tag in bridge.connected_tags %}<span style="color: var(--accent-yellow); margin-right: 0.3rem;">#{{ tag }}</span>{% endfor %}
-                </div>
+                <div class="text-xs text-text-secondary mt-1">{{ _('status.bridges_connects') }} {% for tag in bridge.connected_tags %}<span class="text-warning mr-1">#{{ tag }}</span>{% endfor %}</div>
             </li>
             {% endfor %}
         </ul>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ _('status.bridges_empty') }}</p>
-        {% endif %}
+        {% else %}<p class="text-text-muted text-sm">{{ _('status.bridges_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Sackgassen -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.dead_ends_heading') }}</h2>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('status.dead_ends_heading') }}</h2>
         {% if analytics.dead_ends %}
-        <ul style="list-style: none; padding: 0;">
+        <ul class="space-y-1">
             {% for page in analytics.dead_ends %}
-            <li style="padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary);">{{ page.title }}</a>
-            </li>
+            <li class="py-1 border-b border-border"><a href="{{ base_path }}/wiki/{{ page.slug }}" class="text-text-secondary no-underline">{{ page.title }}</a></li>
             {% endfor %}
         </ul>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ _('status.dead_ends_empty') }}</p>
-        {% endif %}
+        {% else %}<p class="text-text-muted text-sm">{{ _('status.dead_ends_empty') }}</p>{% endif %}
     </div>
 </div>
 
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.sync_heading') }}</h2>
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.sync_heading') }}</h2>
     <p>
-        {% if sync_needed %}
-        <span style="color: var(--accent-yellow); font-weight: 600;">{{ _('status.sync_needed_text') }}</span>
-        {% else %}
-        <span style="color: var(--accent-green); font-weight: 600;">{{ _('status.sync_ok_text') }}</span>
-        {% endif %}
+        {% if sync_needed %}<span class="text-warning font-semibold">{{ _('status.sync_needed_text') }}</span>
+        {% else %}<span class="text-success font-semibold">{{ _('status.sync_ok_text') }}</span>{% endif %}
     </p>
-    <div style="margin-top: 1rem;">
-        <a href="/admin/sync" class="btn btn-primary">{{ _('status.sync_button') }}</a>
-    </div>
+    <div class="mt-3"><a href="{{ base_path }}/admin/sync" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover inline-block">{{ _('status.sync_button') }}</a></div>
 </div>
 
-<!-- Update-Bereich -->
-<div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('status.update_heading') }}</h2>
-    <p>
-        <strong>{{ _('status.update_version_label') }}</strong> <code style="background: var(--bg-code); padding: 0.1rem 0.4rem; border-radius: 4px;">{{ app_version }}</code>
-    </p>
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.update_heading') }}</h2>
+    <p><strong>{{ _('status.update_version_label') }}</strong> <code class="bg-bg-sunken px-1.5 py-0.5 rounded text-sm">{{ app_version }}</code></p>
     {% if update_available %}
-    <p>{{ _('status.update_available_desc') }}</p>
-    <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-        <a href="/settings?tab=update" class="btn btn-primary" style="background: var(--accent-green);"
-           onclick="return confirm('{{ _('status.update_confirm') }}');">
-            {{ _('status.update_run_button') }}
-        </a>
-        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
-           style="background: var(--bg-hover); border: 1px solid var(--border);">
-            {{ _('status.update_github_button') }}
-        </a>
+    <p class="mt-2">{{ _('status.update_available_desc') }}</p>
+    <div class="mt-3 flex gap-3 flex-wrap">
+        <a href="{{ base_path }}/settings?tab=update" class="rounded-lg bg-success px-4 py-2 text-white hover:opacity-90" onclick="return confirm('{{ _('status.update_confirm') }}');">{{ _('status.update_run_button') }}</a>
+        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('status.update_github_button') }}</a>
     </div>
-    {% else %}
-    <p style="color: var(--text-muted);"><em>{{ _('status.update_not_available') }}</em></p>
-    {% endif %}
+    {% else %}<p class="text-text-muted mt-2"><em>{{ _('status.update_not_available') }}</em></p>{% endif %}
 </div>
 {% endblock %}

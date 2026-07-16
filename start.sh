@@ -1,6 +1,6 @@
 #!/bin/bash
 # start.sh – LLMWikiNG Webserver-Starter
-# by ZeroDot1 | Karpathy-Pattern | Flask + qmd
+# by ZeroDot1 | Karpathy-Pattern | FastAPI + qmd
 #
 # Nutzung:
 #   ./start.sh                  → Automatisch freier Port ab 8080
@@ -17,7 +17,7 @@ set -euo pipefail
 
 APP_NAME="LLMWikiNG"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_SCRIPT="$SCRIPT_DIR/llmWiki.py"
+SERVER_SCRIPT="$SCRIPT_DIR/run.py"
 WANTED_PORT=""
 DEBUG=""
 LANG_ARG=""
@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
             echo "  ./start.sh --reset              Server zurücksetzen (alle User-Daten löschen)"
             echo "  ./start.sh --reset -y           Reset ohne Nachfrage ausführen"
             echo ""
-            echo "Weitere Parameter werden direkt an llmWiki.py durchgereicht."
+            echo "Weitere Parameter werden direkt an run.py (FastAPI/uvicorn) durchgereicht."
             echo "Der Server sucht automatisch den nächsten freien Port."
             echo "Danach im Browser: http://localhost:PORT"
             exit 0
@@ -135,18 +135,20 @@ reset_server() {
     fi
 
     echo ""
-    echo "🔄 Lösche Wiki-Seiten (wiki/) …"
-    rm -rf "$SCRIPT_DIR/wiki"/*
+    echo "🔄 Lösche Wikis (wikis/) …"
+    rm -rf "$SCRIPT_DIR/wikis"/*
     echo "🔄 Lösche Rohquellen (raw/) …"
     rm -rf "$SCRIPT_DIR/raw"/*
     echo "🔄 Lösche Exporte (output_docs/) …"
     rm -rf "$SCRIPT_DIR/output_docs"/*
+    echo "🔄 Lösche Benutzer & API-Keys (data/) …"
+    rm -rf "$SCRIPT_DIR/data"/*
 
-    # index.md und log.md OKF-konform neu anlegen
+    # index.md und log.md OKF-konform neu anlegen (Standard-Wiki "main")
     echo "🔄 Erstelle leeres Wiki-Grundgerüst …"
-    mkdir -p "$SCRIPT_DIR/wiki" "$SCRIPT_DIR/raw" "$SCRIPT_DIR/output_docs"
+    mkdir -p "$SCRIPT_DIR/wikis/main" "$SCRIPT_DIR/raw" "$SCRIPT_DIR/output_docs" "$SCRIPT_DIR/data"
 
-    cat > "$SCRIPT_DIR/wiki/index.md" <<-EOF
+    cat > "$SCRIPT_DIR/wikis/main/index.md" <<-EOF
 ---
 okf_version: "0.1"
 ---
@@ -155,7 +157,7 @@ okf_version: "0.1"
 > Automatisch gepflegtes Inhaltsverzeichnis.
 EOF
 
-    cat > "$SCRIPT_DIR/wiki/log.md" <<-EOF
+    cat > "$SCRIPT_DIR/wikis/main/log.md" <<-EOF
 ---
 okf_version: "0.1"
 ---
@@ -193,8 +195,13 @@ if ! command -v python3 &>/dev/null; then
     exit 1
 fi
 
-if ! python3 -c "import flask" 2>/dev/null; then
-    echo "❌ Flask nicht installiert. Bitte installieren: pip install flask"
+if ! python3 -c "import fastapi" 2>/dev/null; then
+    echo "❌ FastAPI nicht installiert. Bitte installieren: pip install -r requirements.txt"
+    exit 1
+fi
+
+if ! python3 -c "import uvicorn" 2>/dev/null; then
+    echo "❌ uvicorn nicht installiert. Bitte installieren: pip install -r requirements.txt"
     exit 1
 fi
 
@@ -272,7 +279,7 @@ echo "║  $APP_NAME"
 echo "║  edition by ZeroDot1"
 echo "║  Version $(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo '1.8.0')"
 echo "╠════════════════════════════════════════════════╣"
-echo "║  📂 Wiki:     $SCRIPT_DIR/wiki"
+echo "║  📂 Wikis:    $SCRIPT_DIR/wikis"
 echo "║  🌐 URL:      http://localhost:${PORT}"
 echo "║  🛑 Stopp:    Strg+C"
 echo "╚════════════════════════════════════════════════╝"

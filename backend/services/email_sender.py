@@ -1,30 +1,36 @@
+"""LLMWikiNG – SMTP-E-Mail-Versand für Wochenberichte.
+
+Portiert aus email_sender.py.
+"""
+
+from __future__ import annotations
+
 import json
 import os
 import re
 import smtplib
 import ssl
-from pathlib import Path
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
-CONFIG_FILE = Path(__file__).resolve().parent / "config.json"
+from core.config import CONFIG_FILE
 
-def load_smtp_config():
-    """Lädt die SMTP-Konfiguration aus config.json."""
+
+def load_smtp_config() -> dict:
     default_config = {
         "smtp_host": "smtp.gmail.com",
         "smtp_port": 587,
         "smtp_user": "",
         "smtp_pass": "",
         "use_tls": True,
-        "recipients": ""
+        "recipients": "",
+        "registration_enabled": True,
     }
     if CONFIG_FILE.exists():
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
-                # Standardwerte ergänzen falls Schlüssel fehlen
                 for k, v in default_config.items():
                     if k not in saved:
                         saved[k] = v
@@ -33,37 +39,44 @@ def load_smtp_config():
             return default_config
     return default_config
 
-def save_smtp_config(config_dict):
-    """Speichert die SMTP-Konfiguration in config.json."""
+
+def save_smtp_config(config_dict: dict) -> bool:
     try:
+        current = {}
+        if CONFIG_FILE.exists():
+            try:
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                    current = json.load(f)
+            except Exception:
+                pass
+        current.update(config_dict)
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(config_dict, f, indent=2, ensure_ascii=False)
+            json.dump(current, f, indent=2, ensure_ascii=False)
         return True
     except Exception:
         return False
 
-def send_real_email(subject, body_html, to_list_override=None):
+
+def send_real_email(subject: str, body_html: str, to_list_override: list[str] | None = None) -> list[str]:
     """Sendet den Wochenbericht unter Nutzung der gespeicherten SMTP-Konfiguration."""
     config = load_smtp_config()
-    
+
     smtp_host = config.get("smtp_host", "smtp.gmail.com")
     try:
         smtp_port = int(config.get("smtp_port", 587))
     except ValueError:
         smtp_port = 587
-        
+
     smtp_user = config.get("smtp_user", "").strip()
     smtp_pass = config.get("smtp_pass", "").strip()
     use_tls = bool(config.get("use_tls", True))
-    
-    # Empfängerliste priorisieren: override > gespeicherte config > env variable
+
     if to_list_override:
         recipients = to_list_override
     else:
         raw_recipients = config.get("recipients", "")
         recipients = [r.strip() for r in raw_recipients.split(",") if r.strip()]
-        
-    # Fallback auf env falls Konfiguration leer ist
+
     if not smtp_user:
         smtp_user = os.environ.get("GMAIL_USER", "").strip()
     if not smtp_pass:
@@ -73,7 +86,10 @@ def send_real_email(subject, body_html, to_list_override=None):
         recipients = [r.strip() for r in raw_rec_env.split(",") if r.strip()]
 
     if not smtp_user or not smtp_pass:
-        raise ValueError("SMTP-Benutzer und SMTP-Passwort sind nicht konfiguriert (weder in config.json noch in GMAIL_USER/GMAIL_APP_PASSWORD env vars).")
+        raise ValueError(
+            "SMTP-Benutzer und SMTP-Passwort sind nicht konfiguriert "
+            "(weder in config.json noch in GMAIL_USER/GMAIL_APP_PASSWORD env vars)."
+        )
     if not recipients:
         raise ValueError("Keine E-Mail-Empfänger konfiguriert.")
 
@@ -81,14 +97,13 @@ def send_real_email(subject, body_html, to_list_override=None):
     msg["Subject"] = subject
     msg["From"] = formataddr(("LLMWikiNG Wochenbericht", smtp_user))
     msg["To"] = formataddr(("LLMWikiNG Empfänger", recipients[0]))
-    
-    # Text-Fallback
-    body_text = re.sub(r'<[^>]+>', '', body_html)
+
+    body_text = re.sub(r"<[^>]+>", "", body_html)
     msg.attach(MIMEText(body_text, "plain", "utf-8"))
     msg.attach(MIMEText(body_html, "html", "utf-8"))
-    
+
     context = ssl.create_default_context()
-    
+
     if smtp_port == 465:
         with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
             server.login(smtp_user, smtp_pass)

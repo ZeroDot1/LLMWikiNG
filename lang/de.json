@@ -5,14 +5,12 @@
     "name": "Deutsch",
     "updated": "2026-07-06"
   },
-
   "global": {
     "app_name": "LLMWikiNG",
     "app_edition": "by ZeroDot1",
     "back_to_top": "↑",
     "keyboard_search": "Tastaturkürzel: Strg+/ = Fokus Suche"
   },
-
   "sidebar": {
     "nav_title": "Navigation",
     "home": "🏠 Startseite",
@@ -35,20 +33,18 @@
     "sync_running": "🔄 Sync läuft…",
     "update": "⬇️ Update",
     "about": "ℹ️ Über llmWiki",
+    "docs": "📚 Dokumentation",
     "settings": "Einstellungen",
     "wiki_pages": "Wiki-Seiten"
   },
-
   "searchbar": {
     "placeholder": "Wiki durchsuchen…",
     "button": "Suchen"
   },
-
   "footer": {
-    "text": "LLMWikiNG – by ZeroDot1 · Powered by Flask + qmd ·",
+    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + qmd ·",
     "imprint": "Impressum"
   },
-
   "index": {
     "page_title": "Startseite",
     "sync_recommended_title": "🔄 Sync empfohlen:",
@@ -65,9 +61,13 @@
     "recent_activities_heading": "📜 Kürzliche Aktivitäten",
     "show_full_log": "Gesamtes Logbuch anzeigen →",
     "no_activities_yet": "Noch keine Aktivitäten protokolliert.",
-    "log_link": "→ Logbuch"
+    "log_link": "→ Logbuch",
+    "stat_wikis": "Wikis",
+    "wiki_overview_heading": "Wiki-Übersicht",
+    "new_wiki": "Neues Wiki",
+    "pages_short": "Seiten",
+    "no_wikis_yet": "Noch keine Wikis vorhanden."
   },
-
   "page": {
     "success_prefix": "Erfolg:",
     "error_prefix": "Fehler:",
@@ -91,7 +91,6 @@
     "link_copy_error": "❌ Fehler",
     "link_share_default": "🔗 Link teilen"
   },
-
   "search": {
     "page_title": "Volltextsuche",
     "heading": "🔍 Volltextsuche",
@@ -121,7 +120,6 @@
     "title_raw": "Rohquelle:",
     "title_exported": "Exportiert:"
   },
-
   "ingest": {
     "page_title": "Quelle einspielen / merken",
     "heading": "📥 Quellen verwalten",
@@ -158,7 +156,6 @@
     "text_save": "💾 Text in ingestlater.md speichern",
     "loading_text": "LLM analysiert die Quelle und pflegt das Wiki ein... Bitte warten..."
   },
-
   "about": {
     "page_title": "Über LLMWikiNG",
     "heading": "ℹ️ Über LLMWikiNG",
@@ -187,14 +184,13 @@
     "endpoints_table_desc": "Beschreibung",
     "third_party_heading": "📦 Drittanbieter-Lizenzen",
     "third_party_intro": "Dieses Projekt nutzt folgende externe Komponenten:",
-    "vis_network_name": "vis-network (Wissensgraph)",
-    "vis_network_desc": "vis-network v10.1.0 – eine dynamische, browser-basierte Visualisierungsbibliothek.",
-    "vis_network_copyright": "Copyright: (c) 2011–2017 Almende B.V · (c) 2017–2019 visjs contributors",
-    "vis_network_license": "Lizenz: Dual-lizenziert unter Apache 2.0 und MIT. Vis.js darf unter einer der beiden Lizenzen verteilt werden.",
+    "vis_network_name": "Canvas-Graph-Engine (Wissensgraph)",
+    "vis_network_desc": "Eigene abhängigkeitsfreie Graph-Engine – Force-Directed-Layout via Canvas-2D-API.",
+    "vis_network_copyright": "Autor: ZeroDot1 für LLMWikiNG",
+    "vis_network_license": "Lizenz: AGPL-3.0. Keine externen Bibliotheken.",
     "links_heading": "🔗 Links",
     "link_karpathy": "Original Karpathy LLM-Wiki Gist"
   },
-
   "status": {
     "page_title": "Systemstatus & Statistik",
     "heading": "📊 Systemstatus & Statistik",
@@ -235,7 +231,6 @@
     "update_github_button": "GitHub-Repository öffnen",
     "update_not_available": "update.sh nicht gefunden – Update-Funktion nicht verfügbar."
   },
-
   "lint": {
     "page_title": "Wiki-Gesundheitscheck (Lint)",
     "heading": "🏥 Wiki-Gesundheitscheck (Lint)",
@@ -261,9 +256,15 @@
     "raw_refs_desc": "Diese Wiki-Seiten verweisen auf eine Rohdatei im Ordner raw/, die physisch nicht existiert.",
     "raw_refs_refers_to": "verweist auf:",
     "raw_refs_empty": "✅ Alle referenzierten Rohdateien existieren in raw/.",
+    "okf_type_heading": "🔴 Fehlendes OKF-Pflichtfeld `type`",
+    "okf_type_desc": "Jede OKF-konforme Wiki-Seite muss ein `type`-Feld im YAML-Frontmatter besitzen (z. B. Concept, Article, Reference, Playbook).",
+    "okf_type_empty": "✅ Alle Seiten besitzen ein `type`-Feld.",
+    "okf_links_heading": "🔗 Defekte absolute/relative Markdown-Links",
+    "okf_links_desc": "Diese Links im Format [Text](/pfad.md) oder [Text](./pfad.md) verweisen auf Ziele, die im Wiki nicht existieren.",
+    "okf_links_on": "Auf Seite",
+    "okf_links_empty": "✅ Alle absoluten/relativen Markdown-Links sind intakt.",
     "idle_hint": "Klicke auf den Button oben, um den Gesundheitscheck zu starten."
   },
-
   "config": {
     "page_title": "E-Mail Konfiguration",
     "heading": "⚙️ E-Mail & SMTP Konfiguration",
@@ -293,11 +294,12 @@
     "back_button": "Zurück zu Briefings",
     "preset_placeholder": "z.B."
   },
-
   "update": {
     "page_title": "LLMWikiNG Update",
     "heading": "⬇️ LLMWikiNG Update",
     "card_heading": "Update von GitHub",
+    "github_token_label": "GitHub Personal Access Token (für private Repositories):",
+    "github_token_placeholder": "ghp_xxxxxxxxxxxx",
     "intro": "Hole die neueste Version von ZeroDot1/LLMWikiNG via Git und aktualisiere alle Programmdateien.",
     "repo_label": "Repository:",
     "method_label": "Methode:",
@@ -328,14 +330,13 @@
     "github_label": "GitHub:",
     "error_prefix": "Fehler:"
   },
-
   "graph": {
     "page_title": "Wissensgraph",
     "heading": "🕸️ Wissensgraph",
     "subtitle": "Interaktive Visualisierung aller verknüpften Wiki-Seiten und deren Beziehungen.",
     "reset_button": "🔍 Ansicht zurücksetzen",
     "loading": "Generiere Wissensgraph...",
-    "credit": "Visualisierung basiert auf vis-network (© 2011–2017 Almende B.V, © 2017–2019 visjs contributors – dual-lizenziert unter Apache 2.0 / MIT).",
+    "credit": "Visualisierung: eigene abhängigkeitsfreie Canvas-Graph-Engine (Vanilla JavaScript).",
     "instructions_heading": "Bedienungshinweise:",
     "instruction_pan": "Ziehen / Navigieren: Klicke und ziehe den Hintergrund, um die Ansicht zu verschieben. Nutze das Mausrad zum Zoomen.",
     "instruction_drag": "Knoten verschieben: Ziehe einzelne Knoten mit der Maus, um das Layout anzupassen.",
@@ -343,7 +344,6 @@
     "instruction_highlight": "Beziehungen hervorheben: Klicke einfach auf einen Knoten, um alle direkt verbundenen Seiten hervorzuheben.",
     "double_click_hint": "Doppelklick zum Öffnen von:"
   },
-
   "raw_list": {
     "page_title": "Rohquellen (raw/)",
     "heading": "📦 Rohquellen",
@@ -358,7 +358,6 @@
     "empty_title": "Noch keine Rohquellen im Ordner raw/ vorhanden.",
     "empty_button": "Jetzt die erste Quelle hochladen"
   },
-
   "raw_view": {
     "page_title_prefix": "Rohquelle:",
     "heading_prefix": "📄 Rohquelle:",
@@ -371,7 +370,6 @@
     "binary_warning": "Dies ist eine Binärdatei oder ihr Format wird im Browser nicht nativ angezeigt.",
     "download_button": "Datei herunterladen"
   },
-
   "export_list": {
     "page_title": "Exportierte Dokumente (output_docs/)",
     "heading": "📤 Exportierte Dokumente",
@@ -385,7 +383,6 @@
     "empty_title": "Noch keine exportierten Dokumente im Ordner output_docs/ vorhanden.",
     "empty_hint": "Du kannst jede Wiki-Seite exportieren, indem du auf den Button am Fußende des Artikels klickst."
   },
-
   "export_view": {
     "page_title_prefix": "Export:",
     "heading_prefix": "📄 Exportiertes Dokument:",
@@ -395,7 +392,6 @@
     "size_label": "Größe:",
     "modified_label": "Geändert:"
   },
-
   "pending_list": {
     "page_title": "Ausstehender Ingest",
     "heading": "⏳ Ausstehender Ingest",
@@ -412,7 +408,6 @@
     "empty_title": "Keine ausstehenden Dateien vorhanden. Alle Rohquellen sind bereits eingepflegt!",
     "loading_text": "Ingest läuft und das LLM generiert die Zusammenfassungen... Bitte warten..."
   },
-
   "briefing": {
     "page_title": "Wöchentliche Briefings",
     "heading": "📰 Wöchentliche Briefings (Wochenberichte)",
@@ -439,12 +434,12 @@
     "generated_by": "Generiert von LLMWikiNG · Unlicense",
     "week_placeholder": "YYYY-Www"
   },
-
   "settings": {
     "page_title": "Einstellungen",
     "heading": "⚙️ Einstellungen",
     "subtitle": "Verwalte hier die Sprache, die E-Mail-Konfiguration und führe den Gesundheitscheck durch.",
     "tab_language": "🌐 Sprache",
+    "tab_theme": "🌓 Erscheinungsbild",
     "tab_config": "⚙️ E-Mail Konfiguration",
     "tab_health": "🏥 Gesundheitscheck",
     "tab_update": "⬇️ Update",
@@ -452,13 +447,53 @@
     "language_subtitle": "Wähle zwischen den verfügbaren Sprachen für die Benutzeroberfläche.",
     "language_current": "Aktuelle Sprache:",
     "language_apply": "Wechseln",
+    "theme_heading": "🌓 Erscheinungsbild (Theme)",
+    "theme_subtitle": "Wähle zwischen hellem und dunklem Erscheinungsbild. Die Einstellung wird dauerhaft in der config.json gespeichert (Standard: Dunkel).",
+    "theme_current": "Aktuelles Theme:",
+    "theme_dark": "🌑 Dunkel",
+    "theme_light": "☀️ Hell",
     "config_placeholder": "Die E-Mail-Konfiguration wird hier aus dem ursprünglichen Formular geladen.",
     "health_run_button": "🔍 Check jetzt ausführen",
     "health_heading": "🏥 Gesundheitscheck",
     "health_subtitle": "Analysiert dein Wiki auf strukturelle Mängel.",
-    "health_idle_hint": "Klicke auf den Button oben, um den Gesundheitscheck zu starten."
+    "health_idle_hint": "Klicke auf den Button oben, um den Gesundheitscheck zu starten.",
+    "tab_users": "👥 Benutzer",
+    "tab_apikeys": "🔑 API-Keys",
+    "security_heading": "🔐 Benutzersicherheit",
+    "allow_registration": "Registrierung neuer Benutzer erlauben",
+    "registration_hint": "Wenn deaktiviert, können sich Benutzer nicht mehr selbstständig über /register registrieren. (Hinweis: Die Ersteinrichtung für den allerersten Administrator-Account ist immer aktiv, falls keine Benutzer in der Datenbank existieren.)",
+    "tab_backup": "📦 Backup & Restore",
+    "backup_heading": "📦 Backup & Restore",
+    "backup_subtitle": "Sichere das gesamte Wiki (einschließlich aller Wikis, Benutzerdatenbanken, API-Keys und Konfigurationen) als komprimiertes tar.xz-Archiv oder stelle ein bestehendes Backup wieder her.",
+    "backup_download_title": "1. Backup herunterladen",
+    "backup_download_desc": "Generiert ein komplettes Backup und lädt es direkt auf deinen Computer herunter.",
+    "backup_download_btn": "📥 Backup jetzt herunterladen",
+    "restore_title": "2. Backup wiederherstellen",
+    "restore_desc": "Lade eine zuvor erstellte tar.xz-Backup-Datei hoch, um alle aktuellen Daten zu überschreiben.",
+    "restore_warning": "⚠️ ACHTUNG: Das Wiederherstellen eines Backups überschreibt alle aktuellen Wiki-Seiten, Einstellungen und Benutzerkonten unwiderruflich! Um Session-Verlust zu verhindern, bleibt deine aktuelle Login-Session aktiv (dein Benutzer wird im wiederhergestellten System angelegt bzw. aktualisiert).",
+    "restore_file_label": "tar.xz-Backup-Datei auswählen:",
+    "restore_btn": "📤 Backup wiederherstellen",
+    "restore_confirm": "Möchtest du das Backup wirklich einspielen? Alle aktuellen Daten werden überschrieben!"
   },
-
+  "register": {
+    "title": "Registrieren",
+    "setup_hint": "Ersteinrichtung: Es sind noch keine Benutzer registriert. Erstelle jetzt das erste Administrator-Konto.",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "show_password": "Passwort anzeigen",
+    "submit": "Konto erstellen",
+    "has_account": "Bereits ein Konto?",
+    "login_here": "Hier anmelden",
+    "success_title": "Registrierung erfolgreich!",
+    "success_subtitle": "Dein Account wurde erfolgreich angelegt.",
+    "success_username": "Benutzername",
+    "success_role": "Rolle",
+    "success_key_title": "Dein generierter API-Key (Einmalige Anzeige!)",
+    "success_key_desc": "Dieser API-Key wurde automatisch für dich generiert. Bitte kopiere ihn jetzt an einen sicheren Ort. Er wird danach nie wieder im Klartext angezeigt!",
+    "success_copy": "Kopieren",
+    "success_copied": "Kopiert!",
+    "success_continue": "Weiter zum Login"
+  },
   "error": {
     "404_title": "Seite nicht gefunden",
     "404_heading": "404 – Seite nicht gefunden",
@@ -467,7 +502,6 @@
     "500_heading": "500 – Interner Server-Fehler",
     "500_detail": "Bitte Logs prüfen."
   },
-
   "python_messages": {
     "page_not_found": "Seite '{page_name}' nicht im Wiki gefunden.",
     "raw_not_found": "Rohdatei '{filename}' wurde nicht gefunden.",
@@ -516,7 +550,6 @@
     "server_start_prod": "Produktion (Uvicorn ASGI-Standard)",
     "server_start_hint": "Drücke Strg+C zum Beenden"
   },
-
   "cli_tools": {
     "qmd_search_error": "Kein Suchbegriff angegeben. Usage: qmd_search.sh \"Suchbegriff\"",
     "read_export_error": "Kein Dateipfad angegeben. Usage: read_and_export.sh <dateipfad>",
@@ -540,5 +573,70 @@
     "wysiwyg_italic": "Kursiv",
     "wysiwyg_list": "Aufzählung",
     "save_btn": "Speichern"
+  },
+  "login": {
+    "title": "Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "show_password": "Passwort anzeigen",
+    "submit": "Anmelden",
+    "setup_hint": "Erster Benutzer wird als Administrator angelegt.",
+    "error": "Fehler:"
+  },
+  "wiki_new": {
+    "title": "Neues Wiki anlegen",
+    "name": "Name des Wikis",
+    "name_placeholder": "z. B. recht-wiki",
+    "description": "Beschreibung (optional)",
+    "submit": "Wiki anlegen",
+    "error": "Fehler:"
+  },
+  "users": {
+    "title": "Benutzerverwaltung",
+    "create_heading": "Neuen Benutzer anlegen",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "role": "Rolle",
+    "role_admin": "Administrator",
+    "role_editor": "Editor",
+    "role_viewer": "Betrachter",
+    "create": "Benutzer anlegen",
+    "create_hint": "Lege einen neuen Benutzer an (Administratorrechte zum Verwalten erforderlich).",
+    "table_username": "Benutzername",
+    "table_role": "Rolle",
+    "table_active": "Aktiv",
+    "table_actions": "Aktionen",
+    "delete": "Löschen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "you": "du",
+    "no_users": "Noch keine Benutzer vorhanden.",
+    "success": "Erfolg:",
+    "error": "Fehler:"
+  },
+  "apikeys": {
+    "title": "API-Schlüssel",
+    "create_heading": "Neuen API-Schlüssel erzeugen",
+    "name": "Name",
+    "name_placeholder": "z. B. ci-pipeline",
+    "scopes": "Bereiche (Scope, kommagetrennt)",
+    "require_password": "Passwortabfrage erfordern",
+    "create": "Schlüssel erzeugen",
+    "raw_key": "Neuer API-Schlüssel (bitte jetzt kopieren):",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "table_name": "Name",
+    "table_scopes": "Bereiche",
+    "table_require_password": "Passwort?",
+    "table_active": "Aktiv",
+    "table_actions": "Aktionen",
+    "delete": "Löschen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "yes": "Ja",
+    "no": "Nein",
+    "no_keys": "Noch keine API-Schlüssel vorhanden.",
+    "success": "Erfolg:",
+    "error": "Fehler:"
   }
 }

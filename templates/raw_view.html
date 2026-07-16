@@ -2,31 +2,29 @@
 {% block title %}{{ _('raw_view.page_title_prefix') }} {{ filename }}{% endblock %}
 
 {% block content %}
-<div class="header-action">
-    <h1>{{ _('raw_view.heading_prefix') }} {{ filename }}</h1>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <a href="/raw" class="btn btn-secondary">{{ _('raw_view.back_button') }}</a>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <h1 class="text-2xl font-bold">{{ _('raw_view.heading_prefix') }} {{ filename }}</h1>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ base_path }}/raw" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('raw_view.back_button') }}</a>
         {% if is_text %}
-        <a href="/edit?filename={{ filename }}&folder=raw" class="btn btn-primary">{{ _('raw_view.edit_button') }}</a>
+        <a href="{{ base_path }}/edit?filename={{ filename }}&folder=raw" class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover">{{ _('raw_view.edit_button') }}</a>
         {% endif %}
         {% if wiki_slug %}
-        <a href="/wiki/{{ wiki_slug }}" class="btn btn-accent">{{ _('raw_view.wiki_page_button') }}</a>
+        <a href="{{ base_path }}/wiki/{{ wiki_slug }}" class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover">{{ _('raw_view.wiki_page_button') }}</a>
         {% endif %}
     </div>
 </div>
 
-<div class="raw-metadata">
-    <p><strong>{{ _('raw_view.path_label') }}</strong> <code>raw/{{ filename }}</code> | <strong>{{ _('raw_view.size_label') }}</strong> {{ size_formatted }} | <strong>{{ _('raw_view.modified_label') }}</strong> {{ mtime_formatted }}</p>
+<div class="rounded-lg border border-border bg-bg-sunken p-3 mb-4 text-sm">
+    <strong>{{ _('raw_view.path_label') }}</strong> <code>raw/{{ filename }}</code> | <strong>{{ _('raw_view.size_label') }}</strong> {{ size_formatted }} | <strong>{{ _('raw_view.modified_label') }}</strong> {{ mtime_formatted }}
 </div>
 
-<div class="raw-content-container">
-    {% if is_text %}
-        <pre class="raw-code"><code>{{ content }}</code></pre>
-    {% else %}
-        <div class="binary-warning">
-            <p>{{ _('raw_view.binary_warning') }}</p>
-            <a href="/raw/{{ filename }}?download=1" class="btn btn-primary">{{ _('raw_view.download_button') }}</a>
-        </div>
-    {% endif %}
-</div>
+{% if is_text %}
+    <pre class="raw-code">{{ content }}</pre>
+{% else %}
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <p>{{ _('raw_view.binary_warning') }}</p>
+        <a href="{{ base_path }}/raw/{{ filename }}?download=1" class="inline-block mt-3 rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('raw_view.download_button') }}</a>
+    </div>
+{% endif %}
 {% endblock %}

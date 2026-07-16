@@ -2,103 +2,72 @@
 {% block title %}{{ _('search.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="search-page-header" style="margin-bottom: 2rem;">
-    <h1>{{ _('search.heading') }}</h1>
-    <p class="subtitle">{{ _('search.subtitle') }}</p>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold mb-1">{{ _('search.heading') }}</h1>
+    <p class="text-text-secondary">{{ _('search.subtitle') }}</p>
 </div>
 
-<!-- Große Suchleiste im Hauptfenster -->
-<div class="main-search-bar-container" style="background: var(--bg-sidebar); border: 1px solid var(--border); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow);">
-    <form action="/search" method="get" style="display: flex; gap: 0.8rem;">
-        <input
-            type="text"
-            name="q"
-            class="form-control"
-            placeholder="{{ _('search.input_placeholder') }}"
-            value="{{ query or '' }}"
-            style="font-size: 1.1rem; padding: 0.8rem 1.2rem; flex: 1;"
-            required
-            autofocus
-        >
-        <button type="submit" class="btn btn-primary" style="font-size: 1rem; padding: 0 1.8rem;">{{ _('search.button') }}</button>
+<div class="rounded-xl border border-border bg-bg-sunken p-4 mb-6 shadow-sm">
+    <form action="{{ base_path }}/search" method="get" class="flex gap-2">
+        <input type="text" name="q" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-lg text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('search.input_placeholder') }}" value="{{ query|default('') }}" required autofocus>
+        <button type="submit" class="rounded-lg bg-primary px-5 py-2.5 text-white hover:bg-primary-hover">{{ _('search.button') }}</button>
     </form>
 </div>
 
 {% if sync_hint %}
-<div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-    <strong>{{ _('search.index_outdated_title') }}</strong>
-    {{ _('search.index_outdated_desc') }}
-    <a href="/admin/sync" style="font-weight: 600;">{{ _('search.sync_now') }}</a>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm">
+    <strong>{{ _('search.index_outdated_title') }}</strong> {{ _('search.index_outdated_desc') }}
+    <a href="{{ base_path }}/admin/sync" class="font-semibold text-primary">{{ _('search.sync_now') }}</a>
 </div>
 {% endif %}
 
 {% if query %}
-    <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">
-        {{ _('search.results_for') }} „<strong style="color: var(--accent-hover);">{{ query }}</strong>“
-        {% if results %}
-        <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted); margin-left: 0.5rem;">({{ results|length }} {{ _('search.hits') }})</span>
-        {% endif %}
+    <h2 class="text-lg mb-3 text-text-secondary">
+        {{ _('search.results_for') }} „<strong class="text-primary">{{ query }}</strong>“
+        {% if results %}<span class="text-sm font-normal text-text-muted ml-2">({{ results|length }} {{ _('search.hits') }})</span>{% endif %}
     </h2>
 {% endif %}
 
 {% if query and not slug_exists and raw_mentions_count > 0 %}
-<div class="admonition admonition-tip" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.5rem;">
-    <div style="font-size: 0.9rem;">
-        <strong>{{ _('search.topic_suggestion') }}</strong> 
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+    <div>
+        <strong>{{ _('search.topic_suggestion') }}</strong>
         {{ _('search.topic_not_exists', query=query, count=raw_mentions_count) }}
-        {% if raw_mentions_count >= 3 %}
-        <br><span style="color: var(--accent-green); font-weight: 600; font-size: 0.85rem;">{{ _('search.relevance_threshold') }}</span>
-        {% endif %}
+        {% if raw_mentions_count >= 3 %}<br><span class="text-success font-semibold text-xs">{{ _('search.relevance_threshold') }}</span>{% endif %}
     </div>
-    <a href="/ingest?title={{ query }}" class="btn btn-sm btn-primary" style="text-decoration: none; white-space: nowrap;">{{ _('search.create_wiki_page') }}</a>
+    <a href="{{ base_path }}/ingest?title={{ query }}" class="rounded-lg bg-primary px-3 py-1.5 text-white hover:bg-primary-hover whitespace-nowrap">{{ _('search.create_wiki_page') }}</a>
 </div>
 {% endif %}
 
 {% if error %}
-    <div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-        <strong>{{ _('search.error_prefix') }}</strong> {{ error }}
-    </div>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('search.error_prefix') }}</strong> {{ error }}</div>
 {% endif %}
 
 {% if results %}
-    <ul class="search-results">
+    <ul class="space-y-3">
     {% for result in results %}
-        <li class="search-result-item" style="border: 1px solid var(--border); margin-bottom: 1rem; background: var(--bg-content); transition: all 0.2s ease;">
-            <div class="search-result-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <div class="search-result-title" style="font-size: 1.15rem; font-weight: 600;">
-                    <a href="{{ result.url }}">{{ result.title_html|safe }}</a>
-                </div>
-                {% if result.score %}
-                <span class="score-badge" style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.15); color: var(--accent-hover); padding: 0.2rem 0.5rem; border-radius: 12px; font-weight: 500;">
-                    {{ _('search.score') }} {{ result.score }}
-                </span>
-                {% endif %}
+        <li class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors">
+            <div class="flex justify-between items-start gap-3 mb-1">
+                <div class="text-lg font-semibold"><a href="{{ result.url }}" class="text-primary no-underline">{{ result.title_html|safe }}</a></div>
+                {% if result.score %}<span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5 shrink-0">{{ _('search.score') }} {{ result.score }}</span>{% endif %}
             </div>
-            
-            {% if result.snippet_html %}
-            <div class="search-result-snippet" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.6rem;">
-                {{ result.snippet_html|safe }}
-            </div>
-            {% endif %}
-            
-            <div class="search-result-footer" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.5rem;">
-                <span style="font-family: var(--font-mono);">{{ result.path }}</span>
-                <a href="{{ result.url }}" style="color: var(--link); font-weight: 500;">{{ _('search.view') }}</a>
+            {% if result.snippet_html %}<div class="text-sm text-text-secondary leading-relaxed">{{ result.snippet_html|safe }}</div>{% endif %}
+            <div class="flex justify-between items-center text-xs text-text-muted mt-2 pt-2 border-t border-border font-mono">
+                <span>{{ result.path }}</span>
+                <a href="{{ result.url }}" class="text-primary font-medium">{{ _('search.view') }}</a>
             </div>
         </li>
     {% endfor %}
     </ul>
 {% elif query %}
-    <div class="search-no-results">
-        <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔎</p>
+    <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+        <p class="text-4xl mb-2">🔎</p>
         <p>{{ _('search.no_results') }} <strong>„{{ query }}“</strong> {{ _('search.no_results_found') }}</p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-            {{ _('search.no_results_hint') }}
-        </p>
+        <p class="text-xs text-text-muted mt-2">{{ _('search.no_results_hint') }}</p>
     </div>
 {% else %}
-    <div class="search-no-results">
-        <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">⌨️</p>
+    <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+        <p class="text-4xl mb-2">⌨️</p>
         <p>{{ _('search.idle_hint') }}</p>
     </div>
 {% endif %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ _('register.title') }}{% endblock %}
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-10 bg-bg-sunken">
+    <div class="w-full max-w-md rounded-2xl border border-border bg-surface p-8 shadow-lg">
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-2">👤</div>
+            <h1 class="text-2xl font-bold">{{ _('register.title') }}</h1>
+            <p class="text-text-secondary text-sm">{{ app_name }}{% if app_edition %} {{ app_edition }}{% endif %} · v{{ app_version }}</p>
+        </div>
+
+        {% if is_first %}
+        <div class="rounded-lg border border-primary/40 bg-primary-subtle p-3 mb-4 text-sm text-text-secondary">
+            🚀 {{ _('register.setup_hint') }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm text-text-secondary">
+            <strong>{{ _('page.error_prefix') }}</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        <form id="registerForm" action="{{ base_path }}/register" method="post" class="space-y-4">
+            <div>
+                <label for="username" class="block font-medium mb-1">{{ _('register.username') }}</label>
+                <input type="text" id="username" name="username" required autofocus class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('register.username') }}">
+            </div>
+            <div>
+                <label for="password" class="block font-medium mb-1">{{ _('register.password') }}</label>
+                <input type="password" id="password" name="password" required class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="••••••••">
+            </div>
+            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                <input type="checkbox" data-toggle-password class="rounded border-border text-primary focus:ring-primary-subtle">
+                <span>{{ _('register.show_password') }}</span>
+            </label>
+            <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2.5 text-white hover:bg-primary-hover font-semibold">{{ _('register.submit') }}</button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-text-secondary">
+            {{ _('register.has_account') }} <a href="{{ base_path }}/login" class="text-primary hover:underline font-semibold">{{ _('register.login_here') }}</a>
+        </div>
+    </div>
+</section>
+<script type="module" src="{{ base_path }}/static/js/auth.js?v={{ app_version }}"></script>
+{% endblock %}

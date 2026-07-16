@@ -2,73 +2,56 @@
 {% block title %}{{ _('pending_list.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="header-action">
-    <h1>{{ _('pending_list.heading') }}</h1>
-    {% if files %}
-    <a href="/pending/ingest-all" class="btn btn-primary" onclick="showLoading(this)">{{ _('pending_list.ingest_all') }}</a>
-    {% endif %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-bold">{{ _('pending_list.heading') }}</h1>
+    {% if files %}<a href="{{ base_path }}/pending/ingest-all" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="showLoading(this)">{{ _('pending_list.ingest_all') }}</a>{% endif %}
 </div>
-
-<p class="subtitle">
-    {{ _('pending_list.subtitle') }}
-</p>
+<p class="text-text-secondary mb-6">{{ _('pending_list.subtitle') }}</p>
 
 {% if success_msg %}
-<div class="admonition admonition-tip">
-    <strong>{{ _('pending_list.success_prefix') }}</strong> {{ success_msg }}
-</div>
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('pending_list.success_prefix') }}</strong> {{ success_msg }}</div>
 {% endif %}
-
 {% if error_msg %}
-<div class="admonition admonition-warning">
-    <strong>{{ _('pending_list.error_prefix') }}</strong> {{ error_msg }}
-</div>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('pending_list.error_prefix') }}</strong> {{ error_msg }}</div>
 {% endif %}
 
 {% if files %}
-<div class="table-container">
-    <table class="raw-table">
-        <thead>
-            <tr>
-                <th>{{ _('pending_list.table_filename') }}</th>
-                <th>{{ _('pending_list.table_size') }}</th>
-                <th>{{ _('pending_list.table_added') }}</th>
-                <th style="text-align: right;">{{ _('pending_list.table_actions') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
-            <tr>
-                <td>
-                    <span class="file-icon">📄</span>
-                    <strong class="file-name">{{ file.name }}</strong>
-                </td>
-                <td class="file-size">{{ file.size_formatted }}</td>
-                <td class="file-date">{{ file.mtime_formatted }}</td>
-                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                    <a href="/pending/ingest/{{ file.name }}" class="btn btn-sm btn-primary" onclick="showLoading(this)">{{ _('pending_list.ingest_button') }}</a>
-                    <a href="/raw/{{ file.name }}" class="btn btn-sm btn-secondary">{{ _('pending_list.preview_button') }}</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-bg-sunken text-text-secondary">
+                <tr>
+                    <th class="text-left font-semibold p-3">{{ _('pending_list.table_filename') }}</th>
+                    <th class="text-left font-semibold p-3">{{ _('pending_list.table_size') }}</th>
+                    <th class="text-left font-semibold p-3">{{ _('pending_list.table_added') }}</th>
+                    <th class="text-right font-semibold p-3">{{ _('pending_list.table_actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr class="border-t border-border">
+                    <td class="p-3"><span>📄</span> <strong>{{ file.name }}</strong></td>
+                    <td class="p-3 text-text-secondary">{{ file.size_formatted }}</td>
+                    <td class="p-3 text-text-secondary">{{ file.mtime_formatted }}</td>
+                    <td class="p-3 text-right whitespace-nowrap">
+                        <a href="{{ base_path }}/pending/ingest/{{ file.name }}" class="inline-block rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover" onclick="showLoading(this)">{{ _('pending_list.ingest_button') }}</a>
+                        <a href="{{ base_path }}/raw/{{ file.name }}" class="inline-block rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('pending_list.preview_button') }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
-<div class="search-no-results">
-    <p style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</p>
+<div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+    <p class="text-4xl mb-2">🎉</p>
     <p>{{ _('pending_list.empty_title') }}</p>
 </div>
 {% endif %}
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
+<div id="loading-overlay" class="hidden fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center text-white">
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent mb-3"></div>
     <p>{{ _('pending_list.loading_text') }}</p>
 </div>
-
-<script>
-function showLoading(btn) {
-    document.getElementById('loading-overlay').classList.add('active');
-}
-</script>
 {% endblock %}

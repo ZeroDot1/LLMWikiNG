@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ _('apikeys.title') }}{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-2">{{ _('apikeys.title') }}</h1>
+
+{% if error %}
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('apikeys.error') }}</strong> {{ error }}</div>
+{% endif %}
+{% if success %}
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('apikeys.success') }}</strong> {{ success }}</div>
+{% endif %}
+
+{% if new_key %}
+<div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6">
+    <p class="mb-2 font-semibold text-success">{{ _('apikeys.raw_key') }}</p>
+    <div class="flex flex-wrap gap-2 items-center">
+        <code id="newKey" class="rounded-lg bg-bg-sunken px-3 py-2 text-sm font-mono break-all">{{ new_key }}</code>
+        <button type="button" id="copyKeyBtn" onclick="copyApiKey()" class="rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-bg-sunken">{{ _('apikeys.copy') }}</button>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function copyApiKey() {
+    const keyElement = document.getElementById('newKey');
+    if (!keyElement) return;
+    const textToCopy = keyElement.innerText.trim();
+    const btn = document.getElementById('copyKeyBtn');
+
+    const showSuccess = () => {
+        if (btn) {
+            const originalText = btn.innerText;
+            btn.innerText = "✓ Kopiert!";
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+        }
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => {
+            fallbackCopy(textToCopy);
+        });
+    } else {
+        fallbackCopy(textToCopy);
+    }
+
+    function fallbackCopy(text) {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+                showSuccess();
+            } else {
+                alert("Kopieren fehlgeschlagen.");
+            }
+        } catch (e) {
+            alert("Fehler: " + e);
+        }
+    }
+}
+</script>
+
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-lg mb-6">
+    <h2 class="text-lg font-semibold mb-1">{{ _('apikeys.create_heading') }}</h2>
+    <form action="{{ base_path }}/api-keys" method="post" class="space-y-4">
+        <div>
+            <label for="name" class="block font-medium mb-1">{{ _('apikeys.name') }}</label>
+            <input type="text" name="name" id="name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('apikeys.name_placeholder') }}">
+        </div>
+        <div>
+            <label for="scopes" class="block font-medium mb-1">{{ _('apikeys.scopes') }}</label>
+            <input type="text" name="scopes" id="scopes" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text font-mono focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="read, write">
+        </div>
+        <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+            <input type="checkbox" name="require_password" value="on" class="rounded border-border text-primary focus:ring-primary-subtle">
+            <span>{{ _('apikeys.require_password') }}</span>
+        </label>
+        <div><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('apikeys.create') }}</button></div>
+    </form>
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('apikeys.title') }}</h2>
+    {% if keys %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-text-muted border-b border-border">
+                    <th class="text-left py-2">{{ _('apikeys.table_name') }}</th>
+                    <th class="text-left py-2">{{ _('apikeys.table_scopes') }}</th>
+                    <th class="text-left py-2">{{ _('apikeys.table_require_password') }}</th>
+                    <th class="text-left py-2">{{ _('apikeys.table_active') }}</th>
+                    <th class="text-left py-2">{{ _('apikeys.table_actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                <tr class="border-b border-border">
+                    <td class="py-2 font-medium">{{ key.name }}</td>
+                    <td class="py-2 font-mono text-xs text-text-secondary">{{ key.scopes | join(', ') if key.scopes else '—' }}</td>
+                    <td class="py-2">{{ _('apikeys.yes') if key.require_password else _('apikeys.no') }}</td>
+                    <td class="py-2">{{ _('apikeys.active') if key.active else _('apikeys.inactive') }}</td>
+                    <td class="py-2">
+                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
+                            <button type="submit" class="text-error hover:underline text-xs">{{ _('apikeys.delete') }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-text-secondary">{{ _('apikeys.no_keys') }}</p>
+    {% endif %}
+</div>
+{% endblock %}

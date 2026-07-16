@@ -2,50 +2,44 @@
 {% block title %}{{ _('export_list.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="header-action">
-    <h1>{{ _('export_list.heading') }}</h1>
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-bold">{{ _('export_list.heading') }}</h1>
 </div>
-
-<p class="subtitle">
-    {{ _('export_list.subtitle') }}
-</p>
+<p class="text-text-secondary mb-6">{{ _('export_list.subtitle') }}</p>
 
 {% if files %}
-<div class="table-container">
-    <table class="raw-table">
-        <thead>
-            <tr>
-                <th>{{ _('export_list.table_filename') }}</th>
-                <th>{{ _('export_list.table_size') }}</th>
-                <th>{{ _('export_list.table_exported') }}</th>
-                <th style="text-align: right;">{{ _('export_list.table_actions') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
-            <tr>
-                <td>
-                    <span class="file-icon">📄</span>
-                    <strong class="file-name">{{ file.name }}</strong>
-                </td>
-                <td class="file-size">{{ file.size_formatted }}</td>
-                <td class="file-date">{{ file.mtime_formatted }}</td>
-                <td style="text-align: right;">
-                    <a href="/export/{{ file.name }}" class="btn btn-sm btn-secondary">{{ _('export_list.view_button') }}</a>
-                    <a href="/export/{{ file.name }}?download=1" class="btn btn-sm btn-accent">{{ _('export_list.download_button') }}</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-bg-sunken text-text-secondary">
+                <tr>
+                    <th class="text-left font-semibold p-3">{{ _('export_list.table_filename') }}</th>
+                    <th class="text-left font-semibold p-3">{{ _('export_list.table_size') }}</th>
+                    <th class="text-left font-semibold p-3">{{ _('export_list.table_exported') }}</th>
+                    <th class="text-right font-semibold p-3">{{ _('export_list.table_actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr class="border-t border-border">
+                    <td class="p-3"><span>📄</span> <strong>{{ file.name }}</strong></td>
+                    <td class="p-3 text-text-secondary">{{ file.size_formatted }}</td>
+                    <td class="p-3 text-text-secondary">{{ file.mtime_formatted }}</td>
+                    <td class="p-3 text-right whitespace-nowrap">
+                        <a href="{{ base_path }}/export/{{ file.name }}" class="inline-block rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('export_list.view_button') }}</a>
+                        <a href="{{ base_path }}/export/{{ file.name }}?download=1" class="inline-block rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover">{{ _('export_list.download_button') }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
-<div class="search-no-results">
-    <p style="font-size: 2rem; margin-bottom: 0.5rem;">📭</p>
+<div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+    <p class="text-4xl mb-2">📭</p>
     <p>{{ _('export_list.empty_title') }}</p>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-        {{ _('export_list.empty_hint') }}
-    </p>
+    <p class="text-sm text-text-muted mt-2">{{ _('export_list.empty_hint') }}</p>
 </div>
 {% endif %}
 {% endblock %}

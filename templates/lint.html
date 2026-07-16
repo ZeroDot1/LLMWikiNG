@@ -2,124 +2,94 @@
 {% block title %}{{ _('lint.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="header-action">
-    <h1>{{ _('lint.heading') }}</h1>
-    <a href="/lint?run=1" class="btn btn-primary">{{ _('lint.run_check') }}</a>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+    <div>
+        <h1 class="text-2xl font-bold">{{ _('lint.heading') }}</h1>
+        <p class="text-text-secondary">{{ _('lint.subtitle') }}</p>
+    </div>
+    <a href="{{ base_path }}/lint?run=1" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('lint.run_check') }}</a>
 </div>
 
-<p class="subtitle">
-    {{ _('lint.subtitle') }}
-</p>
-
 {% if run_check %}
-    <div class="status-summary" style="margin-bottom: 2rem; padding: 1rem; border-radius: var(--radius); background: {% if issue_count == 0 %}rgba(74, 222, 128, 0.12){% else %}rgba(251, 191, 36, 0.12){% endif %}; border: 1px solid {% if issue_count == 0 %}var(--accent-green){% else %}var(--accent-yellow){% endif %};">
+    <div class="rounded-lg border p-3 mb-6 text-sm {% if issue_count == 0 %}border-success/40 bg-success-subtle{% else %}border-warning/40 bg-warning-subtle{% endif %}">
         {% if issue_count == 0 %}
-        <strong style="color: var(--accent-green);">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
+        <strong class="text-success">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
         {% else %}
-        <strong style="color: var(--accent-yellow);">⚠ {{ issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}
+        <strong class="text-warning">⚠ {{ issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}
         {% endif %}
     </div>
 
-    <!-- Verwaiste Seiten -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.orphans_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('lint.orphans_desc') }}
-        </p>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.orphans_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.orphans_desc') }}</p>
         {% if orphans %}
-            <ul class="page-list">
-                {% for orphan in orphans %}
-                <li style="border-color: rgba(248, 113, 113, 0.2);">
-                    <a href="/wiki/{{ orphan.slug }}" style="color: var(--accent-red);">
-                        <span>📄 {{ orphan.title }}</span>
-                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">{{ orphan.filename }}</span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.orphans_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for orphan in orphans %}
+            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken">
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ orphan.slug }}" class="text-error font-medium no-underline">📄 {{ orphan.title }}</a>
+                <span class="text-xs font-mono text-text-muted ml-2">{{ orphan.filename }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.orphans_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Fehlende verlinkte Seiten -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.missing_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('lint.missing_desc') }}
-        </p>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.missing_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.missing_desc') }}</p>
         {% if missing %}
-            <ul class="page-list" style="list-style: none; padding: 0;">
-                {% for ref in missing %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 0.8rem 1.2rem; background: var(--bg-card);">
-                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                        <a href="/ingest?title={{ ref.title }}" style="color: var(--accent-yellow); font-weight: 600; text-decoration: none; font-size: 1.05rem;">
-                            <span>🔗 [{{ ref.title }}]()</span>
-                        </a>
-                        <span class="score-badge" style="font-size: 0.75rem; background: rgba(255, 169, 64, 0.15); color: var(--accent-yellow); padding: 0.15rem 0.6rem; border-radius: 10px; font-weight: 500;">
-                            {{ ref.count }} {{ _('lint.missing_refs') }}
-                        </span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">
-                        {{ _('lint.missing_referenced_by') }} 
-                        {% for src_title, src_slug in ref.sources %}
-                        <a href="/wiki/{{ src_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link); margin-right: 0.5rem;">{{ src_title }}</a>
-                        {% endfor %}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.missing_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for ref in missing %}
+            <li class="rounded-lg border border-border p-3 bg-bg-sunken">
+                <div class="flex justify-between items-center gap-2">
+                    <a href="{{ base_path }}/ingest?title={{ ref.title }}" class="text-warning font-semibold no-underline">🔗 [[{{ ref.title }}]]</a>
+                    <span class="text-xs bg-warning-subtle text-warning rounded-full px-2 py-0.5">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
+                </div>
+                <div class="text-xs text-text-secondary mt-1">{{ _('lint.missing_referenced_by') }}
+                    {% for src_title, src_slug in ref.sources %}<a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ src_slug }}" class="text-primary no-underline border-b border-dotted border-primary mr-2">{{ src_title }}</a>{% endfor %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.missing_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Veraltete Seiten (Staleness) -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.stale_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('lint.stale_desc') }}
-        </p>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.stale_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.stale_desc') }}</p>
         {% if stale %}
-            <ul class="page-list">
-                {% for page in stale %}
-                <li style="border-color: rgba(162, 162, 162, 0.2); padding: 0.75rem 1rem;">
-                    <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary); display: flex; justify-content: space-between; width: 100%; text-decoration: none;">
-                        <span>📄 {{ page.title }}</span>
-                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.stale_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for page in stale %}
+            <li class="rounded-lg border border-border p-2.5 bg-bg-sunken">
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-text-secondary flex justify-between w-full no-underline">
+                    <span>📄 {{ page.title }}</span>
+                    <span class="text-xs font-mono text-text-muted">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.stale_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Fehlende Rohquellen (Raw File Refs) -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-red);">{{ _('lint.raw_refs_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('lint.raw_refs_desc') }}
-        </p>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-error">{{ _('lint.raw_refs_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.raw_refs_desc') }}</p>
         {% if missing_raw %}
-            <ul class="page-list">
-                {% for ref in missing_raw %}
-                <li style="border-color: rgba(248, 113, 113, 0.2); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span>
-                        Seite <a href="/wiki/{{ ref.page_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}:
-                    </span>
-                    <code style="color: var(--accent-red); font-size: 0.85rem; font-family: var(--font-mono); background: rgba(248, 113, 113, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ ref.raw_file }}</code>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.raw_refs_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for ref in missing_raw %}
+            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken flex justify-between items-center gap-2">
+                <span>{{ _('lint.raw_refs_refers_to') }}
+                    <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ ref.page_slug }}" class="text-primary no-underline border-b border-dotted border-primary">{{ ref.page_title }}</a>
+                </span>
+                <code class="text-xs font-mono text-error bg-error-subtle px-1.5 py-0.5 rounded">{{ ref.raw_file }}</code>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.raw_refs_empty') }}</p>{% endif %}
     </div>
 {% else %}
-    <div class="search-no-results">
-        <p style="font-size: 2rem; margin-bottom: 0.5rem;">🏥</p>
+    <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+        <p class="text-4xl mb-2">🏥</p>
         <p>{{ _('lint.idle_hint') }}</p>
     </div>
 {% endif %}

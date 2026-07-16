@@ -1,9 +1,11 @@
 {
-  "language": "de",
+  "theme": "dark",
   "smtp_host": "smtp.gmail.com",
   "smtp_port": 587,
   "smtp_user": "",
   "smtp_pass": "",
-  "use_tls": true,
-  "recipients": ""
+  "use_tls": false,
+  "recipients": "",
+  "language": "en",
+  "registration_enabled": true
 }

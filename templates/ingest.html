@@ -2,151 +2,110 @@
 {% block title %}{{ _('ingest.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="header-action" style="margin-bottom: 1.5rem;">
-    <h1>{{ _('ingest.heading') }}</h1>
-    <a href="/wiki/ingestlater" class="btn btn-secondary">{{ _('ingest.show_ingestlater') }}</a>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <h1 class="text-2xl font-bold">{{ _('ingest.heading') }}</h1>
+    <a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('ingest.show_ingestlater') }}</a>
 </div>
-<p class="subtitle" style="margin-bottom: 2rem;">
-    {{ _('ingest.subtitle') }}
-</p>
+<p class="text-text-secondary mb-6">{{ _('ingest.subtitle') }}</p>
 
 {% if success_msg %}
-<div class="admonition admonition-tip">
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm">
     <strong>{{ success_msg }}</strong>
-    {% if new_slug %}
-    <br><a href="/wiki/{{ new_slug }}" style="font-weight: 600;">{{ _('ingest.go_to_new_page') }}</a>
-    {% elif is_later %}
-    <br><a href="/wiki/ingestlater" style="font-weight: 600;">{{ _('ingest.go_to_ingestlater') }}</a>
-    {% endif %}
+    {% if new_slug %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ new_slug }}" class="font-semibold text-primary">{{ _('ingest.go_to_new_page') }}</a>
+    {% elif is_later %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="font-semibold text-primary">{{ _('ingest.go_to_ingestlater') }}</a>{% endif %}
 </div>
 {% endif %}
-
 {% if error_msg %}
-<div class="admonition admonition-warning">
-    <strong>{{ _('ingest.error_prefix') }}</strong> {{ error_msg }}
-</div>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('ingest.error_prefix') }}</strong> {{ error_msg }}</div>
 {% endif %}
 
-<div class="ingest-tabs">
-    <button class="tab-btn active" onclick="switchTab('file-tab')">{{ _('ingest.tab_file') }}</button>
-    <button class="tab-btn" onclick="switchTab('text-tab')">{{ _('ingest.tab_text') }}</button>
-    <button class="tab-btn" onclick="switchTab('url-later-tab')">{{ _('ingest.tab_url_later') }}</button>
-    <button class="tab-btn" onclick="switchTab('text-later-tab')">{{ _('ingest.tab_text_later') }}</button>
+<div class="flex flex-wrap gap-1 border-b-2 border-border mb-4">
+    <button class="tab-btn active px-4 py-2 font-semibold border-b-2 border-primary text-text" onclick="switchTab('file-tab', this)">{{ _('ingest.tab_file') }}</button>
+    <button class="tab-btn px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" onclick="switchTab('text-tab', this)">{{ _('ingest.tab_text') }}</button>
+    <button class="tab-btn px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" onclick="switchTab('url-later-tab', this)">{{ _('ingest.tab_url_later') }}</button>
+    <button class="tab-btn px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" onclick="switchTab('text-later-tab', this)">{{ _('ingest.tab_text_later') }}</button>
 </div>
 
-<!-- 1. Datei-Upload (Sofortiger Ingest) -->
 <div id="file-tab" class="tab-content active">
-    <form action="/ingest" method="post" enctype="multipart/form-data" class="ingest-form">
+    <form action="{{ base_path }}/ingest" method="post" enctype="multipart/form-data" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="file">
-        
-        <div class="form-group">
-            <label for="file">{{ _('ingest.file_label') }}</label>
-            <input type="file" id="file" name="file" class="form-control" required>
+        <div>
+            <label for="file" class="block font-medium mb-1">{{ _('ingest.file_label') }}</label>
+            <input type="file" id="file" name="file" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <div class="form-group">
-            <label for="file_title">{{ _('ingest.title_optional') }}</label>
-            <input type="text" id="file_title" name="title" class="form-control" placeholder="{{ _('ingest.title_placeholder') }}">
+        <div>
+            <label for="file_title" class="block font-medium mb-1">{{ _('ingest.title_optional') }}</label>
+            <input type="text" id="file_title" name="title" placeholder="{{ _('ingest.title_placeholder') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <div class="form-group">
-            <label for="backend_file">{{ _('ingest.backend_label') }}</label>
-            <select id="backend_file" name="backend" class="form-control">
+        <div>
+            <label for="backend_file" class="block font-medium mb-1">{{ _('ingest.backend_label') }}</label>
+            <select id="backend_file" name="backend" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 <option value="ollama">{{ _('ingest.backend_ollama') }}</option>
                 <option value="agy">{{ _('ingest.backend_agy') }}</option>
                 <option value="opencode">{{ _('ingest.backend_opencode') }}</option>
             </select>
         </div>
-
-        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
+        <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
     </form>
 </div>
 
-<!-- 2. Text-Paste (Sofortiger Ingest) -->
-<div id="text-tab" class="tab-content">
-    <form action="/ingest" method="post" class="ingest-form">
+<div id="text-tab" class="tab-content" style="display:none;">
+    <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text">
-
-        <div class="form-group">
-            <label for="title">{{ _('ingest.text_title_label') }}</label>
-            <input type="text" id="title" name="title" class="form-control" placeholder="{{ _('ingest.text_title_placeholder') }}" required>
+        <div>
+            <label for="title" class="block font-medium mb-1">{{ _('ingest.text_title_label') }}</label>
+            <input type="text" id="title" name="title" placeholder="{{ _('ingest.text_title_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <div class="form-group">
-            <label for="content_text">{{ _('ingest.text_content_label') }}</label>
-            <textarea id="content_text" name="content" rows="10" class="form-control" placeholder="{{ _('ingest.text_content_placeholder') }}" required></textarea>
+        <div>
+            <label for="content_text" class="block font-medium mb-1">{{ _('ingest.text_content_label') }}</label>
+            <textarea id="content_text" name="content" rows="10" placeholder="{{ _('ingest.text_content_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle"></textarea>
         </div>
-
-        <div class="form-group">
-            <label for="backend_text">{{ _('ingest.backend_label') }}</label>
-            <select id="backend_text" name="backend" class="form-control">
+        <div>
+            <label for="backend_text" class="block font-medium mb-1">{{ _('ingest.backend_label') }}</label>
+            <select id="backend_text" name="backend" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 <option value="ollama">{{ _('ingest.backend_ollama') }}</option>
                 <option value="agy">{{ _('ingest.backend_agy') }}</option>
                 <option value="opencode">{{ _('ingest.backend_opencode') }}</option>
             </select>
         </div>
-
-        <button type="submit" class="btn btn-primary" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
+        <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="showLoading(this)">{{ _('ingest.import_now') }}</button>
     </form>
 </div>
 
-<!-- 3. URL für später merken -->
-<div id="url-later-tab" class="tab-content">
-    <form action="/ingest" method="post" class="ingest-form">
+<div id="url-later-tab" class="tab-content" style="display:none;">
+    <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="url_later">
-
-        <div class="form-group">
-            <label for="url_later">{{ _('ingest.url_label') }}</label>
-            <input type="url" id="url_later" name="url" class="form-control" placeholder="{{ _('ingest.url_placeholder') }}" required>
+        <div>
+            <label for="url_later" class="block font-medium mb-1">{{ _('ingest.url_label') }}</label>
+            <input type="url" id="url_later" name="url" placeholder="{{ _('ingest.url_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <div class="form-group">
-            <label for="url_title">{{ _('ingest.url_title_label') }}</label>
-            <input type="text" id="url_title" name="title" class="form-control" placeholder="{{ _('ingest.url_title_placeholder') }}">
+        <div>
+            <label for="url_title" class="block font-medium mb-1">{{ _('ingest.url_title_label') }}</label>
+            <input type="text" id="url_title" name="title" placeholder="{{ _('ingest.url_title_placeholder') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <button type="submit" class="btn btn-secondary">{{ _('ingest.url_save') }}</button>
+        <button type="submit" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('ingest.url_save') }}</button>
     </form>
 </div>
 
-<!-- 4. Text für später merken -->
-<div id="text-later-tab" class="tab-content">
-    <form action="/ingest" method="post" class="ingest-form">
+<div id="text-later-tab" class="tab-content" style="display:none;">
+    <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text_later">
-
-        <div class="form-group">
-            <label for="text_later_title">{{ _('ingest.text_later_title_label') }}</label>
-            <input type="text" id="text_later_title" name="title" class="form-control" placeholder="{{ _('ingest.text_later_title_placeholder') }}" required>
+        <div>
+            <label for="text_later_title" class="block font-medium mb-1">{{ _('ingest.text_later_title_label') }}</label>
+            <input type="text" id="text_later_title" name="title" placeholder="{{ _('ingest.text_later_title_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
-
-        <div class="form-group">
-            <label for="text_later_content">{{ _('ingest.text_later_content_label') }}</label>
-            <textarea id="text_later_content" name="content" rows="8" class="form-control" placeholder="{{ _('ingest.text_later_content_placeholder') }}" required></textarea>
+        <div>
+            <label for="text_later_content" class="block font-medium mb-1">{{ _('ingest.text_later_content_label') }}</label>
+            <textarea id="text_later_content" name="content" rows="8" placeholder="{{ _('ingest.text_later_content_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle"></textarea>
         </div>
-
-        <button type="submit" class="btn btn-secondary">{{ _('ingest.text_save') }}</button>
+        <button type="submit" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('ingest.text_save') }}</button>
     </form>
 </div>
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
+<div id="loading-overlay" class="hidden fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center text-white">
+    <div class="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent mb-3"></div>
     <p>{{ _('ingest.loading_text') }}</p>
 </div>
 
-<script>
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    event.currentTarget.classList.add('active');
-}
-
-function showLoading(btn) {
-    const form = btn.closest('form');
-    if (form.checkValidity()) {
-        document.getElementById('loading-overlay').classList.add('active');
-    }
-}
-</script>
+<script type="module" src="{{ base_path }}/static/js/ingest.js?v={{ app_version }}"></script>
 {% endblock %}

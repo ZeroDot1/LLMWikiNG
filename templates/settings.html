@@ -2,269 +2,227 @@
 {% block title %}{{ _('settings.page_title') }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('settings.heading') }}</h1>
-<p class="subtitle" style="margin-bottom: 2rem;">
-    {{ _('settings.subtitle') }}
-</p>
+<h1 class="text-2xl font-bold mb-2">{{ _('settings.heading') }}</h1>
+<p class="text-text-secondary mb-6">{{ _('settings.subtitle') }}</p>
 
-<!-- Tab Navigation -->
-<div class="settings-tabs" style="display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--border);">
-    <button class="settings-tab active" data-tab="tab-language" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-primary); font-size: 1rem; font-weight: 600; border-bottom: 3px solid var(--accent); transition: all 0.2s;">
-        {{ _('settings.tab_language') }}
-    </button>
-    <button class="settings-tab" data-tab="tab-config" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
-        {{ _('settings.tab_config') }}
-    </button>
-    <button class="settings-tab" data-tab="tab-health" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
-        {{ _('settings.tab_health') }}
-    </button>
-    <button class="settings-tab" data-tab="tab-update" style="padding: 0.8rem 1.5rem; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s;">
-        {{ _('settings.tab_update') }}
-    </button>
+<div class="flex gap-0 mb-6 border-b-2 border-border">
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-primary text-text" data-tab="tab-language">{{ _('settings.tab_language') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-theme">{{ _('settings.tab_theme') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-config">{{ _('settings.tab_config') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-health">{{ _('settings.tab_health') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-update">{{ _('settings.tab_update') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-users">{{ _('settings.tab_users') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-apikeys">{{ _('settings.tab_apikeys') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-backup">{{ _('settings.tab_backup') }}</button>
 </div>
 
-<!-- Tab 1: Language -->
-<div id="tab-language" class="settings-tab-content active">
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 600px;">
-        <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.3rem;">{{ _('settings.language_heading') }}</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            {{ _('settings.language_subtitle') }}
-        </p>
-        <p style="margin-bottom: 1rem;">
-            <strong>{{ _('settings.language_current') }}</strong>
-            <span style="font-weight: 600; color: var(--accent); margin-left: 0.5rem;">{{ available_languages.get(current_lang, current_lang) }}</span>
-        </p>
-        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+<!-- Language -->
+<div id="tab-language" class="settings-tab-content">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+        <h2 class="text-lg font-semibold mb-1">{{ _('settings.language_heading') }}</h2>
+        <p class="text-text-secondary mb-4">{{ _('settings.language_subtitle') }}</p>
+        <p class="mb-3"><strong>{{ _('settings.language_current') }}</strong> <span class="font-semibold text-primary ml-2">{{ available_languages.get(current_lang, current_lang) }}</span></p>
+        <div class="flex flex-wrap gap-3">
             {% for code, name in available_languages.items() %}
-            <a href="/lang/{{ code }}"
-               class="btn {% if current_lang == code %}btn-primary{% else %}btn-secondary{% endif %}"
-               style="text-decoration: none; padding: 0.6rem 1.5rem; font-size: 1rem;">
-                {{ name }} {% if current_lang == code %}✓{% endif %}
-            </a>
+            <a href="{{ base_path }}/lang/{{ code }}" class="rounded-lg px-5 py-2 {% if current_lang == code %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ name }} {% if current_lang == code %}✓{% endif %}</a>
             {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- Tab 2: Email Config -->
-<div id="tab-config" class="settings-tab-content" style="display: none;">
-    {% if config_error_msg %}
-    <div class="admonition admonition-warning" style="margin-bottom: 1.5rem;">
-        <strong>{{ _('config.error_prefix') }}</strong> {{ config_error_msg }}
-    </div>
-    {% endif %}
-    {% if config_success_msg %}
-    <div class="admonition admonition-tip" style="margin-bottom: 1.5rem;">
-        <strong>{{ _('config.success_prefix') }}</strong> {{ config_success_msg }}
-    </div>
-    {% endif %}
-
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 650px;">
-        <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
-            {{ _('config.smtp_heading') }}
-        </h2>
-
-        <div style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius);">
-            <span style="font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); display: block; margin-bottom: 0.6rem;">{{ _('config.presets_label') }}</span>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
-            </div>
-        </div>
-
-        <form action="/settings?tab=config" method="post" style="display: flex; flex-direction: column; gap: 1.2rem;">
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="smtp_host" style="font-weight: 500;">{{ _('config.smtp_host_label') }}</label>
-                    <input type="text" name="smtp_host" id="smtp_host" class="form-control" value="{{ smtp_config.smtp_host }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="smtp_port" style="font-weight: 500;">{{ _('config.smtp_port_label') }}</label>
-                    <input type="number" name="smtp_port" id="smtp_port" class="form-control" value="{{ smtp_config.smtp_port }}" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="smtp_user" style="font-weight: 500;">{{ _('config.smtp_user_label') }}</label>
-                <input type="text" name="smtp_user" id="smtp_user" class="form-control" value="{{ smtp_config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
-                {% if env_user %}
-                <span style="font-size: 0.75rem; color: var(--accent-green);">✔ {{ _('config.smtp_user_env_ok') }}</span>
-                {% else %}
-                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_user_env_hint') }}</span>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="smtp_pass" style="font-weight: 500;">{{ _('config.smtp_pass_label') }}</label>
-                <input type="password" name="smtp_pass" id="smtp_pass" class="form-control" value="{{ smtp_config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
-                {% if env_pass_exists %}
-                <span style="font-size: 0.75rem; color: var(--accent-green);">✔ {{ _('config.smtp_pass_env_ok') }}</span>
-                {% else %}
-                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.smtp_pass_env_hint') }}</span>
-                {% endif %}
-            </div>
-
-            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if smtp_config.use_tls %}checked{% endif %}>
-                <label for="use_tls" style="cursor: pointer; font-size: 0.95rem;">{{ _('config.tls_label') }}</label>
-            </div>
-
-            <div class="form-group">
-                <label for="recipients" style="font-weight: 500;">{{ _('config.recipients_label') }}</label>
-                <input type="text" name="recipients" id="recipients" class="form-control" value="{{ smtp_config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
-                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ _('config.recipients_hint') }}</span>
-            </div>
-
-            <div style="margin-top: 1rem;">
-                <button type="submit" class="btn btn-primary" style="padding: 0.7rem 2rem;">{{ _('config.save_button') }}</button>
+<!-- Theme -->
+<div id="tab-theme" class="settings-tab-content hidden">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+        <h2 class="text-lg font-semibold mb-1">{{ _('settings.theme_heading') }}</h2>
+        <p class="text-text-secondary mb-4">{{ _('settings.theme_subtitle') }}</p>
+        <p class="mb-3"><strong>{{ _('settings.theme_current') }}</strong> <span class="font-semibold text-primary ml-2">{{ _('settings.theme_' + theme) }}</span></p>
+        <form action="{{ base_path }}/theme/set" method="post" class="space-y-4">
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" name="value" value="dark" class="rounded-lg px-5 py-2 {% if theme == 'dark' %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ _('settings.theme_dark') }}{% if theme == 'dark' %} ✓{% endif %}</button>
+                <button type="submit" name="value" value="light" class="rounded-lg px-5 py-2 {% if theme == 'light' %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ _('settings.theme_light') }}{% if theme == 'light' %} ✓{% endif %}</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Tab 3: Health Check -->
-<div id="tab-health" class="settings-tab-content" style="display: none;">
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
-            <div>
-                <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.3rem;">{{ _('settings.health_heading') }}</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 0;">{{ _('settings.health_subtitle') }}</p>
+<!-- Email Config -->
+<div id="tab-config" class="settings-tab-content hidden">
+    {% if config_error_msg %}
+    <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('config.error_prefix') }}</strong> {{ config_error_msg }}</div>
+    {% endif %}
+    {% if config_success_msg %}
+    <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('config.success_prefix') }}</strong> {{ config_success_msg }}</div>
+    {% endif %}
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+        <h2 class="text-lg font-semibold mb-4 border-b border-border pb-2 text-primary">{{ _('config.smtp_heading') }}</h2>
+        <div class="mb-4 rounded-lg border border-border bg-bg-sunken p-3">
+            <span class="block text-sm font-medium text-text-secondary mb-2">{{ _('config.presets_label') }}</span>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
+                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
+                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
             </div>
-            <a href="/settings?tab=health&run=1" class="btn btn-primary">{{ _('settings.health_run_button') }}</a>
+        </div>
+        <form action="{{ base_path }}/settings?tab=config" method="post" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                    <label for="smtp_host" class="block font-medium mb-1">{{ _('config.smtp_host_label') }}</label>
+                    <input type="text" name="smtp_host" id="smtp_host" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_host }}" required>
+                </div>
+                <div>
+                    <label for="smtp_port" class="block font-medium mb-1">{{ _('config.smtp_port_label') }}</label>
+                    <input type="number" name="smtp_port" id="smtp_port" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_port }}" required>
+                </div>
+            </div>
+            <div>
+                <label for="smtp_user" class="block font-medium mb-1">{{ _('config.smtp_user_label') }}</label>
+                <input type="text" name="smtp_user" id="smtp_user" data-ph-prefix="{{ _('config.preset_placeholder') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
+                {% if env_user %}<span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_user_env_ok') }}</span>
+                {% else %}<span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_user_env_hint') }}</span>{% endif %}
+            </div>
+            <div>
+                <label for="smtp_pass" class="block font-medium mb-1">{{ _('config.smtp_pass_label') }}</label>
+                <input type="password" name="smtp_pass" id="smtp_pass" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
+                {% if env_pass_exists %}<span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_pass_env_ok') }}</span>
+                {% else %}<span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_pass_env_hint') }}</span>{% endif %}
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if smtp_config.use_tls %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
+                <span>{{ _('config.tls_label') }}</span>
+            </label>
+            <div>
+                <label for="recipients" class="block font-medium mb-1">{{ _('config.recipients_label') }}</label>
+                <input type="text" name="recipients" id="recipients" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
+                <span class="block mt-1 text-xs text-text-muted">{{ _('config.recipients_hint') }}</span>
+            </div>
+            <div class="pt-4 border-t border-border space-y-2">
+                <h3 class="text-sm font-semibold text-primary">{{ _('settings.security_heading') }}</h3>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="registration_enabled" id="registration_enabled" value="1" {% if smtp_config.registration_enabled %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
+                    <span class="text-sm font-medium">{{ _('settings.allow_registration') }}</span>
+                </label>
+                <span class="block text-xs text-text-muted">{{ _('settings.registration_hint') }}</span>
+            </div>
+            <div class="pt-2"><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('config.save_button') }}</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- Health -->
+<div id="tab-health" class="settings-tab-content hidden">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <div class="flex flex-wrap justify-between items-start gap-3">
+            <div>
+                <h2 class="text-lg font-semibold mb-1">{{ _('settings.health_heading') }}</h2>
+                <p class="text-text-secondary mb-0">{{ _('settings.health_subtitle') }}</p>
+            </div>
+            <a href="{{ base_path }}/settings?tab=health&run=1" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('settings.health_run_button') }}</a>
         </div>
     </div>
 
     {% if health_run_check %}
-    <div class="status-summary" style="margin-bottom: 2rem; margin-top: 1.5rem; padding: 1rem; border-radius: var(--radius); background: {% if health_issue_count == 0 %}rgba(74, 222, 128, 0.12){% else %}rgba(251, 191, 36, 0.12){% endif %}; border: 1px solid {% if health_issue_count == 0 %}var(--accent-green){% else %}var(--accent-yellow){% endif %};">
-        {% if health_issue_count == 0 %}
-        <strong style="color: var(--accent-green);">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
-        {% else %}
-        <strong style="color: var(--accent-yellow);">⚠ {{ health_issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}
-        {% endif %}
+    <div class="rounded-lg border p-3 mt-4 text-sm {% if health_issue_count == 0 %}border-success/40 bg-success-subtle{% else %}border-warning/40 bg-warning-subtle{% endif %}">
+        {% if health_issue_count == 0 %}<strong class="text-success">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
+        {% else %}<strong class="text-warning">⚠ {{ health_issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}{% endif %}
     </div>
 
-    <!-- Orphans -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.orphans_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.orphans_desc') }}</p>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.orphans_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.orphans_desc') }}</p>
         {% if health_orphans %}
-            <ul class="page-list" style="list-style: none; padding: 0;">
-                {% for orphan in health_orphans %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.6rem 1rem; background: var(--bg-card);">
-                    <a href="/wiki/{{ orphan.slug }}" style="color: var(--accent-red); font-weight: 500; text-decoration: none;">📄 {{ orphan.title }}</a>
-                    <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted); margin-left: 0.5rem;">{{ orphan.filename }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.orphans_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for orphan in health_orphans %}
+            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken"><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ orphan.slug }}" class="text-error font-medium no-underline">📄 {{ orphan.title }}</a> <span class="text-xs font-mono text-text-muted ml-2">{{ orphan.filename }}</span></li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.orphans_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Missing pages -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.missing_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.missing_desc') }}</p>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.missing_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.missing_desc') }}</p>
         {% if health_missing %}
-            <ul class="page-list" style="list-style: none; padding: 0;">
-                {% for ref in health_missing %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.8rem 1.2rem; background: var(--bg-card);">
-                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                        <a href="/ingest?title={{ ref.title }}" style="color: var(--accent-yellow); font-weight: 600; text-decoration: none;">🔗 [[{{ ref.title }}]]</a>
-                        <span class="score-badge" style="font-size: 0.75rem; background: rgba(255, 169, 64, 0.15); color: var(--accent-yellow); padding: 0.15rem 0.6rem; border-radius: 10px;">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">
-                        {{ _('lint.missing_referenced_by') }}
-                        {% for src_title, src_slug in ref.sources %}
-                        <a href="/wiki/{{ src_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link); margin-right: 0.5rem;">{{ src_title }}</a>
-                        {% endfor %}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.missing_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for ref in health_missing %}
+            <li class="rounded-lg border border-border p-3 bg-bg-sunken">
+                <div class="flex justify-between items-center gap-2">
+                    <a href="{{ base_path }}/ingest?title={{ ref.title }}" class="text-warning font-semibold no-underline">🔗 [[{{ ref.title }}]]</a>
+                    <span class="text-xs bg-warning-subtle text-warning rounded-full px-2 py-0.5">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
+                </div>
+                <div class="text-xs text-text-secondary mt-1">{{ _('lint.missing_referenced_by') }}
+                    {% for src_title, src_slug in ref.sources %}<a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ src_slug }}" class="text-primary no-underline border-b border-dotted border-primary mr-2">{{ src_title }}</a>{% endfor %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.missing_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Stale pages -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-yellow);">{{ _('lint.stale_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.stale_desc') }}</p>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.stale_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.stale_desc') }}</p>
         {% if health_stale %}
-            <ul class="page-list" style="list-style: none; padding: 0;">
-                {% for page in health_stale %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card);">
-                    <a href="/wiki/{{ page.slug }}" style="color: var(--text-secondary); display: flex; justify-content: space-between; width: 100%; text-decoration: none;">
-                        <span>📄 {{ page.title }}</span>
-                        <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.stale_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for page in health_stale %}
+            <li class="rounded-lg border border-border p-2.5 bg-bg-sunken"><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-text-secondary flex justify-between w-full no-underline"><span>📄 {{ page.title }}</span><span class="text-xs font-mono text-text-muted">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span></a></li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.stale_empty') }}</p>{% endif %}
     </div>
 
-    <!-- Missing raw refs -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-red);">{{ _('lint.raw_refs_heading') }}</h2>
-        <p class="subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">{{ _('lint.raw_refs_desc') }}</p>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-error">{{ _('lint.raw_refs_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.raw_refs_desc') }}</p>
         {% if health_missing_raw %}
-            <ul class="page-list" style="list-style: none; padding: 0;">
-                {% for ref in health_missing_raw %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); display: flex; justify-content: space-between; align-items: center;">
-                    <span>
-                        Seite <a href="/wiki/{{ ref.page_slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}
-                    </span>
-                    <code style="color: var(--accent-red); font-size: 0.85rem; background: rgba(248, 113, 113, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ ref.raw_file }}</code>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p style="color: var(--accent-green); font-size: 0.9rem;">{{ _('lint.raw_refs_empty') }}</p>
-        {% endif %}
+        <ul class="space-y-2">
+            {% for ref in health_missing_raw %}
+            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken flex justify-between items-center gap-2">
+                <span>Seite <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ ref.page_slug }}" class="text-primary no-underline border-b border-dotted border-primary">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}</span>
+                <code class="text-xs font-mono text-error bg-error-subtle px-1.5 py-0.5 rounded">{{ ref.raw_file }}</code>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.raw_refs_empty') }}</p>{% endif %}
     </div>
     {% else %}
-    <div class="search-no-results" style="margin-top: 2rem;">
-        <p style="font-size: 2rem; margin-bottom: 0.5rem;">🏥</p>
+    <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm mt-4">
+        <p class="text-4xl mb-2">🏥</p>
         <p>{{ _('settings.health_idle_hint') }}</p>
     </div>
     {% endif %}
 </div>
 
-<!-- Tab 4: Update -->
-<div id="tab-update" class="settings-tab-content" style="display: none;">
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.card_heading') }}</h2>
+<!-- Update -->
+<div id="tab-update" class="settings-tab-content hidden">
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.card_heading') }}</h2>
         <p>{{ _('update.intro') }}</p>
-
-        <table style="width: 100%; border: none; margin-bottom: 1rem;">
-            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.repo_label') }}</td>
-                <td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
-            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.method_label') }}</td>
-                <td><code>git pull</code> (via GitHub)</td></tr>
-            <tr><td style="padding: 0.3rem 0; color: var(--text-secondary);">{{ _('update.local_version_label') }}</td>
-                <td><strong id="localVersion">{{ app_version }}</strong></td></tr>
+        <table class="w-full mt-3">
+            <tr><td class="py-1 text-text-secondary">{{ _('update.repo_label') }}</td><td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="text-primary">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
+            <tr><td class="py-1 text-text-secondary">{{ _('update.method_label') }}</td><td><code>git pull</code> (via GitHub)</td></tr>
+            <tr><td class="py-1 text-text-secondary">{{ _('update.local_version_label') }}</td><td><strong id="localVersion">{{ app_version }}</strong></td></tr>
         </table>
-
-        <div id="checkResult" style="margin-bottom: 1rem; display: none;"></div>
-
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <button id="checkUpdateBtn" class="btn btn-primary"
-                    style="background: var(--accent-hover);"
-                    onclick="checkUpdate()">
-                {{ _('update.check_button') }}
-            </button>
+        <div class="my-4">
+            <label for="github_token_input" class="block font-medium mb-1 text-sm">{{ _('update.github_token_label') }}</label>
+            <input type="password" id="github_token_input" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('update.github_token_placeholder') }}">
         </div>
-
-        <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ _('update.sections_heading') }}</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius); padding: 1rem;">
-                <strong style="color: var(--accent-green);">{{ _('update.section_replaced_heading') }}</strong>
-                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+        <div id="checkResult" class="mt-3 hidden"
+            data-checking-text="{{ _('update.checking_text') }}"
+            data-error-prefix="{{ _('update.error_prefix') }}"
+            data-up-to-date="{{ _('update.up_to_date') }}"
+            data-local-label="{{ _('update.local_label') }}"
+            data-github-label="{{ _('update.github_label') }}"
+            data-update-available="{{ _('update.update_available') }}"
+            data-run-button="{{ _('update.run_button') }}"></div>
+        <div class="flex flex-wrap gap-3 mt-3">
+            <button id="checkUpdateBtn" data-checking="{{ _('update.checking') }}" data-label="{{ _('update.check_button') }}" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="checkUpdate()">{{ _('update.check_button') }}</button>
+        </div>
+        <h3 class="mt-5 mb-2 font-semibold">{{ _('update.sections_heading') }}</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="rounded-lg border border-success/30 bg-success-subtle p-3">
+                <strong class="text-success">{{ _('update.section_replaced_heading') }}</strong>
+                <ul class="mt-1 ml-4 text-xs list-disc">
                     <li><strong>llmWiki.py</strong> (Webserver)</li>
                     <li><strong>email_sender.py</strong> (E-Mail)</li>
                     <li>wiki.sh, start.sh, update.sh</li>
@@ -275,9 +233,9 @@
                     <li>VERSION, CHANGELOG, README</li>
                 </ul>
             </div>
-            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius); padding: 1rem;">
-                <strong style="color: var(--accent-red);">{{ _('update.section_preserved_heading') }}</strong>
-                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.2rem; font-size: 0.85rem;">
+            <div class="rounded-lg border border-error/30 bg-error-subtle p-3">
+                <strong class="text-error">{{ _('update.section_preserved_heading') }}</strong>
+                <ul class="mt-1 ml-4 text-xs list-disc">
                     <li>wiki/ (Deine Wiki-Seiten)</li>
                     <li>raw/ (Deine Rohquellen)</li>
                     <li>output_docs/ (Deine Exporte)</li>
@@ -288,149 +246,428 @@
         </div>
     </div>
 
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.run_heading') }}</h2>
-
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.run_heading') }}</h2>
         {% if update_available %}
         <p>{{ _('update.run_intro') }}</p>
-
-        <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-            <form action="/settings?tab=update" method="post" style="display: inline;">
+        <div class="flex flex-wrap gap-3 mt-3">
+            <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">
                 <input type="hidden" name="action" value="run_update">
-                <button type="submit" class="btn btn-primary"
-                        style="background: var(--accent-green); font-size: 1.1rem; padding: 0.8rem 2rem;"
-                        onclick="return confirm('{{ _('update.run_confirm') }}');">
-                    {{ _('update.run_button') }}
-                </button>
+                <input type="hidden" name="github_token" value="">
+                <button type="submit" class="rounded-lg bg-success px-4 py-2 text-white text-lg hover:opacity-90" onclick="return confirm('{{ _('update.run_confirm') }}');">{{ _('update.run_button') }}</button>
             </form>
-            <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="btn btn-secondary"
-               style="background: var(--bg-hover); border: 1px solid var(--border);">
-                {{ _('update.github_button') }}
-            </a>
+            <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('update.github_button') }}</a>
         </div>
         {% else %}
-        <div class="admonition admonition-warning">
-            <strong>{{ _('update.not_available_title') }}</strong><br>
-            {{ _('update.not_available_desc') }}
-            <pre style="background: var(--bg-code); padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
+        <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 text-sm">
+            <strong>{{ _('update.not_available_title') }}</strong><br>{{ _('update.not_available_desc') }}
+            <pre class="bg-bg-sunken p-2 rounded mt-2">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
         </div>
         {% endif %}
     </div>
 
     {% if update_log %}
-    <div class="card" style="background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">{{ _('update.log_heading') }}</h2>
-        <pre style="white-space: pre-wrap; font-size: 0.85rem; margin: 0;">{{ update_log }}</pre>
-        <p style="margin-top: 1rem; padding: 0.8rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius);">
-            <strong style="color: var(--accent-yellow);">{{ _('update.restart_warning') }}</strong><br>
-            <code style="background: var(--bg-code); padding: 0.2rem 0.5rem; border-radius: 4px;">./start.sh</code>
-        </p>
+    <div class="rounded-xl border border-border bg-bg-sunken p-5 shadow-sm mb-4">
+        <h2 class="text-lg font-semibold mb-3">{{ _('update.log_heading') }}</h2>
+        <pre class="whitespace-pre-wrap text-xs">{{ update_log }}</pre>
+        <p class="mt-3 p-3 bg-error-subtle rounded-lg text-sm"><strong class="text-warning">{{ _('update.restart_warning') }}</strong><br><code class="bg-bg-sunken px-1.5 py-0.5 rounded">./start.sh</code></p>
     </div>
     {% endif %}
 
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">{{ _('update.terminal_heading') }}</h2>
+    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.terminal_heading') }}</h2>
         <p>{{ _('update.terminal_desc') }}</p>
-        <pre style="background: var(--bg-code); padding: 1rem; border-radius: var(--radius);">./update.sh          # Update ausführen
+        <pre class="bg-bg-sunken p-3 rounded-lg mt-2">./update.sh          # Update ausführen
 ./update.sh --check  # Nur prüfen
 # oder
 ./wiki.sh update</pre>
     </div>
 </div>
 
+<!-- User Management -->
+<div id="tab-users" class="settings-tab-content hidden">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1">{{ _('users.create_heading') }}</h2>
+        <p class="text-text-secondary mb-4">{{ _('users.create_hint', default='Lege einen neuen Benutzer an (Admin-Rechte zum Verwalten erforderlich).') }}</p>
+        <form action="{{ base_path }}/users" method="post" class="space-y-4 max-w-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="username" class="block font-medium mb-1">{{ _('users.username') }}</label>
+                    <input type="text" name="username" id="username" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                </div>
+                <div>
+                    <label for="password" class="block font-medium mb-1">{{ _('users.password') }}</label>
+                    <input type="password" name="password" id="password" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                </div>
+            </div>
+            <div>
+                <label for="role" class="block font-medium mb-1">{{ _('users.role') }}</label>
+                <select name="role" id="role" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                    <option value="admin">{{ _('users.role_admin') }}</option>
+                    <option value="editor">{{ _('users.role_editor') }}</option>
+                    <option value="viewer">{{ _('users.role_viewer') }}</option>
+                </select>
+            </div>
+            <div><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('users.create') }}</button></div>
+        </form>
+    </div>
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('users.title') }}</h2>
+        {% if users %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-text-muted border-b border-border">
+                        <th class="text-left py-2">{{ _('users.table_username') }}</th>
+                        <th class="text-left py-2">{{ _('users.table_role') }}</th>
+                        <th class="text-left py-2">{{ _('users.table_active') }}</th>
+                        <th class="text-left py-2">{{ _('users.table_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="border-b border-border">
+                        <td class="py-2 font-medium">{{ user.username }}{% if current_user and user.username == current_user.username %} <span class="text-xs text-primary">({{ _('users.you', default='du') }})</span>{% endif %}</td>
+                        <td class="py-2">
+                            {% if user.role == 'admin' %}{{ _('users.role_admin') }}
+                            {% elif user.role == 'editor' %}{{ _('users.role_editor') }}
+                            {% elif user.role == 'viewer' %}{{ _('users.role_viewer') }}
+                            {% else %}{{ user.role }}{% endif %}
+                        </td>
+                        <td class="py-2">{{ _('users.active') if user.active else _('users.inactive') }}</td>
+                        <td class="py-2">
+                            {% if not current_user or user.id != current_user.id %}
+                            <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
+                                <button type="submit" class="text-error hover:underline text-xs">{{ _('users.delete') }}</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-text-secondary">{{ _('users.no_users', default='Noch keine Benutzer vorhanden.') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- API-Key Management -->
+<div id="tab-apikeys" class="settings-tab-content hidden">
+    {% if new_key %}
+    <div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6">
+        <p class="mb-2 font-semibold text-success">{{ _('apikeys.raw_key') }}</p>
+        <div class="flex flex-wrap gap-2 items-center">
+            <code id="newKey" class="rounded-lg bg-bg-sunken px-3 py-2 text-sm font-mono break-all">{{ new_key }}</code>
+            <button type="button" id="copyKeyBtn" onclick="copySettingsApiKey()" class="rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-bg-sunken">{{ _('apikeys.copy') }}</button>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-lg mb-6">
+        <h2 class="text-lg font-semibold mb-1">{{ _('apikeys.create_heading') }}</h2>
+        <form action="{{ base_path }}/api-keys" method="post" class="space-y-4">
+            <div>
+                <label for="name" class="block font-medium mb-1">{{ _('apikeys.name') }}</label>
+                <input type="text" name="name" id="name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('apikeys.name_placeholder') }}">
+            </div>
+            <div>
+                <label for="scopes" class="block font-medium mb-1">{{ _('apikeys.scopes') }}</label>
+                <input type="text" name="scopes" id="scopes" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text font-mono focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="read, write">
+            </div>
+            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                <input type="checkbox" name="require_password" value="on" class="rounded border-border text-primary focus:ring-primary-subtle">
+                <span>{{ _('apikeys.require_password') }}</span>
+            </label>
+            <div><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('apikeys.create') }}</button></div>
+        </form>
+    </div>
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('apikeys.title') }}</h2>
+        {% if keys %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-text-muted border-b border-border">
+                        <th class="text-left py-2">{{ _('apikeys.table_name') }}</th>
+                        <th class="text-left py-2">API Key</th>
+                        <th class="text-left py-2">{{ _('apikeys.table_scopes') }}</th>
+                        <th class="text-left py-2">{{ _('apikeys.table_require_password') }}</th>
+                        <th class="text-left py-2">{{ _('apikeys.table_active') }}</th>
+                        <th class="text-left py-2">{{ _('apikeys.table_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key in keys %}
+                    <tr class="border-b border-border">
+                        <td class="py-2 font-medium">{{ key.name }}</td>
+                        <td class="py-2">
+                            <div class="flex items-center gap-2">
+                                <span id="key-display-{{ key.id }}" class="font-mono text-xs text-text-secondary select-all">••••••••••••••••</span>
+                                <button type="button" onclick="openRevealModal('{{ key.id }}', '{{ key.name | escape }}')" class="text-primary hover:text-primary-hover p-1 text-xs" title="Schlüssel anzeigen">👁️ Anzeigen</button>
+                            </div>
+                        </td>
+                        <td class="py-2 font-mono text-xs text-text-secondary">{{ key.scopes | join(', ') if key.scopes else '—' }}</td>
+                        <td class="py-2">{{ _('apikeys.yes') if key.require_password else _('apikeys.no') }}</td>
+                        <td class="py-2">{{ _('apikeys.active') if key.active else _('apikeys.inactive') }}</td>
+                        <td class="py-2">
+                            <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
+                                <button type="submit" class="text-error hover:underline text-xs">{{ _('apikeys.delete') }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-text-secondary">{{ _('apikeys.no_keys') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal für Passwortabfrage zum Anzeigen von API-Keys -->
+<div id="revealModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black/60 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl animate-fade-in">
+        <h3 class="text-lg font-bold mb-2 text-text">Sicherheitsüberprüfung</h3>
+        <p class="text-xs text-text-secondary mb-4">Bitte gib dein Passwort ein, um den API-Schlüssel <strong id="revealModalKeyName" class="text-text"></strong> anzuzeigen:</p>
+        
+        <form id="revealForm" onsubmit="submitRevealKey(event)" class="space-y-4">
+            <input type="hidden" id="revealModalKeyId">
+            <div>
+                <label for="revealPassword" class="block text-sm font-medium mb-1">Passwort</label>
+                <input type="password" id="revealPassword" required class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                <p id="revealError" class="text-error text-xs mt-1 hidden"></p>
+            </div>
+            
+            <div id="revealKeyContainer" class="rounded-lg bg-bg-sunken p-3 border border-border font-mono text-xs text-text break-all hidden select-all">
+                <!-- Entschlüsselter Key wird hier eingefügt -->
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeRevealModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm hover:bg-bg-sunken">Abbrechen</button>
+                <button type="submit" id="revealSubmitBtn" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-sm text-white font-medium">Verifizieren</button>
+                <button type="button" id="revealCopyBtn" class="rounded-lg bg-success px-4 py-2 text-sm text-white font-medium hidden">Kopieren</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Backup & Restore -->
+<div id="tab-backup" class="settings-tab-content hidden">
+    <div class="space-y-6 max-w-2xl">
+        <!-- Backup Download Card -->
+        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.backup_download_title') }}</h2>
+            <p class="text-text-secondary text-sm mb-4">{{ _('settings.backup_download_desc') }}</p>
+            <a href="{{ base_path }}/settings/backup" class="inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 py-2.5 text-white font-semibold no-underline transition-colors shadow-sm">
+                {{ _('settings.backup_download_btn') }}
+            </a>
+        </div>
+
+        <!-- Restore Upload Card -->
+        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-1 text-warning">{{ _('settings.restore_title') }}</h2>
+            <p class="text-text-secondary text-sm mb-4">{{ _('settings.restore_desc') }}</p>
+            <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 mb-4 text-xs text-text-secondary">
+                {{ _('settings.restore_warning') }}
+            </div>
+            <form action="{{ base_path }}/settings/restore" method="post" enctype="multipart/form-data" class="space-y-4" onsubmit="return confirm('{{ _('settings.restore_confirm') }}');">
+                <div>
+                    <label for="backup_file" class="block font-medium mb-1 text-sm">{{ _('settings.restore_file_label') }}</label>
+                    <input type="file" name="backup_file" id="backup_file" required accept=".tar.xz" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                </div>
+                <button type="submit" class="rounded-lg bg-warning hover:bg-warning/80 px-5 py-2.5 text-black font-semibold transition-colors shadow-sm">
+                    {{ _('settings.restore_btn') }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="{{ base_path }}/static/js/presets.js?v={{ app_version }}"></script>
+<script type="module" src="{{ base_path }}/static/js/update.js?v={{ app_version }}"></script>
 <script>
-(function() {
-    // Tab switching
-    const tabs = document.querySelectorAll('.settings-tab');
-    const contents = {
-        'tab-language': document.getElementById('tab-language'),
-        'tab-config': document.getElementById('tab-config'),
-        'tab-health': document.getElementById('tab-health'),
-        'tab-update': document.getElementById('tab-update')
+/* Tab-Umschaltung inline – unabhängig vom externen Modul-Cache. */
+(function () {
+  "use strict";
+  function switchTab(id) {
+    var panels = {
+      "tab-language": document.getElementById("tab-language"),
+      "tab-theme": document.getElementById("tab-theme"),
+      "tab-config": document.getElementById("tab-config"),
+      "tab-users": document.getElementById("tab-users"),
+      "tab-apikeys": document.getElementById("tab-apikeys"),
+      "tab-health": document.getElementById("tab-health"),
+      "tab-update": document.getElementById("tab-update"),
+      "tab-backup": document.getElementById("tab-backup")
     };
+    var tabs = document.querySelectorAll(".settings-tab");
+    Object.keys(panels).forEach(function (k) { if (panels[k]) panels[k].classList.add("hidden"); });
+    tabs.forEach(function (t) {
+      t.classList.remove("border-primary", "text-text");
+      t.classList.add("border-transparent", "text-text-muted");
+    });
+    if (panels[id]) panels[id].classList.remove("hidden");
+    tabs.forEach(function (t) {
+      if (t.dataset.tab === id) {
+        t.classList.add("border-primary", "text-text");
+        t.classList.remove("border-transparent", "text-text-muted");
+      }
+    });
+  }
+  window.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".settings-tab").forEach(function (t) {
+      t.addEventListener("click", function () { switchTab(t.dataset.tab); });
+    });
+    var params = new URLSearchParams(window.location.search);
+    var map = { language: "tab-language", theme: "tab-theme", config: "tab-config", users: "tab-users", apikeys: "tab-apikeys", health: "tab-health", update: "tab-update", backup: "tab-backup" };
+    switchTab(map[params.get("tab")] || "tab-language");
+  });
+})();
 
-    // Open tab from URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const activeTab = urlParams.get('tab') || 'language';
-    const tabMap = { 'language': 'tab-language', 'config': 'tab-config', 'health': 'tab-health', 'update': 'tab-update' };
-    const initialTab = tabMap[activeTab] || 'tab-language';
+function copySettingsApiKey() {
+  var keyElement = document.getElementById('newKey');
+  if (!keyElement) return;
+  var textToCopy = keyElement.innerText.trim();
+  var btn = document.getElementById('copyKeyBtn');
 
-    function switchTab(tabId) {
-        Object.values(contents).forEach(c => { if (c) c.style.display = 'none'; });
-        tabs.forEach(t => {
-            t.style.color = 'var(--text-secondary)';
-            t.style.fontWeight = '500';
-            t.style.borderBottomColor = 'transparent';
-            t.classList.remove('active');
-        });
-        if (contents[tabId]) {
-            contents[tabId].style.display = 'block';
-        }
-        tabs.forEach(t => {
-            if (t.dataset.tab === tabId) {
-                t.style.color = 'var(--text-primary)';
-                t.style.fontWeight = '600';
-                t.style.borderBottomColor = 'var(--accent)';
-                t.classList.add('active');
-            }
-        });
+  var showSuccess = function() {
+    if (btn) {
+      var originalText = btn.innerText;
+      btn.innerText = "✓ Kopiert!";
+      setTimeout(function() { btn.innerText = originalText; }, 2000);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(function() {
+      fallbackCopy(textToCopy);
+    });
+  } else {
+    fallbackCopy(textToCopy);
+  }
+
+  function fallbackCopy(text) {
+    try {
+      var textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      var successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (successful) {
+        showSuccess();
+      } else {
+        alert("Kopieren fehlgeschlagen.");
+      }
+    } catch (e) {
+      alert("Fehler: " + e);
+    }
+  }
+}
+
+/* Modal-Logik zum Anzeigen und Entschlüsseln von API-Schlüsseln */
+var activeRawKey = "";
+
+function openRevealModal(keyId, keyName) {
+  document.getElementById("revealModalKeyId").value = keyId;
+  document.getElementById("revealModalKeyName").innerText = keyName;
+  document.getElementById("revealPassword").value = "";
+  document.getElementById("revealError").classList.add("hidden");
+  document.getElementById("revealKeyContainer").classList.add("hidden");
+  document.getElementById("revealKeyContainer").innerText = "";
+  document.getElementById("revealSubmitBtn").classList.remove("hidden");
+  document.getElementById("revealCopyBtn").classList.add("hidden");
+  document.getElementById("revealModal").classList.remove("hidden");
+  document.getElementById("revealPassword").focus();
+  activeRawKey = "";
+}
+
+function closeRevealModal() {
+  document.getElementById("revealModal").classList.add("hidden");
+}
+
+function submitRevealKey(event) {
+  event.preventDefault();
+  var keyId = document.getElementById("revealModalKeyId").value;
+  var password = document.getElementById("revealPassword").value;
+  var errorEl = document.getElementById("revealError");
+  var keyContainer = document.getElementById("revealKeyContainer");
+  var submitBtn = document.getElementById("revealSubmitBtn");
+  var copyBtn = document.getElementById("revealCopyBtn");
+
+  errorEl.classList.add("hidden");
+
+  fetch("{{ base_path }}/api-keys/reveal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key_id: keyId, password: password })
+  })
+  .then(function(res) {
+    return res.json().then(function(data) {
+      if (!res.ok) {
+        throw new Error(data.error || "Verifizierung fehlgeschlagen");
+      }
+      return data;
+    });
+  })
+  .then(function(data) {
+    activeRawKey = data.raw_key;
+    
+    // In Tabelle anzeigen
+    var tableDisplaySpan = document.getElementById("key-display-" + keyId);
+    if (tableDisplaySpan) {
+      tableDisplaySpan.innerText = activeRawKey;
     }
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            switchTab(this.dataset.tab);
+    // Im Modal anzeigen & kopierbar machen
+    keyContainer.innerText = activeRawKey;
+    keyContainer.classList.remove("hidden");
+    submitBtn.classList.add("hidden");
+    
+    copyBtn.classList.remove("hidden");
+    copyBtn.innerText = "Kopieren";
+    copyBtn.onclick = function() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(activeRawKey).then(function() {
+          copyBtn.innerText = "✓ Kopiert!";
+          setTimeout(function() { copyBtn.innerText = "Kopieren"; }, 2000);
         });
-    });
-
-    switchTab(initialTab);
-
-    // SMTP preset function
-    window.applyPreset = function(host, port, useTls, placeholder) {
-        const hostEl = document.getElementById('smtp_host');
-        const portEl = document.getElementById('smtp_port');
-        const tlsEl = document.getElementById('use_tls');
-        const userEl = document.getElementById('smtp_user');
-        if (hostEl) hostEl.value = host;
-        if (portEl) portEl.value = port;
-        if (tlsEl) tlsEl.checked = useTls;
-        if (userEl) userEl.placeholder = '{{ _('config.preset_placeholder') }} ' + placeholder;
+      } else {
+        // Fallback
+        var textArea = document.createElement("textarea");
+        textArea.value = activeRawKey;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        var successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (successful) {
+          copyBtn.innerText = "✓ Kopiert!";
+          setTimeout(function() { copyBtn.innerText = "Kopieren"; }, 2000);
+        } else {
+          alert("Kopieren nicht unterstützt.");
+        }
+      }
     };
-
-    // Update check function
-    window.checkUpdate = function() {
-        var btn = document.getElementById('checkUpdateBtn');
-        var result = document.getElementById('checkResult');
-        btn.disabled = true;
-        btn.innerHTML = '{{ _('update.checking') }}';
-        result.style.display = 'block';
-        result.innerHTML = '<p style="color: var(--text-muted);">{{ _('update.checking_text') }}</p>';
-
-        fetch('/admin/update/check')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (!data.success) {
-                    result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + data.error + '</div>';
-                    return;
-                }
-                if (data.up_to_date) {
-                    result.innerHTML = '<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                        '<strong style="color: var(--accent-green);">{{ _('update.up_to_date') }}</strong><br>' +
-                        '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> – {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span></div>';
-                } else {
-                    result.innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 1rem;">' +
-                        '<strong style="color: var(--accent-yellow);">{{ _('update.update_available') }}</strong><br>' +
-                        '<span style="color: var(--text-secondary);">{{ _('update.local_label') }} <strong>' + data.local_version + '</strong> → {{ _('update.github_label') }} <strong>' + data.github_version + '</strong></span>' +
-                        '<br><br><a href="/settings?tab=update" class="btn btn-primary" style="background: var(--accent-green);">{{ _('update.run_button') }}</a></div>';
-                }
-            })
-            .catch(function(err) {
-                result.innerHTML = '<div class="admonition admonition-warning"><strong>{{ _('update.error_prefix') }}</strong> ' + err.message + '</div>';
-            })
-            .finally(function() {
-                btn.disabled = false;
-                btn.innerHTML = '{{ _('update.check_button') }}';
-            });
-    };
-})();
+  })
+  .catch(function(err) {
+    errorEl.innerText = err.message;
+    errorEl.classList.remove("hidden");
+  });
+}
 </script>
+
+
 {% endblock %}

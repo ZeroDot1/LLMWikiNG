@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ _('register.success_title') }}{% endblock %}
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-10 bg-bg-sunken">
+    <div class="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 shadow-lg">
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-2">🎉</div>
+            <h1 class="text-2xl font-bold text-success">{{ _('register.success_title') }}</h1>
+            <p class="text-text-secondary text-sm">{{ _('register.success_subtitle') }}</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="rounded-lg bg-bg-sunken p-4 border border-border">
+                <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_username') }}</span>
+                <span class="font-mono text-text text-lg font-bold">{{ username }}</span>
+            </div>
+
+            <div class="rounded-lg bg-bg-sunken p-4 border border-border">
+                <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_role') }}</span>
+                <span class="font-mono text-text">{% if role == "admin" %}{{ _('users.role_admin') }}{% elif role == "editor" %}{{ _('users.role_editor') }}{% else %}{{ _('users.role_viewer') }}{% endif %}</span>
+            </div>
+
+            <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4">
+                <span class="block text-xs font-semibold uppercase tracking-wider text-yellow-500 mb-2">⚠️ {{ _('register.success_key_title') }}</span>
+                <p class="text-xs text-text-secondary mb-3">{{ _('register.success_key_desc') }}</p>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="apiKeyVal" readonly value="{{ raw_key }}" class="w-full font-mono text-xs rounded-lg border border-border bg-surface px-3 py-2 text-text focus:outline-none">
+                    <button type="button" id="copyKeyBtn" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-medium whitespace-nowrap">{{ _('register.success_copy') }}</button>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-border flex justify-end">
+                <a href="{{ base_path }}/login" class="rounded-lg bg-primary px-6 py-2.5 text-white hover:bg-primary-hover font-semibold text-center">{{ _('register.success_continue') }}</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const copyBtn = document.getElementById("copyKeyBtn");
+    const keyInput = document.getElementById("apiKeyVal");
+    const txtCopy = "{{ _('register.success_copy') }}";
+    const txtCopied = "{{ _('register.success_copied') }}";
+    
+    if (copyBtn && keyInput) {
+        copyBtn.addEventListener("click", () => {
+            const textToCopy = keyInput.value;
+            
+            // Funktion zum Ändern der Button-Stile bei Erfolg
+            const showSuccess = () => {
+                copyBtn.textContent = txtCopied;
+                copyBtn.classList.remove("bg-primary", "hover:bg-primary-hover");
+                copyBtn.classList.add("bg-success");
+                setTimeout(() => {
+                    copyBtn.textContent = txtCopy;
+                    copyBtn.classList.remove("bg-success");
+                    copyBtn.classList.add("bg-primary", "hover:bg-primary-hover");
+                }, 2000);
+            };
+
+            // 1. Moderne Clipboard API versuchen
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(err => {
+                    fallbackCopy(textToCopy);
+                });
+            } else {
+                fallbackCopy(textToCopy);
+            }
+
+            // 2. Fallback mit unsichtbarem Textarea-Element
+            function fallbackCopy(text) {
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    if (successful) {
+                        showSuccess();
+                    } else {
+                        alert("Kopieren fehlgeschlagen. Bitte markiere den Text manuell.");
+                    }
+                } catch (e) {
+                    alert("Fehler beim Kopieren: " + e);
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

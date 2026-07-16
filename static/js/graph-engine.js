@@ -1,0 +1,541 @@
+/**
+ * graph-engine.js – Vanilla-JS Wissensgraph-Engine (Canvas 2D, keine externen Libs)
+ * Ersetzt vis-network vollständig. 2026-Standard: ES2022+, Pointer Events, ResizeObserver.
+ */
+export class GraphEngine {
+  /** @param {HTMLCanvasElement} canvas */
+  constructor(canvas, options = {}) {
+    this.canvas = canvas;
+    this.ctx    = canvas.getContext("2d");
+
+    /** @type {Array<{id:string, label:string, group:string, url:string, title:string, x:number, y:number, vx:number, vy:number, opacity:number, _w:number, _h:number}>} */
+    this.nodes     = [];
+    /** @type {Array<{from:string, to:string, color:string, dashes:boolean, title:string, width:number}>} */
+    this.edges     = [];
+    /** @type {Map<string, object>} id → node (O(1) lookup) */
+    this._nodeMap  = new Map();
+    /** @type {Map<string, Set<string>>} id → Set of connected ids */
+    this.adjacency = new Map();
+
+    this.view = { x: 0, y: 0, scale: 1 };
+    this.dragNode  = null;
+    this.hoverNode = null;
+    this.selected  = null;
+
+    this.sim = { alpha: 1, alphaDecay: 0.02, alphaMin: 0.005 };
+    this.opts = {
+      gravitationalConstant: -2000,
+      centralGravity:        0.3,
+      springLength:          120,
+      springConstant:        0.04,
+      ...options,
+    };
+
+    // Tooltip-Element (absolut über dem Canvas-Container)
+    this._tooltip = this._createTooltip();
+    this._raf     = null;
+    this._dpr     = window.devicePixelRatio || 1;
+
+    this._bindEvents();
+    this._observeResize();
+
+    this._loop = this._loop.bind(this);
+    this._raf  = requestAnimationFrame(this._loop);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Public API
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Lade Graph-Daten und starte Simulation. */
+  setData(data) {
+    const TWO_PI = Math.PI * 2;
+    const total  = data.nodes.length;
+
+    this.nodes = data.nodes.map((n, i) => ({
+      id:      n.id,
+      label:   n.label,
+      group:   n.group  || "page",
+      url:     n.url    || "",
+      title:   n.title  || n.label,
+      // Spirale als Startlayout – verhindert initiale Überlagerungen
+      x: Math.cos((i / total) * TWO_PI) * (100 + i * 2) + (Math.random() - 0.5) * 30,
+      y: Math.sin((i / total) * TWO_PI) * (100 + i * 2) + (Math.random() - 0.5) * 30,
+      vx: 0, vy: 0,
+      opacity: 1,
+      _w: 0, _h: 0,
+    }));
+
+    this.edges = data.edges.map(e => ({
+      from:   e.from,
+      to:     e.to,
+      color:  e.color  || "#475569",
+      dashes: !!e.dashes,
+      title:  e.title  || "",
+      width:  e.color  ? 2.5 : 1.5,
+    }));
+
+    // Schnelles id → node Mapping
+    this._nodeMap.clear();
+    this.nodes.forEach(n => this._nodeMap.set(n.id, n));
+
+    // Adjazenzliste
+    this.adjacency.clear();
+    this.nodes.forEach(n => this.adjacency.set(n.id, new Set()));
+    this.edges.forEach(e => {
+      this.adjacency.get(e.from)?.add(e.to);
+      this.adjacency.get(e.to)?.add(e.from);
+    });
+
+    this.sim.alpha = 1;
+    this.selected  = null;
+    this.fit();
+  }
+
+  /** Ansicht auf alle Knoten einpassen. */
+  fit() {
+    if (!this.nodes.length) return;
+    const xs = this.nodes.map(n => n.x);
+    const ys = this.nodes.map(n => n.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+
+    const w   = this.canvas.clientWidth  || this.canvas.width  / this._dpr;
+    const h   = this.canvas.clientHeight || this.canvas.height / this._dpr;
+    const pad = 80;
+    const sx  = (w - pad * 2) / (maxX - minX || 1);
+    const sy  = (h - pad * 2) / (maxY - minY || 1);
+    this.view.scale = Math.min(sx, sy, 2);
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    this.view.x = w / 2 - cx * this.view.scale;
+    this.view.y = h / 2 - cy * this.view.scale;
+  }
+
+  /** Selektion zurücksetzen + fit(). */
+  reset() {
+    this._select(null);
+    this.fit();
+  }
+
+  /** Ressourcen freigeben (falls Engine nicht mehr benötigt). */
+  destroy() {
+    cancelAnimationFrame(this._raf);
+    this._ro?.disconnect();
+    this._tooltip.remove();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Physik: vereinfachter Force-Directed-Algorithmus
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _tick() {
+    if (this.sim.alpha < this.sim.alphaMin) return;
+    const α       = this.sim.alpha;
+    const repulse = -this.opts.gravitationalConstant; // positiver Wert
+    const k       = this.opts.springLength;
+    const kSpring = this.opts.springConstant;
+    const nodes   = this.nodes;
+    const n       = nodes.length;
+
+    // Repulsion: O(n²) – für typische Wikis (<300 Knoten) performant genug
+    for (let i = 0; i < n; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < n; j++) {
+        const b  = nodes[j];
+        let dx   = a.x - b.x;
+        let dy   = a.y - b.y;
+        const d2 = dx * dx + dy * dy || 0.01;
+        const d  = Math.sqrt(d2);
+        const f  = (repulse / d2) * α;
+        const fx = (dx / d) * f;
+        const fy = (dy / d) * f;
+        a.vx += fx; a.vy += fy;
+        b.vx -= fx; b.vy -= fy;
+      }
+    }
+
+    // Attraktion entlang Kanten (Federkraft)
+    for (const e of this.edges) {
+      const a = this._nodeMap.get(e.from);
+      const b = this._nodeMap.get(e.to);
+      if (!a || !b) continue;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d  = Math.hypot(dx, dy) || 0.01;
+      const f  = kSpring * (d - k) * α;
+      const fx = (dx / d) * f, fy = (dy / d) * f;
+      a.vx += fx; a.vy += fy;
+      b.vx -= fx; b.vy -= fy;
+    }
+
+    // Zentralkraft + Euler-Integration + Dämpfung
+    const cg = this.opts.centralGravity * 0.01 * α;
+    for (const nd of nodes) {
+      if (nd === this.dragNode) { nd.vx = 0; nd.vy = 0; continue; }
+      nd.vx += -nd.x * cg;
+      nd.vy += -nd.y * cg;
+      nd.x  += nd.vx;
+      nd.y  += nd.vy;
+      nd.vx *= 0.85;  // Dämpfung
+      nd.vy *= 0.85;
+    }
+
+    this.sim.alpha *= (1 - this.sim.alphaDecay);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Rendering
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _loop() {
+    this._tick();
+    this._render();
+    this._raf = requestAnimationFrame(this._loop);
+  }
+
+  _render() {
+    const { ctx, view } = this;
+    const dpr = this._dpr;
+    const cw  = this.canvas.width;
+    const ch  = this.canvas.height;
+
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.save();
+    // DPR-Skalierung + View-Transformation
+    ctx.scale(dpr, dpr);
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.scale, view.scale);
+
+    // ── Kanten ──────────────────────────────────────────────────────────────
+    ctx.font = "13px Inter, system-ui, sans-serif";
+    for (const e of this.edges) {
+      const a = this._nodeMap.get(e.from);
+      const b = this._nodeMap.get(e.to);
+      if (!a || !b) continue;
+
+      const dim = this._isDimmed(a.id) && this._isDimmed(b.id);
+      ctx.globalAlpha = dim ? 0.1 : 0.85;
+      ctx.strokeStyle = e.color;
+      ctx.lineWidth   = e.width;
+      ctx.setLineDash(e.dashes ? [6, 4] : []);
+
+      // Linie von Node-Rand zu Node-Rand
+      const { sx, sy, ex, ey } = this._edgeEndpoints(a, b);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      this._drawArrow(ex, ey, Math.atan2(ey - sy, ex - sx), e.color, dim ? 0.1 : 0.85);
+    }
+
+    // ── Knoten (Rounded Rect Boxen) ─────────────────────────────────────────
+    const padX = 12, padY = 7;
+    ctx.font = "13px Inter, system-ui, sans-serif";
+    for (const nd of this.nodes) {
+      const isDim = this._isDimmed(nd.id);
+      ctx.globalAlpha = isDim ? 0.2 : nd.opacity;
+      const c  = this._colorFor(nd);
+      const tw = ctx.measureText(nd.label).width;
+      const bw = tw + padX * 2;
+      const bh = 13 + padY * 2;
+      nd._w = bw; nd._h = bh;
+
+      const x = nd.x - bw / 2, y = nd.y - bh / 2;
+
+      // Schatten
+      ctx.shadowColor   = "rgba(0,0,0,0.35)";
+      ctx.shadowBlur    = 6;
+      ctx.shadowOffsetY = 2;
+
+      this._roundRect(x, y, bw, bh, 7);
+      ctx.fillStyle = c.background;
+      ctx.fill();
+
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.lineWidth   = nd.id === this.selected ? 2.5 : 1.5;
+      ctx.strokeStyle = nd.id === this.selected ? "#fff" : c.border;
+      ctx.stroke();
+
+      ctx.fillStyle    = "#f8fafc";
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(nd.label, nd.x, nd.y);
+    }
+
+    ctx.globalAlpha  = 1;
+    ctx.shadowBlur   = 0;
+    ctx.restore();
+  }
+
+  /** Berechne Kanten-Endpunkte an den Node-Rändern. */
+  _edgeEndpoints(a, b) {
+    const dx  = b.x - a.x, dy  = b.y - a.y;
+    const ang = Math.atan2(dy, dx);
+    const aw  = (a._w || 60) / 2, ah = (a._h || 27) / 2;
+    const bw  = (b._w || 60) / 2, bh = (b._h || 27) / 2;
+
+    // Schnittpunkt mit Rechteck-Rand (via parametrische Projektion)
+    const ta  = this._rectEdgeT(aw, ah, ang);
+    const tb  = this._rectEdgeT(bw, bh, ang + Math.PI);
+    const len = Math.hypot(dx, dy);
+
+    return {
+      sx: a.x + Math.cos(ang) * ta,
+      sy: a.y + Math.sin(ang) * ta,
+      ex: b.x - Math.cos(ang) * tb,
+      ey: b.y - Math.sin(ang) * tb,
+    };
+  }
+
+  /** Abstand Rechteck-Mittelpunkt zu Rand in Richtung angle. */
+  _rectEdgeT(hw, hh, angle) {
+    const ca = Math.abs(Math.cos(angle));
+    const sa = Math.abs(Math.sin(angle));
+    return ca < 1e-9 ? hh : sa < 1e-9 ? hw : Math.min(hw / ca, hh / sa);
+  }
+
+  _drawArrow(x, y, angle, color, alpha) {
+    const ah = 9;
+    this.ctx.globalAlpha = alpha;
+    this.ctx.fillStyle   = color;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x - ah * Math.cos(angle - 0.38), y - ah * Math.sin(angle - 0.38));
+    this.ctx.lineTo(x - ah * Math.cos(angle + 0.38), y - ah * Math.sin(angle + 0.38));
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.globalAlpha = 1;
+  }
+
+  _colorFor(n) {
+    if (n.group === "system") return { background: "#e05252", border: "#f08080" };
+    if (n.group === "source") return { background: "#3a80c9", border: "#6ba8e8" };
+    if (n.group?.startsWith("tag-")) {
+      const tag  = n.group.slice(4);
+      const hash = [...tag].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const hues = [35, 90, 160, 200, 260, 320];
+      const hue  = hues[hash % hues.length];
+      return { background: `hsl(${hue},58%,42%)`, border: `hsl(${hue},58%,58%)` };
+    }
+    return { background: "#5b6ee8", border: "#8091f5" };
+  }
+
+  _roundRect(x, y, w, h, r) {
+    const ctx = this.ctx;
+    // 2026: Path2D + roundRect nativ unterstützt in allen modernen Browsern
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x,     y + h, r);
+      ctx.arcTo(x,     y + h, x,     y,     r);
+      ctx.arcTo(x,     y,     x + w, y,     r);
+      ctx.closePath();
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Selektion / Dimming
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _isDimmed(id) {
+    if (!this.selected) return false;
+    return id !== this.selected && !this.adjacency.get(this.selected)?.has(id);
+  }
+
+  _select(id) {
+    this.selected = id;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Interaktion – Pointer Events (Maus + Touch)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _bindEvents() {
+    const cv = this.canvas;
+    let panning = false, lastX = 0, lastY = 0;
+    let clickTimer = null;
+
+    // ── Pointer Down ────────────────────────────────────────────────────────
+    cv.addEventListener("pointerdown", e => {
+      cv.setPointerCapture(e.pointerId);
+      const p   = this._toWorld(e);
+      const hit = this._hitTest(p);
+      if (hit) {
+        this.dragNode = hit;
+        this.sim.alpha = Math.max(this.sim.alpha, 0.12);
+      } else {
+        panning = true;
+        lastX   = e.clientX;
+        lastY   = e.clientY;
+      }
+    });
+
+    // ── Pointer Move ────────────────────────────────────────────────────────
+    cv.addEventListener("pointermove", e => {
+      const p = this._toWorld(e);
+      if (this.dragNode) {
+        this.dragNode.x = p.x;
+        this.dragNode.y = p.y;
+        this.sim.alpha  = Math.max(this.sim.alpha, 0.08);
+      } else if (panning) {
+        this.view.x += e.clientX - lastX;
+        this.view.y += e.clientY - lastY;
+        lastX = e.clientX;
+        lastY = e.clientY;
+      } else {
+        const prev = this.hoverNode;
+        this.hoverNode = this._hitTest(p);
+        cv.style.cursor = this.hoverNode ? "pointer" : "grab";
+        if (this.hoverNode !== prev) {
+          if (this.hoverNode) {
+            this._showTooltip(e, this.hoverNode);
+          } else {
+            this._hideTooltip();
+          }
+        } else if (this.hoverNode) {
+          this._moveTooltip(e);
+        }
+      }
+    });
+
+    // ── Pointer Up ──────────────────────────────────────────────────────────
+    cv.addEventListener("pointerup", e => {
+      if (!this.dragNode && !panning) {
+        // Click-Logik: einfacher Klick vs. Doppelklick
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+          // Doppelklick
+          const p   = this._toWorld(e);
+          const hit = this._hitTest(p);
+          if (hit?.url) window.location.href = hit.url;
+        } else {
+          clickTimer = setTimeout(() => {
+            clickTimer = null;
+            const p   = this._toWorld(e);
+            const hit = this._hitTest(p);
+            this._select(hit ? hit.id : null);
+          }, 220);
+        }
+      }
+      this.dragNode = null;
+      panning       = false;
+    });
+
+    cv.addEventListener("pointercancel", () => {
+      this.dragNode = null;
+      panning       = false;
+    });
+
+    // ── Wheel / Zoom ────────────────────────────────────────────────────────
+    cv.addEventListener("wheel", e => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      const rect   = cv.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      this.view.x     = mx - (mx - this.view.x) * factor;
+      this.view.y     = my - (my - this.view.y) * factor;
+      this.view.scale = Math.max(0.05, Math.min(this.view.scale * factor, 6));
+    }, { passive: false });
+
+    // ── Mouse Leave: Tooltip verbergen ─────────────────────────────────────
+    cv.addEventListener("pointerleave", () => {
+      this._hideTooltip();
+      this.hoverNode = null;
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Koordinaten-Transformation
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _toWorld(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left  - this.view.x) / this.view.scale,
+      y: (e.clientY - rect.top   - this.view.y) / this.view.scale,
+    };
+  }
+
+  _hitTest(p) {
+    // Von vorne nach hinten (zuletzt gezeichnet = oben)
+    for (let i = this.nodes.length - 1; i >= 0; i--) {
+      const n  = this.nodes[i];
+      const hw = (n._w || 80) / 2, hh = (n._h || 27) / 2;
+      if (p.x >= n.x - hw && p.x <= n.x + hw && p.y >= n.y - hh && p.y <= n.y + hh)
+        return n;
+    }
+    return null;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Tooltip
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _createTooltip() {
+    const el = document.createElement("div");
+    el.style.cssText = [
+      "position:absolute",
+      "display:none",
+      "pointer-events:none",
+      "background:rgba(15,20,30,0.92)",
+      "color:#e2e8f0",
+      "padding:5px 10px",
+      "border-radius:6px",
+      "font:12px Inter,system-ui,sans-serif",
+      "border:1px solid rgba(255,255,255,0.1)",
+      "backdrop-filter:blur(4px)",
+      "z-index:100",
+      "max-width:220px",
+      "white-space:pre-wrap",
+    ].join(";");
+    // In den Canvas-Container einhängen
+    const parent = this.canvas.parentElement || document.body;
+    parent.style.position ||= "relative";
+    parent.appendChild(el);
+    return el;
+  }
+
+  _showTooltip(e, node) {
+    if (!node.title) return;
+    const rect   = this.canvas.getBoundingClientRect();
+    const parent = this._tooltip.parentElement.getBoundingClientRect();
+    this._tooltip.textContent = node.title;
+    this._tooltip.style.left  = `${e.clientX - parent.left + 12}px`;
+    this._tooltip.style.top   = `${e.clientY - parent.top  - 30}px`;
+    this._tooltip.style.display = "block";
+  }
+
+  _moveTooltip(e) {
+    const parent = this._tooltip.parentElement.getBoundingClientRect();
+    this._tooltip.style.left = `${e.clientX - parent.left + 12}px`;
+    this._tooltip.style.top  = `${e.clientY - parent.top  - 30}px`;
+  }
+
+  _hideTooltip() {
+    this._tooltip.style.display = "none";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ResizeObserver – Canvas-Auflösung bei Größenänderung anpassen
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  _observeResize() {
+    this._ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const dpr = window.devicePixelRatio || 1;
+        this._dpr = dpr;
+        this.canvas.width  = Math.round(width  * dpr);
+        this.canvas.height = Math.round(height * dpr);
+      }
+    });
+    this._ro.observe(this.canvas);
+  }
+}

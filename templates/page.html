@@ -3,120 +3,65 @@
 
 {% block content %}
 {% if success_msg %}
-<div class="admonition admonition-tip" style="margin-bottom: 1rem;">
-    <strong>{{ _('page.success_prefix') }}</strong> {{ success_msg }}
-</div>
+<div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('page.success_prefix') }}</strong> {{ success_msg }}</div>
 {% endif %}
 
 {% if error_msg %}
-<div class="admonition admonition-warning" style="margin-bottom: 1rem;">
-    <strong>{{ _('page.error_prefix') }}</strong> {{ error_msg }}
-</div>
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('page.error_prefix') }}</strong> {{ error_msg }}</div>
 {% endif %}
 
 {% if wikilinks_missing %}
-<div class="admonition admonition-warning">
+<div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm">
     <strong>{{ _('page.orphaned_links_title') }}</strong>
     {{ _('page.orphaned_links_desc') }}
     {% for link in wikilinks_missing %}
-    <a href="/wiki/{{ link }}" class="wikilink-missing">{{ link }}</a>{% if not loop.last %}, {% endif %}
+    <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ link }}" class="text-error underline decoration-dotted">{{ link }}</a>{% if not loop.last %}, {% endif %}
     {% endfor %}
-    – <a href="/search?q={{ wikilinks_missing[0] }}">{{ _('page.search_in_wiki') }}</a>
+    – <a href="{{ base_path }}/search?q={{ wikilinks_missing[0] }}" class="text-primary underline">{{ _('page.search_in_wiki') }}</a>
 </div>
 {% endif %}
 
 {% if trail_info %}
-<div class="trail-bar" style="background: rgba(102, 126, 234, 0.08); border: 1px solid rgba(102, 126, 234, 0.25); border-radius: var(--radius); padding: 0.8rem 1.2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: 0.9rem;">
-    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); font-weight: 500;">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6 rounded-lg border border-primary/30 bg-primary-subtle p-3 text-sm">
+    <div class="flex items-center gap-2 text-text font-medium">
         <span>{{ _('page.trail_path') }}</span>
-        <a href="/wiki/{{ trail_info.slug }}" style="color: var(--link); text-decoration: none; border-bottom: 1px dashed var(--link);">{{ trail_info.title }}</a>
-        <span style="color: var(--text-muted); font-size: 0.8rem; background: rgba(102, 126, 234, 0.15); padding: 0.1rem 0.5rem; border-radius: 10px;">{{ trail_info.index }} / {{ trail_info.total }}</span>
+        <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ trail_info.slug }}" class="text-primary no-underline border-b border-dotted border-primary">{{ trail_info.title }}</a>
+        <span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5">{{ trail_info.index }} / {{ trail_info.total }}</span>
     </div>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-        {% if trail_info.prev %}
-        <a href="/wiki/{{ trail_info.prev[1] }}" class="btn btn-sm btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; text-decoration: none;" title="{{ trail_info.prev[0] }}">{{ _('page.trail_back') }}</a>
-        {% endif %}
-        {% if trail_info.next %}
-        <a href="/wiki/{{ trail_info.next[1] }}" class="btn btn-sm btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; text-decoration: none;" title="{{ trail_info.next[0] }}">{{ _('page.trail_next') }}</a>
-        {% endif %}
+    <div class="flex gap-2">
+        {% if trail_info.prev %}<a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ trail_info.prev[1] }}" class="rounded-lg border border-border bg-surface px-2.5 py-1 text-sm hover:bg-bg-sunken" title="{{ trail_info.prev[0] }}">{{ _('page.trail_back') }}</a>{% endif %}
+        {% if trail_info.next %}<a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ trail_info.next[1] }}" class="rounded-lg bg-primary px-2.5 py-1 text-sm text-white hover:bg-primary-hover" title="{{ trail_info.next[0] }}">{{ _('page.trail_next') }}</a>{% endif %}
     </div>
 </div>
 {% endif %}
 
 {% if is_log %}
-<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border); padding: 0.8rem 1.2rem; border-radius: var(--radius); flex-wrap: wrap; gap: 0.8rem;">
-    <span style="color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">{{ _('page.log_auto_desc') }}</span>
-    <a href="/admin/clear-log" class="btn btn-sm btn-danger" style="text-decoration: none;" onclick="return confirm('{{ _('page.log_clear_confirm') }}');">{{ _('page.log_clear') }}</a>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6 rounded-lg border border-border bg-bg-sunken p-3 text-sm">
+    <span class="text-text-muted flex items-center gap-1">{{ _('page.log_auto_desc') }}</span>
+    <a href="{{ base_path }}/admin/clear-log" class="rounded-lg border border-error/40 text-error px-2.5 py-1 hover:bg-error-subtle" onclick="return confirm('{{ _('page.log_clear_confirm') }}');">{{ _('page.log_clear') }}</a>
 </div>
 {% endif %}
 
-{{ content|safe }}
+<div class="wiki-content">
+    {{ content|safe }}
+</div>
 
-<div style="margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+<div class="mt-12 pt-4 border-t border-border text-sm text-text-muted flex flex-wrap items-center justify-between gap-3">
     <div>
         {% if show_source and source_path %}
-        {{ _('page.source_label') }} <code>{{ source_path }}</code>
-        ·
-        <a href="/raw/{{ source_path }}">{{ _('page.view_raw_file') }}</a>
+        {{ _('page.source_label') }} <code class="bg-bg-sunken px-1 rounded">{{ source_path }}</code>
+        · <a href="{{ base_path }}/raw/{{ source_path }}" class="text-primary underline">{{ _('page.view_raw_file') }}</a>
         {% endif %}
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-sm btn-secondary" style="font-weight: 500; cursor: pointer; border: none;"
-                onclick="copyPageLink(this)" title="{{ _('page.share_link') }}">
-            {{ _('page.share_link') }}
-        </button>
-        <a href="/edit?filename={{ raw_page_name }}&folder=wiki" class="btn btn-sm btn-primary" style="font-weight: 500;">{{ _('page.edit_page') }}</a>
-        <a href="/wiki/{{ raw_page_name }}/export" class="btn btn-sm btn-secondary" style="font-weight: 500;">{{ _('page.export_page') }}</a>
+    <div class="flex flex-wrap gap-2">
+        <button class="rounded-lg border border-border bg-surface px-3 py-1.5 font-medium hover:bg-bg-sunken" onclick="copyPageLink(this)" title="{{ _('page.share_link') }}" data-copied="{{ _('page.link_copied') }}" data-error="{{ _('page.link_copy_error') }}">{{ _('page.share_link') }}</button>
+        <a href="{{ base_path }}/edit?filename={{ raw_page_name }}&folder=wiki" class="rounded-lg bg-primary px-3 py-1.5 font-medium text-white hover:bg-primary-hover">{{ _('page.edit_page') }}</a>
+        <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ raw_page_name }}/export" class="rounded-lg border border-border bg-surface px-3 py-1.5 font-medium hover:bg-bg-sunken">{{ _('page.export_page') }}</a>
         {% if raw_page_name not in ("index", "log", "ingestlater") %}
-        <a href="/wiki/{{ raw_page_name }}/delete" class="btn btn-sm btn-danger" style="font-weight: 500;" onclick="return confirm('{{ _('page.delete_confirm') }}');">{{ _('page.delete_page') }}</a>
+        <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ raw_page_name }}/delete" class="rounded-lg border border-error/40 text-error px-3 py-1.5 font-medium hover:bg-error-subtle" onclick="return confirm('{{ _('page.delete_confirm') }}');">{{ _('page.delete_page') }}</a>
         {% endif %}
     </div>
 </div>
 
-<script>
-function copyPageLink(btn) {
-    const url = window.location.href;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-            const orig = btn.innerHTML;
-            btn.innerHTML = '{{ _('page.link_copied') }}';
-            btn.style.background = 'var(--accent-green)';
-            btn.style.color = '#fff';
-            setTimeout(() => {
-                btn.innerHTML = orig;
-                btn.style.background = '';
-                btn.style.color = '';
-            }, 2500);
-        }).catch(() => {
-            fallbackCopy(url, btn);
-        });
-    } else {
-        fallbackCopy(url, btn);
-    }
-}
-function fallbackCopy(text, btn) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-        document.execCommand('copy');
-        const orig = btn.innerHTML;
-        btn.innerHTML = '{{ _('page.link_copied') }}';
-        btn.style.background = 'var(--accent-green)';
-        btn.style.color = '#fff';
-        setTimeout(() => {
-            btn.innerHTML = orig;
-            btn.style.background = '';
-            btn.style.color = '';
-        }, 2500);
-    } catch (e) {
-        btn.innerHTML = '{{ _('page.link_copy_error') }}';
-        setTimeout(() => { btn.innerHTML = '{{ _('page.link_share_default') }}'; }, 2000);
-    }
-    document.body.removeChild(ta);
-}
-</script>
+<script type="module" src="{{ base_path }}/static/js/page.js?v={{ app_version }}"></script>
 {% endblock %}

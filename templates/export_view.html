@@ -2,23 +2,23 @@
 {% block title %}{{ _('export_view.page_title_prefix') }} {{ filename }}{% endblock %}
 
 {% block content %}
-<div class="header-action">
-    <h1>{{ _('export_view.heading_prefix') }} {{ filename }}</h1>
-    <div>
-        <a href="/export" class="btn btn-secondary">{{ _('export_view.back_button') }}</a>
-        <a href="/export/{{ filename }}?download=1" class="btn btn-accent">{{ _('export_view.download_button') }}</a>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <h1 class="text-2xl font-bold">{{ _('export_view.heading_prefix') }} {{ filename }}</h1>
+    <div class="flex gap-2">
+        <a href="{{ base_path }}/export" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('export_view.back_button') }}</a>
+        <a href="{{ base_path }}/export/{{ filename }}?download=1" class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover">{{ _('export_view.download_button') }}</a>
     </div>
 </div>
 
-<div class="raw-metadata">
-    <p><strong>{{ _('export_view.path_label') }}</strong> <code>output_docs/{{ filename }}</code> | <strong>{{ _('export_view.size_label') }}</strong> {{ size_formatted }} | <strong>{{ _('export_view.modified_label') }}</strong> {{ mtime_formatted }}</p>
+<div class="rounded-lg border border-border bg-bg-sunken p-3 mb-4 text-sm">
+    <strong>{{ _('export_view.path_label') }}</strong> <code>output_docs/{{ filename }}</code> | <strong>{{ _('export_view.size_label') }}</strong> {{ size_formatted }} | <strong>{{ _('export_view.modified_label') }}</strong> {{ mtime_formatted }}
 </div>
 
-<div class="export-content-container" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-top: 1rem; box-shadow: var(--shadow);">
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
     {% if is_markdown %}
-        {{ content_html|safe }}
+        <div class="wiki-content">{{ content_html|safe }}</div>
     {% else %}
-        <pre class="raw-code"><code>{{ content }}</code></pre>
+        <pre class="raw-code">{{ content }}</pre>
     {% endif %}
 </div>
 {% endblock %}

@@ -5,14 +5,12 @@
     "name": "English",
     "updated": "2026-07-06"
   },
-
   "global": {
     "app_name": "LLMWikiNG",
     "app_edition": "by ZeroDot1",
     "back_to_top": "↑",
     "keyboard_search": "Keyboard shortcut: Ctrl+/ = Focus search"
   },
-
   "sidebar": {
     "nav_title": "Navigation",
     "home": "🏠 Home",
@@ -35,20 +33,18 @@
     "sync_running": "🔄 Sync running…",
     "update": "⬇️ Update",
     "about": "ℹ️ About LLMWiki",
+    "docs": "📚 Documentation",
     "settings": "Settings",
     "wiki_pages": "Wiki Pages"
   },
-
   "searchbar": {
     "placeholder": "Search wiki…",
     "button": "Search"
   },
-
   "footer": {
-    "text": "LLMWikiNG – by ZeroDot1 · Powered by Flask + qmd ·",
+    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + qmd ·",
     "imprint": "Imprint"
   },
-
   "index": {
     "page_title": "Home",
     "sync_recommended_title": "🔄 Sync Recommended:",
@@ -65,9 +61,13 @@
     "recent_activities_heading": "📜 Recent Activities",
     "show_full_log": "Show full logbook →",
     "no_activities_yet": "No activities logged yet.",
-    "log_link": "→ Logbook"
+    "log_link": "→ Logbook",
+    "stat_wikis": "Wikis",
+    "wiki_overview_heading": "Wiki Overview",
+    "new_wiki": "New Wiki",
+    "pages_short": "Pages",
+    "no_wikis_yet": "No wikis available yet."
   },
-
   "page": {
     "success_prefix": "Success:",
     "error_prefix": "Error:",
@@ -91,7 +91,6 @@
     "link_copy_error": "❌ Error",
     "link_share_default": "🔗 Share Link"
   },
-
   "search": {
     "page_title": "Full Text Search",
     "heading": "🔍 Full Text Search",
@@ -121,7 +120,6 @@
     "title_raw": "Raw Source:",
     "title_exported": "Exported:"
   },
-
   "ingest": {
     "page_title": "Ingest / Save for Later",
     "heading": "📥 Manage Sources",
@@ -158,7 +156,6 @@
     "text_save": "💾 Save Text to ingestlater.md",
     "loading_text": "LLM is analyzing the source and maintaining the wiki... Please wait..."
   },
-
   "about": {
     "page_title": "About LLMWikiNG",
     "heading": "ℹ️ About LLMWikiNG",
@@ -187,14 +184,13 @@
     "endpoints_table_desc": "Description",
     "third_party_heading": "📦 Third-Party Licenses",
     "third_party_intro": "This project uses the following external components:",
-    "vis_network_name": "vis-network (Knowledge Graph)",
-    "vis_network_desc": "vis-network v10.1.0 – a dynamic, browser-based visualization library.",
-    "vis_network_copyright": "Copyright: (c) 2011–2017 Almende B.V · (c) 2017–2019 visjs contributors",
-    "vis_network_license": "License: Dual-licensed under Apache 2.0 and MIT. Vis.js may be distributed under either license.",
+    "vis_network_name": "Canvas Graph Engine (Knowledge Graph)",
+    "vis_network_desc": "Custom dependency-free graph engine – force-directed layout via Canvas 2D API.",
+    "vis_network_copyright": "Author: ZeroDot1 for LLMWikiNG",
+    "vis_network_license": "License: AGPL-3.0. No external libraries.",
     "links_heading": "🔗 Links",
     "link_karpathy": "Original Karpathy LLM-Wiki Gist"
   },
-
   "status": {
     "page_title": "System Status & Statistics",
     "heading": "📊 System Status & Statistics",
@@ -235,7 +231,6 @@
     "update_github_button": "Open GitHub Repository",
     "update_not_available": "update.sh not found – Update function not available."
   },
-
   "lint": {
     "page_title": "Wiki Health Check (Lint)",
     "heading": "🏥 Wiki Health Check (Lint)",
@@ -261,9 +256,15 @@
     "raw_refs_desc": "These wiki pages reference a raw file in the raw/ folder that does not physically exist.",
     "raw_refs_refers_to": "references:",
     "raw_refs_empty": "✅ All referenced raw files exist in raw/.",
+    "okf_type_heading": "🔴 Missing OKF Required Field `type`",
+    "okf_type_desc": "Every OKF-compliant wiki page must have a `type` field in its YAML frontmatter (e.g. Concept, Article, Reference, Playbook).",
+    "okf_type_empty": "✅ All pages have a `type` field.",
+    "okf_links_heading": "🔗 Broken Absolute/Relative Markdown Links",
+    "okf_links_desc": "These links in the format [Text](/path.md) or [Text](./path.md) point to targets that do not exist in the wiki.",
+    "okf_links_on": "On page",
+    "okf_links_empty": "✅ All absolute/relative markdown links are intact.",
     "idle_hint": "Click the button above to start the health check."
   },
-
   "config": {
     "page_title": "Email Configuration",
     "heading": "⚙️ Email & SMTP Configuration",
@@ -293,11 +294,12 @@
     "back_button": "Back to Briefings",
     "preset_placeholder": "e.g."
   },
-
   "update": {
     "page_title": "LLMWikiNG Update",
     "heading": "⬇️ LLMWikiNG Update",
     "card_heading": "Update from GitHub",
+    "github_token_label": "GitHub Personal Access Token (for private repositories):",
+    "github_token_placeholder": "ghp_xxxxxxxxxxxx",
     "intro": "Fetch the latest version of ZeroDot1/LLMWikiNG via Git and update all program files.",
     "repo_label": "Repository:",
     "method_label": "Method:",
@@ -328,14 +330,13 @@
     "github_label": "GitHub:",
     "error_prefix": "Error:"
   },
-
   "graph": {
     "page_title": "Knowledge Graph",
     "heading": "🕸️ Knowledge Graph",
     "subtitle": "Interactive visualization of all linked wiki pages and their relationships.",
     "reset_button": "🔍 Reset View",
     "loading": "Generating knowledge graph...",
-    "credit": "Visualization based on vis-network (© 2011–2017 Almende B.V, © 2017–2019 visjs contributors – dual-licensed under Apache 2.0 / MIT).",
+    "credit": "Visualization: custom dependency-free Canvas graph engine (Vanilla JavaScript).",
     "instructions_heading": "Usage Instructions:",
     "instruction_pan": "Pan / Navigate: Click and drag the background to move the view. Use the mouse wheel to zoom.",
     "instruction_drag": "Move Nodes: Drag individual nodes with the mouse to adjust the layout.",
@@ -343,7 +344,6 @@
     "instruction_highlight": "Highlight Relationships: Click a node to highlight all directly connected pages.",
     "double_click_hint": "Double-click to open:"
   },
-
   "raw_list": {
     "page_title": "Raw Sources (raw/)",
     "heading": "📦 Raw Sources",
@@ -358,7 +358,6 @@
     "empty_title": "No raw sources in the raw/ folder yet.",
     "empty_button": "Upload the first source now"
   },
-
   "raw_view": {
     "page_title_prefix": "Raw Source:",
     "heading_prefix": "📄 Raw Source:",
@@ -371,7 +370,6 @@
     "binary_warning": "This is a binary file or its format is not natively displayed in the browser.",
     "download_button": "Download File"
   },
-
   "export_list": {
     "page_title": "Exported Documents (output_docs/)",
     "heading": "📤 Exported Documents",
@@ -385,7 +383,6 @@
     "empty_title": "No exported documents in the output_docs/ folder yet.",
     "empty_hint": "You can export any wiki page by clicking the button at the bottom of the article."
   },
-
   "export_view": {
     "page_title_prefix": "Export:",
     "heading_prefix": "📄 Exported Document:",
@@ -395,7 +392,6 @@
     "size_label": "Size:",
     "modified_label": "Modified:"
   },
-
   "pending_list": {
     "page_title": "Pending Ingest",
     "heading": "⏳ Pending Ingest",
@@ -412,7 +408,6 @@
     "empty_title": "No pending files. All raw sources have been ingested!",
     "loading_text": "Ingest is running and the LLM is generating summaries... Please wait..."
   },
-
   "briefing": {
     "page_title": "Weekly Briefings",
     "heading": "📰 Weekly Briefings (Reports)",
@@ -439,12 +434,12 @@
     "generated_by": "Generated by LLMWikiNG · Unlicense",
     "week_placeholder": "YYYY-Www"
   },
-
   "settings": {
     "page_title": "Settings",
     "heading": "⚙️ Settings",
     "subtitle": "Manage language, email configuration, and run the health check.",
     "tab_language": "🌐 Language",
+    "tab_theme": "🌓 Appearance",
     "tab_config": "⚙️ Email Configuration",
     "tab_health": "🏥 Health Check",
     "tab_update": "⬇️ Update",
@@ -452,13 +447,53 @@
     "language_subtitle": "Choose between available languages for the user interface.",
     "language_current": "Current language:",
     "language_apply": "Switch",
+    "theme_heading": "🌓 Appearance (Theme)",
+    "theme_subtitle": "Choose between light and dark appearance. The setting is saved permanently in config.json (default: Dark).",
+    "theme_current": "Current theme:",
+    "theme_dark": "🌑 Dark",
+    "theme_light": "☀️ Light",
     "config_placeholder": "The email configuration loads here from the original form.",
     "health_run_button": "🔍 Run Check Now",
     "health_heading": "🏥 Health Check",
     "health_subtitle": "Analyzes your wiki for structural issues.",
-    "health_idle_hint": "Click the button above to start the health check."
+    "health_idle_hint": "Click the button above to start the health check.",
+    "tab_users": "👥 Users",
+    "tab_apikeys": "🔑 API Keys",
+    "security_heading": "🔐 User Security",
+    "allow_registration": "Allow new user registration",
+    "registration_hint": "If disabled, users can no longer register themselves via /register. (Note: The initial setup for the very first administrator account is always active if no users exist in the database.)",
+    "tab_backup": "📦 Backup & Restore",
+    "backup_heading": "📦 Backup & Restore",
+    "backup_subtitle": "Back up the entire wiki (including all sub-wikis, user databases, API keys, and configuration) as a compressed tar.xz archive, or restore an existing backup.",
+    "backup_download_title": "1. Download Backup",
+    "backup_download_desc": "Generates a complete backup and downloads it directly to your computer.",
+    "backup_download_btn": "📥 Download Backup Now",
+    "restore_title": "2. Restore Backup",
+    "restore_desc": "Upload a previously created tar.xz backup file to overwrite all current data.",
+    "restore_warning": "⚠️ WARNING: Restoring a backup permanently overwrites all current wiki pages, settings, and user accounts! To prevent session loss, your current login session remains active (your user account will be merged into the restored system).",
+    "restore_file_label": "Select tar.xz backup file:",
+    "restore_btn": "📤 Restore Backup",
+    "restore_confirm": "Are you sure you want to restore this backup? All current data will be overwritten!"
   },
-
+  "register": {
+    "title": "Register",
+    "setup_hint": "Initial Setup: No users registered yet. Create the first administrator account now.",
+    "username": "Username",
+    "password": "Password",
+    "show_password": "Show password",
+    "submit": "Create Account",
+    "has_account": "Already have an account?",
+    "login_here": "Sign in here",
+    "success_title": "Registration Successful!",
+    "success_subtitle": "Your account has been created successfully.",
+    "success_username": "Username",
+    "success_role": "Role",
+    "success_key_title": "Your Generated API Key (Displayed Once!)",
+    "success_key_desc": "This API Key has been automatically generated for you. Please copy it to a secure location now. It will never be displayed in plain text again!",
+    "success_copy": "Copy",
+    "success_copied": "Copied!",
+    "success_continue": "Continue to Login"
+  },
   "error": {
     "404_title": "Page Not Found",
     "404_heading": "404 – Page Not Found",
@@ -467,7 +502,6 @@
     "500_heading": "500 – Internal Server Error",
     "500_detail": "Please check the logs."
   },
-
   "python_messages": {
     "page_not_found": "Page '{page_name}' not found in wiki.",
     "raw_not_found": "Raw file '{filename}' was not found.",
@@ -516,7 +550,6 @@
     "server_start_prod": "Production (Uvicorn ASGI Standard)",
     "server_start_hint": "Press Ctrl+C to exit"
   },
-
   "cli_tools": {
     "qmd_search_error": "No search term provided. Usage: qmd_search.sh \"search term\"",
     "read_export_error": "No file path provided. Usage: read_and_export.sh <filepath>",
@@ -540,5 +573,70 @@
     "wysiwyg_italic": "Italic",
     "wysiwyg_list": "Bullet List",
     "save_btn": "Save"
+  },
+  "login": {
+    "title": "Sign In",
+    "username": "Username",
+    "password": "Password",
+    "show_password": "Show password",
+    "submit": "Sign In",
+    "setup_hint": "The first user will be created as administrator.",
+    "error": "Error:"
+  },
+  "wiki_new": {
+    "title": "Create New Wiki",
+    "name": "Wiki name",
+    "name_placeholder": "e.g. legal-wiki",
+    "description": "Description (optional)",
+    "submit": "Create Wiki",
+    "error": "Error:"
+  },
+  "users": {
+    "title": "User Management",
+    "create_heading": "Create New User",
+    "username": "Username",
+    "password": "Password",
+    "role": "Role",
+    "role_admin": "Administrator",
+    "role_editor": "Editor",
+    "role_viewer": "Viewer",
+    "create": "Create User",
+    "create_hint": "Create a new user (admin rights required to manage).",
+    "table_username": "Username",
+    "table_role": "Role",
+    "table_active": "Active",
+    "table_actions": "Actions",
+    "delete": "Delete",
+    "active": "Active",
+    "inactive": "Inactive",
+    "you": "you",
+    "no_users": "No users yet.",
+    "success": "Success:",
+    "error": "Error:"
+  },
+  "apikeys": {
+    "title": "API Keys",
+    "create_heading": "Generate New API Key",
+    "name": "Name",
+    "name_placeholder": "e.g. ci-pipeline",
+    "scopes": "Scopes (comma-separated)",
+    "require_password": "Require password",
+    "create": "Generate Key",
+    "raw_key": "New API key (copy it now):",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "table_name": "Name",
+    "table_scopes": "Scopes",
+    "table_require_password": "Password?",
+    "table_active": "Active",
+    "table_actions": "Actions",
+    "delete": "Delete",
+    "active": "Active",
+    "inactive": "Inactive",
+    "yes": "Yes",
+    "no": "No",
+    "no_keys": "No API keys yet.",
+    "success": "Success:",
+    "error": "Error:"
   }
 }

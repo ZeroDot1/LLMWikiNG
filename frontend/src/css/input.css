@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@source "../../../templates";
+@source "../../../static/js";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* LLMWikiNG – professionelle Palette (Blue-Violet, hue 250) */
+  --color-primary: oklch(52% 0.17 250);
+  --color-primary-hover: oklch(44% 0.17 250);
+  --color-primary-subtle: oklch(95% 0.03 250);
+  --color-accent: oklch(56% 0.19 290);
+  --color-accent-hover: oklch(48% 0.19 290);
+  --color-accent-subtle: oklch(95% 0.03 290);
+  --color-bg: oklch(98% 0.005 250);
+  --color-surface: oklch(100% 0 0);
+  --color-bg-sunken: oklch(96% 0.008 250);
+  --color-border: oklch(88% 0.01 250);
+  --color-border-focus: oklch(55% 0.17 250);
+  --color-text: oklch(22% 0.02 250);
+  --color-text-secondary: oklch(45% 0.015 250);
+  --color-text-muted: oklch(58% 0.01 250);
+  --color-success: oklch(52% 0.18 145);
+  --color-warning: oklch(66% 0.16 70);
+  --color-error: oklch(55% 0.21 25);
+  --color-error-subtle: oklch(95% 0.03 25);
+  --color-success-subtle: oklch(95% 0.03 145);
+  --color-warning-subtle: oklch(96% 0.04 70);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius-card: 0.75rem;
+}
+
+/* Dark Mode: Variablen direkt auf .dark (== <html>) setzen, damit sie
+   kaskadieren. @variant dark {:root{...}} würde zu ".dark :root" kompilieren
+   und nie matchen – daher hier ein normaler .dark-Block. */
+.dark {
+  --color-bg: oklch(15% 0.018 250);
+  --color-surface: oklch(19% 0.025 250);
+  --color-bg-sunken: oklch(12% 0.014 250);
+  --color-border: oklch(30% 0.02 250);
+  --color-text: oklch(93% 0.008 250);
+  --color-text-secondary: oklch(72% 0.012 250);
+  --color-text-muted: oklch(55% 0.01 250);
+  --color-primary: oklch(64% 0.17 250);
+  --color-primary-hover: oklch(70% 0.17 250);
+  --color-primary-subtle: oklch(26% 0.06 250);
+  --color-accent: oklch(66% 0.18 290);
+  --color-accent-hover: oklch(72% 0.18 290);
+  --color-accent-subtle: oklch(26% 0.05 290);
+  --color-success-subtle: oklch(22% 0.05 145);
+  --color-warning-subtle: oklch(24% 0.05 70);
+  --color-error-subtle: oklch(24% 0.05 25);
+}
+
+/* System-Präferenz als Fallback nur, wenn weder .dark noch .light gesetzt ist
+   (Server setzt immer eine der beiden Klassen aus config.json – FOUC-frei). */
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    --color-bg: oklch(15% 0.018 250);
+    --color-surface: oklch(19% 0.025 250);
+    --color-bg-sunken: oklch(12% 0.014 250);
+    --color-border: oklch(30% 0.02 250);
+    --color-text: oklch(93% 0.008 250);
+    --color-text-secondary: oklch(72% 0.012 250);
+    --color-text-muted: oklch(55% 0.01 250);
+    --color-primary: oklch(64% 0.17 250);
+    --color-primary-hover: oklch(70% 0.17 250);
+    --color-primary-subtle: oklch(26% 0.06 250);
+    --color-accent: oklch(66% 0.18 290);
+    --color-accent-hover: oklch(72% 0.18 290);
+    --color-accent-subtle: oklch(26% 0.05 290);
+    --color-success-subtle: oklch(22% 0.05 145);
+    --color-warning-subtle: oklch(24% 0.05 70);
+    --color-error-subtle: oklch(24% 0.05 25);
+  }
+}
+
+/* Rendered markdown wiki content */
+.wiki-content { line-height: 1.7; }
+.wiki-content a.wikilink { color: var(--color-primary); text-decoration: underline; }
+.wiki-content a.wikilink-missing { color: var(--color-error); text-decoration: underline dotted; }
+.wiki-content pre { background: var(--color-bg-sunken); padding: 1rem; border-radius: var(--radius-card); overflow: auto; border: 1px solid var(--color-border); }
+.wiki-content code { background: var(--color-bg-sunken); padding: 0.1rem 0.3rem; border-radius: 0.25rem; }
+.wiki-content h1, .wiki-content h2, .wiki-content h3 { color: var(--color-text); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+.wiki-content h1 { font-size: 1.75rem; font-weight: 700; }
+.wiki-content h2 { font-size: 1.4rem; font-weight: 700; border-bottom: 1px solid var(--color-border); padding-bottom: 0.4rem; }
+.wiki-content h3 { font-size: 1.15rem; font-weight: 600; }
+.wiki-content ul, .wiki-content ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+.wiki-content blockquote { border-left: 3px solid var(--color-primary); padding-left: 1rem; color: var(--color-text-secondary); margin: 1rem 0; }
+.wiki-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+.wiki-content th, .wiki-content td { border: 1px solid var(--color-border); padding: 0.5rem 0.75rem; }
+.wiki-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+
+/* Raw code / pre views */
+.raw-code { background: var(--color-bg-sunken); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 1rem; overflow: auto; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.85rem; }
+
+/* Back-to-top button */
+#backToTop { opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
+#backToTop.visible { opacity: 1; visibility: visible; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

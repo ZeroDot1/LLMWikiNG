@@ -2,112 +2,84 @@
 {% block title %}{{ _('briefing.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="header-action" style="margin-bottom: 1.5rem;">
-    <h1>{{ _('briefing.heading') }}</h1>
-    <form action="/briefings" method="get" style="display: flex; gap: 0.5rem; align-items: center;">
-        <label for="week" style="font-size: 0.9rem; color: var(--text-secondary);">{{ _('briefing.week_label') }}</label>
-        <input type="text" name="week" id="week" class="form-control" value="{{ week }}" style="width: 120px; padding: 0.3rem 0.6rem; font-size: 0.9rem;" placeholder="{{ _('briefing.week_placeholder') }}">
-        <button type="submit" class="btn btn-sm btn-primary">{{ _('briefing.select_button') }}</button>
+<div class="flex flex-wrap justify-between items-end gap-3 mb-4">
+    <h1 class="text-2xl font-bold">{{ _('briefing.heading') }}</h1>
+    <form action="{{ base_path }}/briefings" method="get" class="flex gap-2 items-center">
+        <label for="week" class="text-sm text-text-secondary">{{ _('briefing.week_label') }}</label>
+        <input type="text" name="week" id="week" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm w-32 focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ week }}" placeholder="{{ _('briefing.week_placeholder') }}">
+        <button type="submit" class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover">{{ _('briefing.select_button') }}</button>
     </form>
 </div>
 
-<p class="subtitle" style="margin-bottom: 2rem;">
-    {{ _('briefing.subtitle') }}
-</p>
+<p class="text-text-secondary mb-6">{{ _('briefing.subtitle') }}</p>
 
-<div class="status-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
-    <!-- 1. Themen dieser Woche -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--accent-hover);">
-            {{ _('briefing.topics_heading', week=week, count=week_pages|length) }}
-        </h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('briefing.timeframe', start=start_date.strftime('%d.%m.%Y'), end=end_date.strftime('%d.%m.%Y')) }}
-        </p>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('briefing.topics_heading', week=week, count=week_pages|length) }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('briefing.timeframe', start=start_date.strftime('%d.%m.%Y'), end=end_date.strftime('%d.%m.%Y')) }}</p>
 
         {% if week_pages %}
-            <ul class="page-list" style="list-style: none; padding: 0; margin-bottom: 1.5rem;">
-                {% for page in week_pages %}
-                <li style="border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.6rem 1rem; background: var(--bg-card);">
-                    <a href="/wiki/{{ page.slug }}" style="font-weight: 600; color: var(--link); text-decoration: none;">
-                        📄 {{ page.title }}
-                    </a>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                        {{ page.desc }}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-
-            <form action="/briefings?week={{ week }}" method="post">
-                <input type="hidden" name="action" value="generate">
-                <button type="submit" class="btn btn-primary" style="width: 100%;">{{ _('briefing.generate_button') }}</button>
-            </form>
+        <ul class="space-y-2 mb-4">
+            {% for page in week_pages %}
+            <li class="rounded-lg border border-border bg-bg-sunken p-3">
+                <a href="{{ base_path }}/wiki/{{ page.slug }}" class="font-semibold text-primary no-underline">📄 {{ page.title }}</a>
+                <div class="text-sm text-text-secondary mt-1">{{ page.desc }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+        <form action="{{ base_path }}/briefings?week={{ week }}" method="post">
+            <input type="hidden" name="action" value="generate">
+            <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('briefing.generate_button') }}</button>
+        </form>
         {% else %}
-            <div style="text-align: center; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--bg-card); color: var(--text-muted);">
-                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">📭</p>
-                <p>{{ _('briefing.no_entries') }}</p>
-            </div>
+        <div class="text-center rounded-lg border border-dashed border-border bg-bg-sunken p-10 text-text-muted">
+            <p class="text-4xl mb-2">📭</p>
+            <p>{{ _('briefing.no_entries') }}</p>
+        </div>
         {% endif %}
     </div>
 
-    <!-- 2. E-Mail Versand -->
-    <div class="card" style="background: var(--bg-content); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            <h2 style="margin: 0; font-size: 1.2rem; color: var(--accent-green);">
-                {{ _('briefing.email_heading') }}
-            </h2>
-            <a href="/config" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; text-decoration: none; padding: 0.2rem 0.5rem;">{{ _('briefing.email_setup_button') }}</a>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <div class="flex justify-between items-center border-b border-border pb-2 mb-3">
+            <h2 class="text-lg font-semibold text-success m-0">{{ _('briefing.email_heading') }}</h2>
+            <a href="{{ base_path }}/config" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs no-underline hover:bg-bg-sunken">{{ _('briefing.email_setup_button') }}</a>
         </div>
-        
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-            {{ _('briefing.email_subtitle') }}
-        </p>
+
+        <p class="text-sm text-text-muted mb-3">{{ _('briefing.email_subtitle') }}</p>
 
         {% if smtp_cfg.smtp_user or default_smtp_user %}
-        <div style="font-size: 0.8rem; background: var(--bg-card); border: 1px solid var(--border); padding: 0.6rem; border-radius: var(--radius); margin-bottom: 1.2rem;">
+        <div class="text-sm bg-bg-sunken border border-border p-3 rounded-lg mb-3">
             <strong>{{ _('briefing.email_active_prefix') }}</strong> {{ smtp_cfg.smtp_host }}:{{ smtp_cfg.smtp_port }} ({{ smtp_cfg.smtp_user or default_smtp_user }})
         </div>
         {% else %}
-        <div style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); padding: 0.6rem; border-radius: var(--radius); margin-bottom: 1.2rem; color: var(--accent-red);">
-            {{ _('briefing.email_no_creds') }}
-        </div>
+        <div class="text-sm bg-error-subtle border border-error text-error p-3 rounded-lg mb-3">{{ _('briefing.email_no_creds') }}</div>
         {% endif %}
 
         {% if success_msg %}
-        <div class="admonition admonition-tip" style="margin-bottom: 1rem;">
-            <strong>{{ _('briefing.email_success_prefix') }}</strong> {{ success_msg }}
-        </div>
+        <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-3 text-sm"><strong>{{ _('briefing.email_success_prefix') }}</strong> {{ success_msg }}</div>
         {% endif %}
         {% if error_msg %}
-        <div class="admonition admonition-warning" style="margin-bottom: 1rem;">
-            <strong>{{ _('briefing.email_error_prefix') }}</strong> {{ error_msg }}
-        </div>
+        <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-3 text-sm"><strong>{{ _('briefing.email_error_prefix') }}</strong> {{ error_msg }}</div>
         {% endif %}
 
-        <form action="/briefings?week={{ week }}" method="post" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <form action="{{ base_path }}/briefings?week={{ week }}" method="post" class="flex flex-col gap-3 mb-4">
             <input type="hidden" name="action" value="email">
-
-            <div class="form-group">
-                <label for="to_emails" style="font-size: 0.85rem; color: var(--text-secondary);">{{ _('briefing.email_recipients_label') }}</label>
-                <input type="text" name="to_emails" id="to_emails" class="form-control" value="{{ recipients_value }}" placeholder="{{ _('briefing.email_recipients_placeholder') }}" style="padding: 0.4rem;" required>
+            <div>
+                <label for="to_emails" class="block text-sm text-text-secondary mb-1">{{ _('briefing.email_recipients_label') }}</label>
+                <input type="text" name="to_emails" id="to_emails" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ recipients_value }}" placeholder="{{ _('briefing.email_recipients_placeholder') }}" required>
             </div>
-
-            <button type="submit" class="btn btn-primary" {% if not week_pages or (not smtp_cfg.smtp_user and not default_smtp_user) %}disabled{% endif %}>{{ _('briefing.email_send_button') }}</button>
+            <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" {% if not week_pages or (not smtp_cfg.smtp_user and not default_smtp_user) %}disabled{% endif %}>{{ _('briefing.email_send_button') }}</button>
         </form>
 
         {% if email_simulation %}
-            <div style="border-top: 1.5px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
-                <h3 style="font-size: 1rem; margin-bottom: 0.8rem; color: var(--text-primary);">{{ _('briefing.email_draft_heading') }}</h3>
-                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border);">
-                    <strong>{{ _('briefing.email_to_label') }}</strong> {{ email_simulation.to }}<br>
-                    <strong>{{ _('briefing.email_subject_label') }}</strong> {{ email_simulation.subject }}
-                </div>
-                <!-- E-Mail-Vorschau Sandboxed Iframe -->
-                <div style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 1rem; color: black;">
-                    {{ email_simulation.html|safe }}
-                </div>
+        <div class="border-t-2 border-border pt-3 mt-3">
+            <h3 class="text-base font-semibold mb-2 text-text">{{ _('briefing.email_draft_heading') }}</h3>
+            <div class="text-sm text-text-secondary mb-2 bg-bg-sunken border border-border p-2 rounded">
+                <strong>{{ _('briefing.email_to_label') }}</strong> {{ email_simulation.to }}<br>
+                <strong>{{ _('briefing.email_subject_label') }}</strong> {{ email_simulation.subject }}
             </div>
+            <div class="border border-border rounded-lg bg-surface p-4 text-text">{{ email_simulation.html|safe }}</div>
+        </div>
         {% endif %}
     </div>
 </div>

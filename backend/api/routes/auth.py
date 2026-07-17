@@ -213,9 +213,13 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
         return JSONResponse({"error": "Dieser Schlüssel wurde vor dem Sicherheitsupdate generiert und kann nicht angezeigt werden. Bitte erstelle einen neuen Schlüssel."}, status_code=400)
 
     from core.security import decrypt_api_key
-    raw_key = decrypt_api_key(encrypted)
+    try:
+        raw_key = decrypt_api_key(encrypted)
+    except Exception:
+        raw_key = None
+
     if not raw_key:
-        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen"}, status_code=500)
+        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret (LLMWIKI_SECRET) wurde seit der Erstellung des Schlüssels geändert oder zurückgesetzt."}, status_code=500)
 
     return JSONResponse({"raw_key": raw_key})
 

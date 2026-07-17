@@ -5,7 +5,20 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.8] – 2026-07-17
+
+### Fixes: API-Key Reveal Passwort-Validierung & UI Einstellungs-Tabs
+
+#### Fixed
+- **API-Key Reveal Decryption Error Handling (`backend/api/routes/auth.py`)**: Fehlermeldungen bei der Passwort-Verifizierung für API-Keys verfeinert. Tritt ein Fehler bei der Schlüssel-Entschlüsselung auf (z.B. durch Rotation des System-Secrets `LLMWIKI_SECRET`), wird nun eine präzise Fehlermeldung ausgegeben, anstatt fälschlicherweise "Ungültiges Passwort" anzuzeigen.
+
+#### Changed
+- **Einstellungsseiten (`templates/settings.html`)**: Layouts für *Benutzerverwaltung* und *API-Schlüssel* überarbeitet. Tabellen haben nun abgerundete Ecken, Statuselemente nutzen farbige Badges (Erfolgreich/Inaktiv/Admin/Editor) und Actions verwenden ansprechendere Symbole. Duplikate im HTML-Markup wurden bereinigt.
+
+---
+
 ## [2.4.7] – 2026-07-17
+
 
 ### WebUI: Optimierung der Registrierungsseite & Verifizierung des Update-Backups
 

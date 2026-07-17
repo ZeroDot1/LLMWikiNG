@@ -5,7 +5,29 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] – 2026-07-17
+
+### Knowledge Graph – vollständig überarbeitete Seite
+
+#### Added
+- **Wiki-Switcher im Graph**: Dropdown in der Graph-Toolbar erlaubt direkten Wiki-Wechsel, ohne die Seite zu verlassen. Die URL wird aktualisiert und der Graph für das neue Wiki geladen.
+- **Knoten-Suche**: Neues Suchfeld in der Toolbar – tippt man einen Begriff, springt die Ansicht sofort zum passenden Knoten, markiert ihn und öffnet das Detail-Panel. `Escape` setzt die Suche zurück.
+- **Tag-Filter-Leiste**: Unter der Toolbar erscheint automatisch eine Leiste mit allen im Wiki vorhandenen Tags als Pill-Buttons. Klick auf einen Tag filtert den Graph auf Seiten dieses Tags; „Alle" zeigt wieder den vollständigen Graphen.
+- **Knoten-Detail-Panel**: Seitliches Slide-in-Panel nach Klick auf einen Knoten – zeigt Titel, Gruppe, Anzahl direkter Verbindungen und einen direkten „Seite öffnen"-Link.
+- **Stats-Overlay**: Kleines transparentes Panel oben links zeigt laufend die Anzahl der Knoten, Kanten und – bei Selektion – den Namen des gewählten Knotens.
+- **Zoom-Buttons**: Zwei Zoom-In/Zoom-Out-Buttons unten links im Canvas ermöglichen Zoomen per Mausklick (ergänzend zum Mausrad).
+- **Vollbild-Modus**: Neuer Button öffnet den Graph-Container im Browser-Vollbild (`requestFullscreen`); Icon wechselt zwischen Expand/Compress; Layout passt sich automatisch an.
+- **Aufklappbare Bedienungshinweise**: Der Instruktionsblock ist jetzt ein `<details>`-Element – standardmäßig zugeklappt, damit der Graph mehr Platz hat. Zwei neue Hinweise für Suche und Tag-Filter ergänzt.
+- **Neue i18n-Schlüssel** (`de.json` / `en.json`): `wiki_select_label`, `search_placeholder`, `fullscreen_button`, `tag_filter_label`, `filter_label`, `filter_all`, `canvas_aria`, `stat_nodes`, `stat_edges`, `stat_selected`, `detail_connections`, `detail_open`, `zoom_in`, `zoom_out`, `double_click_hint_inline`, `instruction_search`, `instruction_tag`.
+
+#### Changed
+- **`templates/graph.html`**: Vollständig neu aufgebaut – Toolbar mit Wiki-Switcher, Suche, Reset, Fullscreen; Tag-Filter-Leiste; Stats-Overlay; Zoom-Controls; Knoten-Detail-Panel; Credit + Inline-Hinweis unter dem Canvas.
+- **`static/js/graph.js`**: Modularisiert in `initWikiSwitcher()`, `initSearch()`, `initZoomButtons()`, `initFullscreen()`, `buildTagBar()`, `applyTagFilter()`, `openDetailPanel()`, `closeDetailPanel()`, `updateStatsOverlay()`; vollständige Node-/Edge-Listen (`_allNodes`, `_allEdges`) für clientseitige Filter ohne Netzwerk-Requests.
+
+---
+
 ## [2.4.4] – 2026-07-17
+
 
 ### Performance: Lazy Loading im Graph & Index-Caching für große Wikis
 

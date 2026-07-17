@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] – 2026-07-17
+
+### Security: Vollständige Daten-Persistierung aller schreibbaren Verzeichnisse
+
+#### Changed
+- **Verzeichnis-Volumes (`Dockerfile` & `docker-compose.yml`)**: Die Ordner `/app/raw` (für hochgeladene, rohe Quelltexte) und `/app/config.json` (für globale SMTP- und Theme-Konfigurationen) wurden zusätzlich als persistente Volumes deklariert. Somit sind nun alle beschreibbaren Verzeichnisse und Konfigurationsdateien vollständig vor Datenverlust geschützt.
+
+---
+
 ## [2.5.9] – 2026-07-17
+
 
 ### Security: Vordefinierte Volumes im Docker-Image zur GUI-Auto-Erkennung
 

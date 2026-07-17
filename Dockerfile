@@ -64,7 +64,7 @@ ENV HOST=0.0.0.0
 EXPOSE 8080
 
 # Volumes vordefinieren für automatische Erkennung in Docker-GUIs (wie Ugreen UGOS)
-VOLUME ["/app/data", "/app/wikis"]
+VOLUME ["/app/data", "/app/wikis", "/app/raw", "/app/config.json"]
 
 # Healthcheck einrichten
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

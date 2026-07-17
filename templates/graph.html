@@ -1,20 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ _('graph.page_title') }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ base_path }}/static/css/graph.css?v={{ app_version }}">
+{% endblock %}
+
 {% block content %}
 {# ── Kopfzeile ──────────────────────────────────────────────────────────────── #}
-<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+<div class="graph-page-header">
     <div>
-        <h1 class="text-2xl font-bold">{{ _('graph.heading') }}</h1>
-        <p class="text-text-secondary text-sm mt-0.5">{{ _('graph.subtitle') }}</p>
+        <h1 class="graph-page-title">{{ _('graph.heading') }}</h1>
+        <p class="graph-page-subtitle">{{ _('graph.subtitle') }}</p>
     </div>
 
     {# ── Toolbar ── #}
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="graph-toolbar">
         {# Wiki-Switcher #}
-        <div class="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1.5 text-sm">
-            <svg class="h-3.5 w-3.5 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
-            <select id="graph-wiki-select" class="bg-transparent text-sm text-text focus:outline-none cursor-pointer" aria-label="{{ _('graph.wiki_select_label') }}">
+        <div class="graph-toolbar-wiki">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
+            <select id="graph-wiki-select" aria-label="{{ _('graph.wiki_select_label') }}">
                 {% for w in wikis %}
                 <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
@@ -22,112 +26,95 @@
         </div>
 
         {# Suche #}
-        <div class="relative flex items-center">
-            <svg class="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input id="graph-search" type="search" placeholder="{{ _('graph.search_placeholder') }}"
-                   class="rounded-lg border border-border bg-surface pl-7 pr-3 py-1.5 text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle focus:outline-none w-44"
-                   autocomplete="off">
+        <div class="graph-search-wrap">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="graph-search" type="search" placeholder="{{ _('graph.search_placeholder') }}" class="graph-search-input" autocomplete="off">
         </div>
 
         {# Reset #}
-        <button id="graph-reset-btn" onclick="resetGraph()"
-                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken transition-colors flex items-center gap-1.5"
-                title="{{ _('graph.reset_button') }}">
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <button id="graph-reset-btn" onclick="resetGraph()" class="graph-btn" title="{{ _('graph.reset_button') }}">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             {{ _('graph.reset_button') }}
         </button>
 
         {# Vollbild #}
-        <button id="graph-fullscreen-btn"
-                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken transition-colors flex items-center gap-1.5"
-                title="{{ _('graph.fullscreen_button') }}">
-            <svg id="graph-fs-icon-expand" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-            <svg id="graph-fs-icon-compress" class="h-3.5 w-3.5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4M9 9H4M9 9L4 4m11 5h5m-5 0V4m5 5l-5-5M9 15v5m0-5H4m5 5l-5 5m11-5h5m-5 0v5m5-5l-5 5"/></svg>
+        <button id="graph-fullscreen-btn" class="graph-btn" title="{{ _('graph.fullscreen_button') }}">
+            <svg id="graph-fs-icon-expand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            <svg id="graph-fs-icon-compress" class="hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4M9 9H4M9 9L4 4m11 5h5m-5 0V4m5 5l-5-5M9 15v5m0-5H4m5 5l-5 5m11-5h5m-5 0v5m5-5l-5 5"/></svg>
             <span id="graph-fs-label">{{ _('graph.fullscreen_button') }}</span>
         </button>
     </div>
 </div>
 
 {# ── Tag-Filter-Leiste (wird via JS befüllt) ──────────────────────────────── #}
-<div id="graph-tag-bar" class="hidden flex flex-wrap gap-1.5 mb-3" aria-label="{{ _('graph.tag_filter_label') }}">
-    <span class="text-xs text-text-muted self-center mr-1">{{ _('graph.filter_label') }}</span>
-    <button data-tag="" class="graph-tag-btn graph-tag-active rounded-full border border-primary bg-primary-subtle px-2.5 py-0.5 text-xs font-medium text-primary transition-colors">
+<div id="graph-tag-bar" class="graph-tag-bar" aria-label="{{ _('graph.tag_filter_label') }}">
+    <span class="graph-tag-label">{{ _('graph.filter_label') }}</span>
+    <button data-tag="" class="graph-tag-btn is-active">
         {{ _('graph.filter_all') }}
     </button>
 </div>
 
 {# ── Graph-Canvas + Stats-Overlay ─────────────────────────────────────────── #}
-<div id="graph-container"
-     class="relative w-full rounded-xl border border-border bg-bg-sunken shadow-sm overflow-hidden transition-all"
-     style="height: 640px;"
-     data-wiki="{{ wiki }}"
-     data-hint="{{ _('graph.double_click_hint') }}">
+<div id="graph-container" class="graph-container" data-wiki="{{ wiki }}" data-hint="{{ _('graph.double_click_hint') }}">
 
     {# Lade-Spinner #}
-    <div id="network-loader" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-text-secondary z-10 select-none">
-        <div class="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p class="text-sm">{{ _('graph.loading') }}</p>
+    <div id="network-loader" class="graph-loader">
+        <div class="graph-spinner"></div>
+        <p>{{ _('graph.loading') }}</p>
     </div>
 
     {# Canvas #}
-    <canvas id="network" class="block w-full h-full" aria-label="{{ _('graph.canvas_aria') }}"></canvas>
+    <canvas id="network" aria-label="{{ _('graph.canvas_aria') }}"></canvas>
 
     {# Stats-Overlay (oben links) – wird via JS befüllt #}
-    <div id="graph-stats-overlay"
-         class="absolute top-3 left-3 hidden rounded-lg border border-border/60 bg-bg-sunken/80 backdrop-blur px-3 py-2 text-xs text-text-secondary space-y-0.5 pointer-events-none select-none z-20">
-        <div><span class="text-text font-medium" id="graph-stat-nodes">–</span> {{ _('graph.stat_nodes') }}</div>
-        <div><span class="text-text font-medium" id="graph-stat-edges">–</span> {{ _('graph.stat_edges') }}</div>
-        <div id="graph-stat-selected-row" class="hidden"><span class="text-primary font-medium" id="graph-stat-selected">–</span> {{ _('graph.stat_selected') }}</div>
+    <div id="graph-stats-overlay" class="graph-stats">
+        <div class="graph-stats-row"><span class="graph-stats-value" id="graph-stat-nodes">–</span> {{ _('graph.stat_nodes') }}</div>
+        <div class="graph-stats-row"><span class="graph-stats-value" id="graph-stat-edges">–</span> {{ _('graph.stat_edges') }}</div>
+        <div id="graph-stat-selected-row" class="graph-stats-row is-hidden"><span class="graph-stats-selected" id="graph-stat-selected">–</span> {{ _('graph.stat_selected') }}</div>
     </div>
 
     {# Zoom-Controls (unten links) #}
-    <div class="absolute bottom-3 left-3 flex flex-col gap-1 z-20">
-        <button id="graph-zoom-in"
-                class="h-7 w-7 rounded-lg border border-border bg-surface/90 backdrop-blur flex items-center justify-center text-text-secondary hover:text-text hover:bg-bg-sunken transition-colors shadow-sm"
-                title="{{ _('graph.zoom_in') }}">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    <div class="graph-zoom-controls">
+        <button id="graph-zoom-in" class="graph-zoom-btn" title="{{ _('graph.zoom_in') }}">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         </button>
-        <button id="graph-zoom-out"
-                class="h-7 w-7 rounded-lg border border-border bg-surface/90 backdrop-blur flex items-center justify-center text-text-secondary hover:text-text hover:bg-bg-sunken transition-colors shadow-sm"
-                title="{{ _('graph.zoom_out') }}">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+        <button id="graph-zoom-out" class="graph-zoom-btn" title="{{ _('graph.zoom_out') }}">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
         </button>
     </div>
 
     {# Knoten-Detail-Panel (rechts, eingeblendet bei Klick) #}
-    <div id="graph-detail-panel"
-         class="absolute top-3 right-3 hidden w-56 rounded-xl border border-border bg-surface/95 backdrop-blur shadow-lg p-4 z-30 text-sm">
-        <div class="flex items-start justify-between mb-2">
-            <p class="font-semibold text-text leading-tight" id="graph-detail-title">–</p>
-            <button id="graph-detail-close" class="ml-2 shrink-0 text-text-muted hover:text-text" aria-label="Schließen">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    <div id="graph-detail-panel" class="graph-detail-panel">
+        <div class="graph-detail-header">
+            <p class="graph-detail-title" id="graph-detail-title">–</p>
+            <button id="graph-detail-close" class="graph-detail-close" aria-label="Schließen">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <p class="text-text-muted text-xs mb-3" id="graph-detail-group">–</p>
-        <div class="text-xs text-text-secondary mb-3">
+        <p class="graph-detail-group" id="graph-detail-group">–</p>
+        <div class="graph-detail-connections">
             <span id="graph-detail-connections">–</span> {{ _('graph.detail_connections') }}
         </div>
-        <a id="graph-detail-link" href="#" target="_self"
-           class="block w-full rounded-lg bg-primary px-3 py-1.5 text-center text-xs font-semibold text-white hover:opacity-90 transition-opacity">
+        <a id="graph-detail-link" href="#" target="_self" class="graph-detail-link">
             {{ _('graph.detail_open') }} →
         </a>
     </div>
 </div>
 
 {# ── Unterzeile: Credit + Hinweis ─────────────────────────────────────────── #}
-<div class="flex flex-wrap items-center justify-between gap-2 mt-2 px-0.5">
-    <p class="text-xs text-text-muted">{{ _('graph.credit') }}</p>
-    <p class="text-xs text-text-muted italic">{{ _('graph.double_click_hint_inline') }}</p>
+<div class="graph-footer-row">
+    <p>{{ _('graph.credit') }}</p>
+    <p class="italic">{{ _('graph.double_click_hint_inline') }}</p>
 </div>
 
 {# ── Bedienungshinweise (aufklappbar) ─────────────────────────────────────── #}
-<details class="mt-3 rounded-lg border border-border bg-surface" id="graph-help-details">
-    <summary class="cursor-pointer select-none px-4 py-3 text-sm font-medium flex items-center gap-2">
-        <svg class="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+<details class="graph-help" id="graph-help-details">
+    <summary>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
         {{ _('graph.instructions_heading') }}
     </summary>
-    <div class="px-4 pb-4 pt-0">
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-sm text-text-secondary">
+    <div class="graph-help-content">
+        <ul>
             <li>{{ _('graph.instruction_pan') }}</li>
             <li>{{ _('graph.instruction_drag') }}</li>
             <li>{{ _('graph.instruction_open') }}</li>
@@ -137,8 +124,6 @@
         </ul>
     </div>
 </details>
-
-<!-- vis-network entfernt – Vanilla-JS Engine in graph-engine.js -->
 {% endblock %}
 
 {% block scripts %}

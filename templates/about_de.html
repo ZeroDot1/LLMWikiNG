@@ -18,7 +18,7 @@
         <li>🔗 <strong>Native Markdown Links</strong> – Verwendet standardisierte Markdown-Verknüpfungen (<code>[Anzeige](/pfad/zur/seite.md)</code>) anstelle proprietärer Wikilinks.</li>
         <li>🗂️ <strong>Mehrere Wikis (Multi-Wiki)</strong> – Beliebig viele, voneinander getrennte Wikis unter <code>wikis/&lt;Name&gt;/</code>, verwaltet über die WebUI.</li>
         <li>✍️ <strong>Universeller Editor (WYSIWYG &amp; Markdown)</strong> – Integrierter Dual-Mode-Editor zum Erstellen und Bearbeiten von Wiki-Seiten und Rohquellen direkt im Browser.</li>
-        <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (vollständig offline – eigene abhängigkeitsfreie Canvas-Engine, keine externen Bibliotheken). Optimiert für große Wikis mit <strong>Lazy Loading</strong>, <strong>Barnes-Hut O(n log n)-Physik</strong>, <strong>Viewport Culling</strong> und <strong>Level-of-Detail-Rendering</strong>. Die Graph-Seite bietet <strong>Knoten-Suche</strong>, <strong>Tag-Filter-Leiste</strong>, <strong>Knoten-Detail-Panel</strong>, <strong>Stats-Overlay</strong>, <strong>Zoom-Buttons</strong>, <strong>Vollbild-Modus</strong> und einen <strong>Wiki-Switcher</strong> in der Toolbar.</li>
+        <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (vollständig offline – eigene abhängigkeitsfreie Canvas-Engine, keine externen Bibliotheken). Optimiert für große Wikis mit <strong>Lazy Loading</strong>, <strong>Barnes-Hut O(n log n)-Physik</strong>, <strong>Viewport Culling</strong> und <strong>Level-of-Detail-Rendering</strong>. Die Graph-Seite bietet <strong>Knoten-Suche</strong>, <strong>Tag-Filter-Leiste</strong>, <strong>Knoten-Detail-Panel</strong>, <strong>Stats-Overlay</strong>, <strong>Zoom-Buttons</strong>, <strong>Vollbild-Modus</strong> und einen <strong>Wiki-Switcher</strong> in der Toolbar. Layout optimiert und gestylt in einem eigenen Stylesheet (<code>graph.css</code>).</li>
         <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite.</li>
         <li>📰 <strong>Wochenberichte &amp; E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen und versendet sie sicher über einen integrierten SMTP-Client.</li>
         <li>🔍 <strong>Volltextsuche</strong> – Superschnelle BM25-Suche im Wiki, in Rohquellen und exportierten Dokumenten mit Treffer-Hervorhebung.</li>
@@ -65,7 +65,7 @@
 63: ├── raw/                 # Archivierte Rohquellen
 64: ├── tools/               # Hilfswerkzeuge
 65: ├── templates/           # HTML-Templates (Jinja2)
-66: ├── static/              # CSS (Tailwind), JS-Module, Graph-Engine (Vanilla JS)
+66: ├── static/              # CSS (Tailwind, graph.css), JS-Module, Graph-Engine (Vanilla JS)
 67: ├── output_docs/         # Exportierte Dokumente
 68: └── .agy.yaml            # Agent-Konfiguration</pre>
 

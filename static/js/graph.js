@@ -78,7 +78,7 @@ function updateBadge(loaded, total, isComplete) {
 function updateStatsOverlay(nodes, edges, selectedId) {
   const overlay = document.getElementById("graph-stats-overlay");
   if (!overlay) return;
-  overlay.classList.remove("hidden");
+  overlay.classList.add("is-visible");
   const nEl = document.getElementById("graph-stat-nodes");
   const eEl = document.getElementById("graph-stat-edges");
   if (nEl) nEl.textContent = nodes.toLocaleString();
@@ -88,10 +88,10 @@ function updateStatsOverlay(nodes, edges, selectedId) {
   const selEl  = document.getElementById("graph-stat-selected");
   if (selRow && selEl) {
     if (selectedId) {
-      selRow.classList.remove("hidden");
+      selRow.classList.remove("is-hidden");
       selEl.textContent = selectedId;
     } else {
-      selRow.classList.add("hidden");
+      selRow.classList.add("is-hidden");
     }
   }
 }
@@ -109,7 +109,7 @@ function buildTagBar(nodes) {
   for (const n of nodes) {
     if (n.group?.startsWith("tag-")) tagSet.add(n.group.slice(4));
   }
-  if (tagSet.size === 0) { bar.classList.add("hidden"); return; }
+  if (tagSet.size === 0) { bar.classList.remove("is-visible"); return; }
 
   // "Alle"-Button bleibt, weitere Tags anhängen
   const existing = bar.querySelectorAll("[data-tag]:not([data-tag=''])");
@@ -118,12 +118,12 @@ function buildTagBar(nodes) {
   for (const tag of [...tagSet].sort()) {
     const btn = document.createElement("button");
     btn.dataset.tag = tag;
-    btn.className   = "graph-tag-btn rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-colors";
+    btn.className   = "graph-tag-btn";
     btn.textContent = tag;
     bar.appendChild(btn);
   }
 
-  bar.classList.remove("hidden");
+  bar.classList.add("is-visible");
   bar.querySelectorAll(".graph-tag-btn").forEach(btn => {
     btn.addEventListener("click", () => applyTagFilter(btn.dataset.tag));
   });
@@ -131,19 +131,10 @@ function buildTagBar(nodes) {
 
 function applyTagFilter(tag) {
   _currentTag = tag;
-  // Aktiven Button markieren
   document.querySelectorAll(".graph-tag-btn").forEach(b => {
-    const isActive = b.dataset.tag === tag;
-    b.classList.toggle("graph-tag-active", isActive);
-    b.classList.toggle("border-primary",     isActive);
-    b.classList.toggle("bg-primary-subtle",  isActive);
-    b.classList.toggle("text-primary",       isActive);
-    b.classList.toggle("border-border",      !isActive);
-    b.classList.toggle("bg-surface",         !isActive);
-    b.classList.toggle("text-text-secondary",!isActive);
+    b.classList.toggle("is-active", b.dataset.tag === tag);
   });
 
-  // Graph neu filtern
   const filteredNodes = tag
     ? _allNodes.filter(n => n.group === `tag-${tag}` || n.group === "page")
     : _allNodes;
@@ -228,15 +219,15 @@ function openDetailPanel(nodeId) {
   // Stats aktualisieren
   const selRow = document.getElementById("graph-stat-selected-row");
   const selEl  = document.getElementById("graph-stat-selected");
-  if (selRow && selEl) { selRow.classList.remove("hidden"); selEl.textContent = node.label || nodeId; }
+  if (selRow && selEl) { selRow.classList.remove("is-hidden"); selEl.textContent = node.label || nodeId; }
 
-  panel.classList.remove("hidden");
+  panel.classList.add("is-visible");
 }
 
 function closeDetailPanel() {
-  document.getElementById("graph-detail-panel")?.classList.add("hidden");
+  document.getElementById("graph-detail-panel")?.classList.remove("is-visible");
   const selRow = document.getElementById("graph-stat-selected-row");
-  if (selRow) selRow.classList.add("hidden");
+  if (selRow) selRow.classList.add("is-hidden");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -5,7 +5,23 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.6] – 2026-07-17
+
+### Knowledge Graph – CSS Modularisierung & Layout-Optimierung
+
+#### Added
+- **`static/css/graph.css` (neu)**: Alle Stile für die Wissensgraph-Seite wurden in eine eigene CSS-Datei ausgelagert. Dies umfasst feste Layouts für Header, Toolbar, Wiki-Switcher, Suche, Tag-Filter, Canvas-Container, Zoom-Controls, Stats-Overlay und das Knoten-Detail-Panel.
+- **Emoji- & Icon-Sizing**: Feste Größen und Layout-Regeln für alle SVGs und Emojis, um übergroße Symbole und UI-Verschiebungen zu verhindern.
+
+#### Changed
+- **`templates/base.html`**: `{% block head %}` hinzugefügt, damit einzelne Seiten spezifische Stylesheets vor dem Body laden können.
+- **`templates/graph.html`**: Komplett bereinigt von Tailwind-Utility-Klassen und inline-Style-Anweisungen. Nutzt nun die semantischen Klassen aus `graph.css`.
+- **`static/js/graph.js`**: Element-Klasseninteraktionen angepasst, um die Zustände (`is-visible`, `is-active`, `is-hidden`) der neuen `graph.css` statt inline/Tailwind-Klassen zu steuern.
+
+---
+
 ## [2.4.5] – 2026-07-17
+
 
 ### Knowledge Graph – vollständig überarbeitete Seite
 

@@ -5,7 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.4] – 2026-07-17
+
+### Security: API-Key Erstellung mit Benutzer-Zuweisung
+
+#### Added
+- **Benutzer-Dropdown bei API-Key Erstellung (`templates/settings.html`)**: Admins können nun beim Generieren eines neuen API-Schlüssels über ein Dropdown-Menü explizit auswählen, welchem registrierten Benutzer der Schlüssel zugewiesen werden soll (standardmäßig vorausgewählt ist der aktuell angemeldete Admin).
+- **Zuweisungs-Spalte in API-Key Liste (`templates/settings.html`)**: Die API-Key Tabelle zeigt nun an, welchem Benutzer (inkl. Rolle) der jeweilige Schlüssel zugeordnet ist.
+
+#### Changed
+- **API-Key Controller (`backend/api/routes/auth.py`)**: Endpunkt `/api-keys` liest nun die `user_id` aus den Formulardaten aus und weist diese dem erzeugten API-Key zu, anstatt hartcodiert die ID des aktuell angemeldeten Administrators einzutragen.
+
+---
+
 ## [2.5.3] – 2026-07-17
+
 
 ### Fixes: API-Key Deletion, Multiwiki Ingest & Sync
 

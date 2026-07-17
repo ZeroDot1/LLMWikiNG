@@ -386,6 +386,16 @@
     <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-lg mb-6">
         <h2 class="text-lg font-semibold mb-1">{{ _('apikeys.create_heading') }}</h2>
         <form action="{{ base_path }}/api-keys" method="post" class="space-y-4">
+            {% if users %}
+            <div>
+                <label for="key_user_id" class="block font-medium mb-1">Benutzer zuweisen</label>
+                <select id="key_user_id" name="user_id" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if current_user and u.id == current_user.id %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
             <div>
                 <label for="name" class="block font-medium mb-1">{{ _('apikeys.name') }}</label>
                 <input type="text" name="name" id="name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('apikeys.name_placeholder') }}">
@@ -410,6 +420,7 @@
                 <thead>
                     <tr class="text-text-muted border-b border-border">
                         <th class="text-left py-3 px-2">{{ _('apikeys.table_name') }}</th>
+                        <th class="text-left py-3 px-2">Zugeordneter User</th>
                         <th class="text-left py-3 px-2">API Key</th>
                         <th class="text-left py-3 px-2">{{ _('apikeys.table_scopes') }}</th>
                         <th class="text-left py-3 px-2">{{ _('apikeys.table_require_password') }}</th>
@@ -421,6 +432,14 @@
                     {% for key in keys %}
                     <tr class="border-b border-border hover:bg-bg-sunken/40 transition-colors">
                         <td class="py-3 px-2 font-semibold text-text">{{ key.name }}</td>
+                        <td class="py-3 px-2 text-text-secondary">
+                            {% set k_user = users | selectattr("id", "equalto", key.user_id) | first %}
+                            {% if k_user %}
+                                <span class="font-medium text-text">{{ k_user.username }}</span> <span class="text-xs text-text-muted">({{ k_user.role }})</span>
+                            {% else %}
+                                <span class="font-mono text-xs text-text-muted">ID: {{ key.user_id[:8] }}...</span>
+                            {% endif %}
+                        </td>
                         <td class="py-3 px-2">
                             <div class="flex items-center gap-2">
                                 <span id="key-display-{{ key.id }}" class="font-mono text-xs text-text-secondary select-all">••••••••••••••••</span>

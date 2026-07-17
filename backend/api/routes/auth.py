@@ -140,12 +140,13 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
 
     form = await request.form()
     name = (form.get("name") or "").strip()
+    target_user_id = form.get("user_id") or admin["id"]
     require_password = form.get("require_password") == "on"
     scopes = form.getlist("scopes")
     if not name:
         return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Name+erforderlich")
     key_obj, raw = create_key(
-        user_id=admin["id"],
+        user_id=target_user_id,
         name=name,
         require_password=require_password,
         scopes=scopes,

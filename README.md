@@ -325,7 +325,13 @@ To view or rotate this secret, log in as an administrator, navigate to **Setting
 - **Regenerate**: To securely generate and persist a new random system secret.
 
 > [!WARNING]
-> If you rotate the secret, already generated API keys can no longer be decrypted and active user sessions are terminated. You must recreate your API keys once in the web interface after rotation.
+> If you rotate the secret, already generated API keys can no longer be decrypted and active user sessions are terminated. 
+
+#### 📋 Steps to follow after changing the secret:
+1. **Re-Login**: All active sessions are immediately invalidated. You will be redirected to the login page. Log back in with your username and password.
+2. **Recreate API Keys**: Go to **Settings** -> **API-Keys**. Your old keys will show decryption errors since they were encrypted with the old secret. **Delete all existing keys and create new ones**.
+3. **Update Client Scripts**: Update any scripts, cron jobs, or curl integrations that query the API with the newly generated API keys.
+4. **Restore Existing Installations**: If you updated a running installation that used a different secret in `docker-compose.yml`, copy the old secret string and paste it into `config.json` under `"secret_key"` (or reveal the new secret in the WebUI and recreate your API keys).
 
 ### 📦 Self-Update
 

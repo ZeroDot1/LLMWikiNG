@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] – 2026-07-17
+
+### Dokumentation: Vorgehensweise nach Änderung des System-Secrets
+
+#### Changed
+- **`README.md`**: Detaillierte Schritt-für-Schritt-Anleitung ergänzt, was nach einer Geheimnis-Rotation (Secret-Wechsel) oder bei der Migration von Bestands-Installationen mit altem Secret aus `docker-compose.yml` zu beachten und auszuführen ist (Re-Login, Löschung alter Keys, Aktualisierung von Skripten).
+
+---
+
 ## [2.5.0] – 2026-07-17
+
 
 ### Security: Vollständige Migration des System-Secrets in die Config-Struktur
 

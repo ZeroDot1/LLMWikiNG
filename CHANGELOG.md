@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.5] – 2026-07-17
+
+### Fixes: Persistierung des Synchronisations-Status
+
+#### Fixed
+- **Synchronisations-Status (`backend/services/sync.py`)**: Der Zeitpunkt des letzten erfolgreichen Syncs (`LAST_SYNC_TIME`) wird nun persistent in der Datei `data/sync_status.json` gespeichert. Zuvor lag dieser Wert flüchtig im Arbeitsspeicher, was dazu führte, dass nach jedem automatischen Server-Reload (z. B. nach Updates) erneut der Banner *"Sync Recommended"* eingeblendet wurde, obwohl der Sync erfolgreich war.
+
+---
+
 ## [2.5.4] – 2026-07-17
+
 
 ### Security: API-Key Erstellung mit Benutzer-Zuweisung
 

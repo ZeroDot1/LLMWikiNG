@@ -13,13 +13,39 @@ from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
-LAST_SYNC_TIME: dict[str, object] = {}
+# Persistenter Sync-Status
+SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
 
+def _load_sync_times() -> dict[str, str]:
+    if SYNC_STATUS_FILE.exists():
+        try:
+            import json
+            return json.loads(SYNC_STATUS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def _save_sync_times(times: dict[str, str]) -> None:
+    try:
+        import json
+        SYNC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SYNC_STATUS_FILE.write_text(json.dumps(times, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+def get_last_sync(wiki: str = "main") -> datetime | None:
+    times = _load_sync_times()
+    val = times.get(wiki)
+    if val:
+        try:
+            return datetime.fromisoformat(val)
+        except Exception:
+            return None
+    return None
 
 def is_sync_needed(wiki: str = "main") -> bool:
     """Prüft, ob seit dem letzten Sync neue/geänderte Dateien im Wiki sind."""
-    global LAST_SYNC_TIME
-    last = LAST_SYNC_TIME.get(wiki)
+    last = get_last_sync(wiki)
     if last is None:
         return True
     root = wiki_path(wiki)
@@ -43,8 +69,9 @@ def is_sync_needed(wiki: str = "main") -> bool:
 
 
 def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
-    global LAST_SYNC_TIME
-    LAST_SYNC_TIME[wiki] = value or datetime.now()
+    times = _load_sync_times()
+    times[wiki] = (value or datetime.now()).isoformat()
+    _save_sync_times(times)
 
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
@@ -119,7 +146,6 @@ def regenerate_index(wiki: str = "main") -> bool:
 
 def do_sync(wiki: str = "main") -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
-    global LAST_SYNC_TIME
     results = {"qmd": False, "index": False, "messages": []}
 
     # Cache für dieses Wiki sofort invalidieren, damit nach dem Sync
@@ -139,7 +165,7 @@ def do_sync(wiki: str = "main") -> dict:
     except Exception as e:
         results["messages"].append(f"index.md Fehler: {e}")
 
-    LAST_SYNC_TIME[wiki] = datetime.now()
+    set_last_sync(datetime.now(), wiki)
 
     try:
         append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}", wiki)

@@ -11,5 +11,4 @@ services:
     environment:
       - PORT=8080
       - HOST=0.0.0.0
-      - LLMWIKI_SECRET=5e5d3fa9de1e6c382217cff17849e7b2b7fb9842272883c576420d605e9f30c6 # Festes, sicheres Secret
 

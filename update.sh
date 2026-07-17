@@ -153,7 +153,7 @@ if [ -f "$BACKUP_DIR/config.json" ]; then
 fi
 
 # Ausführbare Berechtigungen setzen
-chmod +x wiki.sh start.sh tools/*.sh update.sh change_secret.sh clean_release.sh 2>/dev/null || true
+chmod +x wiki.sh start.sh tools/*.sh update.sh clean_release.sh 2>/dev/null || true
 
 # ─── Fertig ───────────────────────────────────────────────────────────────────
 

@@ -318,17 +318,14 @@ LLM_BACKEND=ollama OLLAMA_MODEL=llama3:8b ./wiki.sh ingest file.md
 ### 🔑 The Cryptographic Secret (`LLMWIKI_SECRET`)
 The system uses a central password (the *secret*) to secure your login sessions (session cookies) and to store your API keys encrypted in the database.
 
-To secure your installation, you should change the default secret. We have provided a simple script for this:
+By default, the secret is automatically generated upon the first start of the application and saved persistently in the `config.json` file (under the key `secret_key`). 
 
-```bash
-./change_secret.sh
-```
-
-**What does the script do?**
-It generates a new, completely random secret and automatically writes it into your `docker-compose.yml`. After that, simply restart your containers (`docker compose down && docker compose up -d`).
+To view or rotate this secret, log in as an administrator, navigate to **Settings** -> **Backup & Restore**, enter your password, and select either:
+- **Reveal**: To display the active secret in plain text.
+- **Regenerate**: To securely generate and persist a new random system secret.
 
 > [!WARNING]
-> If you change the secret, already generated API keys can no longer be decrypted. You must recreate them once in the web interface after the change.
+> If you rotate the secret, already generated API keys can no longer be decrypted and active user sessions are terminated. You must recreate your API keys once in the web interface after rotation.
 
 ### 📦 Self-Update
 

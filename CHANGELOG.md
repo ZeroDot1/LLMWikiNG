@@ -5,7 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] – 2026-07-17
+
+### Security: Vollständige Migration des System-Secrets in die Config-Struktur
+
+#### Removed
+- **Geheimnis-Skript (`change_secret.sh`)**: Skript vollständig gelöscht, da die Rotation des Secrets nun sicher und direkt über die Weboberfläche in den Einstellungen gesteuert wird.
+- **Docker-Compose Secret Variable**: Umgebungsvariable `LLMWIKI_SECRET` in der `docker-compose.yml` gelöscht. Das Geheimnis wird nicht mehr über Umgebungsvariablen an Container übergeben, sondern ausschließlich über die persistenten App-Daten verwaltet.
+
+#### Changed
+- **Dokumentation (Changelog, README, Über)**: Alle Verweise auf `change_secret.sh` und docker-basierte Secret-Konfigurationen gelöscht und durch die neue Web-Steuerung und config-basierte Persistenz unter Einstellungen ➜ Backup & Restore ersetzt.
+
+---
+
 ## [2.4.9] – 2026-07-17
+
 
 ### Security: Persistierung & Steuerung des System-Secrets (LLMWIKI_SECRET)
 

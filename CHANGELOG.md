@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.7] – 2026-07-17
+
+### Fixes: Host-Volumes für persistente Datenhaltung integriert
+
+#### Changed
+- **Daten-Persistierung (`docker-compose.yml`)**: Volumes-Mounts für die Ordner `./data` (Benutzerdatenbanken, API-Keys, Sync-Status) und `./wikis` (Wiki-Beiträge) hinzugefügt. Verhindert jeglichen Datenverlust bei Container-Neustarts, da die App-Zustände und Inhalte nun sicher auf dem Host-Dateisystem gespeichert werden.
+
+---
+
 ## [2.5.6] – 2026-07-17
+
 
 ### Fixes: Fehlender Import-Crash in Sync-Logik behoben
 

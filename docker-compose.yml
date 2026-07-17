@@ -11,4 +11,7 @@ services:
     environment:
       - PORT=8080
       - HOST=0.0.0.0
+    volumes:
+      - ./data:/app/data
+      - ./wikis:/app/wikis
 

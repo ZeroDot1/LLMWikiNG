@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.6] – 2026-07-17
+
+### Fixes: Fehlender Import-Crash in Sync-Logik behoben
+
+#### Fixed
+- **Datenbank-Import in Sync-Logik (`backend/services/sync.py`)**: Fehlenden Import von `DATA_DIR` aus `core.config` am Dateianfang ergänzt. Behebt einen fatalen `NameError` beim Initialisieren der persistenten Statusdatei, der beim Starten eines Syncs oder Laden von Seiten zu einem Absturz der gesamten Web-App führte.
+
+---
+
 ## [2.5.5] – 2026-07-17
+
 
 ### Fixes: Persistierung des Synchronisations-Status
 

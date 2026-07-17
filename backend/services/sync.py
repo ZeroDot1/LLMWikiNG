@@ -9,7 +9,7 @@ import re
 import subprocess
 from datetime import datetime
 
-from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path
+from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 

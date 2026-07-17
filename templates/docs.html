@@ -172,6 +172,19 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   </section>
 
   <section>
+    <h2 class="text-2xl font-semibold mb-3">🔑 Cryptographic Secret (LLMWIKI_SECRET)</h2>
+    <p class="text-text-secondary">The system uses a central key to sign browser session cookies and encrypt API keys. It is read from the <code>LLMWIKI_SECRET</code> environment variable or dynamically generated and persisted inside <code>config.json</code> (under the key <code>"secret_key"</code>) upon the first launch.</p>
+    <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 my-3 text-xs text-text-secondary leading-relaxed">
+      <strong>⚠️ Warning regarding Secret Rotation:</strong><br>
+      Rotating the secret key will immediately invalidate all active web sessions (forcing a re-login) and make previously encrypted API keys un-decryptable. After changing the secret, old API keys must be deleted and recreated inside the admin interface.
+    </div>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li><strong>Manage in WebUI:</strong> Log in as Admin ➜ Settings ➜ Backup &amp; Restore ➜ enter password to <strong>Reveal</strong> or <strong>Regenerate</strong>.</li>
+      <li><strong>Restore on updates:</strong> If you migrate an old setup, copy the existing secret key from your legacy configuration and insert it as the <code>"secret_key"</code> value inside your <code>config.json</code>.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2 class="text-2xl font-semibold mb-3">🌗 UI Appearance (Theme)</h2>
     <p class="text-text-secondary">The appearance theme (Dark/Light) is managed in the settings panel and saved in <code>config.json</code> (<code>"theme": "dark"</code> or <code>"light"</code>). Dark theme is activated by default and loaded server-side. There is no manual theme toggler in the navigation sidebar.</p>
     <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">

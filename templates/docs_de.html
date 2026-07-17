@@ -176,6 +176,19 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   </section>
 
   <section>
+    <h2 class="text-2xl font-semibold mb-3">🔑 Kryptografisches Geheimnis (LLMWIKI_SECRET)</h2>
+    <p class="text-text-secondary">Das System verwendet ein zentrales Geheimnis, um Browser-Sitzungscookies zu signieren und API-Schlüssel zu verschlüsseln. Es wird aus der Umgebungsvariablen <code>LLMWIKI_SECRET</code> ausgelesen oder beim ersten Start automatisch generiert und dauerhaft in der Datei <code>config.json</code> (unter dem Schlüssel <code>"secret_key"</code>) gespeichert.</p>
+    <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 my-3 text-xs text-text-secondary leading-relaxed">
+      <strong>⚠️ Warnung zur Rotation des Geheimnisses:</strong><br>
+      Das Ändern des System-Geheimnisses führt zum sofortigen Ablauf aller aktiven Web-Sitzungen (erfordert eine erneute Anmeldung) und macht zuvor verschlüsselte API-Schlüssel unlesbar. Nach dem Ändern des Secrets müssen alte API-Keys gelöscht und in der Administration neu erstellt werden.
+    </div>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li><strong>Verwaltung im WebUI:</strong> Als Administrator anmelden ➜ Einstellungen ➜ Backup &amp; Restore ➜ Passwort eingeben zum <strong>Anzeigen</strong> oder <strong>Neu generieren</strong>.</li>
+      <li><strong>Wiederherstellung bei Updates:</strong> Wenn Sie eine bestehende Instanz aktualisieren, kopieren Sie das alte Geheimnis aus der vorherigen Konfiguration und tragen es als Wert für <code>"secret_key"</code> in der <code>config.json</code> ein.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2 class="text-2xl font-semibold mb-3">🌗 Erscheinungsbild (Theme)</h2>
     <p class="text-text-secondary">Das Aussehen (Dark/Light) wird ausschließlich in den
       Einstellungen gesteuert und persistent in <code>config.json</code> gespeichert

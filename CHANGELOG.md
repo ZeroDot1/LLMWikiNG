@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.2] – 2026-07-17
+
+### Dokumentation: Neue Sicherheitsseite in Web-Docs integriert
+
+#### Changed
+- **Web-Dokumentation (`templates/docs.html` / `templates/docs_de.html`)**: Neue Sektion "🔑 Cryptographic Secret (LLMWIKI_SECRET)" bzw. "🔑 Kryptografisches Geheimnis (LLMWIKI_SECRET)" hinzugefügt. Beschreibt die Verwaltung über die Web-Oberfläche, die neue config-basierte Persistenz, das Risiko von API-Key-Ungültigkeit nach Rotationen und die Schritte zur Migration von Altsystemen.
+
+---
+
 ## [2.5.1] – 2026-07-17
+
 
 ### Dokumentation: Vorgehensweise nach Änderung des System-Secrets
 

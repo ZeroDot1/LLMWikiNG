@@ -5,7 +5,19 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.7] – 2026-07-17
+
+### WebUI: Optimierung der Registrierungsseite & Verifizierung des Update-Backups
+
+#### Changed
+- **Registrierungserfolgseite (`templates/register_success.html`)**: Layout-Design überarbeitet mit besseren Grid-Spalten, klarem Warnbereich und modernem Card-Shadow.
+- **Lokalisierungstexte (`lang/de.json` / `lang/en.json`)**: Erklärungstext aktualisiert um den Hinweis, dass der API-Key jederzeit nachträglich in den Einstellungen nach Eingabe des Benutzerpassworts sichtbar gemacht werden kann.
+- **Sicherheitsprüfung Update-Skript (`update.sh`)**: Das Update-Skript sichert das komplette Projektverzeichnis (inkl. Configs und Nutzer-DBs unter `data/`) vor einem Git-Reset in ein timestamp-basiertes Verzeichnis unter `/tmp` und stellt diese Daten danach automatisch wieder her. Dies gewährleistet, dass keine Dateien durch Git-Updates verloren gehen.
+
+---
+
 ## [2.4.6] – 2026-07-17
+
 
 ### Knowledge Graph – CSS Modularisierung & Layout-Optimierung
 

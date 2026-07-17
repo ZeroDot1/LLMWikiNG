@@ -506,7 +506,7 @@
     "success_username": "Benutzername",
     "success_role": "Rolle",
     "success_key_title": "Dein generierter API-Key (Einmalige Anzeige!)",
-    "success_key_desc": "Dieser API-Key wurde automatisch für dich generiert. Bitte kopiere ihn jetzt an einen sicheren Ort. Er wird danach nie wieder im Klartext angezeigt!",
+    "success_key_desc": "Dieser API-Key wurde automatisch für dich generiert. Bitte kopiere ihn jetzt an einen sicheren Ort. Er wird danach nie wieder im Klartext angezeigt! (Du kannst ihn jedoch später unter 'Einstellungen' -> 'API-Keys' durch Eingabe deines Passworts erneut anzeigen lassen.)",
     "success_copy": "Kopieren",
     "success_copied": "Kopiert!",
     "success_continue": "Weiter zum Login"

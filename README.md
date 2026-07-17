@@ -62,8 +62,7 @@ In addition to the CLI, the project offers a full-featured, extremely performant
     - **Direct Network Ingest (API)**: Enables fully automated uploading and immediate processing of source texts, URLs, or files remotely over the network. You can submit documents via curl or client scripts, which then immediately receive AI summaries and are integrated OKF-compliant into the desired wiki.
 *   **📤 Export Management**: View all exported documents in the browser, read them rendered, or download them directly.
 *   **🔍 Search with Term Highlighting**: Lightning-fast BM25 search across the entire wiki, raw files, and exports with colored highlights in the text.
-*   **🏥 Web Linter**: Shows orphaned pages, stale pages (staleness), broken raw-source references (Raw File Refs), and open link references sorted by their importance (frequency).
-*   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Protects wiki pages, raw sources, and configuration.
+*   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
 *   **⚙️ Settings**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **User Management**, **API-Key Management** (with secure **API-Key Recovery** after password verification), SMTP email configuration, health check, and update function.
 *   **🌗 Appearance**: The theme (Dark/Light) is changed exclusively in the settings (`/settings?tab=theme`) and persisted in `config.json`. Dark mode is the default and is loaded server-side — without a toggle in the sidebar.
 
@@ -142,7 +141,7 @@ is automatically moved to `wikis/main/` on first start.
 
 The web interface is **password-protected** (Argon2 hashes, signed sessions).
 On **first start** (when the user database is empty), every request is automatically redirected to `/register` to create the first user as administrator.
-Upon registration, a **default API key** is automatically generated for the user, which is displayed in plaintext once.
+Upon registration, a **default API key** is automatically generated for the user. Although warned that keys are only displayed once, administrators can securely decrypt and view their API keys again at any time under **Settings** -> **API-Keys** by verifying their password.
 After initial setup, self-registration is automatically disabled to protect the system. The administrator can re-enable or disable registration at any time in the **Settings** (`/settings` -> checkbox "Allow registration of new users"). Additional users and API keys can be managed directly in the administration.
 
 All functions are also accessible via a **JSON API** under `/LLMWikiNG/api/v1`,

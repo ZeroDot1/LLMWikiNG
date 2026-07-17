@@ -1,37 +1,51 @@
 {% extends "base.html" %}
 {% block title %}{{ _('register.success_title') }}{% endblock %}
 {% block content %}
-<section class="min-h-screen flex items-center justify-center px-4 py-10 bg-bg-sunken">
-    <div class="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 shadow-lg">
-        <div class="text-center mb-6">
-            <div class="text-4xl mb-2">🎉</div>
+<section class="min-h-[80vh] flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 shadow-xl">
+        <div class="text-center mb-8">
+            <div class="text-5xl mb-3 animate-bounce">🎉</div>
             <h1 class="text-2xl font-bold text-success">{{ _('register.success_title') }}</h1>
-            <p class="text-text-secondary text-sm">{{ _('register.success_subtitle') }}</p>
+            <p class="text-text-secondary text-sm mt-1">{{ _('register.success_subtitle') }}</p>
         </div>
 
-        <div class="space-y-4">
-            <div class="rounded-lg bg-bg-sunken p-4 border border-border">
-                <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_username') }}</span>
-                <span class="font-mono text-text text-lg font-bold">{{ username }}</span>
+        <div class="space-y-5">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-xl bg-bg-sunken p-4 border border-border">
+                    <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_username') }}</span>
+                    <span class="font-mono text-text font-bold text-base">{{ username }}</span>
+                </div>
+
+                <div class="rounded-xl bg-bg-sunken p-4 border border-border">
+                    <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_role') }}</span>
+                    <span class="font-semibold text-text text-sm">
+                        {% if role == "admin" %}
+                            👑 {{ _('users.role_admin') }}
+                        {% elif role == "editor" %}
+                            ✍️ {{ _('users.role_editor') }}
+                        {% else %}
+                            👀 {{ _('users.role_viewer') }}
+                        {% endif %}
+                    </span>
+                </div>
             </div>
 
-            <div class="rounded-lg bg-bg-sunken p-4 border border-border">
-                <span class="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">{{ _('register.success_role') }}</span>
-                <span class="font-mono text-text">{% if role == "admin" %}{{ _('users.role_admin') }}{% elif role == "editor" %}{{ _('users.role_editor') }}{% else %}{{ _('users.role_viewer') }}{% endif %}</span>
-            </div>
-
-            <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4">
-                <span class="block text-xs font-semibold uppercase tracking-wider text-yellow-500 mb-2">⚠️ {{ _('register.success_key_title') }}</span>
-                <p class="text-xs text-text-secondary mb-3">{{ _('register.success_key_desc') }}</p>
+            <div class="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-5">
+                <span class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-yellow-600 mb-2">
+                    ⚠️ {{ _('register.success_key_title') }}
+                </span>
+                <p class="text-xs text-text-secondary leading-relaxed mb-4">
+                    {{ _('register.success_key_desc') }}
+                </p>
                 
                 <div class="flex gap-2">
-                    <input type="text" id="apiKeyVal" readonly value="{{ raw_key }}" class="w-full font-mono text-xs rounded-lg border border-border bg-surface px-3 py-2 text-text focus:outline-none">
-                    <button type="button" id="copyKeyBtn" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-medium whitespace-nowrap">{{ _('register.success_copy') }}</button>
+                    <input type="text" id="apiKeyVal" readonly value="{{ raw_key }}" class="w-full font-mono text-xs rounded-lg border border-border bg-surface px-3.5 py-2 text-text focus:outline-none focus:ring-1 focus:ring-yellow-500/50">
+                    <button type="button" id="copyKeyBtn" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold whitespace-nowrap transition-colors shadow-sm">{{ _('register.success_copy') }}</button>
                 </div>
             </div>
 
             <div class="pt-4 border-t border-border flex justify-end">
-                <a href="{{ base_path }}/login" class="rounded-lg bg-primary px-6 py-2.5 text-white hover:bg-primary-hover font-semibold text-center">{{ _('register.success_continue') }}</a>
+                <a href="{{ base_path }}/login" class="rounded-lg bg-primary px-6 py-2.5 text-white hover:bg-primary-hover font-semibold text-sm transition-colors text-center shadow-md">{{ _('register.success_continue') }}</a>
             </div>
         </div>
     </div>

@@ -13,7 +13,30 @@ import secrets
 import argon2
 from itsdangerous import URLSafeTimedSerializer
 
-SECRET = os.getenv("LLMWIKI_SECRET", secrets.token_hex(32))
+def _get_persistent_secret() -> str:
+    # 1. Aus Umgebungsvariable (Docker/System)
+    env_secret = os.getenv("LLMWIKI_SECRET")
+    if env_secret:
+        return env_secret
+
+    # 2. Aus config.json
+    from core.config import CONFIG_FILE, load_app_config, save_app_config
+    try:
+        cfg = load_app_config()
+        if "secret_key" in cfg and cfg["secret_key"]:
+            return str(cfg["secret_key"])
+    except Exception:
+        pass
+
+    # 3. Dynamisch generieren und in config.json persistieren
+    new_secret = secrets.token_hex(32)
+    try:
+        save_app_config({"secret_key": new_secret})
+    except Exception:
+        pass
+    return new_secret
+
+SECRET = _get_persistent_secret()
 _ph = argon2.PasswordHasher()
 _signer = URLSafeTimedSerializer(SECRET, salt="llmwikisession")
 

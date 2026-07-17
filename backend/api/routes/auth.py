@@ -224,6 +224,60 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
     return JSONResponse({"raw_key": raw_key})
 
 
+@router.post("/system-secret/reveal")
+async def system_secret_reveal(request: Request, admin: dict = Depends(require_admin)):
+    """Verifiziert das Admin-Passwort und gibt das kryptografische System-Secret zurück."""
+    try:
+        data = await request.json()
+        password = data.get("password")
+    except Exception:
+        return JSONResponse({"error": "Ungültiges JSON-Format"}, status_code=400)
+
+    if not password:
+        return JSONResponse({"error": "Passwort erforderlich"}, status_code=400)
+
+    if not verify_password(password, admin["password_hash"]):
+        return JSONResponse({"error": "Ungültiges Passwort"}, status_code=403)
+
+    from core.security import SECRET
+    return JSONResponse({"secret": SECRET})
+
+
+@router.post("/system-secret/regenerate")
+async def system_secret_regenerate(request: Request, admin: dict = Depends(require_admin)):
+    """Verifiziert das Admin-Passwort, generiert ein neues kryptografisches Secret und speichert es."""
+    try:
+        data = await request.json()
+        password = data.get("password")
+    except Exception:
+        return JSONResponse({"error": "Ungültiges JSON-Format"}, status_code=400)
+
+    if not password:
+        return JSONResponse({"error": "Passwort erforderlich"}, status_code=400)
+
+    if not verify_password(password, admin["password_hash"]):
+        return JSONResponse({"error": "Ungültiges Passwort"}, status_code=403)
+
+    import secrets
+    from core.config import save_app_config
+    import core.security
+
+    new_secret = secrets.token_hex(32)
+    try:
+        save_app_config({"secret_key": new_secret})
+    except Exception as e:
+        return JSONResponse({"error": f"Fehler beim Speichern in config.json: {str(e)}"}, status_code=500)
+
+    # In-Memory-Secret aktualisieren, damit die App das neue Secret direkt verwendet
+    core.security.SECRET = new_secret
+    # Neue Verschlüsselungsobjekte mit dem neuen Secret instanziieren
+    from itsdangerous import URLSafeTimedSerializer
+    core.security._signer = URLSafeTimedSerializer(new_secret, salt="llmwikisession")
+    core.security._key_cipher = URLSafeTimedSerializer(new_secret, salt="llmwikingapikey")
+
+    return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
+
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Theme (in config.json persistieren, Default = dunkel)

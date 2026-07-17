@@ -511,6 +511,30 @@
                 </button>
             </form>
         </div>
+
+        <!-- System Secret Management Card -->
+        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-1 text-error">🔐 System-Geheimnis (LLMWIKI_SECRET)</h2>
+            <p class="text-text-secondary text-sm mb-4">Verwalte das zentrale kryptografische Geheimnis zur Ver- und Entschlüsselung von API-Schlüsseln und Sessions.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="secretPassword" class="block text-sm font-medium mb-1">Passwort bestätigen</label>
+                    <input type="password" id="secretPassword" class="w-full max-w-md rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="Passwort des angemeldeten Administrators">
+                    <p id="secretError" class="text-error text-xs mt-1 hidden"></p>
+                    <p id="secretSuccess" class="text-success text-xs mt-1 hidden"></p>
+                </div>
+
+                <div id="secretRevealContainer" class="rounded-lg bg-bg-sunken p-3 border border-border font-mono text-xs text-text break-all hidden select-all">
+                    <!-- Entschlüsseltes System-Secret wird hier angezeigt -->
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" onclick="revealSystemSecret()" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">👁️ Anzeigen</button>
+                    <button type="button" onclick="regenerateSystemSecret()" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">🔄 Neu generieren</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -685,6 +709,92 @@ function submitRevealKey(event) {
         }
       }
     };
+  })
+  .catch(function(err) {
+    errorEl.innerText = err.message;
+    errorEl.classList.remove("hidden");
+  });
+}
+
+function revealSystemSecret() {
+  var password = document.getElementById("secretPassword").value;
+  var errorEl = document.getElementById("secretError");
+  var successEl = document.getElementById("secretSuccess");
+  var container = document.getElementById("secretRevealContainer");
+
+  errorEl.classList.add("hidden");
+  errorEl.innerText = "";
+  successEl.classList.add("hidden");
+  successEl.innerText = "";
+  container.classList.add("hidden");
+  container.innerText = "";
+
+  if (!password) {
+    errorEl.innerText = "Bitte gib dein Passwort zur Verifizierung ein.";
+    errorEl.classList.remove("hidden");
+    return;
+  }
+
+  fetch("{{ base_path }}/system-secret/reveal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: password })
+  })
+  .then(function(res) {
+    return res.json().then(function(data) {
+      if (!res.ok) throw new Error(data.error || "Verifizierung fehlgeschlagen");
+      return data;
+    });
+  })
+  .then(function(data) {
+    container.innerText = data.secret;
+    container.classList.remove("hidden");
+  })
+  .catch(function(err) {
+    errorEl.innerText = err.message;
+    errorEl.classList.remove("hidden");
+  });
+}
+
+function regenerateSystemSecret() {
+  var password = document.getElementById("secretPassword").value;
+  var errorEl = document.getElementById("secretError");
+  var successEl = document.getElementById("secretSuccess");
+  var container = document.getElementById("secretRevealContainer");
+
+  errorEl.classList.add("hidden");
+  errorEl.innerText = "";
+  successEl.classList.add("hidden");
+  successEl.innerText = "";
+  container.classList.add("hidden");
+  container.innerText = "";
+
+  if (!password) {
+    errorEl.innerText = "Bitte gib dein Passwort zur Bestätigung ein.";
+    errorEl.classList.remove("hidden");
+    return;
+  }
+
+  if (!confirm("WARNUNG: Wenn du das System-Geheimnis neu generierst, werden alle zuvor erstellten API-Keys ungültig und laufende Sessions beendet. Möchtest du wirklich fortfahren?")) {
+    return;
+  }
+
+  fetch("{{ base_path }}/system-secret/regenerate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: password })
+  })
+  .then(function(res) {
+    return res.json().then(function(data) {
+      if (!res.ok) throw new Error(data.error || "Aktion fehlgeschlagen");
+      return data;
+    });
+  })
+  .then(function(data) {
+    container.innerText = data.secret;
+    container.classList.remove("hidden");
+    successEl.innerText = data.message;
+    successEl.classList.remove("hidden");
   })
   .catch(function(err) {
     errorEl.innerText = err.message;

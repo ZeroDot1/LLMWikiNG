@@ -5,7 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.9] – 2026-07-17
+
+### Security: Persistierung & Steuerung des System-Secrets (LLMWIKI_SECRET)
+
+#### Added
+- **System-Secret-Management im Einstellungs-Menü (`templates/settings.html`)**: Neue Steuerungs-Karte im "Backup & Restore"-Tab. Ermöglicht nach Eingabe des Administratorpassworts das Anzeigen oder das sichere Neugenerieren des System-Geheimnisses direkt über die Web-Oberfläche.
+- **System-Secret Endpoints (`backend/api/routes/auth.py`)**: Endpunkte `/system-secret/reveal` und `/system-secret/regenerate` unter Administrator-Berechtigungsschutz hinzugefügt.
+
+#### Changed
+- **Persistierung in `config.json` (`backend/core/security.py`)**: Das kryptografische System-Secret (`LLMWIKI_SECRET`) wird nun prioritär aus der persistenten `config.json` (Schlüssel `secret_key`) geladen und dort bei Erstgenerierung sicher abgelegt. Dies verhindert jeglichen Daten- und Entschlüsselungsverlust bei Updates über die Weboberfläche (Git Pulls).
+
+---
+
 ## [2.4.8] – 2026-07-17
+
 
 ### Fixes: API-Key Reveal Passwort-Validierung & UI Einstellungs-Tabs
 

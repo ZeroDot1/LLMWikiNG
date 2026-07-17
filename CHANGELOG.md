@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.8] – 2026-07-17
+
+### Fixes: Volumes für Ugreen NAS (UGOS) Dateistruktur angepasst
+
+#### Changed
+- **NAS-Kompatibilität (`docker-compose.yml`)**: Die Pfade für die Docker-Volumes wurden auf absolute Pfade unter `/volume1/docker/llmwiking/data` und `/volume1/docker/llmwiking/wikis` umgestellt. Dies entspricht der Standard-Verzeichnisstruktur von Ugreen NAS-Systemen (UGOS) zur persistenten Ablage von Container-Daten.
+
+---
+
 ## [2.5.7] – 2026-07-17
+
 
 ### Fixes: Host-Volumes für persistente Datenhaltung integriert
 

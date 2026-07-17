@@ -12,6 +12,6 @@ services:
       - PORT=8080
       - HOST=0.0.0.0
     volumes:
-      - ./data:/app/data
-      - ./wikis:/app/wikis
+      - /volume1/docker/llmwiking/data:/app/data
+      - /volume1/docker/llmwiking/wikis:/app/wikis
 

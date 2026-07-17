@@ -4,15 +4,15 @@
 {% block content %}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <h1 class="text-2xl font-bold">{{ _('ingest.heading') }}</h1>
-    <a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('ingest.show_ingestlater') }}</a>
+    <a href="{{ base_path }}/wiki/{{ wiki }}/ingestlater" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('ingest.show_ingestlater') }}</a>
 </div>
 <p class="text-text-secondary mb-6">{{ _('ingest.subtitle') }}</p>
 
 {% if success_msg %}
 <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm">
     <strong>{{ success_msg }}</strong>
-    {% if new_slug %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ new_slug }}" class="font-semibold text-primary">{{ _('ingest.go_to_new_page') }}</a>
-    {% elif is_later %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="font-semibold text-primary">{{ _('ingest.go_to_ingestlater') }}</a>{% endif %}
+    {% if new_slug %}<br><a href="{{ base_path }}/wiki/{{ wiki }}/{{ new_slug }}" class="font-semibold text-primary">{{ _('ingest.go_to_new_page') }}</a>
+    {% elif is_later %}<br><a href="{{ base_path }}/wiki/{{ wiki }}/ingestlater" class="font-semibold text-primary">{{ _('ingest.go_to_ingestlater') }}</a>{% endif %}
 </div>
 {% endif %}
 {% if error_msg %}
@@ -29,6 +29,16 @@
 <div id="file-tab" class="tab-content active">
     <form action="{{ base_path }}/ingest" method="post" enctype="multipart/form-data" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="file">
+        {% if wikis %}
+        <div>
+            <label for="wiki_file" class="block font-medium mb-1">Ziel-Wiki</label>
+            <select id="wiki_file" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                {% for w in wikis %}
+                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <div>
             <label for="file" class="block font-medium mb-1">{{ _('ingest.file_label') }}</label>
             <input type="file" id="file" name="file" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
@@ -52,6 +62,16 @@
 <div id="text-tab" class="tab-content" style="display:none;">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text">
+        {% if wikis %}
+        <div>
+            <label for="wiki_text" class="block font-medium mb-1">Ziel-Wiki</label>
+            <select id="wiki_text" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                {% for w in wikis %}
+                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <div>
             <label for="title" class="block font-medium mb-1">{{ _('ingest.text_title_label') }}</label>
             <input type="text" id="title" name="title" placeholder="{{ _('ingest.text_title_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
@@ -75,6 +95,16 @@
 <div id="url-later-tab" class="tab-content" style="display:none;">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="url_later">
+        {% if wikis %}
+        <div>
+            <label for="wiki_url_later" class="block font-medium mb-1">Ziel-Wiki</label>
+            <select id="wiki_url_later" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                {% for w in wikis %}
+                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <div>
             <label for="url_later" class="block font-medium mb-1">{{ _('ingest.url_label') }}</label>
             <input type="url" id="url_later" name="url" placeholder="{{ _('ingest.url_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
@@ -90,6 +120,16 @@
 <div id="text-later-tab" class="tab-content" style="display:none;">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text_later">
+        {% if wikis %}
+        <div>
+            <label for="wiki_text_later" class="block font-medium mb-1">Ziel-Wiki</label>
+            <select id="wiki_text_later" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                {% for w in wikis %}
+                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <div>
             <label for="text_later_title" class="block font-medium mb-1">{{ _('ingest.text_later_title_label') }}</label>
             <input type="text" id="text_later_title" name="title" placeholder="{{ _('ingest.text_later_title_placeholder') }}" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">

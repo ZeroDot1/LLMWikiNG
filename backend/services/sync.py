@@ -47,13 +47,18 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     LAST_SYNC_TIME[wiki] = value or datetime.now()
 
 
-def run_qmd_embed() -> tuple[bool, str]:
+def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     """Führt qmd embed aus. Gibt (success, message) zurück."""
     try:
+        import os
+        from core.config import wiki_path
+        env = os.environ.copy()
+        env["WIKI_DIR"] = str(wiki_path(wiki))
+        env["COLLECTION_NAME"] = f"wiki_{wiki}"
         result = subprocess.run(
             [QMD_BIN, "embed"],
             capture_output=True, text=True, timeout=60,
-            cwd=str(PROJECT_ROOT),
+            cwd=str(PROJECT_ROOT), env=env
         )
         if result.returncode == 0:
             return True, "qmd-Embeddings aktualisiert"
@@ -123,7 +128,7 @@ def do_sync(wiki: str = "main") -> dict:
     _cache.invalidate_prefix(f"pages:{wiki}")
     _cache.invalidate(f"graph:{wiki}")
 
-    qmd_ok, qmd_msg = run_qmd_embed()
+    qmd_ok, qmd_msg = run_qmd_embed(wiki)
     results["qmd"] = qmd_ok
     results["messages"].append(qmd_msg)
 

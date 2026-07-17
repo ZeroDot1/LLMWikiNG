@@ -5,7 +5,19 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.3] – 2026-07-17
+
+### Fixes: API-Key Deletion, Multiwiki Ingest & Sync
+
+#### Fixed
+- **API-Key Deletion (`backend/api/routes/auth.py`)**: Endpunkt `/api-keys/{key_id}/delete` von `GET` auf `POST` geändert. Behebt den `405 Method Not Allowed`-Fehler beim Löschen alter API-Keys über das Einstellungs-Formular.
+- **Multiwiki Synchronisation (`backend/services/sync.py`)**: `run_qmd_embed()` erhält nun das Zielwiki als Argument und setzt die Umgebungsvariablen `WIKI_DIR` und `COLLECTION_NAME` passend für das jeweilige Wiki-Verzeichnis auf, um korrekte Embeddings zu generieren.
+- **Manage Sources / Ingest (`backend/api/routes/pages.py` & `templates/ingest.html`)**: Ingest-Schnittstellen (Datei, Text, Später merken) auf Multiwiki-Struktur angepasst. Die Benutzeroberfläche bietet nun in allen Reitern ein Dropdown zur Auswahl des Ziel-Wikis. Das Backend liest dieses aus und spielt die Quellen direkt in das ausgewählte Wiki.
+
+---
+
 ## [2.5.2] – 2026-07-17
+
 
 ### Dokumentation: Neue Sicherheitsseite in Web-Docs integriert
 

@@ -555,6 +555,7 @@ def ingest_get(request: Request):
     return render(
         request, "ingest.html",
         active_page="ingest", wiki=wiki,
+        wikis=list_wikis(),
         success_msg=None, error_msg=None, new_slug=None, is_later=False,
     )
 
@@ -565,9 +566,9 @@ async def ingest_post(request: Request):
     error_msg = None
     new_slug = None
     is_later = False
-    wiki = (request.query_params.get("wiki") or _default_wiki())
-
+    
     form = await request.form()
+    wiki = (form.get("wiki") or request.query_params.get("wiki") or _default_wiki())
     ingest_type = form.get("type")
     backend = form.get("backend", "ollama")
 
@@ -625,6 +626,8 @@ async def ingest_post(request: Request):
         if filepath is not None:
             env = os.environ.copy()
             env["LLM_BACKEND"] = backend
+            env["WIKI_DIR"] = str(wiki_path(wiki))
+            env["COLLECTION_NAME"] = f"wiki_{wiki}"
             cmd = ["./wiki.sh", "ingest", str(filepath)]
             custom_title = (form.get("title") or "").strip()
             if custom_title and ingest_type == "file":
@@ -650,7 +653,7 @@ async def ingest_post(request: Request):
 
             new_slug = slugify_german(title_to_slug)
             success_msg = f"Quelle erfolgreich eingespielt! ({new_slug}.md)"
-            do_sync("main")
+            do_sync(wiki)
 
     except Exception as e:
         error_msg = str(e)
@@ -664,6 +667,7 @@ async def ingest_post(request: Request):
     return render(
         request, "ingest.html",
         active_page="ingest", wiki=wiki,
+        wikis=list_wikis(),
         success_msg=success_msg, error_msg=error_msg, new_slug=new_slug, is_later=is_later,
     )
 

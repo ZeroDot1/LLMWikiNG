@@ -178,7 +178,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=API-Key+gelöscht")
 
 
-@router.get("/api-keys/{key_id}/delete")
+@router.post("/api-keys/{key_id}/delete")
 async def api_key_delete(key_id: str, request: Request, admin: dict = Depends(require_admin)):
     delete_key(key_id)
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=API-Key+gelöscht")

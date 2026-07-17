@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] – 2026-07-17
+
+### Security: Auslagerung des Export-Verzeichnisses auf Host-Volumes
+
+#### Changed
+- **Daten-Persistierung (`Dockerfile` & `docker-compose.yml`)**: Das Verzeichnis `/app/output_docs` (in dem alle exportierten Dokumente und Berichte abgelegt werden) wurde als persistentes Volume hinzugefügt. Es sind nun alle schreibbaren Ordner der Applikation vollständig vom Container entkoppelt und auf das Host-Dateisystem verlagert.
+
+---
+
 ## [2.6.0] – 2026-07-17
+
 
 ### Security: Vollständige Daten-Persistierung aller schreibbaren Verzeichnisse
 

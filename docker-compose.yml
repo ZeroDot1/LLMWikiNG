@@ -15,5 +15,6 @@ services:
       - /volume1/docker/llmwiking/data:/app/data
       - /volume1/docker/llmwiking/wikis:/app/wikis
       - /volume1/docker/llmwiking/raw:/app/raw
+      - /volume1/docker/llmwiking/output_docs:/app/output_docs
       - /volume1/docker/llmwiking/config.json:/app/config.json
 

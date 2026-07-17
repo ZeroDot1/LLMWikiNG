@@ -5,7 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.9] – 2026-07-17
+
+### Security: Vordefinierte Volumes im Docker-Image zur GUI-Auto-Erkennung
+
+#### Added
+- **Volume-Auto-Erkennung (`Dockerfile`)**: Die Instruktion `VOLUME ["/app/data", "/app/wikis"]` im Dockerfile integriert. Beim Importieren des exportierten Images auf NAS-Systemen (wie Ugreen UGOS oder Synology DSM) werden die persistenten Daten- und Wiki-Verzeichnisse nun vollautomatisch in der grafischen Benutzeroberfläche erkannt und zur Host-Pfadzuweisung vorgeschlagen.
+
+---
+
 ## [2.5.8] – 2026-07-17
+
 
 ### Fixes: Volumes für Ugreen NAS (UGOS) Dateistruktur angepasst
 

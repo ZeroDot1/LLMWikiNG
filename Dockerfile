@@ -63,6 +63,9 @@ ENV HOST=0.0.0.0
 # Port im Container freigeben
 EXPOSE 8080
 
+# Volumes vordefinieren für automatische Erkennung in Docker-GUIs (wie Ugreen UGOS)
+VOLUME ["/app/data", "/app/wikis"]
+
 # Healthcheck einrichten
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/LLMWikiNG/status || exit 1

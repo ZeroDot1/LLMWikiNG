@@ -26,7 +26,7 @@ from core.storage import (
 )
 from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german
 from services.search import local_search, qmd_search
-from services.graph import build_graph_data
+from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.editor import ensure_okf_frontmatter
 from services.sync import do_sync, append_okf_log
@@ -86,6 +86,46 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
 def api_graph(wiki: str, user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
     return build_graph_data(wiki)
+
+
+@router.get("/wikis/{wiki}/graph/paginated")
+def api_graph_paginated(
+    wiki: str,
+    page: int = 0,
+    page_size: int = 200,
+    tag: str = "",
+    user: dict = Depends(get_api_user),
+):
+    """Paginierter Graph-Endpunkt für große Wikis (>500 Knoten).
+
+    Query-Parameter:
+        page: Null-basierter Seitenindex (default 0).
+        page_size: Knoten pro Seite (default 200, max 1000).
+        tag: Optionaler Tag-Filter.
+    """
+    _wiki_or_404(wiki)
+    page_size = min(max(1, page_size), 1000)
+    return build_graph_data_paginated(
+        wiki,
+        page=page,
+        page_size=page_size,
+        tag_filter=tag or None,
+    )
+
+
+@router.get("/cache/stats")
+def api_cache_stats(admin: dict = Depends(require_api_admin)):
+    """Gibt aktuelle Cache-Statistiken zurück (nur Admin)."""
+    from services.cache import get_cache
+    return get_cache().stats()
+
+
+@router.post("/cache/clear")
+def api_cache_clear(admin: dict = Depends(require_api_admin)):
+    """Leert den gesamten In-Memory-Cache (nur Admin)."""
+    from services.cache import get_cache
+    get_cache().clear()
+    return {"ok": True, "message": "Cache geleert"}
 
 
 @router.get("/wikis/{wiki}/stats")

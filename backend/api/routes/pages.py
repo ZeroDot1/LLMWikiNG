@@ -49,7 +49,7 @@ from services.wiki import (
 from services.markdown import render_markdown, render_markdown_preview
 from services.search import qmd_search, local_search
 from services.sync import is_sync_needed, do_sync, append_okf_log
-from services.graph import build_graph_data
+from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.analytics import get_wiki_analytics
 from services.editor import ensure_okf_frontmatter
@@ -518,6 +518,31 @@ def graph_data(request: Request):
 
     wiki = request.query_params.get("wiki") or _default_wiki()
     return JSONResponse(build_graph_data(wiki))
+
+
+@router.get("/graph/data/paginated")
+def graph_data_paginated(request: Request):
+    """Paginierter Graph-Endpunkt für Lazy-Loading im Frontend.
+
+    Query-Parameter:
+        wiki: Wiki-Name.
+        page: Null-basierter Seitenindex (default 0).
+        page_size: Knoten pro Seite (default 200, max 1000).
+        tag: Optionaler Tag-Filter.
+    """
+    from fastapi.responses import JSONResponse
+
+    wiki = request.query_params.get("wiki") or _default_wiki()
+    try:
+        page = int(request.query_params.get("page", 0))
+    except (ValueError, TypeError):
+        page = 0
+    try:
+        page_size = min(max(1, int(request.query_params.get("page_size", 200))), 1000)
+    except (ValueError, TypeError):
+        page_size = 200
+    tag = request.query_params.get("tag", "") or None
+    return JSONResponse(build_graph_data_paginated(wiki, page=page, page_size=page_size, tag_filter=tag))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

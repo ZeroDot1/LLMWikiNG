@@ -18,7 +18,7 @@
         <li>🔗 <strong>Native Markdown Links</strong> – Verwendet standardisierte Markdown-Verknüpfungen (<code>[Anzeige](/pfad/zur/seite.md)</code>) anstelle proprietärer Wikilinks.</li>
         <li>🗂️ <strong>Mehrere Wikis (Multi-Wiki)</strong> – Beliebig viele, voneinander getrennte Wikis unter <code>wikis/&lt;Name&gt;/</code>, verwaltet über die WebUI.</li>
         <li>✍️ <strong>Universeller Editor (WYSIWYG &amp; Markdown)</strong> – Integrierter Dual-Mode-Editor zum Erstellen und Bearbeiten von Wiki-Seiten und Rohquellen direkt im Browser.</li>
-        <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (vollständig offline – eigene abhängigkeitsfreie Canvas-Engine, keine externen Bibliotheken).</li>
+        <li>🕸️ <strong>Wissensgraph</strong> – Interaktive, farbcodierte visuelle Netzwerkkarte aller Verknüpfungen (vollständig offline – eigene abhängigkeitsfreie Canvas-Engine, keine externen Bibliotheken). Optimiert für große Wikis mit <strong>Lazy Loading</strong>, <strong>Barnes-Hut O(n log n)-Physik</strong>, <strong>Viewport Culling</strong> und <strong>Level-of-Detail-Rendering</strong>.</li>
         <li>📜 <strong>Aktivitäts-Timeline</strong> – Chronologische Liste der letzten Ingests, Löschungen und Exporte direkt auf der Startseite.</li>
         <li>📰 <strong>Wochenberichte &amp; E-Mail-Briefings</strong> – Aggregiert wöchentliche Wiki-Änderungen und versendet sie sicher über einen integrierten SMTP-Client.</li>
         <li>🔍 <strong>Volltextsuche</strong> – Superschnelle BM25-Suche im Wiki, in Rohquellen und exportierten Dokumenten mit Treffer-Hervorhebung.</li>
@@ -55,7 +55,7 @@
 53: │   ├── web.py           # Jinja2Templates, base_context()
 54: │   ├── core/            # config, security (Argon2), storage
 55: │   ├── api/routes/      # pages.py, auth.py, api.py
-56: │   └── services/        # wiki, markdown, search, graph, lint, …
+56: │   └── services/        # wiki, markdown, search, graph, lint, cache, …
 57: ├── frontend/            # Tailwind-CSS-v4-Pipeline
 58: ├── wiki.sh              # CLI-Tool (Suche, Ingest, Export, Lint, Update)
 59: ├── update.sh            # ⬇️ Selbstupdate-Skript (Git-basiert)
@@ -86,7 +86,8 @@
         <tr><td><code>/briefings</code></td><td>Generiert Wochenberichte und versendet sie per E-Mail</td></tr>
         <tr><td><code>/config</code></td><td>SMTP-Konfiguration</td></tr>
         <tr><td><code>/ingest</code></td><td>Datei-Upload, Textpaste oder Merkzettel-Import</td></tr>
-        <tr><td><code>/graph</code></td><td>🕸️ Interaktiver Wissensgraph</td></tr>
+        <tr><td><code>/graph</code></td><td>🕸️ Interaktiver Wissensgraph (Lazy Loading, LOD)</td></tr>
+        <tr><td><code>/graph/data/paginated</code></td><td>Paginiertes Graph-JSON für große Wikis (Lazy Loading)</td></tr>
         <tr><td><code>/pending</code></td><td>⏳ Ausstehende Ingests</td></tr>
         <tr><td><code>/raw</code></td><td>📦 Rohquellen-Übersicht</td></tr>
         <tr><td><code>/edit</code></td><td>✍️ Universeller Editor</td></tr>
@@ -135,7 +136,7 @@
     <p>Dieses Projekt nutzt folgende eigene/externe Komponenten:</p>
     <h3>Canvas-Graph-Engine (Wissensgraph)</h3>
     <p>
-        Eigene abhängigkeitsfreie Graph-Engine &ndash; Force-Directed-Layout gerendert via Canvas-2D-API (keine externen Bibliotheken).<br>
+        Eigene abhängigkeitsfreie Graph-Engine – Force-Directed-Layout mit <strong>Barnes-Hut O(n log n)-Approximation</strong>, Viewport Culling, Level-of-Detail-Rendering und Lazy Loading, gerendert via Canvas-2D-API (keine externen Bibliotheken).<br>
         <em>Autor:</em> ZeroDot1 für LLMWikiNG &middot; <em>Lizenz:</em> AGPL-3.0
     </p>
 

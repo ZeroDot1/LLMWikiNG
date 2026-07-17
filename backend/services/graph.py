@@ -1,6 +1,9 @@
 """LLMWikiNG – Wissensgraph-Daten für vis.js.
 
-Portiert aus llmWiki.py.
+Portiert aus llmWiki.py. Jetzt mit In-Memory-Cache:
+- build_graph_data() cached das komplette Graph-Dict pro Wiki.
+- Invalidierung via mtime-Fingerabdruck des Wiki-Verzeichnisses.
+- Separate paginated API für große Wikis (>500 Knoten).
 """
 
 from __future__ import annotations
@@ -9,10 +12,84 @@ import re
 
 from core.config import WIKI_DIR, BASE_PATH, wiki_path
 from services.wiki import get_all_wiki_pages
+from services.cache import get_cache
 
 
 def build_graph_data(wiki: str = "main") -> dict:
-    """Liefert Knoten und Kanten des Wikis für vis.js."""
+    """Liefert Knoten und Kanten des Wikis für vis.js.
+
+    Ergebnis wird in-memory gecached. Cache wird bei Datei-Änderungen
+    automatisch invalidiert (mtime-basiert).
+    """
+    cache = get_cache()
+    root = wiki_path(wiki)
+    cache_key = f"graph:{wiki}"
+
+    cached = cache.get(cache_key, root)
+    if cached is not None:
+        return cached
+
+    result = _build_graph_uncached(wiki)
+    cache.set(cache_key, result, root)
+    return result
+
+
+def build_graph_data_paginated(
+    wiki: str = "main",
+    page: int = 0,
+    page_size: int = 200,
+    tag_filter: str | None = None,
+) -> dict:
+    """Gibt einen paginierten Ausschnitt des Graphen zurück.
+
+    Für große Wikis (>500 Knoten) kann das Frontend schrittweise
+    nachladen. Gibt immer alle Kanten zurück, aber nur die Knoten
+    des aktuellen Segments (damit Kanten-Rendering korrekt bleibt).
+
+    Args:
+        wiki: Wiki-Name.
+        page: Null-basierter Seitenindex.
+        page_size: Anzahl Knoten pro Seite.
+        tag_filter: Wenn gesetzt, nur Knoten mit diesem Tag.
+
+    Returns:
+        Dict mit ``nodes``, ``edges``, ``total_nodes``, ``page``,
+        ``page_size``, ``total_pages``.
+    """
+    full = build_graph_data(wiki)
+    all_nodes: list[dict] = full["nodes"]
+    all_edges: list[dict] = full["edges"]
+
+    # Optionaler Tag-Filter
+    if tag_filter:
+        prefix = f"tag-{tag_filter.lower()}"
+        all_nodes = [n for n in all_nodes if n.get("group", "").startswith(prefix)]
+        visible_ids = {n["id"] for n in all_nodes}
+        all_edges = [e for e in all_edges if e["from"] in visible_ids or e["to"] in visible_ids]
+
+    total = len(all_nodes)
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    page = max(0, min(page, total_pages - 1))
+    start = page * page_size
+    page_nodes = all_nodes[start : start + page_size]
+
+    # Nur Kanten zurückgeben, bei denen mindestens ein Endpunkt in der
+    # aktuellen Seite liegt (sonst sehr viele irrelevante Kanten)
+    page_ids = {n["id"] for n in page_nodes}
+    page_edges = [e for e in all_edges if e["from"] in page_ids or e["to"] in page_ids]
+
+    return {
+        "nodes": page_nodes,
+        "edges": page_edges,
+        "total_nodes": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
+
+
+def _build_graph_uncached(wiki: str) -> dict:
+    """Interne Funktion – baut Graph-Daten ohne Cache."""
     nodes: list[dict] = []
     edges: list[dict] = []
 

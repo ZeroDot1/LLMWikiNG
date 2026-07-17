@@ -11,6 +11,7 @@ from datetime import datetime
 
 from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path
 from services.wiki import get_all_wiki_pages
+from services.cache import get_cache
 
 LAST_SYNC_TIME: dict[str, object] = {}
 
@@ -115,6 +116,12 @@ def do_sync(wiki: str = "main") -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
     global LAST_SYNC_TIME
     results = {"qmd": False, "index": False, "messages": []}
+
+    # Cache für dieses Wiki sofort invalidieren, damit nach dem Sync
+    # alle Leseanfragen frische Daten bekommen.
+    _cache = get_cache()
+    _cache.invalidate_prefix(f"pages:{wiki}")
+    _cache.invalidate(f"graph:{wiki}")
 
     qmd_ok, qmd_msg = run_qmd_embed()
     results["qmd"] = qmd_ok

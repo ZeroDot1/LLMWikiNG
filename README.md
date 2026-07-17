@@ -54,7 +54,7 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 
 *   **🏠 Dashboard & Navigation**: Overview of all current wiki pages, statistics, and system state.
 *   **✍️ Universal Editor (WYSIWYG & Markdown)**: Integrated dual-mode editor for creating and editing wiki pages and raw sources directly in the browser — with WYSIWYG formatting (bold, italic, lists, quotes, code, links, images) and raw Markdown source mode including YAML frontmatter.
-*   **🕸️ Interactive Knowledge Graph**: Visualizes all relationships of your pages in a color-coded, dynamic 2D network (fully offline — custom dependency-free Canvas engine, no external libraries). Contradictions/conflicts are shown in red dashed lines.
+*   **🕸️ Interactive Knowledge Graph**: Visualizes all relationships of your pages in a color-coded, dynamic 2D network (fully offline — custom dependency-free Canvas engine, no external libraries). Optimized for large wikis: **Lazy Loading** (first 200 nodes appear instantly, remaining pages load in the background), **Barnes-Hut O(n log n) physics**, **Viewport Culling**, and **Level-of-Detail rendering** keep the graph smooth even with 1,000+ pages. Contradictions/conflicts are shown in red dashed lines.
 *   **📰 Weekly Reports & Email Briefings**: Aggregate weekly changes, generate new briefing files in the wiki, and send them securely via the integrated SMTP client to your recipients. Configuration is done via the web interface (saved in `config.json`) with integrated quick presets for **Gmail**, **ProtonMail Bridge**, and **Mail.ru**.
 *   **⏳ Pending Ingest**: Shows un-ingested files in `raw/` and allows ingesting them individually or as a batch ("Ingest All") via the web interface.
 *   **📥 Network & Web Ingest**:
@@ -128,7 +128,8 @@ is automatically moved to `wikis/main/` on first start.
 *   `/pending`, `/pending/ingest/<filename>`, `/pending/ingest-all` – Pending ingest.
 *   `/export`, `/export/<filename>` – Export management.
 *   `/graph` – Interactive knowledge graph (custom Canvas engine, no external libs).
-*   `/graph/data?wiki=<name>` – Graph data as JSON.
+*   `/graph/data?wiki=<name>` – Complete graph data as JSON (cached in-memory).
+*   `/graph/data/paginated?wiki=<name>&page=0&page_size=200&tag=` – Paginated graph data for lazy loading (frontend uses this for wikis of any size).
 *   `/ingest` (GET/POST) – Ingest center (upload, URL notes, batch).
 *   `/search?q=` – BM25 full-text search with match highlighting.
 *   `/lang/<code>` – Language switch (cookie).

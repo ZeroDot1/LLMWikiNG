@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.config import WIKI_DIR, RAW_DIR, PROJECT_ROOT, wiki_path
+from services.cache import get_cache
 
 SYSTEM_PAGES = ("index", "log", "ingestlater")
 
@@ -50,7 +51,26 @@ def extract_links_from_content(content: str) -> list[str]:
 
 
 def get_all_wiki_pages(wiki: str = "main") -> list[dict]:
-    """Listet alle Markdown-Seiten im Wiki auf (ohne System-Seiten)."""
+    """Listet alle Markdown-Seiten im Wiki auf (ohne System-Seiten).
+
+    Ergebnis wird in-memory gecached und bei Datei-Änderungen automatisch
+    invalidiert (mtime-basierter Fingerabdruck des Wiki-Verzeichnisses).
+    """
+    root = wiki_path(wiki)
+    cache = get_cache()
+    cache_key = f"pages:{wiki}"
+
+    cached = cache.get(cache_key, root)
+    if cached is not None:
+        return cached
+
+    result = _get_all_wiki_pages_uncached(wiki)
+    cache.set(cache_key, result, root)
+    return result
+
+
+def _get_all_wiki_pages_uncached(wiki: str = "main") -> list[dict]:
+    """Interne Funktion – liest alle Wiki-Seiten ohne Cache."""
     root = wiki_path(wiki)
     pages: list[dict] = []
     if not root.exists():

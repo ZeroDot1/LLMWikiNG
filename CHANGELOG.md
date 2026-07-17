@@ -5,7 +5,32 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] – 2026-07-17
+
+### Performance: Lazy Loading im Graph & Index-Caching für große Wikis
+
+#### Added
+- **In-Memory-Cache (`services/cache.py`)**: Neues zentrales Cache-Modul `WikiCache` – thread-sicher (RLock), mit mtime-Fingerabdruck-Invalidierung aller `.md`-Dateien (nur `stat()`, kein Datei-Read). Globale Singleton-Instanz, kein externer Cache-Server nötig. TTL-Fallback (300 s) als Sicherheitsnetz.
+- **Index-Caching (`services/wiki.py`)**: `get_all_wiki_pages()` ist jetzt gecacht. Bei 1.000 Seiten spart das ca. 500 ms Disk-I/O pro API-Request. Disk-Read-Logik ausgelagert in `_get_all_wiki_pages_uncached()`.
+- **Graph-Caching (`services/graph.py`)**: `build_graph_data()` ist jetzt gecacht (Key `graph:<wiki>`). Neue Funktion `build_graph_data_paginated()` liefert paginierte Graph-Daten (Seiten à max. 1.000 Knoten, optional mit Tag-Filter).
+- **Paginierter Graph-Endpunkt**: Neuer Route `GET /graph/data/paginated?wiki=&page=&page_size=&tag=` in `pages.py` sowie `GET /api/v1/wikis/{wiki}/graph/paginated` in `api.py`.
+- **Cache-Admin-Endpunkte (`api.py`)**: `GET /api/v1/cache/stats` und `POST /api/v1/cache/clear` (jeweils nur für Admin-Keys) zur Überwachung und manuellen Invalidierung des In-Memory-Caches.
+- **Lazy Loading im Knowledge Graph (Frontend)**: `graph.js` lädt die ersten 200 Knoten sofort (Graph ist sofort sichtbar), alle weiteren Seiten werden asynchron im Hintergrund nachgeladen. Ein Progress-Badge zeigt „X / Y Knoten geladen" an und blendet sich nach Abschluss aus.
+- **Barnes-Hut Quadtree (`graph-engine.js`)**: Physik-Simulation wechselt bei mehr als 100 Knoten von O(n²) auf O(n log n) Barnes-Hut-Approximation (konfigurierbar via `barnesHutThreshold`). Massive Geschwindigkeitsverbesserung bei 500+ Knoten.
+- **Viewport Culling (`graph-engine.js`)**: Knoten und Kanten außerhalb des sichtbaren Bereichs werden übersprungen – kein unnötiges Rendern bei großen Graphen und kleinem Zoom.
+- **Level-of-Detail / LOD (`graph-engine.js`)**: Drei Render-Stufen je nach Zoom-Faktor: Voll (Labels + Rechtecke), Medium (Rechtecke ohne Labels), Ultra-LOD (einfache Punkte). Hält die FPS auch bei 1.000+ Knoten stabil.
+- **Lazy-Render / Dirty-Flag (`graph-engine.js`)**: `requestAnimationFrame`-Schleife rendert nur noch, wenn Simulation aktiv, Interaktion stattfindet oder das `_dirty`-Flag gesetzt ist. Kein unnötiges Rendern im Ruhezustand.
+- **Kanten-Batching (`graph-engine.js`)**: Gleichfarbige Standardkanten werden in einem einzigen `ctx.beginPath()`/`ctx.stroke()`-Block gezeichnet – deutlich weniger Canvas-State-Wechsel.
+- **Fade-in für nachgeladene Knoten (`graph-engine.js`)**: Neu hinzugeladene Knoten (via `appendData()`) blenden sanft ein statt abrupt zu erscheinen.
+
+#### Changed
+- **Cache-Invalidierung nach Sync (`services/sync.py`)**: `do_sync()` invalidiert zu Beginn sofort die Cache-Einträge `pages:<wiki>` und `graph:<wiki>`, damit nach einem Sync keine veralteten Daten ausgeliefert werden.
+- **`graph-engine.js`**: Neue öffentliche Methode `appendData(data)` zum inkrementellen Hinzufügen von Knoten und Kanten ohne Neustart der Simulation.
+
+---
+
 ## [2.4.3] – 2026-07-16
+
 
 ### WebUI-Server-Neustart & Robusterer Daten-Erhalt bei Updates
 

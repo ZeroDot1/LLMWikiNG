@@ -18,7 +18,7 @@
         <li>🔗 <strong>Native Markdown Links</strong> – Uses standardized Markdown links (<code>[Label](/path/to/page.md)</code>) instead of proprietary Wikilinks.</li>
         <li>🗂️ <strong>Multi-Wiki Support</strong> – Create and switch between completely separate wikis stored under <code>wikis/&lt;Name&gt;/</code>, managed via the WebUI.</li>
         <li>✍️ <strong>Universal Editor (WYSIWYG &amp; Markdown)</strong> – Integrated dual-mode editor to create and edit wiki pages and raw sources directly in the browser.</li>
-        <li>🕸️ <strong>Knowledge Graph</strong> – Interactive, color-coded visual network map of all page relations (rendered fully offline via a custom dependency-free Canvas engine &ndash; no external libraries).</li>
+        <li>🕸️ <strong>Knowledge Graph</strong> – Interactive, color-coded visual network map of all page relations (rendered fully offline via a custom dependency-free Canvas engine &ndash; no external libraries). Optimized for large wikis with <strong>Lazy Loading</strong>, <strong>Barnes-Hut O(n log n) physics</strong>, <strong>Viewport Culling</strong>, and <strong>Level-of-Detail rendering</strong>.</li>
         <li>📜 <strong>Activity Timeline</strong> – Chronological list of recent ingests, deletions, and exports displayed right on the dashboard.</li>
         <li>📰 <strong>Weekly Reports &amp; Email Briefings</strong> – Aggregates weekly wiki changes and sends them securely via an integrated SMTP client.</li>
         <li>🔍 <strong>Full-text Search</strong> – Blazing fast BM25 hybrid search inside the wiki, raw sources, and exported documents with term highlighting.</li>
@@ -55,7 +55,7 @@
 │   ├── web.py           # Jinja2Templates, base_context()
 │   ├── core/            # config, security (Argon2), storage
 │   ├── api/routes/      # pages.py, auth.py, api.py, register.py
-│   └── services/        # wiki, markdown, search, graph, lint, …
+│   └── services/        # wiki, markdown, search, graph, lint, cache, …
 ├── frontend/            # Tailwind CSS v4 pipeline
 ├── wiki.sh              # CLI tool (Search, Ingest, Export, Lint, Update)
 ├── update.sh            # ⬇️ Self-update script (Git-based)
@@ -87,7 +87,8 @@
         <tr><td><code>/briefings</code></td><td>Generates weekly reports and emails them</td></tr>
         <tr><td><code>/config</code></td><td>SMTP Configuration</td></tr>
         <tr><td><code>/ingest</code></td><td>Ingest panel (Upload, Textpaste, URL bookmarking)</td></tr>
-        <tr><td><code>/graph</code></td><td>🕸️ Interactive Knowledge Graph</td></tr>
+        <tr><td><code>/graph</code></td><td>🕸️ Interactive Knowledge Graph (Lazy Loading, LOD)</td></tr>
+        <tr><td><code>/graph/data/paginated</code></td><td>Paginated graph JSON for large wikis (lazy loading)</td></tr>
         <tr><td><code>/pending</code></td><td>⏳ Pending uploads</td></tr>
         <tr><td><code>/raw</code></td><td>📦 Raw sources explorer</td></tr>
         <tr><td><code>/edit</code></td><td>✍️ Universal editor (WYSIWYG &amp; Markdown modes)</td></tr>
@@ -136,7 +137,7 @@
     <p>This project uses the following custom/external components:</p>
     <h3>Canvas Graph Engine (Knowledge Graph)</h3>
     <p>
-        Custom dependency-free graph engine &ndash; force-directed layout rendered via the Canvas 2D API (no external libraries).<br>
+        Custom dependency-free graph engine &ndash; force-directed layout with <strong>Barnes-Hut O(n log n) approximation</strong>, Viewport Culling, Level-of-Detail rendering, and Lazy Loading rendered via the Canvas 2D API (no external libraries).<br>
         <em>Author:</em> ZeroDot1 for LLMWikiNG &middot; <em>License:</em> AGPL-3.0
     </p>
 

@@ -7,7 +7,16 @@
   "use_tls": false,
   "recipients": "",
   "language": "en",
-  "registration_enabled": true,
+  "registration_enabled": false,
   "audit_enabled": true,
-  "audit_disabled_categories": []
+  "audit_disabled_categories": [
+    "api_keys",
+    "audit",
+    "ingest",
+    "pages",
+    "system",
+    "users",
+    "wikis"
+  ],
+  "secret_key": "99a3d8bbd2e1752e9e7f4774efad137632772bf02c9ca8b21ee297f963597d53"
 }

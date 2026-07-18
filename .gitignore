@@ -47,3 +47,7 @@ wikis_data/
 .env
 node_modules/
 frontend/static/css/tailwind-build.css
+data/
+data/*
+*.db
+

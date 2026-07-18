@@ -11,6 +11,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Erweitertes Audit-Logging**: Alle Systemaktionen inklusive Suchanfragen (`search`), Ingest (`ingest`) werden nun protokolliert.
 - **Kategorien-System für Audit-Logs**: Per-Category Enable/Disable, Logbuch ersetzt durch umfassendes Audit-Log, neues Dashboard Widget.
 - **Settings-Erweiterung**: Neue Audit-Config-Optionen zum individuellen An/Abschalten einzelner Kategorien oder global.
+- **Modulare Einstellungs-Seite**: Das Einstellungen-Template wurde in separate, wiederverwendbare HTML-Dateien unter `templates/settings/` aufgeteilt, um die Wartbarkeit zu verbessern, und das Design optisch aufgewertet.
 
 
 

@@ -56,25 +56,33 @@ def require_api_admin(request: Request, background_tasks: BackgroundTasks) -> di
 
 
 def get_api_user(request: Request, background_tasks: BackgroundTasks) -> dict:
+    """API-Key Auth ODER Session-Cookie Fallback (für Browser-Frontend)."""
     raw = request.headers.get("X-API-Key") or request.query_params.get("api_key")
-    if not raw:
-        raise HTTPException(status_code=401, detail="API-Key erforderlich")
-    h = hashlib.sha256(raw.encode()).hexdigest()
-    key = get_key_by_hash(h)
-    if not key:
-        raise HTTPException(status_code=403, detail="Ungültiger API-Key")
-    user = get_user(key["user_id"])
-    if not user or not user.get("active", True):
-        raise HTTPException(status_code=403, detail="Benutzer inaktiv")
-    # Optionale Passwort-Pflicht pro Key (Anforderung 4)
-    if key.get("require_password"):
-        pw = request.headers.get("X-API-Password") or request.query_params.get("api_password")
-        if not (pw and verify_password(pw, user["password_hash"])):
-            raise HTTPException(status_code=401, detail="API-Passwort erforderlich")
-    
-    # Asynchrones Update im Hintergrund
-    background_tasks.add_task(update_key_last_used, key["id"])
-    return user
+
+    if raw:
+        # ── API-Key Pfad ──
+        h = hashlib.sha256(raw.encode()).hexdigest()
+        key = get_key_by_hash(h)
+        if not key:
+            raise HTTPException(status_code=403, detail="Ungültiger API-Key")
+        user = get_user(key["user_id"])
+        if not user or not user.get("active", True):
+            raise HTTPException(status_code=403, detail="Benutzer inaktiv")
+        # Optionale Passwort-Pflicht pro Key (Anforderung 4)
+        if key.get("require_password"):
+            pw = request.headers.get("X-API-Password") or request.query_params.get("api_password")
+            if not (pw and verify_password(pw, user["password_hash"])):
+                raise HTTPException(status_code=401, detail="API-Passwort erforderlich")
+        # Asynchrones Update im Hintergrund
+        background_tasks.add_task(update_key_last_used, key["id"])
+        return user
+
+    # ── Session-Cookie Fallback (Browser-Frontend) ──
+    session_user = get_current_user(request)
+    if session_user and session_user.get("active", True):
+        return session_user
+
+    raise HTTPException(status_code=401, detail="API-Key erforderlich")
 
 
 def require_wiki(wiki_name: str) -> str:

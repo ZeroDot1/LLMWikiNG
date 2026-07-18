@@ -11,7 +11,7 @@ import os
 from core.config import BASE_PATH, CONFIG_FILE, load_app_config, APP_VERSION, PROJECT_ROOT
 from web import render, redirect, urlencode
 from api.deps import require_login, require_admin
-from services.audit import log_action
+from services.audit import log_action, ALL_CATEGORIES
 from core.security import verify_password, create_session
 from core.storage import (
     list_users,
@@ -169,6 +169,8 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         smtp_config=smtp_config,
         env_user=os.environ.get("GMAIL_USER", ""),
         env_pass_exists=bool(os.environ.get("GMAIL_APP_PASSWORD")),
+        audit_config=load_app_config(),
+        all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
         config_error_msg=None,
         health_run_check=False,

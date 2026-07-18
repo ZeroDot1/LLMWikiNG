@@ -158,9 +158,13 @@ curl -X POST \
   "$SERVER_URL/api/v1/wikis/$WIKI_NAME/ingest/process"
 ```
 
-#### 11. Volltextsuche
+#### 11. Volltextsuche (Unterstützt Cross-Wiki-Suche via wiki=all)
 ```bash
+# Suche in einem bestimmten Wiki:
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/search?q=Suchbegriff&wiki=$WIKI_NAME"
+
+# Cross-Wiki-Suche (alle Wikis durchsuchen):
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/search?q=Suchbegriff&wiki=all"
 ```
 
 #### 12. Wissensgraph-Daten abrufen (Gesamter Graph)

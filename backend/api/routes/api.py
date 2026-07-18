@@ -144,7 +144,7 @@ def api_lint(wiki: str, user: dict = Depends(get_api_user)):
 def api_search(q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
     if not q:
         return {"query": q, "results": [], "local": []}
-    result = qmd_search(q)
+    result = qmd_search(q, wiki)
     local = local_search(q, wiki)
     return {"query": q, "wiki": wiki, "results": result.get("results", []), "local": local.get("results", [])}
 

@@ -97,6 +97,8 @@
     "subtitle": "Durchsuche das gesamte Wiki nach Begriffen, Artikeln oder Querverweisen.",
     "input_placeholder": "Suchbegriff eingeben...",
     "button": "Suchen",
+    "wiki_select_label": "In Wiki suchen:",
+    "all_wikis": "Alle Wikis",
     "index_outdated_title": "🔄 Suchindex veraltet:",
     "index_outdated_desc": "Es wurden neue oder geänderte Seiten im Wiki erkannt.",
     "sync_now": "Jetzt synchronisieren →",

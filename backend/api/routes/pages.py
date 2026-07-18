@@ -684,17 +684,26 @@ def search(request: Request):
     error = None
     sync_hint = False
 
-    page_count = len(get_all_wiki_pages(wiki))
+    if wiki == "all":
+        page_count = sum(len(get_all_wiki_pages(w["name"])) for w in list_wikis())
+        sync_needed_flag = any(is_sync_needed(w["name"]) for w in list_wikis())
+    else:
+        page_count = len(get_all_wiki_pages(wiki))
+        sync_needed_flag = is_sync_needed(wiki)
 
     if query:
-        if page_count > 0 and is_sync_needed(wiki):
+        if page_count > 0 and sync_needed_flag:
             sync_hint = True
 
-        search_result = qmd_search(query)
+        search_result = qmd_search(query, wiki)
         if search_result.get("error"):
             if "not found" in search_result.get("error", "").lower() or "timeout" in search_result.get("error", "").lower():
-                do_sync(wiki)
-                search_result = qmd_search(query)
+                if wiki == "all":
+                    for w in list_wikis():
+                        do_sync(w["name"])
+                else:
+                    do_sync(wiki)
+                search_result = qmd_search(query, wiki)
                 sync_hint = False
             else:
                 error = search_result["error"]
@@ -705,7 +714,7 @@ def search(request: Request):
                 r["snippet_html"] = _highlight_text(r["snippet"], query)
                 results.append(r)
 
-        if not results and page_count > 0 and is_sync_needed(wiki):
+        if not results and page_count > 0 and sync_needed_flag:
             sync_hint = True
 
         raw_mentions_count = 0
@@ -720,7 +729,13 @@ def search(request: Request):
                         pass
 
         target_slug = slugify_german(query)
-        slug_exists = target_slug in {p["slug"] for p in get_all_wiki_pages(wiki)}
+        if wiki == "all":
+            all_slugs = set()
+            for w in list_wikis():
+                all_slugs.update(p["slug"] for p in get_all_wiki_pages(w["name"]))
+            slug_exists = target_slug in all_slugs
+        else:
+            slug_exists = target_slug in {p["slug"] for p in get_all_wiki_pages(wiki)}
     else:
         raw_mentions_count = 0
         slug_exists = False

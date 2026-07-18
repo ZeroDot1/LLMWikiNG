@@ -8,9 +8,19 @@
 </div>
 
 <div class="rounded-xl border border-border bg-bg-sunken p-4 mb-6 shadow-sm">
-    <form action="{{ base_path }}/search" method="get" class="flex gap-2">
-        <input type="text" name="q" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-lg text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('search.input_placeholder') }}" value="{{ query|default('') }}" required autofocus>
-        <button type="submit" class="rounded-lg bg-primary px-5 py-2.5 text-white hover:bg-primary-hover">{{ _('search.button') }}</button>
+    <form action="{{ base_path }}/search" method="get" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1">
+            <input type="text" name="q" class="search-input w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-lg text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('search.input_placeholder') }}" value="{{ query|default('') }}" required autofocus>
+        </div>
+        <div class="flex gap-2">
+            <select name="wiki" class="rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle min-w-[140px]">
+                <option value="all" {% if wiki == 'all' %}selected{% endif %}>🌍 {{ _('search.all_wikis') }}</option>
+                {% for w in wikis %}
+                <option value="{{ w.name }}" {% if wiki == w.name %}selected{% endif %}>📄 {{ w.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="rounded-lg bg-primary px-5 py-2.5 text-white hover:bg-primary-hover whitespace-nowrap">{{ _('search.button') }}</button>
+        </div>
     </form>
 </div>
 
@@ -44,12 +54,17 @@
 {% endif %}
 
 {% if results %}
-    <ul class="space-y-3">
+    <ul class="space-y-3 search-results-list">
     {% for result in results %}
-        <li class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors">
+        <li class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors search-result-item" data-wiki="{{ result.wiki }}">
             <div class="flex justify-between items-start gap-3 mb-1">
                 <div class="text-lg font-semibold"><a href="{{ result.url }}" class="text-primary no-underline">{{ result.title_html|safe }}</a></div>
-                {% if result.score %}<span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5 shrink-0">{{ _('search.score') }} {{ result.score }}</span>{% endif %}
+                <div class="flex items-center gap-1.5 shrink-0">
+                    {% if result.wiki and result.wiki != 'global' %}
+                        <span class="text-xs bg-bg-sunken border border-border text-text-secondary rounded-full px-2.5 py-0.5 font-mono">📁 {{ result.wiki }}</span>
+                    {% endif %}
+                    {% if result.score %}<span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5 shrink-0">{{ _('search.score') }} {{ result.score }}</span>{% endif %}
+                </div>
             </div>
             {% if result.snippet_html %}<div class="text-sm text-text-secondary leading-relaxed">{{ result.snippet_html|safe }}</div>{% endif %}
             <div class="flex justify-between items-center text-xs text-text-muted mt-2 pt-2 border-t border-border font-mono">
@@ -59,6 +74,8 @@
         </li>
     {% endfor %}
     </ul>
+    
+    <script type="module" src="{{ base_path }}/static/js/search.js"></script>
 {% elif query %}
     <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
         <p class="text-4xl mb-2">🔎</p>

@@ -5,6 +5,15 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.3] – 2026-07-18
+
+### Added
+- **Cross-Wiki-Suche (Mehrere Wikis durchsuchen)**: Die Suchfunktion wurde um die Option erweitert, entweder ein bestimmtes Wiki auszuwählen oder alle Wikis gleichzeitig zu durchsuchen (Cross-Wiki-Search). Die Benutzeroberfläche verfügt nun über ein entsprechendes Auswahlfeld und zeigt bei den Suchtreffern an, aus welchem Wiki sie stammen.
+- **Extra JS-Datei für Suche (`static/js/search.js`)**: Der JavaScript-Code für die Suchinteraktionen wurde in eine eigene Datei ausgelagert. Diese bietet Tastatur-Navigation (Pfeiltasten zum Wechseln, Enter zum Öffnen) sowie Fokus-Shortcuts für bessere Usability.
+- **Schnittstellen-Erweiterung in der API**: Der Search-Endpunkt `/api/v1/search` unterstützt nun die Übergabe von `wiki=all` bzw. filterspezifischen Wiki-Parametern zur Steuerung des Suchbereichs.
+
+---
+
 ## [2.6.2] – 2026-07-18
 
 ### Changed

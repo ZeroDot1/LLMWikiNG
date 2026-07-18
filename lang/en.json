@@ -97,6 +97,8 @@
     "subtitle": "Search the entire wiki for terms, articles, or cross-references.",
     "input_placeholder": "Enter search term...",
     "button": "Search",
+    "wiki_select_label": "Search in Wiki:",
+    "all_wikis": "All Wikis",
     "index_outdated_title": "🔄 Search Index Outdated:",
     "index_outdated_desc": "New or modified pages have been detected in the wiki.",
     "sync_now": "Synchronize now →",

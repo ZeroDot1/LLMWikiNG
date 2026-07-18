@@ -70,8 +70,12 @@ def is_sync_needed(wiki: str = "main") -> bool:
 
 def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     times = _load_sync_times()
-    times[wiki] = (value or datetime.now()).isoformat()
+    # Fügen wir einen kleinen Puffer von 5 Sekunden hinzu, um Dateisystem-Schreibverzögerungen auszugleichen
+    import datetime as dt
+    ref_time = value or (dt.datetime.now() + dt.timedelta(seconds=5))
+    times[wiki] = ref_time.isoformat()
     _save_sync_times(times)
+
 
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:

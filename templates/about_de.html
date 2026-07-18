@@ -30,7 +30,7 @@
         <li>🔐 <strong>Authentifizierung &amp; API</strong> – Login mit Argon2-Hashes, automatischer Setup-Umleitung, selbsttätiger API-Key-Generierung auf der Registrierungsseite, API-Key-Verwaltung mit sicherer **API-Key Recovery** nach Passwortverifizierung sowie JSON-API unter <code>/api/v1</code>.</li>
         <li>⬇️ <strong>Self-Update</strong> – Integrierte Update-Funktion per Klick. Sichert Datenbanken und Konfigurationen vor dem Update sicher nach <code>/tmp</code> und stellt sie danach wieder her.</li>
         <li>🐋 <strong>Docker &amp; UGreen NAS Optimierung</strong> – Speziell für <strong>UGreen NAS (UGOS)</strong> optimiertes Docker-Setup zur automatischen Volume-Erkennung und direkten Kompatibilität. Über die Pfadvariable <code>DOCKER_VOLUME_BASE</code> auch problemlos lokal einsetzbar.</li>
-        <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprache, Erscheinungsbild, SMTP, Benutzerverwaltung, API-Schlüssel, Registrierungssteuerung, Gesundheitscheck und Update.</li>
+        <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprache, Erscheinungsbild, SMTP, Wiki-Verwaltung (Tabelle mit Name, Slug, Seiten, Dateien, Größe), Benutzerverwaltung, API-Schlüssel, Registrierungssteuerung, Gesundheitscheck und Update.</li>
         <li>🛡️ <strong>Erweitertes Audit-Logging</strong> – SQLite-basiertes Logging (konfigurierbar pro Kategorie). Protokolliert Suchanfragen, Ingests, API-Keys, Seiten, Wikis, Logins. Mit Dashboard Widget und Kategorie-Filter.</li>
     </ul>
 
@@ -92,7 +92,7 @@
         <tr><td><code>/pending</code></td><td>⏳ Ausstehende Ingests</td></tr>
         <tr><td><code>/raw</code></td><td>📦 Rohquellen-Übersicht</td></tr>
         <tr><td><code>/edit</code></td><td>✍️ Universeller Editor</td></tr>
-        <tr><td><code>/settings</code></td><td>⚙️ Einstellungen (Sprache, Erscheinungsbild, SMTP, Benutzer, API-Schlüssel, Health, Update)</td></tr>
+        <tr><td><code>/settings</code></td><td>⚙️ Einstellungen (Sprache, Erscheinungsbild, SMTP, Wiki-Verwaltung, Benutzer, API-Schlüssel, Health, Update)</td></tr>
         <tr><td><code>/docs</code></td><td>📚 Dokumentation</td></tr>
         <tr><td><code>/about</code></td><td>ℹ️ Über-Seite</td></tr>
         <tr><td><code>/api/v1/*</code></td><td>🔌 JSON-API (Key-geschützt): Wikis, Seiten, Suche, Graph, Stats, Lint, Status, User, API-Keys, Ingest, Export, System</td></tr>

@@ -33,7 +33,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "2.10.0"
+APP_VERSION = "2.11.0"
 DEFAULT_LANG = "en"  # Kann via config.json oder --lang CLI überschrieben werden
 
 # Zur Laufzeit durch run.py gesetzt (CLI --lang / config.json)

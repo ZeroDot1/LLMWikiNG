@@ -30,7 +30,7 @@
         <li>🔐 <strong>Authentication &amp; API</strong> – Secure login with Argon2 hashes, automatic setup redirection, auto-generated API keys on registration, full API-key management with secure password-based **API-Key Recovery**, and a robust JSON API under <code>/api/v1</code>.</li>
         <li>⬇️ <strong>Self-Update</strong> – Integrated update utility to pull the latest version from GitHub with one click. Safely performs backups of databases and configurations to <code>/tmp</code> and restores them automatically after git reset.</li>
         <li>🐋 <strong>Docker &amp; UGreen NAS Optimization</strong> – Docker setup specifically optimized for <strong>UGreen NAS (UGOS)</strong> to support automatic volume detection and out-of-the-box compatibility. Can also be deployed locally using the <code>DOCKER_VOLUME_BASE</code> path variable.</li>
-        <li>⚙️ <strong>Settings</strong> – Central configuration panel with tabs for language, theme, SMTP, user management, API keys, registration controls, health, and updates.</li>
+        <li>⚙️ <strong>Settings</strong> – Central configuration panel with tabs for language, theme, SMTP, wiki management (table view with name, slug, pages, files, size), user management, API keys, registration controls, health, and updates.</li>
         <li>🛡️ <strong>Extended Audit Logging</strong> – SQLite-backed, category-configurable logging (search, ingest, API-keys, pages, wikis). Includes a dashboard widget and category filters.</li>
     </ul>
 
@@ -93,7 +93,7 @@
         <tr><td><code>/pending</code></td><td>⏳ Pending uploads</td></tr>
         <tr><td><code>/raw</code></td><td>📦 Raw sources explorer</td></tr>
         <tr><td><code>/edit</code></td><td>✍️ Universal editor (WYSIWYG &amp; Markdown modes)</td></tr>
-        <tr><td><code>/settings</code></td><td>⚙️ Settings (Language, Theme, SMTP, Users, API Keys, Registration, Health, Updates)</td></tr>
+        <tr><td><code>/settings</code></td><td>⚙️ Settings (Language, Theme, SMTP, Wiki Management, Users, API Keys, Health, Updates)</td></tr>
         <tr><td><code>/docs</code></td><td>📚 Documentation</td></tr>
         <tr><td><code>/about</code></td><td>ℹ️ About page</td></tr>
         <tr><td><code>/api/v1/*</code></td><td>🔌 JSON API (Key-protected): Wikis, pages, search, graph, stats, lint, status, users, API keys, ingest, export, system</td></tr>

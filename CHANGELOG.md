@@ -5,6 +5,23 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-07-19
+
+### Changed
+- **Wiki-Verwaltung: Kartenansicht durch Tabellenansicht ersetzt** (`templates/settings/wikis.html`): Der Tab „Wikis" in den Einstellungen zeigt nun alle Wikis als übersichtliche Tabelle statt als Karten-Grid. Die Tabelle enthält Spalten für Name (inkl. Beschreibung), Slug, Seitenanzahl, Dateianzahl, Größe und Zuletzt geändert – mit Aktionen zum Öffnen, Bearbeiten und Löschen. Das Haupt-Wiki erhält eine blaue Hervorhebung. Responsive Design: Slug- und Datumsspalte werden auf Mobile ausgeblendet.
+- **CSS überarbeitet** (`static/css/wikis.css`): Karten-Styles (`wiki-card`, `wiki-card-header`, etc.) entfernt und durch Tabellen-Styles (`wiki-table`, `wiki-row-main`) ersetzt. Sticky Table Header, abgerundete Ecken und Responsive-Breakpoints für Mobile.
+- **Ingest-API robustheit** (`backend/api/routes/api.py`): `html2text`-Import in inneren Try/Except verschoben, damit ein fehlender Import nicht den gesamten URL-Ingest blockiert. Roher HTML-Fallback mit Regex-Tag-Strip als Alternative.
+- **Temp-Verzeichnis konfigurierbar** (`backend/api/routes/api.py`): Hardcoded `PROJECT_ROOT / "backend" / "scratch"` durch konfigurierbares `SCRATCH_DIR` aus `core.config` ersetzt.
+
+### Fixed
+- **BUG: `html2text` Import blockierte URL-Ingest** (`backend/api/routes/api.py`): Der Import stand außerhalb des try/except-Blocks – eine ImportError warf eine Exception zum äußeren Catch, sodass der HTML-Fallback-Code nie erreicht wurde.
+- **BUG: Falscher Temp-Verzeichnis-Pfad im Ingest** (`backend/api/routes/api.py`): `temp_dir` war hardcoded auf `PROJECT_ROOT / "backend" / "scratch"`, was bei nicht-standardmäßigen Installationen zu `FileNotFoundError` führte.
+
+### Added
+- **58 API-Integrationstests** (`tests/test_api.py`): Umfangreiche Testklasse mit 13 Testgruppen für Authentifizierung, Wiki-Verwaltung, Seitenverwaltung, Direkt-Ingest, Sync, Suche, Graph, Statistiken, Lint, Benutzerverwaltung, API-Key-Verwaltung, System-API, Raw-Ingest und E2E-Integration.
+
+---
+
 ## [2.10.0] - 2026-07-18
 
 ### Added

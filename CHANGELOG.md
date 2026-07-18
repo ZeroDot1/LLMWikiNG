@@ -5,13 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-07-18
+
+### Fixed
+- **Übersetzung des Audit-Logbuchs (i18n)**: Harte deutsche Strings im Audit-Logbuch-Template (`templates/audit.html`) wurden durch Lokalisierungs-Platzhalter (`_()`) ersetzt, um die vollständige Unterstützung der englischen Sprache im Admin-Bereich zu gewährleisten.
+- **Fehlerbereinigung (Jinja2 TypeError)**: Behebung eines Absturzes im Template-Rendering durch fehlerhafte Parameterübergabe in Übersetzungsmethoden.
+
+### Refactored
+- **Modulare Einstellungs-Seite**: Das Einstellungen-Template wurde in separate, wiederverwendbare HTML-Dateien unter `templates/settings/` aufgeteilt, um die Wartbarkeit zu verbessern, und das Design optisch aufgewertet.
+
 ## [2.8.0] - 2026-07-18
 
 ### Added
 - **Erweitertes Audit-Logging**: Alle Systemaktionen inklusive Suchanfragen (`search`), Ingest (`ingest`) werden nun protokolliert.
 - **Kategorien-System für Audit-Logs**: Per-Category Enable/Disable, Logbuch ersetzt durch umfassendes Audit-Log, neues Dashboard Widget.
 - **Settings-Erweiterung**: Neue Audit-Config-Optionen zum individuellen An/Abschalten einzelner Kategorien oder global.
-- **Modulare Einstellungs-Seite**: Das Einstellungen-Template wurde in separate, wiederverwendbare HTML-Dateien unter `templates/settings/` aufgeteilt, um die Wartbarkeit zu verbessern, und das Design optisch aufgewertet.
 
 
 

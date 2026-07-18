@@ -633,8 +633,12 @@ async def ingest_post(request: Request):
             raise ValueError("Ungültiger Ingest-Typ.")
 
         if filepath is not None:
+            from core.config import load_app_config
+            cfg = load_app_config()
             env = os.environ.copy()
             env["LLM_BACKEND"] = backend
+            env["OLLAMA_HOST"] = cfg.get("ollama_host", "http://localhost:11434")
+            env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
             env["WIKI_DIR"] = str(wiki_path(wiki))
             env["COLLECTION_NAME"] = f"wiki_{wiki}"
             cmd = ["./wiki.sh", "ingest", str(filepath)]

@@ -129,6 +129,9 @@ def load_app_config() -> dict[str, Any]:
         "registration_enabled": True,
         "audit_enabled": True,
         "audit_disabled_categories": [],
+        "ollama_host": "http://localhost:11434",
+        "ollama_model": "llama3.2:3b",
+
     }
     if CONFIG_FILE.exists():
         try:

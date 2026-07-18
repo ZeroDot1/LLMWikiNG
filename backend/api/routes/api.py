@@ -261,8 +261,12 @@ def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
     processed = []
     errors = []
     backend = os.environ.get("LLM_BACKEND", "ollama")
+    from core.config import load_app_config
+    cfg = load_app_config()
     env = os.environ.copy()
     env["LLM_BACKEND"] = backend
+    env["OLLAMA_HOST"] = cfg.get("ollama_host", "http://localhost:11434")
+    env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
 
     for item in pending:
         filepath = RAW_DIR / item["name"]
@@ -399,8 +403,12 @@ async def api_direct_ingest(
     temp_dir.mkdir(exist_ok=True)
     
     backend = os.environ.get("LLM_BACKEND", "ollama")
+    from core.config import load_app_config
+    cfg = load_app_config()
     env = os.environ.copy()
     env["LLM_BACKEND"] = backend
+    env["OLLAMA_HOST"] = cfg.get("ollama_host", "http://localhost:11434")
+    env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
     env["WIKI_DIR"] = str(root)
     env["RAW_DIR"] = str(RAW_DIR)
     env["COLLECTION_NAME"] = f"wiki_{slug}"

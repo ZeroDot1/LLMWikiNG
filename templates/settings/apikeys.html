@@ -1,0 +1,117 @@
+{% if new_key %}
+<div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6 max-w-2xl">
+    <p class="mb-2 font-semibold text-success flex items-center gap-1.5">
+        <span>✓</span> {{ _('apikeys.raw_key') }}
+    </p>
+    <div class="flex flex-wrap gap-2 items-center">
+        <code id="newKey" class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all">{{ new_key }}</code>
+        <button type="button" id="copyKeyBtn" onclick="copySettingsApiKey()" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold hover:bg-bg-sunken transition-colors">{{ _('apikeys.copy') }}</button>
+    </div>
+</div>
+{% endif %}
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-lg mb-6">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('apikeys.create_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">Erstelle einen neuen API-Schlüssel für programmatischen Zugriff.</p>
+    
+    <form action="{{ base_path }}/api-keys" method="post" class="space-y-4">
+        {% if users %}
+        <div>
+            <label for="key_user_id" class="block text-xs font-semibold text-text-muted uppercase mb-1">Benutzer zuweisen</label>
+            <select id="key_user_id" name="user_id" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if current_user and u.id == current_user.id %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div>
+            <label for="name" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('apikeys.name') }}</label>
+            <input type="text" name="name" id="name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('apikeys.name_placeholder') }}">
+        </div>
+        
+        <div>
+            <label for="scopes" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('apikeys.scopes') }}</label>
+            <input type="text" name="scopes" id="scopes" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text font-mono focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="read, write">
+        </div>
+        
+        <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none">
+            <input type="checkbox" name="require_password" value="on" class="rounded border-border text-primary focus:ring-primary-subtle">
+            <span>{{ _('apikeys.require_password') }}</span>
+        </label>
+        
+        <div>
+            <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-sm font-semibold text-white transition-colors shadow-sm">{{ _('apikeys.create') }}</button>
+        </div>
+    </form>
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('apikeys.title') }}</h2>
+    {% if keys %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead>
+                <tr class="text-text-muted text-xs uppercase border-b border-border">
+                    <th class="py-3 px-2">{{ _('apikeys.table_name') }}</th>
+                    <th class="py-3 px-2">Zugeordneter User</th>
+                    <th class="py-3 px-2">API Key</th>
+                    <th class="py-3 px-2">{{ _('apikeys.table_scopes') }}</th>
+                    <th class="py-3 px-2">{{ _('apikeys.table_require_password') }}</th>
+                    <th class="py-3 px-2">{{ _('apikeys.table_active') }}</th>
+                    <th class="py-3 px-2 text-right">{{ _('apikeys.table_actions') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for key in keys %}
+                <tr class="hover:bg-bg-sunken/30 transition-colors">
+                    <td class="py-3.5 px-2 font-semibold text-text">{{ key.name }}</td>
+                    <td class="py-3.5 px-2 text-text-secondary">
+                        {% set k_user = users | selectattr("id", "equalto", key.user_id) | first %}
+                        {% if k_user %}
+                        <span class="font-semibold text-text">{{ k_user.username }}</span> 
+                        <span class="text-xs text-text-muted bg-border px-1.5 py-0.5 rounded-full">Admin</span>
+                        {% else %}
+                        <span class="font-mono text-xs text-text-muted">ID: {{ key.user_id[:8] }}...</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3.5 px-2">
+                        <div class="flex items-center gap-2">
+                            <span id="key-display-{{ key.id }}" class="font-mono text-xs text-text-secondary select-all">••••••••••••••••</span>
+                            <button type="button" onclick="openRevealModal('{{ key.id }}', '{{ key.name | escape }}')" class="rounded-lg bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-text hover:text-primary text-xs font-semibold transition-colors" title="Schlüssel anzeigen">👁️ Anzeigen</button>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-2 font-mono text-xs text-text-secondary">
+                        {% if key.scopes %}
+                        {% for scope in key.scopes %}
+                        <span class="bg-border text-text px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold">{{ scope }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-text-muted italic">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3.5 px-2">
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if key.require_password %}bg-yellow-500/10 text-yellow-600 border border-yellow-500/20{% else %}bg-bg-sunken text-text-muted{% endif %}">
+                            {{ _('apikeys.yes') if key.require_password else _('apikeys.no') }}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-2">
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if key.active %}bg-success-subtle text-success{% else %}bg-error-subtle text-error{% endif %}">
+                            {{ _('apikeys.active') if key.active else _('apikeys.inactive') }}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-2 text-right">
+                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
+                            <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('apikeys.delete') }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-text-secondary">{{ _('apikeys.no_keys') }}</p>
+    {% endif %}
+</div>

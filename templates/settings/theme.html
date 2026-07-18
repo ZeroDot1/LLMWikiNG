@@ -1,0 +1,20 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.theme_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('settings.theme_subtitle') }}</p>
+    <p class="mb-4 text-sm">
+        <strong>{{ _('settings.theme_current') }}</strong> 
+        <span class="font-semibold text-primary ml-2 bg-primary-subtle px-2.5 py-1 rounded-full text-xs">
+            {{ _('settings.theme_' + theme) }}
+        </span>
+    </p>
+    <form action="{{ base_path }}/theme/set" method="post" class="space-y-4">
+        <div class="flex flex-wrap gap-2.5">
+            <button type="submit" name="value" value="dark" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if theme == 'dark' %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
+                🌙 {{ _('settings.theme_dark') }}{% if theme == 'dark' %} ✓{% endif %}
+            </button>
+            <button type="submit" name="value" value="light" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if theme == 'light' %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
+                ☀️ {{ _('settings.theme_light') }}{% if theme == 'light' %} ✓{% endif %}
+            </button>
+        </div>
+    </form>
+</div>

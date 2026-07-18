@@ -2,475 +2,68 @@
 {% block title %}{{ _('settings.page_title') }}{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-2">{{ _('settings.heading') }}</h1>
-<p class="text-text-secondary mb-6">{{ _('settings.subtitle') }}</p>
+<div class="wiki-content">
+    <header class="border-b border-border pb-4 mb-6">
+        <h1 class="text-2xl font-bold mb-1">⚙️ {{ _('settings.heading') }}</h1>
+        <p class="text-text-secondary text-sm">{{ _('settings.subtitle') }}</p>
+    </header>
 
-<div class="flex gap-0 mb-6 border-b-2 border-border">
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-primary text-text" data-tab="tab-language">{{ _('settings.tab_language') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-theme">{{ _('settings.tab_theme') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-config">{{ _('settings.tab_config') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-health">{{ _('settings.tab_health') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-update">{{ _('settings.tab_update') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-users">{{ _('settings.tab_users') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-apikeys">{{ _('settings.tab_apikeys') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-backup">{{ _('settings.tab_backup') }}</button>
-    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-audit">Audit</button>
-</div>
-
-<!-- Language -->
-<div id="tab-language" class="settings-tab-content">
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
-        <h2 class="text-lg font-semibold mb-1">{{ _('settings.language_heading') }}</h2>
-        <p class="text-text-secondary mb-4">{{ _('settings.language_subtitle') }}</p>
-        <p class="mb-3"><strong>{{ _('settings.language_current') }}</strong> <span class="font-semibold text-primary ml-2">{{ available_languages.get(current_lang, current_lang) }}</span></p>
-        <div class="flex flex-wrap gap-3">
-            {% for code, name in available_languages.items() %}
-            <a href="{{ base_path }}/lang/{{ code }}" class="rounded-lg px-5 py-2 {% if current_lang == code %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ name }} {% if current_lang == code %}✓{% endif %}</a>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-<!-- Theme -->
-<div id="tab-theme" class="settings-tab-content hidden">
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
-        <h2 class="text-lg font-semibold mb-1">{{ _('settings.theme_heading') }}</h2>
-        <p class="text-text-secondary mb-4">{{ _('settings.theme_subtitle') }}</p>
-        <p class="mb-3"><strong>{{ _('settings.theme_current') }}</strong> <span class="font-semibold text-primary ml-2">{{ _('settings.theme_' + theme) }}</span></p>
-        <form action="{{ base_path }}/theme/set" method="post" class="space-y-4">
-            <div class="flex flex-wrap gap-3">
-                <button type="submit" name="value" value="dark" class="rounded-lg px-5 py-2 {% if theme == 'dark' %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ _('settings.theme_dark') }}{% if theme == 'dark' %} ✓{% endif %}</button>
-                <button type="submit" name="value" value="light" class="rounded-lg px-5 py-2 {% if theme == 'light' %}bg-primary text-white{% else %}border border-border bg-surface hover:bg-bg-sunken{% endif %} no-underline">{{ _('settings.theme_light') }}{% if theme == 'light' %} ✓{% endif %}</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Email Config -->
-<div id="tab-config" class="settings-tab-content hidden">
-    {% if config_error_msg %}
-    <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm"><strong>{{ _('config.error_prefix') }}</strong> {{ config_error_msg }}</div>
-    {% endif %}
-    {% if config_success_msg %}
-    <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm"><strong>{{ _('config.success_prefix') }}</strong> {{ config_success_msg }}</div>
-    {% endif %}
-
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
-        <h2 class="text-lg font-semibold mb-4 border-b border-border pb-2 text-primary">{{ _('config.smtp_heading') }}</h2>
-        <div class="mb-4 rounded-lg border border-border bg-bg-sunken p-3">
-            <span class="block text-sm font-medium text-text-secondary mb-2">{{ _('config.presets_label') }}</span>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.gmail.com', 587, true, 'absender@gmail.com')">{{ _('config.preset_gmail') }}</button>
-                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('127.0.0.1', 1025, true, 'absender@protonmail.ch')">{{ _('config.preset_protonmail') }}</button>
-                <button type="button" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken" onclick="applyPreset('smtp.mail.ru', 465, false, 'absender@mail.ru')">{{ _('config.preset_mailru') }}</button>
-            </div>
-        </div>
-        <form action="{{ base_path }}/settings?tab=config" method="post" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="sm:col-span-2">
-                    <label for="smtp_host" class="block font-medium mb-1">{{ _('config.smtp_host_label') }}</label>
-                    <input type="text" name="smtp_host" id="smtp_host" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_host }}" required>
-                </div>
-                <div>
-                    <label for="smtp_port" class="block font-medium mb-1">{{ _('config.smtp_port_label') }}</label>
-                    <input type="number" name="smtp_port" id="smtp_port" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_port }}" required>
-                </div>
-            </div>
-            <div>
-                <label for="smtp_user" class="block font-medium mb-1">{{ _('config.smtp_user_label') }}</label>
-                <input type="text" name="smtp_user" id="smtp_user" data-ph-prefix="{{ _('config.preset_placeholder') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_user }}" placeholder="{{ _('config.smtp_user_placeholder') }}">
-                {% if env_user %}<span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_user_env_ok') }}</span>
-                {% else %}<span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_user_env_hint') }}</span>{% endif %}
-            </div>
-            <div>
-                <label for="smtp_pass" class="block font-medium mb-1">{{ _('config.smtp_pass_label') }}</label>
-                <input type="password" name="smtp_pass" id="smtp_pass" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.smtp_pass }}" placeholder="{{ _('config.smtp_pass_placeholder') }}">
-                {% if env_pass_exists %}<span class="block mt-1 text-xs text-success">✔ {{ _('config.smtp_pass_env_ok') }}</span>
-                {% else %}<span class="block mt-1 text-xs text-text-muted">{{ _('config.smtp_pass_env_hint') }}</span>{% endif %}
-            </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="use_tls" id="use_tls" value="1" {% if smtp_config.use_tls %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
-                <span>{{ _('config.tls_label') }}</span>
-            </label>
-            <div>
-                <label for="recipients" class="block font-medium mb-1">{{ _('config.recipients_label') }}</label>
-                <input type="text" name="recipients" id="recipients" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" value="{{ smtp_config.recipients }}" placeholder="{{ _('config.recipients_placeholder') }}">
-                <span class="block mt-1 text-xs text-text-muted">{{ _('config.recipients_hint') }}</span>
-            </div>
-            <div class="pt-4 border-t border-border space-y-2">
-                <h3 class="text-sm font-semibold text-primary">{{ _('settings.security_heading') }}</h3>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="registration_enabled" id="registration_enabled" value="1" {% if smtp_config.registration_enabled %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
-                    <span class="text-sm font-medium">{{ _('settings.allow_registration') }}</span>
-                </label>
-                <span class="block text-xs text-text-muted">{{ _('settings.registration_hint') }}</span>
-            </div>
-            <div class="pt-2"><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('config.save_button') }}</button></div>
-        </form>
-    </div>
-</div>
-
-<!-- Health -->
-<div id="tab-health" class="settings-tab-content hidden">
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <div class="flex flex-wrap justify-between items-start gap-3">
-            <div>
-                <h2 class="text-lg font-semibold mb-1">{{ _('settings.health_heading') }}</h2>
-                <p class="text-text-secondary mb-0">{{ _('settings.health_subtitle') }}</p>
-            </div>
-            <a href="{{ base_path }}/settings?tab=health&run=1" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('settings.health_run_button') }}</a>
-        </div>
+    <!-- Navigation Tabs -->
+    <div class="flex flex-wrap gap-1 mb-6 border-b border-border overflow-x-auto select-none">
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary transition-all" data-tab="tab-language">{{ _('settings.tab_language') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-theme">{{ _('settings.tab_theme') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-config">{{ _('settings.tab_config') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-health">{{ _('settings.tab_health') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-update">{{ _('settings.tab_update') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-users">{{ _('settings.tab_users') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-apikeys">{{ _('settings.tab_apikeys') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-backup">{{ _('settings.tab_backup') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-audit">🛡️ Audit</button>
     </div>
 
-    {% if health_run_check %}
-    <div class="rounded-lg border p-3 mt-4 text-sm {% if health_issue_count == 0 %}border-success/40 bg-success-subtle{% else %}border-warning/40 bg-warning-subtle{% endif %}">
-        {% if health_issue_count == 0 %}<strong class="text-success">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}
-        {% else %}<strong class="text-warning">⚠ {{ health_issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}{% endif %}
+    <!-- Language Section -->
+    <div id="tab-language" class="settings-tab-content">
+        {% include "settings/language.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
-        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.orphans_heading') }}</h2>
-        <p class="text-xs text-text-muted mb-3">{{ _('lint.orphans_desc') }}</p>
-        {% if health_orphans %}
-        <ul class="space-y-2">
-            {% for orphan in health_orphans %}
-            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken"><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ orphan.slug }}" class="text-error font-medium no-underline">📄 {{ orphan.title }}</a> <span class="text-xs font-mono text-text-muted ml-2">{{ orphan.filename }}</span></li>
-            {% endfor %}
-        </ul>
-        {% else %}<p class="text-sm text-success">{{ _('lint.orphans_empty') }}</p>{% endif %}
+    <!-- Theme Section -->
+    <div id="tab-theme" class="settings-tab-content hidden">
+        {% include "settings/theme.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
-        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.missing_heading') }}</h2>
-        <p class="text-xs text-text-muted mb-3">{{ _('lint.missing_desc') }}</p>
-        {% if health_missing %}
-        <ul class="space-y-2">
-            {% for ref in health_missing %}
-            <li class="rounded-lg border border-border p-3 bg-bg-sunken">
-                <div class="flex justify-between items-center gap-2">
-                    <a href="{{ base_path }}/ingest?title={{ ref.title }}" class="text-warning font-semibold no-underline">🔗 [[{{ ref.title }}]]</a>
-                    <span class="text-xs bg-warning-subtle text-warning rounded-full px-2 py-0.5">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
-                </div>
-                <div class="text-xs text-text-secondary mt-1">{{ _('lint.missing_referenced_by') }}
-                    {% for src_title, src_slug in ref.sources %}<a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ src_slug }}" class="text-primary no-underline border-b border-dotted border-primary mr-2">{{ src_title }}</a>{% endfor %}
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}<p class="text-sm text-success">{{ _('lint.missing_empty') }}</p>{% endif %}
+    <!-- SMTP Email Configuration Section -->
+    <div id="tab-config" class="settings-tab-content hidden">
+        {% include "settings/smtp.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
-        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.stale_heading') }}</h2>
-        <p class="text-xs text-text-muted mb-3">{{ _('lint.stale_desc') }}</p>
-        {% if health_stale %}
-        <ul class="space-y-2">
-            {% for page in health_stale %}
-            <li class="rounded-lg border border-border p-2.5 bg-bg-sunken"><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-text-secondary flex justify-between w-full no-underline"><span>📄 {{ page.title }}</span><span class="text-xs font-mono text-text-muted">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span></a></li>
-            {% endfor %}
-        </ul>
-        {% else %}<p class="text-sm text-success">{{ _('lint.stale_empty') }}</p>{% endif %}
+    <!-- Health Check Section -->
+    <div id="tab-health" class="settings-tab-content hidden">
+        {% include "settings/health.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
-        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-error">{{ _('lint.raw_refs_heading') }}</h2>
-        <p class="text-xs text-text-muted mb-3">{{ _('lint.raw_refs_desc') }}</p>
-        {% if health_missing_raw %}
-        <ul class="space-y-2">
-            {% for ref in health_missing_raw %}
-            <li class="rounded-lg border border-error/20 p-2.5 bg-bg-sunken flex justify-between items-center gap-2">
-                <span>Seite <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ ref.page_slug }}" class="text-primary no-underline border-b border-dotted border-primary">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}</span>
-                <code class="text-xs font-mono text-error bg-error-subtle px-1.5 py-0.5 rounded">{{ ref.raw_file }}</code>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}<p class="text-sm text-success">{{ _('lint.raw_refs_empty') }}</p>{% endif %}
-    </div>
-    {% else %}
-    <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm mt-4">
-        <p class="text-4xl mb-2">🏥</p>
-        <p>{{ _('settings.health_idle_hint') }}</p>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Update -->
-<div id="tab-update" class="settings-tab-content hidden">
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
-        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.card_heading') }}</h2>
-        <p>{{ _('update.intro') }}</p>
-        <table class="w-full mt-3">
-            <tr><td class="py-1 text-text-secondary">{{ _('update.repo_label') }}</td><td><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="text-primary">github.com/ZeroDot1/LLMWikiNG</a></td></tr>
-            <tr><td class="py-1 text-text-secondary">{{ _('update.method_label') }}</td><td><code>git pull</code> (via GitHub)</td></tr>
-            <tr><td class="py-1 text-text-secondary">{{ _('update.local_version_label') }}</td><td><strong id="localVersion">{{ app_version }}</strong></td></tr>
-        </table>
-        <div class="my-4">
-            <label for="github_token_input" class="block font-medium mb-1 text-sm">{{ _('update.github_token_label') }}</label>
-            <input type="password" id="github_token_input" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('update.github_token_placeholder') }}">
-        </div>
-        <div id="checkResult" class="mt-3 hidden"
-            data-checking-text="{{ _('update.checking_text') }}"
-            data-error-prefix="{{ _('update.error_prefix') }}"
-            data-up-to-date="{{ _('update.up_to_date') }}"
-            data-local-label="{{ _('update.local_label') }}"
-            data-github-label="{{ _('update.github_label') }}"
-            data-update-available="{{ _('update.update_available') }}"
-            data-run-button="{{ _('update.run_button') }}"></div>
-        <div class="flex flex-wrap gap-3 mt-3">
-            <button id="checkUpdateBtn" data-checking="{{ _('update.checking') }}" data-label="{{ _('update.check_button') }}" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover" onclick="checkUpdate()">{{ _('update.check_button') }}</button>
-        </div>
-        <h3 class="mt-5 mb-2 font-semibold">{{ _('update.sections_heading') }}</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="rounded-lg border border-success/30 bg-success-subtle p-3">
-                <strong class="text-success">{{ _('update.section_replaced_heading') }}</strong>
-                <ul class="mt-1 ml-4 text-xs list-disc">
-                    <li><strong>llmWiki.py</strong> (Webserver)</li>
-                    <li><strong>email_sender.py</strong> (E-Mail)</li>
-                    <li>wiki.sh, start.sh, update.sh</li>
-                    <li>prompts/ (System-Prompts)</li>
-                    <li>templates/ (HTML-Vorlagen)</li>
-                    <li>static/ (CSS, JS)</li>
-                    <li>tools/ (Hilfsskripte)</li>
-                    <li>VERSION, CHANGELOG, README</li>
-                </ul>
-            </div>
-            <div class="rounded-lg border border-error/30 bg-error-subtle p-3">
-                <strong class="text-error">{{ _('update.section_preserved_heading') }}</strong>
-                <ul class="mt-1 ml-4 text-xs list-disc">
-                    <li>wiki/ (Deine Wiki-Seiten)</li>
-                    <li>raw/ (Deine Rohquellen)</li>
-                    <li>output_docs/ (Deine Exporte)</li>
-                    <li>config.json (SMTP-Einstellungen)</li>
-                    <li>.agy.yaml (LLM-Konfiguration)</li>
-                </ul>
-            </div>
-        </div>
+    <!-- System Update Section -->
+    <div id="tab-update" class="settings-tab-content hidden">
+        {% include "settings/update.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
-        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.run_heading') }}</h2>
-        {% if update_available %}
-        <p>{{ _('update.run_intro') }}</p>
-        <div class="flex flex-wrap gap-3 mt-3">
-            <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">
-                <input type="hidden" name="action" value="run_update">
-                <input type="hidden" name="github_token" value="">
-                <button type="submit" class="rounded-lg bg-success px-4 py-2 text-white text-lg hover:opacity-90" onclick="return confirm('{{ _('update.run_confirm') }}');">{{ _('update.run_button') }}</button>
-            </form>
-            <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('update.github_button') }}</a>
-        </div>
-        {% else %}
-        <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3 text-sm">
-            <strong>{{ _('update.not_available_title') }}</strong><br>{{ _('update.not_available_desc') }}
-            <pre class="bg-bg-sunken p-2 rounded mt-2">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
-        </div>
-        {% endif %}
+    <!-- User Accounts Section -->
+    <div id="tab-users" class="settings-tab-content hidden">
+        {% include "settings/users.html" %}
     </div>
 
-    {% if update_log %}
-    <div class="rounded-xl border border-border bg-bg-sunken p-5 shadow-sm mb-4">
-        <h2 class="text-lg font-semibold mb-3">{{ _('update.log_heading') }}</h2>
-        <pre class="whitespace-pre-wrap text-xs">{{ update_log }}</pre>
-        <p class="mt-3 p-3 bg-error-subtle rounded-lg text-sm mb-3"><strong class="text-warning">{{ _('update.restart_warning') }}</strong><br><code class="bg-bg-sunken px-1.5 py-0.5 rounded">./start.sh</code></p>
-        <form action="{{ base_path }}/settings?tab=update" method="post" onsubmit="return confirm('Möchtest du den Webserver jetzt neu starten? Im Container-Modus wird er automatisch wieder hochgefahren.');">
-            <input type="hidden" name="action" value="restart_server">
-            <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">🔄 Server jetzt neu starten</button>
-        </form>
-    </div>
-    {% endif %}
-
-    <div class="rounded-xl border border-border bg-surface p-5 shadow-sm">
-        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('update.terminal_heading') }}</h2>
-        <p>{{ _('update.terminal_desc') }}</p>
-        <pre class="bg-bg-sunken p-3 rounded-lg mt-2">./update.sh          # Update ausführen
-./update.sh --check  # Nur prüfen
-# oder
-./wiki.sh update</pre>
-    </div>
-</div>
-
-<!-- User Management -->
-<div id="tab-users" class="settings-tab-content hidden">
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
-        <h2 class="text-lg font-semibold mb-1">{{ _('users.create_heading') }}</h2>
-        <p class="text-text-secondary mb-4">{{ _('users.create_hint', default='Lege einen neuen Benutzer an (Admin-Rechte zum Verwalten erforderlich).') }}</p>
-        <form action="{{ base_path }}/users" method="post" class="space-y-4 max-w-lg">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="username" class="block font-medium mb-1">{{ _('users.username') }}</label>
-                    <input type="text" name="username" id="username" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
-                </div>
-                <div>
-                    <label for="password" class="block font-medium mb-1">{{ _('users.password') }}</label>
-                    <input type="password" name="password" id="password" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
-                </div>
-            </div>
-            <div>
-                <label for="role" class="block font-medium mb-1">{{ _('users.role') }}</label>
-                <select name="role" id="role" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
-                    <option value="admin">{{ _('users.role_admin') }}</option>
-                    <option value="editor">{{ _('users.role_editor') }}</option>
-                    <option value="viewer">{{ _('users.role_viewer') }}</option>
-                </select>
-            </div>
-            <div><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('users.create') }}</button></div>
-        </form>
+    <!-- API Keys Section -->
+    <div id="tab-apikeys" class="settings-tab-content hidden">
+        {% include "settings/apikeys.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('users.title') }}</h2>
-        {% if users %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-text-muted border-b border-border">
-                        <th class="text-left py-3 px-2">{{ _('users.table_username') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('users.table_role') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('users.table_active') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('users.table_actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr class="border-b border-border hover:bg-bg-sunken/40 transition-colors">
-                        <td class="py-3 px-2 font-semibold text-text">
-                            {{ user.username }}
-                            {% if current_user and user.username == current_user.username %}
-                            <span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5 ml-1">{{ _('users.you', default='du') }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="py-3 px-2">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {% if user.role == 'admin' %}bg-primary-subtle text-primary{% else %}bg-bg-sunken text-text-secondary border border-border{% endif %}">
-                                {% if user.role == 'admin' %}👑 {{ _('users.role_admin') }}
-                                {% elif user.role == 'editor' %}✍️ {{ _('users.role_editor') }}
-                                {% elif user.role == 'viewer' %}👀 {{ _('users.role_viewer') }}
-                                {% else %}{{ user.role }}{% endif %}
-                            </span>
-                        </td>
-                        <td class="py-3 px-2">
-                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if user.active %}bg-success-subtle text-success{% else %}bg-error-subtle text-error{% endif %}">
-                                {{ _('users.active') if user.active else _('users.inactive') }}
-                            </span>
-                        </td>
-                        <td class="py-3 px-2">
-                            {% if not current_user or user.id != current_user.id %}
-                            <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
-                                <button type="submit" class="text-error hover:underline text-xs font-semibold">🗑️ {{ _('users.delete') }}</button>
-                            </form>
-                            {% else %}
-                            <span class="text-xs text-text-muted">-</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-text-secondary">{{ _('users.no_users', default='Noch keine Benutzer vorhanden.') }}</p>
-        {% endif %}
-    </div>
-</div>
-
-<!-- API-Key Management -->
-<div id="tab-apikeys" class="settings-tab-content hidden">
-    {% if new_key %}
-    <div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6">
-        <p class="mb-2 font-semibold text-success">{{ _('apikeys.raw_key') }}</p>
-        <div class="flex flex-wrap gap-2 items-center">
-            <code id="newKey" class="rounded-lg bg-bg-sunken px-3 py-2 text-sm font-mono break-all">{{ new_key }}</code>
-            <button type="button" id="copyKeyBtn" onclick="copySettingsApiKey()" class="rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-bg-sunken">{{ _('apikeys.copy') }}</button>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-lg mb-6">
-        <h2 class="text-lg font-semibold mb-1">{{ _('apikeys.create_heading') }}</h2>
-        <form action="{{ base_path }}/api-keys" method="post" class="space-y-4">
-            {% if users %}
-            <div>
-                <label for="key_user_id" class="block font-medium mb-1">Benutzer zuweisen</label>
-                <select id="key_user_id" name="user_id" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
-                    {% for u in users %}
-                    <option value="{{ u.id }}" {% if current_user and u.id == current_user.id %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <div>
-                <label for="name" class="block font-medium mb-1">{{ _('apikeys.name') }}</label>
-                <input type="text" name="name" id="name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('apikeys.name_placeholder') }}">
-            </div>
-            <div>
-                <label for="scopes" class="block font-medium mb-1">{{ _('apikeys.scopes') }}</label>
-                <input type="text" name="scopes" id="scopes" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text font-mono focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="read, write">
-            </div>
-            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
-                <input type="checkbox" name="require_password" value="on" class="rounded border-border text-primary focus:ring-primary-subtle">
-                <span>{{ _('apikeys.require_password') }}</span>
-            </label>
-            <div><button type="submit" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover">{{ _('apikeys.create') }}</button></div>
-        </form>
+    <!-- Backups Section -->
+    <div id="tab-backup" class="settings-tab-content hidden">
+        {% include "settings/backup.html" %}
     </div>
 
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('apikeys.title') }}</h2>
-        {% if keys %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-text-muted border-b border-border">
-                        <th class="text-left py-3 px-2">{{ _('apikeys.table_name') }}</th>
-                        <th class="text-left py-3 px-2">Zugeordneter User</th>
-                        <th class="text-left py-3 px-2">API Key</th>
-                        <th class="text-left py-3 px-2">{{ _('apikeys.table_scopes') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('apikeys.table_require_password') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('apikeys.table_active') }}</th>
-                        <th class="text-left py-3 px-2">{{ _('apikeys.table_actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for key in keys %}
-                    <tr class="border-b border-border hover:bg-bg-sunken/40 transition-colors">
-                        <td class="py-3 px-2 font-semibold text-text">{{ key.name }}</td>
-                        <td class="py-3 px-2 text-text-secondary">
-                            {% set k_user = users | selectattr("id", "equalto", key.user_id) | first %}
-                            {% if k_user %}
-                                <span class="font-medium text-text">{{ k_user.username }}</span> <span class="text-xs text-text-muted">({{ k_user.role }})</span>
-                            {% else %}
-                                <span class="font-mono text-xs text-text-muted">ID: {{ key.user_id[:8] }}...</span>
-                            {% endif %}
-                        </td>
-                        <td class="py-3 px-2">
-                            <div class="flex items-center gap-2">
-                                <span id="key-display-{{ key.id }}" class="font-mono text-xs text-text-secondary select-all">••••••••••••••••</span>
-                                <button type="button" onclick="openRevealModal('{{ key.id }}', '{{ key.name | escape }}')" class="rounded bg-bg-sunken hover:bg-border border border-border px-2 py-0.5 text-text hover:text-primary text-xs font-semibold transition-colors" title="Schlüssel anzeigen">👁️ Anzeigen</button>
-                            </div>
-                        </td>
-                        <td class="py-3 px-2 font-mono text-xs text-text-secondary">{{ key.scopes | join(', ') if key.scopes else '—' }}</td>
-                        <td class="py-3 px-2">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {% if key.require_password %}bg-yellow-500/10 text-yellow-600{% else %}bg-bg-sunken text-text-muted{% endif %}">
-                                {{ _('apikeys.yes') if key.require_password else _('apikeys.no') }}
-                            </span>
-                        </td>
-                        <td class="py-3 px-2">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {% if key.active %}bg-success-subtle text-success{% else %}bg-error-subtle text-error{% endif %}">
-                                {{ _('apikeys.active') if key.active else _('apikeys.inactive') }}
-                            </span>
-                        </td>
-                        <td class="py-3 px-2">
-                            <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
-                                <button type="submit" class="text-error hover:underline text-xs font-semibold">🗑️ {{ _('apikeys.delete') }}</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-text-secondary">{{ _('apikeys.no_keys') }}</p>
-        {% endif %}
+    <!-- Audit Log Settings Section -->
+    <div id="tab-audit" class="settings-tab-content hidden">
+        {% include "settings/audit.html" %}
     </div>
 </div>
 
@@ -501,105 +94,13 @@
     </div>
 </div>
 
-
-<!-- Backup & Restore -->
-<div id="tab-backup" class="settings-tab-content hidden">
-    <div class="space-y-6 max-w-2xl">
-        <!-- Backup Download Card -->
-        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-            <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.backup_download_title') }}</h2>
-            <p class="text-text-secondary text-sm mb-4">{{ _('settings.backup_download_desc') }}</p>
-            <a href="{{ base_path }}/settings/backup" class="inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 py-2.5 text-white font-semibold no-underline transition-colors shadow-sm">
-                {{ _('settings.backup_download_btn') }}
-            </a>
-        </div>
-
-        <!-- Restore Upload Card -->
-        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-            <h2 class="text-lg font-semibold mb-1 text-warning">{{ _('settings.restore_title') }}</h2>
-            <p class="text-text-secondary text-sm mb-4">{{ _('settings.restore_desc') }}</p>
-            <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 mb-4 text-xs text-text-secondary">
-                {{ _('settings.restore_warning') }}
-            </div>
-            <form action="{{ base_path }}/settings/restore" method="post" enctype="multipart/form-data" class="space-y-4" onsubmit="return confirm('{{ _('settings.restore_confirm') }}');">
-                <div>
-                    <label for="backup_file" class="block font-medium mb-1 text-sm">{{ _('settings.restore_file_label') }}</label>
-                    <input type="file" name="backup_file" id="backup_file" required accept=".tar.xz" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
-                </div>
-                <button type="submit" class="rounded-lg bg-warning hover:bg-warning/80 px-5 py-2.5 text-black font-semibold transition-colors shadow-sm">
-                    {{ _('settings.restore_btn') }}
-                </button>
-            </form>
-        </div>
-
-        <!-- System Secret Management Card -->
-        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-            <h2 class="text-lg font-semibold mb-1 text-error">🔐 System-Geheimnis (LLMWIKI_SECRET)</h2>
-            <p class="text-text-secondary text-sm mb-4">Verwalte das zentrale kryptografische Geheimnis zur Ver- und Entschlüsselung von API-Schlüsseln und Sessions.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="secretPassword" class="block text-sm font-medium mb-1">Passwort bestätigen</label>
-                    <input type="password" id="secretPassword" class="w-full max-w-md rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="Passwort des angemeldeten Administrators">
-                    <p id="secretError" class="text-error text-xs mt-1 hidden"></p>
-                    <p id="secretSuccess" class="text-success text-xs mt-1 hidden"></p>
-                </div>
-
-                <div id="secretRevealContainer" class="rounded-lg bg-bg-sunken p-3 border border-border font-mono text-xs text-text break-all hidden select-all">
-                    <!-- Entschlüsseltes System-Secret wird hier angezeigt -->
-                </div>
-
-                <div class="flex flex-wrap gap-3">
-                    <button type="button" onclick="revealSystemSecret()" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">👁️ Anzeigen</button>
-                    <button type="button" onclick="regenerateSystemSecret()" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">🔄 Neu generieren</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Audit Config -->
-<div id="tab-audit" class="settings-tab-content hidden">
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
-        <h2 class="text-lg font-semibold mb-2">Audit-Logging</h2>
-        <p class="text-text-secondary text-sm mb-4">Hier kannst du das Protokollieren von Ereignissen im Audit-Log konfigurieren.</p>
-        
-        <form action="{{ base_path }}/settings" method="post" class="space-y-4">
-            <input type="hidden" name="action" value="save_audit_config">
-            
-            <div class="flex items-center gap-2 mb-4">
-                <input type="checkbox" id="audit_enabled" name="audit_enabled" value="1" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if audit_config.get("audit_enabled", True) %}checked{% endif %}>
-                <label for="audit_enabled" class="font-medium text-text">Audit-Logging global aktivieren</label>
-            </div>
-            
-            <h3 class="text-md font-medium text-text mt-4 mb-2">Kategorien</h3>
-            <p class="text-xs text-text-muted mb-3">Wähle ab, um das Logging für bestimmte Kategorien zu deaktivieren.</p>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {% set disabled_cats = audit_config.get("audit_disabled_categories", []) %}
-                {% for cat in all_audit_categories %}
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="cat_{{ cat }}" name="audit_categories" value="{{ cat }}" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if cat not in disabled_cats %}checked{% endif %}>
-                    <label for="cat_{{ cat }}" class="text-sm text-text-secondary">{{ cat }}</label>
-                </div>
-                {% endfor %}
-            </div>
-            <p class="text-xs text-text-muted italic mt-2">Kategorien ohne Häkchen werden nicht protokolliert.</p>
-            
-            <div class="mt-4 pt-4 border-t border-border text-right">
-                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">Speichern</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script type="module" src="{{ base_path }}/static/js/presets.js?v={{ app_version }}"></script>
 <script type="module" src="{{ base_path }}/static/js/update.js?v={{ app_version }}"></script>
 <script>
-/* Tab-Umschaltung inline – unabhängig vom externen Modul-Cache. */
 (function () {
   "use strict";
-  function switchTab(id) {
+
+  document.addEventListener("DOMContentLoaded", function () {
     var panels = {
       "tab-language": document.getElementById("tab-language"),
       "tab-theme": document.getElementById("tab-theme"),
@@ -612,25 +113,48 @@
       "tab-audit": document.getElementById("tab-audit")
     };
     var tabs = document.querySelectorAll(".settings-tab");
-    Object.keys(panels).forEach(function (k) { if (panels[k]) panels[k].classList.add("hidden"); });
-    tabs.forEach(function (t) {
-      t.classList.remove("border-primary", "text-text");
-      t.classList.add("border-transparent", "text-text-muted");
-    });
-    if (panels[id]) panels[id].classList.remove("hidden");
-    tabs.forEach(function (t) {
-      if (t.dataset.tab === id) {
-        t.classList.add("border-primary", "text-text");
-        t.classList.remove("border-transparent", "text-text-muted");
+
+    function switchTab(activeTabId) {
+      // 1. Hide all panels
+      Object.keys(panels).forEach(function (k) {
+        if (panels[k]) panels[k].classList.add("hidden");
+      });
+      // 2. Show active panel
+      if (panels[activeTabId]) {
+        panels[activeTabId].classList.remove("hidden");
       }
-    });
-  }
-  window.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".settings-tab").forEach(function (t) {
+      // 3. Highlight tab button
+      tabs.forEach(function (t) {
+        if (t.dataset.tab === activeTabId) {
+          t.classList.remove("border-transparent", "text-text-secondary");
+          t.classList.add("border-primary", "text-primary");
+        } else {
+          t.classList.remove("border-primary", "text-primary");
+          t.classList.add("border-transparent", "text-text-secondary");
+        }
+      });
+      // 4. Update URL parameter without reload
+      var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      var tabName = activeTabId.replace("tab-", "");
+      window.history.replaceState({ path: newUrl }, "", newUrl + "?tab=" + tabName);
+    }
+
+    tabs.forEach(function (t) {
       t.addEventListener("click", function () { switchTab(t.dataset.tab); });
     });
+    
     var params = new URLSearchParams(window.location.search);
-    var map = { language: "tab-language", theme: "tab-theme", config: "tab-config", users: "tab-users", apikeys: "tab-apikeys", health: "tab-health", update: "tab-update", backup: "tab-backup", audit: "tab-audit" };
+    var map = {
+      language: "tab-language",
+      theme: "tab-theme",
+      config: "tab-config",
+      users: "tab-users",
+      apikeys: "tab-apikeys",
+      health: "tab-health",
+      update: "tab-update",
+      backup: "tab-backup",
+      audit: "tab-audit"
+    };
     switchTab(map[params.get("tab")] || "tab-language");
   });
 })();
@@ -711,7 +235,7 @@ function submitRevealKey(event) {
 
   errorEl.classList.add("hidden");
 
-  fetch("{{ base_path }}/api-keys/reveal", {
+  fetch("/LLMWikiNG/api-keys/reveal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key_id: keyId, password: password })
@@ -791,7 +315,7 @@ function revealSystemSecret() {
     return;
   }
 
-  fetch("{{ base_path }}/system-secret/reveal", {
+  fetch("/LLMWikiNG/system-secret/reveal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password: password })
@@ -835,7 +359,7 @@ function regenerateSystemSecret() {
     return;
   }
 
-  fetch("{{ base_path }}/system-secret/regenerate", {
+  fetch("/LLMWikiNG/system-secret/regenerate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password: password })
@@ -858,6 +382,4 @@ function regenerateSystemSecret() {
   });
 }
 </script>
-
-
 {% endblock %}

@@ -1,0 +1,31 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
+    <h2 class="text-lg font-semibold mb-2 text-primary">🛡️ Audit-Logging</h2>
+    <p class="text-text-secondary text-sm mb-4">Hier kannst du das Protokollieren von Ereignissen im Audit-Log konfigurieren.</p>
+    
+    <form action="{{ base_path }}/settings" method="post" class="space-y-4">
+        <input type="hidden" name="action" value="save_audit_config">
+        
+        <label class="flex items-center gap-2 mb-4 cursor-pointer select-none">
+            <input type="checkbox" id="audit_enabled" name="audit_enabled" value="1" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if audit_config.get("audit_enabled", True) %}checked{% endif %}>
+            <span class="font-medium text-sm text-text">Audit-Logging global aktivieren</span>
+        </label>
+        
+        <h3 class="text-xs font-bold uppercase tracking-wider text-text-muted mt-5 mb-2">Kategorien</h3>
+        <p class="text-xs text-text-secondary mb-3">Wähle ab, um das Logging für bestimmte Kategorien zu deaktivieren.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-bg-sunken p-4 rounded-lg border border-border">
+            {% set disabled_cats = audit_config.get("audit_disabled_categories", []) %}
+            {% for cat in all_audit_categories %}
+            <label class="flex items-center gap-2.5 cursor-pointer select-none text-sm text-text-secondary">
+                <input type="checkbox" id="cat_{{ cat }}" name="audit_categories" value="{{ cat }}" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if cat not in disabled_cats %}checked{% endif %}>
+                <span class="capitalize">{{ cat }}</span>
+            </label>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-text-muted italic mt-2">Kategorien ohne Häkchen werden nicht protokolliert.</p>
+        
+        <div class="mt-4 pt-4 border-t border-border">
+            <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">Speichern</button>
+        </div>
+    </form>
+</div>

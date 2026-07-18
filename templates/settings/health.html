@@ -1,0 +1,104 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <div>
+            <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.health_heading') }}</h2>
+            <p class="text-text-secondary text-sm">{{ _('settings.health_subtitle') }}</p>
+        </div>
+        <a href="{{ base_path }}/settings?tab=health&run=1" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors shadow-sm">{{ _('settings.health_run_button') }}</a>
+    </div>
+</div>
+
+{% if health_run_check %}
+<div class="rounded-lg border p-3.5 mt-4 text-sm flex items-center gap-2 {% if health_issue_count == 0 %}border-success/30 bg-success-subtle{% else %}border-warning/30 bg-warning-subtle{% endif %}">
+    {% if health_issue_count == 0 %}
+    <span class="text-success font-bold">✓</span>
+    <span><strong class="text-success">{{ _('lint.no_issues') }}</strong> {{ _('lint.no_issues_detail') }}</span>
+    {% else %}
+    <span class="text-warning font-bold">⚠</span>
+    <span><strong class="text-warning">{{ health_issue_count }} {{ _('lint.issues_found') }}</strong> {{ _('lint.issues_detail') }}</span>
+    {% endif %}
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+    <h2 class="text-md font-bold mb-1 border-b border-border pb-2 text-warning uppercase tracking-wide">{{ _('lint.orphans_heading') }}</h2>
+    <p class="text-xs text-text-muted mb-3">{{ _('lint.orphans_desc') }}</p>
+    {% if health_orphans %}
+    <ul class="space-y-2">
+        {% for orphan in health_orphans %}
+        <li class="rounded-lg border border-border p-2.5 bg-bg-sunken flex justify-between items-center text-sm">
+            <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ orphan.slug }}" class="text-error font-medium no-underline hover:underline">📄 {{ orphan.title }}</a>
+            <code class="text-xs font-mono text-text-muted bg-surface px-2 py-0.5 rounded border border-border">{{ orphan.filename }}</code>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-success font-medium">✓ {{ _('lint.orphans_empty') }}</p>
+    {% endif %}
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+    <h2 class="text-md font-bold mb-1 border-b border-border pb-2 text-warning uppercase tracking-wide">{{ _('lint.missing_heading') }}</h2>
+    <p class="text-xs text-text-muted mb-3">{{ _('lint.missing_desc') }}</p>
+    {% if health_missing %}
+    <ul class="space-y-2">
+        {% for ref in health_missing %}
+        <li class="rounded-lg border border-border p-3 bg-bg-sunken">
+            <div class="flex justify-between items-center gap-2">
+                <a href="{{ base_path }}/ingest?title={{ ref.title }}" class="text-warning font-semibold no-underline hover:underline">🔗 [[{{ ref.title }}]]</a>
+                <span class="text-[10px] font-bold bg-warning-subtle text-warning border border-warning/20 rounded-full px-2.5 py-0.5 uppercase tracking-wide">{{ ref.count }} {{ _('lint.missing_refs') }}</span>
+            </div>
+            <div class="text-xs text-text-secondary mt-2">
+                {{ _('lint.missing_referenced_by') }}
+                {% for src_title, src_slug in ref.sources %}
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ src_slug }}" class="text-primary no-underline border-b border-dotted border-primary mr-2 hover:text-primary-hover">{{ src_title }}</a>
+                {% endfor %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-success font-medium">✓ {{ _('lint.missing_empty') }}</p>
+    {% endif %}
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+    <h2 class="text-md font-bold mb-1 border-b border-border pb-2 text-warning uppercase tracking-wide">{{ _('lint.stale_heading') }}</h2>
+    <p class="text-xs text-text-muted mb-3">{{ _('lint.stale_desc') }}</p>
+    {% if health_stale %}
+    <ul class="space-y-2">
+        {% for page in health_stale %}
+        <li class="rounded-lg border border-border p-2.5 bg-bg-sunken text-sm">
+            <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-text-secondary flex justify-between w-full no-underline hover:text-text">
+                <span>📄 {{ page.title }}</span>
+                <span class="text-xs font-mono text-text-muted">{{ _('lint.stale_last_modified') }} {{ page.mtime_formatted }}</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-success font-medium">✓ {{ _('lint.stale_empty') }}</p>
+    {% endif %}
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+    <h2 class="text-md font-bold mb-1 border-b border-border pb-2 text-error uppercase tracking-wide">{{ _('lint.raw_refs_heading') }}</h2>
+    <p class="text-xs text-text-muted mb-3">{{ _('lint.raw_refs_desc') }}</p>
+    {% if health_missing_raw %}
+    <ul class="space-y-2">
+        {% for ref in health_missing_raw %}
+        <li class="rounded-lg border border-border p-2.5 bg-bg-sunken flex justify-between items-center gap-2 text-sm">
+            <span>Seite <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ ref.page_slug }}" class="text-primary no-underline border-b border-dotted border-primary hover:text-primary-hover">{{ ref.page_title }}</a> {{ _('lint.raw_refs_refers_to') }}</span>
+            <code class="text-xs font-mono text-error bg-error-subtle px-2 py-0.5 rounded border border-error/25">{{ ref.raw_file }}</code>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-success font-medium">✓ {{ _('lint.raw_refs_empty') }}</p>
+    {% endif %}
+</div>
+{% else %}
+<div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm mt-4">
+    <p class="text-4xl mb-2">🏥</p>
+    <p class="text-sm text-text-secondary">{{ _('settings.health_idle_hint') }}</p>
+</div>
+{% endif %}

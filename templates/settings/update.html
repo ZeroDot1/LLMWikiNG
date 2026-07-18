@@ -1,0 +1,113 @@
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('update.card_heading') }}</h2>
+    <p class="text-sm text-text-secondary">{{ _('update.intro') }}</p>
+    
+    <div class="overflow-hidden rounded-lg border border-border bg-bg-sunken my-4">
+        <table class="w-full text-sm">
+            <tbody class="divide-y divide-border">
+                <tr>
+                    <td class="py-2.5 px-3 font-medium text-text-muted w-1/3">{{ _('update.repo_label') }}</td>
+                    <td class="py-2.5 px-3"><a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="text-primary hover:underline font-semibold">github.com/ZeroDot1/LLMWikiNG</a></td>
+                </tr>
+                <tr>
+                    <td class="py-2.5 px-3 font-medium text-text-muted">{{ _('update.method_label') }}</td>
+                    <td class="py-2.5 px-3"><code class="font-mono text-xs text-text-secondary bg-surface px-1.5 py-0.5 rounded border border-border">git pull</code> (via GitHub)</td>
+                </tr>
+                <tr>
+                    <td class="py-2.5 px-3 font-medium text-text-muted">{{ _('update.local_version_label') }}</td>
+                    <td class="py-2.5 px-3"><strong id="localVersion" class="bg-primary-subtle text-primary text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ app_version }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="my-4">
+        <label for="github_token_input" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('update.github_token_label') }}</label>
+        <input type="password" id="github_token_input" class="w-full max-w-md rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('update.github_token_placeholder') }}">
+    </div>
+    
+    <div id="checkResult" class="mt-3 hidden"
+        data-checking-text="{{ _('update.checking_text') }}"
+        data-error-prefix="{{ _('update.error_prefix') }}"
+        data-up-to-date="{{ _('update.up_to_date') }}"
+        data-local-label="{{ _('update.local_label') }}"
+        data-github-label="{{ _('update.github_label') }}"
+        data-update-available="{{ _('update.update_available') }}"
+        data-run-button="{{ _('update.run_button') }}"></div>
+        
+    <div class="flex flex-wrap gap-3 mt-3">
+        <button id="checkUpdateBtn" data-checking="{{ _('update.checking') }}" data-label="{{ _('update.check_button') }}" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors shadow-sm" onclick="checkUpdate()">{{ _('update.check_button') }}</button>
+    </div>
+    
+    <h3 class="mt-6 mb-3 font-semibold text-sm uppercase tracking-wide text-text-muted">{{ _('update.sections_heading') }}</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-success/20 bg-success-subtle p-3.5 text-xs">
+            <strong class="text-success text-sm block mb-1">✓ {{ _('update.section_preserved_heading') }}</strong>
+            <ul class="ml-4 list-disc space-y-1 text-text-secondary">
+                <li>wiki/ (Deine Wiki-Seiten)</li>
+                <li>raw/ (Deine Rohquellen)</li>
+                <li>output_docs/ (Deine Exporte)</li>
+                <li>config.json (SMTP-Einstellungen)</li>
+                <li>.agy.yaml (LLM-Konfiguration)</li>
+            </ul>
+        </div>
+        <div class="rounded-lg border border-warning/20 bg-warning-subtle p-3.5 text-xs">
+            <strong class="text-warning text-sm block mb-1">⚠ {{ _('update.section_replaced_heading') }}</strong>
+            <ul class="ml-4 list-disc space-y-1 text-text-secondary">
+                <li><strong>llmWiki.py</strong> (Webserver)</li>
+                <li><strong>email_sender.py</strong> (E-Mail)</li>
+                <li>wiki.sh, start.sh, update.sh</li>
+                <li>prompts/ (System-Prompts)</li>
+                <li>templates/ (HTML-Vorlagen)</li>
+                <li>static/ (CSS, JS)</li>
+                <li>tools/ (Hilfsskripte)</li>
+                <li>VERSION, CHANGELOG, README</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('update.run_heading') }}</h2>
+    {% if update_available %}
+    <p class="text-sm text-text-secondary mb-3">{{ _('update.run_intro') }}</p>
+    <div class="flex flex-wrap gap-3">
+        <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">
+            <input type="hidden" name="action" value="run_update">
+            <input type="hidden" name="github_token" value="">
+            <button type="submit" class="rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-opacity" onclick="return confirm('{{ _('update.run_confirm') }}');">{{ _('update.run_button') }}</button>
+        </form>
+        <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-5 py-2 text-sm font-semibold hover:bg-bg-sunken transition-colors no-underline text-text-secondary">{{ _('update.github_button') }}</a>
+    </div>
+    {% else %}
+    <div class="rounded-lg border border-warning/40 bg-warning-subtle p-3.5 text-sm">
+        <strong>{{ _('update.not_available_title') }}</strong><br>
+        <span class="text-xs text-text-secondary block mt-1">{{ _('update.not_available_desc') }}</span>
+        <pre class="bg-bg-sunken p-2 rounded mt-2 font-mono text-xs text-text">git clone https://github.com/ZeroDot1/LLMWikiNG.git</pre>
+    </div>
+    {% endif %}
+</div>
+
+{% if update_log %}
+<div class="rounded-xl border border-border bg-bg-sunken p-5 shadow-sm mb-4">
+    <h2 class="text-lg font-semibold mb-3 text-primary">{{ _('update.log_heading') }}</h2>
+    <pre class="whitespace-pre-wrap text-xs bg-surface border border-border p-3 rounded font-mono text-text max-h-60 overflow-y-auto">{{ update_log }}</pre>
+    <p class="mt-3 p-3 bg-error-subtle rounded-lg text-xs border border-error/20 flex flex-col gap-1">
+        <strong class="text-error font-bold">⚠ {{ _('update.restart_warning') }}</strong>
+        <span class="text-text-secondary">Starte den Server neu um die Änderungen anzuwenden: <code class="bg-bg-sunken px-1 rounded border border-border font-mono">./start.sh</code></span>
+    </p>
+    <form action="{{ base_path }}/settings?tab=update" method="post" onsubmit="return confirm('Möchtest du den Webserver jetzt neu starten? Im Container-Modus wird er automatisch wieder hochgefahren.');">
+        <input type="hidden" name="action" value="restart_server">
+        <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover shadow-sm transition-colors">🔄 Server jetzt neu starten</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-text-muted">{{ _('update.terminal_heading') }}</h2>
+    <p class="text-sm text-text-secondary mb-3">{{ _('update.terminal_desc') }}</p>
+    <pre class="bg-bg-sunken p-3.5 rounded-lg font-mono text-xs text-text border border-border">./update.sh          # Update ausführen
+./update.sh --check  # Nur prüfen
+# oder
+./wiki.sh update</pre>
+</div>

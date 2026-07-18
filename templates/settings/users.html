@@ -1,0 +1,82 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6 max-w-2xl">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('users.create_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('users.create_hint', default='Lege einen neuen Benutzer an (Admin-Rechte zum Verwalten erforderlich).') }}</p>
+    
+    <form action="{{ base_path }}/users" method="post" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label for="username" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.username') }}</label>
+                <input type="text" name="username" id="username" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+            </div>
+            <div>
+                <label for="password" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.password') }}</label>
+                <input type="password" name="password" id="password" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+            </div>
+        </div>
+        <div>
+            <label for="role" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.role') }}</label>
+            <select name="role" id="role" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                <option value="admin">{{ _('users.role_admin') }}</option>
+                <option value="editor" selected>{{ _('users.role_editor') }}</option>
+                <option value="viewer">{{ _('users.role_viewer') }}</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-sm font-semibold text-white transition-colors shadow-sm">{{ _('users.create') }}</button>
+        </div>
+    </form>
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('users.title') }}</h2>
+    {% if users %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead>
+                <tr class="text-text-muted text-xs uppercase border-b border-border">
+                    <th class="py-3 px-3">{{ _('users.table_username') }}</th>
+                    <th class="py-3 px-3">{{ _('users.table_role') }}</th>
+                    <th class="py-3 px-3">{{ _('users.table_active') }}</th>
+                    <th class="py-3 px-3 text-right">{{ _('users.table_actions') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for user in users %}
+                <tr class="hover:bg-bg-sunken/30 transition-colors">
+                    <td class="py-3.5 px-3 font-semibold text-text">
+                        {{ user.username }}
+                        {% if current_user and user.username == current_user.username %}
+                        <span class="text-[10px] bg-primary-subtle text-primary font-bold rounded-full px-2 py-0.5 ml-1.5 uppercase tracking-wide">{{ _('users.you', default='du') }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3.5 px-3">
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if user.role == 'admin' %}bg-primary-subtle text-primary{% else %}bg-bg-sunken text-text-secondary border border-border{% endif %}">
+                            {% if user.role == 'admin' %}👑 {{ _('users.role_admin') }}
+                            {% elif user.role == 'editor' %}✍️ {{ _('users.role_editor') }}
+                            {% elif user.role == 'viewer' %}👀 {{ _('users.role_viewer') }}
+                            {% else %}{{ user.role }}{% endif %}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-3">
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {% if user.active %}bg-success-subtle text-success{% else %}bg-error-subtle text-error{% endif %}">
+                            {{ _('users.active') if user.active else _('users.inactive') }}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-3 text-right">
+                        {% if not current_user or user.id != current_user.id %}
+                        <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
+                            <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('users.delete') }}</button>
+                        </form>
+                        {% else %}
+                        <span class="text-xs text-text-muted italic">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-text-secondary">{{ _('users.no_users', default='Noch keine Benutzer vorhanden.') }}</p>
+    {% endif %}
+</div>

@@ -1,0 +1,17 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.language_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('settings.language_subtitle') }}</p>
+    <p class="mb-4 text-sm">
+        <strong>{{ _('settings.language_current') }}</strong> 
+        <span class="font-semibold text-primary ml-2 bg-primary-subtle px-2.5 py-1 rounded-full text-xs">
+            {{ available_languages.get(current_lang, current_lang) }}
+        </span>
+    </p>
+    <div class="flex flex-wrap gap-2.5">
+        {% for code, name in available_languages.items() %}
+        <a href="{{ base_path }}/lang/{{ code }}" class="rounded-lg px-4 py-2 text-sm transition-all duration-200 {% if current_lang == code %}bg-primary text-white shadow-sm font-semibold{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %} no-underline">
+            {{ name }} {% if current_lang == code %}✓{% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>

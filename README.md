@@ -146,7 +146,8 @@ Upon registration, a **default API key** is automatically generated for the user
 After initial setup, self-registration is automatically disabled to protect the system. The administrator can re-enable or disable registration at any time in the **Settings** (`/settings` -> checkbox "Allow registration of new users"). Additional users and API keys can be managed directly in the administration.
 
 All functions are also accessible via a **JSON API** under `/LLMWikiNG/api/v1`,
-protected by **API keys** (`X-API-Key` header). A key can optionally
+protected by **API keys** (`X-API-Key` header) or **session cookies** (automatic
+fallback for the web browser). A key can optionally
 require that an additional password (`X-API-Password`) is sent:
 
 #### Direct Network Ingest via curl:

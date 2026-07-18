@@ -59,6 +59,7 @@
       <li><strong>API-Schlüssel</strong> – API-Keys erzeugen/widerrufen, optional mit Passwort-Pflicht.</li>
       <li><strong>Registrierung</strong> – Einstellen ob die Benutzerregistrierung unter /register aktiv ist.</li>
       <li><strong>Gesundheitscheck</strong> – Linter (Orphans, fehlende Links, Staleness, Raw-Refs).</li>
+      <li><strong>Wiki-Verwaltung</strong> – Wikis anlegen, bearbeiten, löschen (Inline-Edit in der Tabelle).</li>
       <li><strong>Update</strong> – Selbstupdate via GitHub.</li>
     </ul>
   </section>
@@ -66,7 +67,7 @@
   <section>
     <h2 class="text-2xl font-semibold mb-3">🌐 API (JSON, Key-geschützt)</h2>
     <p class="text-text-secondary">Alle Funktionen sind unter <code>/LLMWikiNG/api/v1</code> per
-      <code>X-API-Key</code>-Header erreichbar.</p>
+      <code>X-API-Key</code>-Header erreichbar. Das Browser-Frontend nutzt automatisch Session-Cookie-Auth als Fallback.</p>
 
     <!-- Skill Download -->
     <div class="my-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">

@@ -5,6 +5,18 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.2] - 2026-07-19
+
+### Changed
+- **API-Auth akzeptiert Session-Cookie als Fallback** (`backend/api/deps.py`): `get_api_user()` prüft zuerst auf API-Key (`X-API-Key` Header). Wurde keiner gesendet, wird automatisch das Session-Cookie des Browsers geprüft. Dadurch funktionieren alle JSON-API-Endpunkte (`/api/v1/*`) sowohl aus dem Browser (Session) als auch programmatisch (API-Key) – ohne separate Routes für das Frontend.
+- **Wiki-Settings Inline-Edit** (`templates/settings/wikis.html`): Das Bearbeiten-Modal (Popup) wurde durch Inline-Bearbeitung direkt in der Tabellenzeile ersetzt. Beim Klick auf „Bearbeiten" werden Name und Slug durch Eingabefelder ersetzt, Speichern/Abbrechen-Buttons erscheinen in der Aktions-Spalte.
+- **CSS für Inline-Edit** (`static/css/wikis.css`): Neue Styles `.wiki-row-editing`, `.wiki-inline-input`, `.wiki-inline-input-error` für den Inline-Bearbeitungs-Zustand.
+
+### Added
+- **4 session-geschützte JSON-Endpoints** (`backend/api/routes/pages.py`): `GET/POST/PUT/DELETE /settings/wikis/json` für Wiki-Verwaltung über Session-Auth (als Fallback, falls API-Key nicht verfügbar).
+
+---
+
 ## [2.11.1] - 2026-07-19
 
 ### Added

@@ -56,13 +56,14 @@
       <li><strong>API Keys</strong> – Generate or revoke API Keys, toggle password-requirement.</li>
       <li><strong>Registration</strong> – Turn public registration on or off.</li>
       <li><strong>Health Check</strong> – Run the wiki linter (orphans, missing targets, staleness, raw-file refs).</li>
+      <li><strong>Wiki Management</strong> – Create, edit (inline), and delete wikis with page/file count and size.</li>
       <li><strong>Update</strong> – Pull updates directly from GitHub.</li>
     </ul>
   </section>
 
   <section>
     <h2 class="text-2xl font-semibold mb-3">🌐 API (JSON, Key-protected)</h2>
-    <p class="text-text-secondary">All actions are available under <code>/LLMWikiNG/api/v1</code> via the <code>X-API-Key</code> header.</p>
+    <p class="text-text-secondary">All actions are available under <code>/LLMWikiNG/api/v1</code> via the <code>X-API-Key</code> header or session cookie (automatic fallback for the web browser).</p>
 
     <!-- Skill Download -->
     <div class="my-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">

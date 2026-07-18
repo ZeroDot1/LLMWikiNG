@@ -415,6 +415,29 @@ def pending_ingest_single(filename: str, request: Request):
         return redirect(f"{BASE_PATH}/pending?error_msg={urlencode(f'Fehler beim Ingest von {filename}: {e}')}")
 
 
+@router.get("/pending/delete/{filename}")
+def pending_delete_single(filename: str, request: Request):
+    user = require_login(request)
+    filepath = RAW_DIR / filename
+    if not filepath.exists() or not filepath.is_file():
+        return redirect(f"{BASE_PATH}/pending?error_msg=" + urlencode(f"Datei '{filename}' nicht gefunden."))
+
+    try:
+        filepath.unlink()
+        log_action(
+            action="pages_delete",
+            details=f"Rohdatei aus Pending Ingest gelöscht: '{filename}'",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request
+        )
+        success_msg = f"Datei '{filename}' wurde gelöscht!"
+        return redirect(f"{BASE_PATH}/pending?success_msg={urlencode(success_msg)}")
+    except Exception as e:
+        return redirect(f"{BASE_PATH}/pending?error_msg={urlencode(f'Fehler beim Löschen von {filename}: {e}')}")
+
+
+
 @router.get("/pending/ingest-all")
 def pending_ingest_all(request: Request):
     files = get_pending_files()

@@ -425,6 +425,8 @@
     "table_actions": "Aktionen",
     "ingest_button": "📥 Ingest",
     "preview_button": "Vorschau",
+    "delete_button": "🗑️ Löschen",
+    "delete_confirm": "Möchtest du diese Rohdatei wirklich unwiderruflich löschen?",
     "empty_title": "Keine ausstehenden Dateien vorhanden. Alle Rohquellen sind bereits eingepflegt!",
     "loading_text": "Ingest läuft und das LLM generiert die Zusammenfassungen... Bitte warten..."
   },

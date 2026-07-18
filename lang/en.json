@@ -425,6 +425,8 @@
     "table_actions": "Actions",
     "ingest_button": "📥 Ingest",
     "preview_button": "Preview",
+    "delete_button": "🗑️ Delete",
+    "delete_confirm": "Do you really want to permanently delete this raw file?",
     "empty_title": "No pending files. All raw sources have been ingested!",
     "loading_text": "Ingest is running and the LLM is generating summaries... Please wait..."
   },

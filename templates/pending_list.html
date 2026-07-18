@@ -33,9 +33,10 @@
                     <td class="p-3"><span>📄</span> <strong>{{ file.name }}</strong></td>
                     <td class="p-3 text-text-secondary">{{ file.size_formatted }}</td>
                     <td class="p-3 text-text-secondary">{{ file.mtime_formatted }}</td>
-                    <td class="p-3 text-right whitespace-nowrap">
+                    <td class="p-3 text-right whitespace-nowrap space-x-1">
                         <a href="{{ base_path }}/pending/ingest/{{ file.name }}" class="inline-block rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary-hover" onclick="showLoading(this)">{{ _('pending_list.ingest_button') }}</a>
                         <a href="{{ base_path }}/raw/{{ file.name }}" class="inline-block rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('pending_list.preview_button') }}</a>
+                        <a href="{{ base_path }}/pending/delete/{{ file.name }}" class="inline-block rounded-lg border border-error/40 text-error px-3 py-1.5 text-sm hover:bg-error-subtle" onclick="return confirm('{{ _('pending_list.delete_confirm') }}')">{{ _('pending_list.delete_button') }}</a>
                     </td>
                 </tr>
                 {% endfor %}

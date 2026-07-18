@@ -44,23 +44,24 @@
         <div class="rounded-lg border border-success/20 bg-success-subtle p-3.5 text-xs">
             <strong class="text-success text-sm block mb-1">✓ {{ _('update.section_preserved_heading') }}</strong>
             <ul class="ml-4 list-disc space-y-1 text-text-secondary">
-                <li>wiki/ (Deine Wiki-Seiten)</li>
+                <li>wikis/ (Deine Wiki-Seiten)</li>
                 <li>raw/ (Deine Rohquellen)</li>
                 <li>output_docs/ (Deine Exporte)</li>
                 <li>config.json (SMTP-Einstellungen)</li>
+                <li>data/ (Benutzer &amp; API-Keys)</li>
                 <li>.agy.yaml (LLM-Konfiguration)</li>
             </ul>
         </div>
         <div class="rounded-lg border border-warning/20 bg-warning-subtle p-3.5 text-xs">
             <strong class="text-warning text-sm block mb-1">⚠ {{ _('update.section_replaced_heading') }}</strong>
             <ul class="ml-4 list-disc space-y-1 text-text-secondary">
-                <li><strong>llmWiki.py</strong> (Webserver)</li>
-                <li><strong>email_sender.py</strong> (E-Mail)</li>
-                <li>wiki.sh, start.sh, update.sh</li>
+                <li><strong>backend/</strong> (FastAPI-Webserver, Services)</li>
+                <li>start.sh, update.sh, wiki.sh</li>
                 <li>prompts/ (System-Prompts)</li>
                 <li>templates/ (HTML-Vorlagen)</li>
                 <li>static/ (CSS, JS)</li>
                 <li>tools/ (Hilfsskripte)</li>
+                <li>requirements.txt (Python-Abhängigkeiten)</li>
                 <li>VERSION, CHANGELOG, README</li>
             </ul>
         </div>

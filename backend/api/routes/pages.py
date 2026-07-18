@@ -1160,13 +1160,16 @@ async def settings_post(request: Request):
                     [str(update_script)],
                     capture_output=True,
                     text=True,
-                    timeout=120,
+                    timeout=300,
                     cwd=str(PROJECT_ROOT),
                     env=env
                 )
-                update_log_output = proc.stdout + proc.stderr
+                # ANSI-Farbcodes aus Output entfernen (fuer saubere HTML-Anzeige)
+                import re as _re
+                raw_output = proc.stdout + proc.stderr
+                update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
             except subprocess.TimeoutExpired:
-                update_log_output = "FEHLER: Update-Skript hat 120 Sekunden überschritten."
+                update_log_output = "FEHLER: Update-Skript hat 300 Sekunden ueberschritten."
             except Exception as e:
                 update_log_output = f"FEHLER: {e}"
     elif action == "restart_server":

@@ -16,7 +16,7 @@ import subprocess
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki
+from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR
 from api.deps import get_api_user, require_api_admin
 from core.storage import (
     list_users,
@@ -494,8 +494,8 @@ async def api_direct_ingest(
             files = [f]
 
     # Temporäres Ingest-Verzeichnis
-    temp_dir = PROJECT_ROOT / "backend" / "scratch"
-    temp_dir.mkdir(exist_ok=True)
+    temp_dir = SCRATCH_DIR
+    temp_dir.mkdir(parents=True, exist_ok=True)
     
     backend = os.environ.get("LLM_BACKEND", "ollama")
     from core.config import load_app_config
@@ -521,13 +521,17 @@ async def api_direct_ingest(
             with urllib.request.urlopen(req, timeout=15) as response:
                 html = response.read().decode('utf-8', errors='replace')
             # Zu Markdown konvertieren (sehr einfach oder roher Text)
-            import html2text # Falls vorhanden, sonst Fallback
             try:
+                import html2text
                 h = html2text.HTML2Text()
                 h.ignore_links = False
                 md_content = h.handle(html)
-            except ImportError:
-                md_content = f"# {title or url}\n\nDownloaded from {url}\n\n{html[:5000]}"
+            except (ImportError, Exception):
+                # Fallback: roher HTML-Text
+                import re as _re
+                _text = _re.sub(r'<[^>]+>', ' ', html)
+                _text = _re.sub(r'\s+', ' ', _text).strip()
+                md_content = f"# {title or url}\n\nDownloaded from {url}\n\n{_text[:5000]}"
                 
             temp_filepath = temp_dir / "downloaded_url.md"
             temp_filepath.write_text(md_content, encoding="utf-8")

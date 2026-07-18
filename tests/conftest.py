@@ -45,7 +45,8 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     lang_dir = tmp_path / "lang"
     templates_dir = tmp_path / "templates"
 
-    for d in [wikis_root, main_wiki, data_dir, raw_dir, export_dir, lang_dir, templates_dir]:
+    scratch_dir = tmp_path / "scratch"
+    for d in [wikis_root, main_wiki, data_dir, raw_dir, export_dir, lang_dir, templates_dir, scratch_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
     # Standard config.json
@@ -159,6 +160,15 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # services.markdown: WIKI_DIR
     import services.markdown as markdown_svc
     monkeypatch.setattr(markdown_svc, "WIKI_DIR", main_wiki)
+
+    # api.routes.api: WIKIS_ROOT, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, DATA_DIR, SCRATCH_DIR
+    import api.routes.api as api_mod
+    monkeypatch.setattr(api_mod, "WIKIS_ROOT", wikis_root)
+    monkeypatch.setattr(api_mod, "RAW_DIR", raw_dir)
+    monkeypatch.setattr(api_mod, "EXPORT_DIR", export_dir)
+    monkeypatch.setattr(api_mod, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(api_mod, "DATA_DIR", data_dir)
+    monkeypatch.setattr(api_mod, "SCRATCH_DIR", scratch_dir)
 
     # ---------------------------------------------------------------
     # web.py und main.py: Module-level Bindungen auf echten

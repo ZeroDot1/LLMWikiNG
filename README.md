@@ -191,6 +191,8 @@ curl -X POST \
 | `DELETE` | `/api/v1/api-keys/<id>` | API key (admin) |
 | `POST` | `/wiki/<wiki>/api/ingest` | API key (direct ingest for a specific wiki) |
 | `POST` | `/wiki/<wiki>/api/sync` | API key (direct sync for a specific wiki) |
+| `GET`  | `/mcp/sse` | MCP API key (SSE-Kanal für KI-Agenten) |
+| `POST` | `/mcp/messages` | MCP API key (JSON-RPC Nachrichten-Kanal) |
 
 Example:
 ```bash
@@ -213,6 +215,95 @@ is the default and is loaded server-side from `config.json` — there is deliber
 *   **Change theme:** `Settings → Appearance` (tab `theme`) → choose Dark/Light.
 *   **Directly via API:** `POST /LLMWikiNG/theme/set` (form field `value=dark|light`, login required).
 *   **Restore default:** Set the `"theme"` entry in `config.json` to `dark`.
+
+---
+
+## 🤖 Model Context Protocol (MCP) & Open Knowledge Format (OKF)
+
+LLMWikiNG implementiert nativ das **Open Knowledge Format (OKF v0.1)** für KI-gestützte Wissensallokation. Alle Seiten werden als offene, portable Markdown-Dateien mit standardisiertem YAML-Frontmatter gespeichert. Dies sichert eine lückenlose menschliche Lesbarkeit und verhindert proprietären Vendor-Lock-in.
+
+### 🔌 MCP-Server über HTTP-SSE aktivieren
+
+Der MCP-Server ist standardmäßig aktiviert. Konfiguriere ihn über Umgebungsvariablen:
+
+```bash
+# MCP aktivieren (Default: true)
+ENABLE_MCP_SERVER=true
+
+# API-Key für KI-Agenten setzen
+LLMWIKING_MCP_KEY=dein_sicherer_mcp_key_2026
+```
+
+Starte die Anwendung neu. Der Server stellt nun zwei Endpunkte bereit:
+- **SSE-Kanal:** `http://localhost:8080/LLMWikiNG/mcp/sse`
+- **Message-Kanal:** `http://localhost:8080/LLMWikiNG/mcp/messages`
+
+### 💻 Client-Einbindung (Beispiel: Cursor)
+
+Füge in Cursor unter *Settings → Features → MCP* einen neuen Server hinzu:
+
+| Feld | Wert |
+|------|------|
+| Name | LLMWikiNG-OKF |
+| Type | SSE |
+| URL | http://localhost:8080/LLMWikiNG/mcp/sse |
+| Headers | `{"X-API-Key": "dein_sicherer_mcp_key_2026"}` |
+
+### 📋 Verfügbare MCP-Tools (31 Stück)
+
+| Tool | Beschreibung |
+|------|-------------|
+| `okf_list_wikis` | Listet alle Wikis mit Metadaten auf |
+| `okf_create_wiki` | Erstellt ein neues Wiki |
+| `okf_update_wiki` | Bearbeitet Name/Beschreibung/Slug eines Wikis |
+| `okf_delete_wiki` | Loescht ein Wiki (nicht main) |
+| `okf_list_pages` | Listet alle Seiten eines Wikis |
+| `okf_read_concept` | Liest ein OKF-Konzept (Frontmatter + Markdown) |
+| `okf_write_concept` | Erstellt/Aktualisiert ein OKF-Konzept |
+| `okf_delete_page` | Loescht eine Wiki-Seite |
+| `okf_export_page` | Exportiert eine Seite nach output_docs/ |
+| `okf_list_pending` | Listet Rohquellen auf Ingest |
+| `okf_process_pending` | Verarbeitet alle ausstehenden Rohquellen |
+| `okf_ingest_text` | Ingest von reinem Text |
+| `okf_search` | Volltextsuche ueber Wiki-Seiten |
+| `okf_wiki_stats` | Zeigt Wiki-Statistiken |
+| `okf_graph` | Zeigt den Wissensgraphen |
+| `okf_lint` | Fuehrt Gesundheitspruefung durch |
+| `okf_read_raw` | Liest Rohquellen aus raw/ |
+| `okf_list_raw` | Listet alle Rohquellen-Dateien |
+| `okf_system_status` | Zeigt Systemstatus |
+| `okf_system_sync` | Synchronisiert Wikis |
+| `okf_audit_logs` | Zeigt Audit-Protokolle |
+| `okf_cache_stats` | Zeigt Cache-Statistiken |
+| `okf_cache_clear` | Leert den Cache |
+| `okf_list_users` | Listet alle Benutzer |
+| `okf_create_user` | Erstellt einen Benutzer |
+| `okf_delete_user` | Loescht einen Benutzer |
+| `okf_list_api_keys` | Listet alle API-Keys |
+| `okf_create_api_key` | Erstellt einen API-Key |
+| `okf_delete_api_key` | Loescht einen API-Key |
+| `okf_check_update` | Prueft auf Update via Git |
+| `okf_run_update` | Fuehrt das System-Update aus |
+
+### 📄 OKF v0.1 Dokumentenformat
+
+Jede Wiki-Seite folgt dem Open Knowledge Format:
+
+```markdown
+---
+type: Concept
+title: MCP Architektur 2026
+description: Technische Spezifikation des SSE-basierten Protokolls
+tags: [backend, mcp, security]
+timestamp: 2026-07-18T16:43:00Z
+author: Agent (Cursor-Dev)
+status: AI-Generated
+---
+
+# MCP Architektur 2026
+
+Hier beginnt der freie, menschenlesbare Markdown-Textkörper.
+```
 
 ---
 
@@ -279,10 +370,10 @@ pip install -r requirements.txt
 ```
 run.py                      # Entry point (adds backend/ to path, calls main.main)
 backend/
-├── main.py                 # create_app() + main() (argparse, uvicorn), mounts all routers
+├── main.py                 # create_app() + main() (argparse, uvicorn), mounts all routers + MCP
 ├── web.py                  # Jinja2Templates, render(), abort/redirect, base_context()
 ├── core/
-│   ├── config.py           # BASE_PATH, paths, multi-wiki (wikis/<name>), i18n
+│   ├── config.py           # BASE_PATH, paths, multi-wiki, i18n, MCP-Config
 │   ├── security.py         # Argon2 hashing, signed sessions, API-key management
 │   └── storage.py          # JSON store for users & API keys (data/)
 ├── api/
@@ -290,7 +381,8 @@ backend/
 │   └── routes/
 │       ├── pages.py        # ALL HTML routes (under BASE_PATH)
 │       ├── auth.py         # /login, /logout, /users, /api-keys
-│       └── api.py          # /api/v1/* (JSON, key-protected)
+│       ├── api.py          # /api/v1/* (JSON, key-protected)
+│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 31 Tools)
 └── services/               # wiki, markdown, search, sync, graph, lint,
                             #   analytics, editor, email_sender (all multi-wiki capable)
 templates/                  # Jinja2 templates (Tailwind v4, responsive, dark mode)

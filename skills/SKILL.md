@@ -322,6 +322,74 @@ curl -X DELETE \
 
 ---
 
+## 🤖 3.5. MCP-Server (Model Context Protocol) – OKF v0.1
+
+LLMWikiNG stellt einen nativen MCP-Server bereit, der KI-Agenten (Cursor, Windsurf, Claude Code) direkten Zugriff auf das Wiki im Open Knowledge Format (OKF v0.1) ermöglicht.
+
+### Konfiguration
+
+```bash
+# MCP-API-Key (separate Umgebungsvariable oder in config.json)
+MCP_KEY="dein_sicherer_mcp_key_2026"
+MCP_SSE_URL="http://localhost:8080/LLMWikiNG/mcp/sse"
+```
+
+### MCP-Tools (31 Stück)
+
+Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität zwischen API-Key und MCP-Agenten-Zugang.
+
+| Tool | Beschreibung |
+|------|-------------|
+| **Wiki-Verwaltung** | |
+| `okf_list_wikis` | Listet alle Wikis mit Metadaten |
+| `okf_create_wiki` | Erstellt ein neues Wiki |
+| `okf_update_wiki` | Bearbeitet Name/Beschreibung/Slug |
+| `okf_delete_wiki` | Loescht ein Wiki |
+| **Seiten-Verwaltung** | |
+| `okf_list_pages` | Listet alle Seiten eines Wikis |
+| `okf_read_concept` | Liest ein OKF-Konzept |
+| `okf_write_concept` | Erstellt/Aktualisiert ein OKF-Konzept |
+| `okf_delete_page` | Loescht eine Wiki-Seite |
+| `okf_export_page` | Exportiert eine Seite nach output_docs/ |
+| `okf_list_pending` | Listet Rohquellen auf Ingest |
+| `okf_process_pending` | Verarbeitet ausstehende Rohquellen |
+| `okf_ingest_text` | Ingest von reinem Text |
+| **Suche & Analyse** | |
+| `okf_search` | Volltextsuche |
+| `okf_wiki_stats` | Wiki-Statistiken |
+| `okf_graph` | Wissensgraph |
+| `okf_lint` | Gesundheitspruefung |
+| **Rohquellen** | |
+| `okf_read_raw` | Liest Rohquelle aus raw/ |
+| `okf_list_raw` | Listet alle Rohquellen |
+| **System** | |
+| `okf_system_status` | Systemstatus |
+| `okf_system_sync` | Wiki-Synchronisation |
+| `okf_audit_logs` | Audit-Protokolle |
+| `okf_cache_stats` | Cache-Statistiken |
+| `okf_cache_clear` | Cache leeren |
+| **Benutzer** | |
+| `okf_list_users` | Benutzer auflisten |
+| `okf_create_user` | Benutzer erstellen |
+| `okf_delete_user` | Benutzer loeschen |
+| **API-Keys** | |
+| `okf_list_api_keys` | API-Keys auflisten |
+| `okf_create_api_key` | API-Key erstellen |
+| `okf_delete_api_key` | API-Key loeschen |
+| **Update** | |
+| `okf_check_update` | Update-Verfuegbarkeit pruefen |
+| `okf_run_update` | System-Update ausfuehren |
+
+### Client-Einbindung (Cursor)
+
+Füge in Cursor unter Settings → Features → MCP hinzu:
+- **Name:** LLMWikiNG-OKF
+- **Type:** SSE
+- **URL:** `http://localhost:8080/LLMWikiNG/mcp/sse`
+- **Headers:** `{"X-API-Key": "dein_sicherer_mcp_key_2026"}`
+
+---
+
 ## 💻 4. Interaktiver CLI Ingest-Client (`tools/api_ingest_client.py`)
 
 Für die komfortable Interaktion aus der Konsole steht das Skript `tools/api_ingest_client.py` bereit. Es fungiert als Fernbedienung mit automatischer Wiki-Auswahl:

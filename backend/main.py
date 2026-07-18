@@ -61,6 +61,51 @@ def create_app() -> FastAPI:
     app.include_router(wiki_api_router)
     app.include_router(pages_router)
 
+    # ═════════════════════════════════════════════════════════════════════════
+    # MCP-Server (Model Context Protocol) – SSE-Transport
+    # ═════════════════════════════════════════════════════════════════════════
+    from core.config import ENABLE_MCP_SERVER, LLMWIKING_MCP_KEY
+
+    if ENABLE_MCP_SERVER:
+        from api.routes.mcp import get_mcp_sse_app, _MCP_AVAILABLE
+
+        if _MCP_AVAILABLE:
+            mcp_sse_app = get_mcp_sse_app()
+            if mcp_sse_app is not None:
+                # MCP API-Key Middleware: Prueft X-API-Key Header auf allen
+                # /mcp/ Routen, bevor die SSE-App den Request verarbeitet.
+                from starlette.middleware.base import BaseHTTPMiddleware
+                from starlette.responses import JSONResponse as StarletteJSON
+
+                class McpApiKeyMiddleware(BaseHTTPMiddleware):
+                    """Middleware fuer MCP-Endpunkte: Prueft API-Key.
+
+                    Liest LLMWIKING_MCP_KEY zur Laufzeit aus core.config,
+                    damit Monkeypatches in Tests wirksam werden.
+                    """
+
+                    async def dispatch(self, request, call_next):
+                        if "/mcp/" in request.url.path:
+                            from core.config import LLMWIKING_MCP_KEY as _KEY
+                            key = request.headers.get("X-API-Key", "")
+                            if not _KEY:
+                                return StarletteJSON(
+                                    {"detail": "MCP nicht konfiguriert (LLMWIKING_MCP_KEY fehlt)"},
+                                    status_code=503,
+                                )
+                            if key != _KEY:
+                                return StarletteJSON(
+                                    {"detail": "Ungueltiger MCP API-Key"},
+                                    status_code=401,
+                                )
+                        return await call_next(request)
+
+                app.add_middleware(McpApiKeyMiddleware)
+                app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
+        else:
+            # MCP-Paket nicht installiert – stille Deaktivierung
+            pass
+
     # Komfort: Root auf BASE_PATH umleiten (App liegt unter /LLMWikiNG)
     @app.get("/")
     async def _root_redirect():

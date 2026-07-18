@@ -33,7 +33,17 @@ DATA_DIR = PROJECT_ROOT / "data"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "2.11.2"
+APP_VERSION = "2.12.1"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MCP (Model Context Protocol) – Open Knowledge Format Server
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Steuert die Verfügbarkeit des MCP-Endpunkts (SSE-basiert)
+ENABLE_MCP_SERVER: bool = os.getenv("ENABLE_MCP_SERVER", "true").lower() == "true"
+
+# API-Key für externe KI-Agenten (Cursor, Windsurf, Claude Code etc.)
+LLMWIKING_MCP_KEY: str = os.getenv("LLMWIKING_MCP_KEY", "")
 DEFAULT_LANG = "en"  # Kann via config.json oder --lang CLI überschrieben werden
 
 # Zur Laufzeit durch run.py gesetzt (CLI --lang / config.json)

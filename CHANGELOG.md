@@ -5,6 +5,49 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2026-07-19
+
+### Added
+- **MCP-Server erweitert auf 31 Tools** (`backend/api/routes/mcp.py`): Das MCP-Interface kann nun alles, was auch die REST-API kann. Vollständige Paritaet zwischen API-Key und MCP-Agenten-Zugang.
+  - **Wiki-Verwaltung**: `okf_create_wiki`, `okf_update_wiki`, `okf_delete_wiki`
+  - **Seiten-Verwaltung**: `okf_delete_page`, `okf_export_page`, `okf_list_pending`, `okf_process_pending`, `okf_ingest_text`
+  - **Wissensgraph & Lint**: `okf_graph`, `okf_lint`
+  - **Rohquellen**: `okf_list_raw`
+  - **System**: `okf_system_status`, `okf_system_sync`, `okf_audit_logs`, `okf_cache_stats`, `okf_cache_clear`
+  - **Benutzer**: `okf_list_users`, `okf_create_user`, `okf_delete_user`
+  - **API-Keys**: `okf_list_api_keys`, `okf_create_api_key`, `okf_delete_api_key`
+  - **Update**: `okf_check_update`, `okf_run_update`
+
+### Fixed
+- **MCP Middleware las LLMWIKING_MCP_KEY als Closure-Variable** (`backend/main.py`): Die Middleware importierte `LLMWIKING_MCP_KEY` beim Start und speicherte den Wert als Closure. In Tests fuehrte ein Monkeypatch des Wertes nicht zu einer Aenderung. Fix: Middleware liest den Wert zur Laufzeit aus `core.config`.
+- **MCP mcp.py Syntaxfehler** (`backend/api/routes/mcp.py`): `results[w["slug"]}` hatte eine falsche Klammer (`}` statt `]`).
+- **9 MCP-Tests angepasst** (`tests/test_mcp.py`): Tests fuer `wiki_path()` Auto-Create-Verhalten, Frontmatter `timestamp`-Felder, `concept` Lowercase, `list_wikis` Auto-Discovery angepasst.
+
+### Changed
+- **MCP-Tests erweitert** (`tests/test_mcp.py`): 77 Tests in 19 Testklassen fuer alle 31 MCP-Tools.
+- **conftest.py erweitert** (`tests/conftest.py`): MCP-Modul-Patching fuer `RAW_DIR`, `EXPORT_DIR`, `PROJECT_ROOT`, `DATA_DIR`, `WIKIS_ROOT`. `LLMWIKING_MCP_KEY` wird in `core.config` gepatcht statt im MCP-Modul.
+
+---
+
+## [2.12.0] - 2026-07-19
+
+### Added
+- **MCP-Server (Model Context Protocol)** (`backend/api/routes/mcp.py`): Vollständiger SSE-basierter MCP-Server für KI-Agenten (Cursor, Windsurf, Claude Code etc.). Ermöglicht das Lesen, Schreiben und Durchsuchen des Wikis über das Open Knowledge Format (OKF v0.1). Alle Dokumente werden als standardisiertes Markdown mit YAML-Frontmatter gespeichert.
+  - 7 MCP-Tools: `okf_list_wikis`, `okf_list_pages`, `okf_read_concept`, `okf_write_concept`, `okf_search`, `okf_read_raw`, `okf_wiki_stats`
+  - SSE-Transport über `GET /LLMWikiNG/mcp/sse` + `POST /LLMWikiNG/mcp/messages`
+  - API-Key-Schutz via `X-API-Key` Header (konfigurierbar via `LLMWIKING_MCP_KEY` Umgebungsvariable)
+  - Middleware-basierte Authentifizierung auf MCP-Routen
+  - `ENABLE_MCP_SERVER` Umgebungsvariable zum Aktivieren/Deaktivieren (Default: `true`)
+- **OKF v0.1 Datenmodell** – Alle Wiki-Seiten enthalten gemäß Standard ein YAML-Frontmatter mit Pflichtfeld `type` (Concept, Playbook, API-Doc, Reference etc.). Automatische Frontmatter-Generierung beim Erstellen über MCP.
+- **python-frontmatter Integration** (`requirements.txt`): Sauberes Lesen/Schreiben von YAML-Frontmatter.
+- **MCP-Tests** (`tests/test_mcp.py`): Umfangreiche Tests für alle 7 MCP-Tools, API-Key-Validierung, OKF-konforme Ausgabe.
+
+### Changed
+- **Architektur-Update**: LLMWikiNG ist nun ein vollwertiger MCP-Server mit OKF v0.1 nativer Unterstützung.
+- **requirements.txt**: Neue Abhängigkeiten `mcp>=1.2.0`, `sse-starlette>=2.1.0`, `python-frontmatter>=1.1.0`.
+
+---
+
 ## [2.11.2] - 2026-07-19
 
 ### Changed

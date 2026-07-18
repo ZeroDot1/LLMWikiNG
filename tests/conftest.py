@@ -170,6 +170,20 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(api_mod, "DATA_DIR", data_dir)
     monkeypatch.setattr(api_mod, "SCRATCH_DIR", scratch_dir)
 
+    # api.routes.mcp: RAW_DIR, EXPORT_DIR, PROJECT_ROOT, DATA_DIR, WIKIS_ROOT
+    try:
+        import api.routes.mcp as mcp_mod
+        monkeypatch.setattr(mcp_mod, "RAW_DIR", raw_dir)
+        monkeypatch.setattr(mcp_mod, "EXPORT_DIR", export_dir)
+        monkeypatch.setattr(mcp_mod, "PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(mcp_mod, "DATA_DIR", data_dir)
+        monkeypatch.setattr(mcp_mod, "WIKIS_ROOT", wikis_root)
+    except ImportError:
+        pass
+
+    # core.config: LLMWIKING_MCP_KEY (wird von Middleware zur Laufzeit gelesen)
+    monkeypatch.setattr(cfg, "LLMWIKING_MCP_KEY", "test_mcp_key_2026")
+
     # ---------------------------------------------------------------
     # web.py und main.py: Module-level Bindungen auf echten
     # PROJECT_ROOT. templates = Jinja2Templates(directory=...) und

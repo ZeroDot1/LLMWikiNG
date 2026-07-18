@@ -46,7 +46,7 @@
     <nav class="flex-1 px-3 py-3 space-y-1 text-sm">
         <a href="{{ base_path }}/" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'home' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.home') }}</a>
         <a href="{{ base_path }}/wiki/{{ current_wiki }}/index" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'index' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.index') }}</a>
-        <a href="{{ base_path }}/audit" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'log' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.logbook') }}</a>
+
         <a href="{{ base_path }}/raw" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'raw_list' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.raw_sources') }}</a>
         <a href="{{ base_path }}/edit" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'editor' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.editor') }}</a>
         <a href="{{ base_path }}/pending" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'pending_list' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.pending') }}</a>
@@ -58,7 +58,7 @@
         <a href="{{ base_path }}/search" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'search' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.search') }}</a>
         <a href="{{ base_path }}/settings" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'settings' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">⚙️ {{ _('sidebar.settings') }}</a>
         {% if current_user and current_user.role == 'admin' %}
-        <a href="{{ base_path }}/audit" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'audit' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">🛡️ {{ _('sidebar.audit_log')|default('Audit-Log') }}</a>
+        <a href="{{ base_path }}/audit" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'audit' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">🛡️ {{ _('sidebar.audit_log') }}</a>
         {% endif %}
         <a href="{{ base_path }}/status" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'status' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.status_stats') }}</a>
         <a href="{{ base_path }}/briefings" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'briefings' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.weekly_reports') }}</a>

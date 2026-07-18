@@ -41,7 +41,6 @@ from services.wiki import (
     is_text_file,
     find_wiki_slug_for_raw,
     get_pending_files,
-    delete_wiki_data,
     save_to_ingestlater,
     get_wiki_trails,
     extract_links_from_content,

@@ -12,9 +12,9 @@ services:
       - PORT=8080
       - HOST=0.0.0.0
     volumes:
-      - /volume1/docker/llmwiking/data:/app/data
-      - /volume1/docker/llmwiking/wikis:/app/wikis
-      - /volume1/docker/llmwiking/raw:/app/raw
-      - /volume1/docker/llmwiking/output_docs:/app/output_docs
-      - /volume1/docker/llmwiking/config.json:/app/config.json
+      - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/data:/app/data
+      - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/wikis:/app/wikis
+      - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/raw:/app/raw
+      - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/output_docs:/app/output_docs
+      - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/config.json:/app/config.json
 

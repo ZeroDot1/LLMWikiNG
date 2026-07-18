@@ -13,6 +13,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request, UploadFile
+from fastapi.responses import JSONResponse
 
 from core.config import (
     PROJECT_ROOT,
@@ -29,6 +30,7 @@ from core.config import (
     wiki_path,
     list_wikis,
     save_wiki_meta,
+    delete_wiki,
 )
 from web import templates, render, abort, redirect, urlencode
 from api.deps import require_login, require_admin
@@ -128,6 +130,143 @@ def dashboard(request: Request):
         sync_status=request.query_params.get("sync_status", ""),
         sync_msg=request.query_params.get("sync_msg", ""),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Session-geschützte JSON-Endpoints für Wiki-Verwaltung (Settings-Tab)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/settings/wikis/json")
+def settings_wikis_list(request: Request):
+    """JSON-Endpoint für Wiki-Liste (session-geschützt, kein API-Key nötig)."""
+    return {"wikis": list_wikis()}
+
+
+@router.post("/settings/wikis/json")
+async def settings_wikis_create(request: Request):
+    """JSON-Endpoint für Wiki-Erstellung (session-geschützt)."""
+    user = require_login(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse(status_code=400, content={"ok": False, "detail": "Ungültiges JSON"})
+
+    name = (data.get("name") or "").strip()
+    slug = (data.get("slug") or "").strip()
+    description = (data.get("description") or "").strip()
+
+    if not name or not slug:
+        return JSONResponse(status_code=400, content={"ok": False, "detail": "Name und Slug sind erforderlich"})
+
+    # Slug validieren
+    slug = slugify_wiki(slug)
+    root = wiki_path(slug)
+    if root.exists():
+        return JSONResponse(status_code=409, content={"ok": False, "detail": f"Wiki '{slug}' existiert bereits"})
+
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "index.md").write_text(
+        f"---\nokf_version: \"0.1\"\n---\n# {name}\n\n> Wiki-Index von **{name}**.\n",
+        encoding="utf-8",
+    )
+    (root / "log.md").write_text(
+        f"---\nokf_version: \"0.1\"\n---\n# Wiki-Aktivitätslogbuch\n\n## {date.today().isoformat()}\n"
+        f"- **Create**: Wiki '{name}' angelegt\n",
+        encoding="utf-8",
+    )
+
+    save_wiki_meta({"slug": slug, "name": name, "description": description})
+    log_action(action="wiki_create", details=f"Wiki '{name}' ({slug}) erstellt",
+               username=user.get("username"), user_id=user.get("id"), request=request)
+    return JSONResponse(status_code=201, content={"ok": True, "slug": slug})
+
+
+@router.put("/settings/wikis/json/{slug}")
+async def settings_wikis_update(slug: str, request: Request):
+    """JSON-Endpoint für Wiki-Bearbeitung (session-geschützt)."""
+    user = require_login(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse(status_code=400, content={"ok": False, "detail": "Ungültiges JSON"})
+
+    new_name = (data.get("name") or "").strip()
+    new_slug = (data.get("slug") or slug).strip()
+    description = (data.get("description") or "").strip()
+
+    if not new_name:
+        return JSONResponse(status_code=400, content={"ok": False, "detail": "Name ist erforderlich"})
+
+    new_slug = slugify_wiki(new_slug)
+    old_root = wiki_path(slug)
+
+    if not old_root.exists():
+        return JSONResponse(status_code=404, content={"ok": False, "detail": f"Wiki '{slug}' nicht gefunden"})
+
+    # Slug-Änderung → Verzeichnis umbenennen
+    if new_slug != slug:
+        new_root = wiki_path(new_slug)
+        if new_root.exists():
+            return JSONResponse(status_code=409, content={"ok": False, "detail": f"Slug '{new_slug}' bereits vergeben"})
+        import shutil
+        shutil.move(str(old_root), str(new_root))
+        # Alten slug aus wikis.json entfernen + neuen eintragen
+        from core.config import DATA_DIR
+        wikis_file = DATA_DIR / "wikis.json"
+        if wikis_file.exists():
+            wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+            wikis = [w for w in wikis if w.get("slug") != slug]
+            wikis.append({"slug": new_slug, "name": new_name, "description": description})
+            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+        else:
+            save_wiki_meta({"slug": new_slug, "name": new_name, "description": description})
+        log_action(action="wiki_rename", details=f"Wiki '{slug}' → '{new_slug}' umbenannt",
+                   username=user.get("username"), user_id=user.get("id"), request=request)
+    else:
+        # Nur Name/Description aktualisieren
+        from core.config import DATA_DIR
+        wikis_file = DATA_DIR / "wikis.json"
+        if wikis_file.exists():
+            wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+            for w in wikis:
+                if w.get("slug") == slug:
+                    w["name"] = new_name
+                    w["description"] = description
+                    break
+            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+        log_action(action="wiki_update", details=f"Wiki '{slug}' aktualisiert",
+                   username=user.get("username"), user_id=user.get("id"), request=request)
+
+    return JSONResponse(content={"ok": True, "slug": new_slug})
+
+
+@router.delete("/settings/wikis/json/{slug}")
+async def settings_wikis_delete(slug: str, request: Request):
+    """JSON-Endpoint für Wiki-Löschung (session-geschützt)."""
+    user = require_login(request)
+
+    if slug == "main":
+        return JSONResponse(status_code=400, content={"ok": False, "detail": "Das Hauptwiki kann nicht gelöscht werden"})
+
+    root = wiki_path(slug)
+    if not root.exists():
+        return JSONResponse(status_code=404, content={"ok": False, "detail": f"Wiki '{slug}' nicht gefunden"})
+
+    name = slug
+    # Name aus wikis.json holen
+    from core.config import DATA_DIR
+    wikis_file = DATA_DIR / "wikis.json"
+    if wikis_file.exists():
+        wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+        for w in wikis:
+            if w.get("slug") == slug:
+                name = w.get("name", slug)
+                break
+
+    delete_wiki(slug)
+    log_action(action="wiki_delete", details=f"Wiki '{name}' ({slug}) gelöscht",
+               username=user.get("username"), user_id=user.get("id"), request=request)
+    return JSONResponse(content={"ok": True})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -50,4 +50,5 @@ frontend/static/css/tailwind-build.css
 data/
 data/*
 *.db
+scratch.py
 

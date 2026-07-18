@@ -8,6 +8,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.10.0] - 2026-07-18
 
 ### Added
+- **Umfangreiche Testsuite (285 Tests)**: 18 pytest-Testdateien mit 2667 Zeilen unter `tests/`. Testet Security, Config, Storage, Cache, Wiki-Service, Suche, Graph, Lint, Sync, Markdown, Audit, Editor, Analytics, Backup, E-Mail, FastAPI-App und API-Routen. Gemeinsames Fixture-Setup in `conftest.py` mit isoliertem Temp-Verzeichnis und Monkeypatching aller Service-Module.
 - **Wiki-Verwaltung (Settings-Tab)**: Vollständig überarbeiteter Tab „Wikis" in den Einstellungen mit eigener CSS-Datei (`static/css/wikis.css`), responsiver Kartenansicht aller Wikis und Gesamtstatistik-Leiste (Wikis, Seiten, Dateien, Gesamtgröße).
 - **Wiki-Metadaten erweitert**: `list_wikis()` liefert nun zusätzlich `file_count` (Gesamtzahl aller Dateien) und `last_modified` (Datum der letzten Änderung) pro Wiki.
 - **Wiki-Bearbeitung via API**: Neuer `PUT /api/v1/wikis/{slug}` Endpoint zum Ändern von Name, Beschreibung und Slug eines bestehenden Wikis inkl. Verzeichnis-Umbenennung.

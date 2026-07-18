@@ -78,6 +78,15 @@ def create_app() -> FastAPI:
     except Exception:
         pass
 
+    # Alle Konfigurationsstandards dauerhaft in config.json sicherstellen,
+    # damit jeder Schlüssel (inkl. audit_enabled, audit_disabled_categories)
+    # sofort auf Disk vorhanden ist und nicht nur als In-Memory-Default existiert.
+    try:
+        from core.config import save_app_config
+        save_app_config({})   # leeres Dict → load_app_config() füllt alle Defaults ein
+    except Exception:
+        pass
+
     # ═════════════════════════════════════════════════════════════════════════
     # Fehlerseiten
     # ═════════════════════════════════════════════════════════════════════════

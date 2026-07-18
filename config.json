@@ -7,5 +7,7 @@
   "use_tls": false,
   "recipients": "",
   "language": "en",
-  "registration_enabled": true
+  "registration_enabled": true,
+  "audit_enabled": true,
+  "audit_disabled_categories": []
 }

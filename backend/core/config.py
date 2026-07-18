@@ -41,10 +41,12 @@ _current_lang = {"value": DEFAULT_LANG}
 
 
 def slugify_wiki(name: str) -> str:
-    """Wiki-Namen sicher machen: nur [a-z0-9-]."""
+    """Wiki-Namen sicher machen: nur [a-z0-9-] mit Umlaut-Auflösung."""
     s = name.strip().lower()
+    s = s.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
     s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-") or "main"
+
 
 
 def wiki_path(name: str = "main") -> Path:

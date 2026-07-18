@@ -35,7 +35,7 @@ def slugify_german(value: str) -> str:
 def extract_links_from_content(content: str) -> list[str]:
     """Extrahiert alle lokalen Wiki-Verknüpfungen aus dem Markdown-Body."""
     body = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
-    raw_links = re.findall(r"\[.*?\]\((/.*?\.md|\./.*?\.md|.*?\.md|[^#:\s\)]+)\)", body)
+    raw_links = re.findall(r"\[.*?\]\((/.*?\.md|\./.*?\.md|[^\[\]()\s]+\.md|[^#:\s\)\[\]()]+)\)", body)
 
     slugs: list[str] = []
     for link in raw_links:

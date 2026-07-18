@@ -51,7 +51,7 @@ def verify_password(pw: str, hpw: str) -> bool:
     try:
         return _ph.verify(hpw, pw)
     except (argon2.exceptions.VerifyMismatchError, argon2.exceptions.VerificationError,
-            argon2.exceptions.InvalidHashError):
+            argon2.exceptions.InvalidHashError, TypeError, ValueError, UnicodeEncodeError):
         return False
 
 

@@ -18,6 +18,7 @@
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-users">{{ _('settings.tab_users') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-apikeys">{{ _('settings.tab_apikeys') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-backup">{{ _('settings.tab_backup') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-wikis">{{ _('settings.tab_wikis') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-audit">🛡️ Audit</button>
     </div>
 
@@ -59,6 +60,11 @@
     <!-- Backups Section -->
     <div id="tab-backup" class="settings-tab-content hidden">
         {% include "settings/backup.html" %}
+    </div>
+
+    <!-- Wiki Management Section -->
+    <div id="tab-wikis" class="settings-tab-content hidden">
+        {% include "settings/wikis.html" %}
     </div>
 
     <!-- Audit Log Settings Section -->
@@ -110,6 +116,7 @@
       "tab-health": document.getElementById("tab-health"),
       "tab-update": document.getElementById("tab-update"),
       "tab-backup": document.getElementById("tab-backup"),
+      "tab-wikis": document.getElementById("tab-wikis"),
       "tab-audit": document.getElementById("tab-audit")
     };
     var tabs = document.querySelectorAll(".settings-tab");
@@ -153,6 +160,7 @@
       health: "tab-health",
       update: "tab-update",
       backup: "tab-backup",
+      wikis: "tab-wikis",
       audit: "tab-audit"
     };
     switchTab(map[params.get("tab")] || "tab-language");

@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from fastapi import Request
+from starlette.requests import Request
 from core.config import DATA_DIR, load_app_config
 
 AUDIT_DB = DATA_DIR / "audit_log.db"

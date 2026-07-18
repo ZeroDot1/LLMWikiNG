@@ -7,6 +7,8 @@ bzw. `api_password` (Anforderung 4).
 
 from __future__ import annotations
 
+import datetime
+import json
 import os
 import re
 import subprocess
@@ -14,7 +16,7 @@ import subprocess
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path
+from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki
 from api.deps import get_api_user, require_api_admin
 from core.storage import (
     list_users,
@@ -45,6 +47,99 @@ def _wiki_or_404(wiki: str):
 @router.get("/wikis")
 def api_list_wikis(user: dict = Depends(get_api_user)):
     return {"wikis": list_wikis()}
+
+
+@router.post("/wikis")
+async def api_create_wiki(request: Request, admin: dict = Depends(require_api_admin)):
+    import json
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiger JSON-Body")
+    name = (body.get("name") or "").strip()
+    slug = (body.get("slug") or "").strip()
+    description = (body.get("description") or "").strip()
+    if not name or not slug:
+        raise HTTPException(status_code=400, detail="name und slug erforderlich")
+    slug = slugify_wiki(slug)
+    
+    d = WIKIS_ROOT / slug
+    if d.exists():
+        raise HTTPException(status_code=409, detail="Wiki existiert bereits")
+    d.mkdir(parents=True)
+    save_wiki_meta(slug, name, description)
+    return {"ok": True, "slug": slug}
+
+
+@router.delete("/wikis/{wiki}")
+def api_delete_wiki(wiki: str, admin: dict = Depends(require_api_admin)):
+    if wiki == "main":
+        raise HTTPException(status_code=400, detail="Standard-Wiki kann nicht gelöscht werden")
+    d = WIKIS_ROOT / wiki
+    if not d.exists():
+        raise HTTPException(status_code=404, detail="Wiki nicht gefunden")
+    delete_wiki(wiki)
+    return {"ok": True}
+
+
+@router.put("/wikis/{wiki}")
+async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(require_api_admin)):
+    """Bearbeitet die Metadaten eines bestehenden Wikis (Name, Beschreibung, Slug)."""
+    d = WIKIS_ROOT / wiki
+    if not d.exists():
+        raise HTTPException(status_code=404, detail="Wiki nicht gefunden")
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiger JSON-Body")
+    name = (body.get("name") or "").strip()
+    description = (body.get("description") or "").strip()
+    new_slug = (body.get("slug") or "").strip()
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Name ist erforderlich")
+
+    # Wenn Slug geändert werden soll
+    if new_slug and new_slug != wiki:
+        new_slug = slugify_wiki(new_slug)
+        if new_slug == wiki:
+            # Slug identisch – nur Metadaten aktualisieren
+            pass
+        else:
+            new_d = WIKIS_ROOT / new_slug
+            if new_d.exists():
+                raise HTTPException(status_code=409, detail="Ein Wiki mit diesem Slug existiert bereits")
+            # Verzeichnis umbenennen
+            d.rename(new_d)
+            # Alten wikis.json-Eintrag entfernen, neuen hinzufügen
+            wikis_file = DATA_DIR / "wikis.json"
+            if wikis_file.exists():
+                try:
+                    wikis_data = json.loads(wikis_file.read_text(encoding="utf-8"))
+                    wikis_data = [w for w in wikis_data if w.get("slug") != wiki]
+                    wikis_data.append({
+                        "slug": new_slug,
+                        "name": name,
+                        "description": description,
+                        "created_at": datetime.datetime.now().isoformat(),
+                    })
+                    wikis_file.write_text(json.dumps(wikis_data, indent=2, ensure_ascii=False), encoding="utf-8")
+                except Exception:
+                    pass
+            # wiki.json im neuen Verzeichnis aktualisieren
+            meta = new_d / "wiki.json"
+            try:
+                meta.write_text(
+                    json.dumps({"name": name, "description": description}, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+            except Exception:
+                pass
+            return {"ok": True, "slug": new_slug}
+
+    # Nur Metadaten aktualisieren
+    save_wiki_meta(wiki, name, description)
+    return {"ok": True, "slug": wiki}
 
 
 @router.get("/wikis/{wiki}/pages")

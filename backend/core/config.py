@@ -33,7 +33,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "2.3.0"
+APP_VERSION = "2.10.0"
 DEFAULT_LANG = "en"  # Kann via config.json oder --lang CLI überschrieben werden
 
 # Zur Laufzeit durch run.py gesetzt (CLI --lang / config.json)
@@ -66,43 +66,147 @@ def migrate_legacy_wiki() -> None:
         LEGACY_WIKI_DIR.rename(WIKIS_ROOT / "main")
 
 
+def get_directory_size(path: Path) -> int:
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):
+                try:
+                    total += os.path.getsize(fp)
+                except OSError:
+                    pass
+    return total
+
+
 def list_wikis() -> list[dict]:
-    """Listet alle vorhandenen Wikis mit Metadaten."""
-    wikis: list[dict] = []
-    if WIKIS_ROOT.exists():
-        for d in sorted(WIKIS_ROOT.iterdir()):
-            if d.is_dir():
-                meta = d / "wiki.json"
-                name = d.name
-                display = name
-                desc = ""
-                if meta.exists():
-                    try:
-                        data = json.loads(meta.read_text(encoding="utf-8"))
-                        display = data.get("name", name)
-                        desc = data.get("description", "")
-                    except Exception:
-                        pass
-                page_count = sum(
-                    1 for _ in d.rglob("*.md")
-                    if _.stem not in ("index", "log", "ingestlater")
-                )
-                wikis.append({
-                    "slug": name,
-                    "name": display,
-                    "description": desc,
-                    "page_count": page_count,
-                })
-    return wikis
+    """Listet alle vorhandenen Wikis mit Metadaten (aus data/wikis.json, plus dynamische Stats)."""
+    import datetime
+    wikis_file = DATA_DIR / "wikis.json"
+
+    if not wikis_file.exists():
+        initial_wikis = []
+        if WIKIS_ROOT.exists():
+            for d in sorted(WIKIS_ROOT.iterdir()):
+                if d.is_dir():
+                    meta = d / "wiki.json"
+                    name = d.name
+                    display = name
+                    desc = ""
+                    if meta.exists():
+                        try:
+                            data = json.loads(meta.read_text(encoding="utf-8"))
+                            display = data.get("name", name)
+                            desc = data.get("description", "")
+                        except Exception:
+                            pass
+                    initial_wikis.append({
+                        "slug": name,
+                        "name": display,
+                        "description": desc,
+                        "created_at": datetime.datetime.now().isoformat()
+                    })
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        wikis_file.write_text(json.dumps(initial_wikis, indent=2), encoding="utf-8")
+
+    try:
+        stored_wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+    except Exception:
+        stored_wikis = []
+
+    result = []
+    for w in stored_wikis:
+        d = WIKIS_ROOT / w.get("slug", "")
+        if d.exists() and d.is_dir():
+            # Seiten-Zähler (exkl. Systemseiten)
+            page_count = sum(1 for _ in d.rglob("*.md") if _.stem not in ("index", "log", "ingestlater"))
+            # Gesamtzahl aller Dateien im Wiki-Verzeichnis
+            file_count = sum(1 for _ in d.rglob("*") if _.is_file())
+            # Datum der letzten Änderung
+            last_modified = ""
+            try:
+                latest_mtime = 0
+                for fp in d.rglob("*"):
+                    if fp.is_file():
+                        mt = fp.stat().st_mtime
+                        if mt > latest_mtime:
+                            latest_mtime = mt
+                if latest_mtime > 0:
+                    last_modified = datetime.datetime.fromtimestamp(latest_mtime).strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                pass
+            w["page_count"] = page_count
+            w["file_count"] = file_count
+            w["size"] = get_directory_size(d)
+            w["last_modified"] = last_modified
+            w["status"] = "online"
+            result.append(w)
+
+    return result
 
 
 def save_wiki_meta(name: str, display_name: str, description: str = "") -> None:
-    """Speichert Anzeigename/Beschreibung eines Wikis."""
+    """Speichert Anzeigename/Beschreibung eines Wikis in data/wikis.json."""
+    import datetime
+    wikis_file = DATA_DIR / "wikis.json"
+    wikis = list_wikis()
+    found = False
+    for w in wikis:
+        if w["slug"] == name:
+            w["name"] = display_name
+            w["description"] = description
+            found = True
+            break
+    if not found:
+        wikis.append({
+            "slug": name,
+            "name": display_name,
+            "description": description,
+            "created_at": datetime.datetime.now().isoformat(),
+            "page_count": 0,
+            "size": 0,
+            "status": "online"
+        })
+    # Remove dynamic fields before saving
+    for w in wikis:
+        w.pop("page_count", None)
+        w.pop("file_count", None)
+        w.pop("size", None)
+        w.pop("last_modified", None)
+        w.pop("status", None)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+    
+    # Also save to old wiki.json for backwards compatibility if needed
     meta = wiki_path(name) / "wiki.json"
-    meta.write_text(
-        json.dumps({"name": display_name, "description": description}, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    try:
+        meta.parent.mkdir(parents=True, exist_ok=True)
+        meta.write_text(
+            json.dumps({"name": display_name, "description": description}, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
+def delete_wiki(slug: str) -> bool:
+    """Löscht ein Wiki-Verzeichnis und den Eintrag in data/wikis.json."""
+    import shutil
+    if slug == "main":
+        return False
+    d = WIKIS_ROOT / slug
+    if d.exists():
+        shutil.rmtree(d)
+    wikis_file = DATA_DIR / "wikis.json"
+    if wikis_file.exists():
+        try:
+            wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+            wikis = [w for w in wikis if w.get("slug") != slug]
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+    return True
 
 
 def set_default_lang(lang: str) -> None:

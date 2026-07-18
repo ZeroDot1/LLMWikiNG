@@ -5,6 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-07-18
+
+### Added
+- **Wiki-Verwaltung (Settings-Tab)**: Vollständig überarbeiteter Tab „Wikis" in den Einstellungen mit eigener CSS-Datei (`static/css/wikis.css`), responsiver Kartenansicht aller Wikis und Gesamtstatistik-Leiste (Wikis, Seiten, Dateien, Gesamtgröße).
+- **Wiki-Metadaten erweitert**: `list_wikis()` liefert nun zusätzlich `file_count` (Gesamtzahl aller Dateien) und `last_modified` (Datum der letzten Änderung) pro Wiki.
+- **Wiki-Bearbeitung via API**: Neuer `PUT /api/v1/wikis/{slug}` Endpoint zum Ändern von Name, Beschreibung und Slug eines bestehenden Wikis inkl. Verzeichnis-Umbenennung.
+- **Wiki-Löschen (zentrale Funktion)**: Neue `delete_wiki()` Funktion in `config.py` als zentrale Anlaufstelle für das Löschen von Wikis (Verzeichnis + wikis.json-Eintrag).
+- **Auto-Slug beim Erstellen**: Beim Tippen des Wiki-Namens wird der Slug automatisch generiert (inkl. Umlaut-Auflösung).
+- **Bearbeiten-Modal**: Modales Fenster zum Bearbeiten von Name, Slug und Beschreibung direkt in der Wiki-Verwaltung.
+- **Gesamtstatistik**: Kopfzeile zeigt aggregierte Werte aller Wikis (Seiten, Dateien, Größe).
+
+### Changed
+- **CSS-Modularisierung**: Wiki-Verwaltung-Styles in eigenständige Datei `static/css/wikis.css` ausgelagert.
+- **API-Refactoring**: DELETE-Endpoint nutzt nun zentrale `delete_wiki()` Funktion statt Inline-Logik.
+
 ## [2.9.0] - 2026-07-18
 
 ### Fixed

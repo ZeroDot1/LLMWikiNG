@@ -1,0 +1,286 @@
+<link rel="stylesheet" href="{{ base_path }}/static/css/wikis.css?v={{ app_version }}">
+
+<div class="settings-section animate-fade-in">
+    <h2 class="text-xl font-bold mb-1">{{ _('settings.wiki_management_title') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('settings.wiki_management_subtitle') }}</p>
+
+    <!-- Gesamtstatistik -->
+    <div class="wikis-summary" id="wikisSummary"></div>
+
+    <!-- Erstellungs-Panel -->
+    <div class="wiki-create-panel">
+        <h3>{{ _('settings.wiki_create_new') }}</h3>
+        <form id="createWikiForm">
+            <div class="wiki-form-row">
+                <div class="wiki-form-group">
+                    <label>{{ _('settings.wiki_name') }}</label>
+                    <input type="text" id="wikiName" required placeholder="{{ _('settings.wiki_name_placeholder') }}">
+                </div>
+                <div class="wiki-form-group">
+                    <label>{{ _('settings.wiki_slug') }}</label>
+                    <input type="text" id="wikiSlug" required placeholder="mein-wiki" style="font-family: monospace;">
+                </div>
+                <div class="wiki-form-group">
+                    <label>{{ _('settings.wiki_description') }}</label>
+                    <input type="text" id="wikiDescription" placeholder="{{ _('settings.wiki_description_placeholder') }}">
+                </div>
+                <div style="flex: 0 0 auto;">
+                    <button type="submit" class="wiki-btn wiki-btn-primary" style="height: 2.25rem;">
+                        {{ _('settings.wiki_create_btn') }}
+                    </button>
+                </div>
+            </div>
+            <p id="wikiCreateError" class="wiki-msg wiki-msg-error hidden"></p>
+            <p id="wikiCreateSuccess" class="wiki-msg wiki-msg-success hidden"></p>
+        </form>
+    </div>
+
+    <!-- Wiki-Karten-Grid -->
+    <div id="wikisGrid" class="wikis-grid">
+        <div class="wiki-loading">
+            <div class="wiki-spinner"></div>
+            <p style="margin-top: 0.5rem;">{{ _('settings.wiki_loading') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Bearbeiten-Modal -->
+<div id="wikiEditModal" class="wiki-edit-modal-overlay hidden" onclick="if(event.target===this)closeWikiEditModal()">
+    <div class="wiki-edit-modal">
+        <h3>{{ _('settings.wiki_edit_title') }}</h3>
+        <form id="editWikiForm">
+            <input type="hidden" id="editWikiSlug">
+            <div class="wiki-form-group">
+                <label>{{ _('settings.wiki_name') }}</label>
+                <input type="text" id="editWikiName" required>
+            </div>
+            <div class="wiki-form-group">
+                <label>{{ _('settings.wiki_slug') }}</label>
+                <input type="text" id="editWikiNewSlug" style="font-family: monospace;">
+            </div>
+            <div class="wiki-form-group">
+                <label>{{ _('settings.wiki_description') }}</label>
+                <input type="text" id="editWikiDescription">
+            </div>
+            <p id="wikiEditError" class="wiki-msg wiki-msg-error hidden"></p>
+            <div class="wiki-edit-actions">
+                <button type="button" class="wiki-btn wiki-btn-edit" onclick="closeWikiEditModal()">{{ _('settings.wiki_edit_cancel') }}</button>
+                <button type="submit" class="wiki-btn wiki-btn-primary">{{ _('settings.wiki_edit_save') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    "use strict";
+
+    var BASE = "{{ base_path }}";
+    var grid = document.getElementById("wikisGrid");
+    var summary = document.getElementById("wikisSummary");
+    var createForm = document.getElementById("createWikiForm");
+    var editModal = document.getElementById("wikiEditModal");
+    var editForm = document.getElementById("editWikiForm");
+
+    function formatBytes(bytes) {
+        if (!+bytes) return "0 Bytes";
+        var k = 1024;
+        var sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    }
+
+    function renderSummary(wikis) {
+        var totalPages = 0, totalFiles = 0, totalSize = 0;
+        wikis.forEach(function(w) {
+            totalPages += w.page_count || 0;
+            totalFiles += w.file_count || 0;
+            totalSize += w.size || 0;
+        });
+        summary.innerHTML =
+            '<div class="wikis-summary-item"><span class="label">{{ _("settings.wiki_stat_total") }}:</span> <span class="value">' + wikis.length + '</span></div>' +
+            '<div class="wikis-summary-item"><span class="label">{{ _("settings.wiki_stat_pages") }}:</span> <span class="value">' + totalPages + '</span></div>' +
+            '<div class="wikis-summary-item"><span class="label">{{ _("settings.wiki_stat_files") }}:</span> <span class="value">' + totalFiles + '</span></div>' +
+            '<div class="wikis-summary-item"><span class="label">{{ _("settings.wiki_stat_size") }}:</span> <span class="value">' + formatBytes(totalSize) + '</span></div>';
+    }
+
+    function renderWikiCard(wiki) {
+        var isMain = wiki.slug === "main";
+        var card = document.createElement("div");
+        card.className = "wiki-card" + (isMain ? " is-main" : "");
+        card.innerHTML =
+            '<div class="wiki-card-header">' +
+                '<div>' +
+                    '<div class="wiki-card-title">' + escHtml(wiki.name) + '</div>' +
+                    '<div class="wiki-card-slug">' + escHtml(wiki.slug) + '</div>' +
+                '</div>' +
+                '<span class="wiki-status-badge ' + (wiki.status === "online" ? "status-online" : "status-offline") + '">' +
+                    '<span class="wiki-status-dot"></span> ' + (wiki.status || "online") +
+                '</span>' +
+            '</div>' +
+            '<p class="wiki-card-desc">' + escHtml(wiki.description || "{{ _('settings.wiki_no_description') }}") + '</p>' +
+            '<div class="wiki-card-stats">' +
+                '<div class="wiki-stat"><span class="wiki-stat-icon">&#128196;</span> {{ _("settings.wiki_page_count") }}: <span class="wiki-stat-value">' + (wiki.page_count || 0) + '</span></div>' +
+                '<div class="wiki-stat"><span class="wiki-stat-icon">&#128193;</span> {{ _("settings.wiki_file_count") }}: <span class="wiki-stat-value">' + (wiki.file_count || 0) + '</span></div>' +
+                '<div class="wiki-stat"><span class="wiki-stat-icon">&#128207;</span> {{ _("settings.wiki_size") }}: <span class="wiki-stat-value">' + formatBytes(wiki.size || 0) + '</span></div>' +
+                (wiki.last_modified ? '<div class="wiki-stat"><span class="wiki-stat-icon">&#128337;</span> {{ _("settings.wiki_last_modified") }}: <span class="wiki-stat-value">' + escHtml(wiki.last_modified) + '</span></div>' : '') +
+            '</div>' +
+            '<div class="wiki-card-actions">' +
+                '<a href="' + BASE + '/wiki/' + wiki.slug + '/" class="wiki-btn wiki-btn-primary">{{ _("settings.wiki_action_open") }}</a>' +
+                '<button class="wiki-btn wiki-btn-edit" onclick="openWikiEditModal(\'' + escAttr(wiki.slug) + '\', \'' + escAttr(wiki.name) + '\', \'' + escAttr(wiki.description || "") + '\')">{{ _("settings.wiki_action_edit") }}</button>' +
+                (isMain
+                    ? '<span class="wiki-btn wiki-btn-main-badge">{{ _("settings.wiki_default_badge") }}</span>'
+                    : '<button class="wiki-btn wiki-btn-danger" onclick="deleteWiki(\'' + escAttr(wiki.slug) + '\')">{{ _("settings.wiki_action_delete") }}</button>') +
+            '</div>';
+        return card;
+    }
+
+    function escHtml(s) {
+        var el = document.createElement("span");
+        el.textContent = s || "";
+        return el.innerHTML;
+    }
+
+    function escAttr(s) {
+        return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    }
+
+    function loadWikis() {
+        fetch(BASE + "/api/v1/wikis")
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var wikis = data.wikis || [];
+                grid.innerHTML = "";
+                renderSummary(wikis);
+                if (wikis.length === 0) {
+                    grid.innerHTML = '<div class="wiki-empty-state"><div class="wiki-empty-state-icon">&#128218;</div><p class="wiki-empty-state-text">{{ _("settings.wiki_no_wikis") }}</p></div>';
+                    return;
+                }
+                wikis.forEach(function(wiki) {
+                    grid.appendChild(renderWikiCard(wiki));
+                });
+            })
+            .catch(function(err) {
+                grid.innerHTML = '<div class="wiki-msg wiki-msg-error">{{ _("settings.wiki_load_error") }}: ' + escHtml(err.message) + '</div>';
+            });
+    }
+
+    /* ── Erstellen ── */
+    createForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById("wikiCreateError");
+        var okEl = document.getElementById("wikiCreateSuccess");
+        errEl.classList.add("hidden");
+        okEl.classList.add("hidden");
+
+        var name = document.getElementById("wikiName").value.trim();
+        var slug = document.getElementById("wikiSlug").value.trim();
+        var description = document.getElementById("wikiDescription").value.trim();
+
+        if (!name || !slug) return;
+
+        fetch(BASE + "/api/v1/wikis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: name, slug: slug, description: description })
+        })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(r) {
+            if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_create_error') }}");
+            okEl.textContent = "{{ _('settings.wiki_create_success') }}";
+            okEl.classList.remove("hidden");
+            createForm.reset();
+            loadWikis();
+        })
+        .catch(function(err) {
+            errEl.textContent = err.message;
+            errEl.classList.remove("hidden");
+        });
+    });
+
+    /* ── Bearbeiten ── */
+    window.openWikiEditModal = function(slug, name, description) {
+        document.getElementById("editWikiSlug").value = slug;
+        document.getElementById("editWikiName").value = name;
+        document.getElementById("editWikiNewSlug").value = slug;
+        document.getElementById("editWikiDescription").value = description;
+        document.getElementById("wikiEditError").classList.add("hidden");
+        editModal.classList.remove("hidden");
+    };
+
+    window.closeWikiEditModal = function() {
+        editModal.classList.add("hidden");
+    };
+
+    editForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById("wikiEditError");
+        errEl.classList.add("hidden");
+
+        var slug = document.getElementById("editWikiSlug").value;
+        var name = document.getElementById("editWikiName").value.trim();
+        var newSlug = document.getElementById("editWikiNewSlug").value.trim();
+        var description = document.getElementById("editWikiDescription").value.trim();
+
+        if (!name) return;
+
+        fetch(BASE + "/api/v1/wikis/" + slug, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: name, slug: newSlug, description: description })
+        })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(r) {
+            if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_edit_error') }}");
+            closeWikiEditModal();
+            loadWikis();
+        })
+        .catch(function(err) {
+            errEl.textContent = err.message;
+            errEl.classList.remove("hidden");
+        });
+    });
+
+    /* ── Löschen ── */
+    window.deleteWiki = function(slug) {
+        if (!confirm("{{ _('settings.wiki_delete_confirm') }}")) return;
+
+        fetch(BASE + "/api/v1/wikis/" + slug, { method: "DELETE" })
+            .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+            .then(function(r) {
+                if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_delete_error') }}");
+                loadWikis();
+            })
+            .catch(function(err) {
+                alert("{{ _('settings.wiki_delete_error') }}: " + err.message);
+            });
+    };
+
+    /* ── Auto-Slug beim Tippen ── */
+    document.getElementById("wikiName").addEventListener("input", function() {
+        var slugField = document.getElementById("wikiSlug");
+        if (!slugField.dataset.manual) {
+            slugField.value = this.value.toLowerCase()
+                .replace(/[ä]/g, "ae").replace(/[ö]/g, "oe").replace(/[ü]/g, "ue").replace(/[ß]/g, "ss")
+                .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        }
+    });
+    document.getElementById("wikiSlug").addEventListener("input", function() {
+        this.dataset.manual = "1";
+    });
+
+    /* ── Initial laden ── */
+    var tabPanel = document.getElementById("tab-wikis");
+    if (tabPanel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                if (m.type === "attributes" && m.attributeName === "class") {
+                    if (!tabPanel.classList.contains("hidden")) loadWikis();
+                }
+            });
+        });
+        observer.observe(tabPanel, { attributes: true });
+        if (!tabPanel.classList.contains("hidden")) loadWikis();
+    }
+})();
+</script>

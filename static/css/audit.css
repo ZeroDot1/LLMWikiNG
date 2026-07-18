@@ -1,0 +1,166 @@
+/* audit.css – Audit-Logbuch Styles (Kompatibel mit LLMWikiNG Dark/Light-Theme) */
+
+/* ── Pagination Button ── */
+.audit-page-btn {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-surface, #1a1b26);
+  border: 1px solid var(--color-border, #2e3244);
+  color: var(--color-text-secondary, #9aa5ce);
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+.audit-page-btn:hover {
+  background: var(--color-bg-sunken, #13141c);
+  color: var(--color-primary, #7aa2f7);
+}
+
+/* ── Action Badges ── */
+.badge-action {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0.1rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* Auth - Positive */
+.badge-action[data-action="login"],
+.badge-action[data-action="setup_admin"] {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Auth - Negative */
+.badge-action[data-action="login_failed"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Auth - Neutral */
+.badge-action[data-action="logout"] {
+  background: rgba(107, 114, 128, 0.12);
+  color: #9ca3af;
+  border-color: rgba(107, 114, 128, 0.25);
+}
+
+/* User Management */
+.badge-action[data-action="user_create"] {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.badge-action[data-action="user_delete"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* API Keys */
+.badge-action[data-action="api_key_create"] {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+.badge-action[data-action="api_key_delete"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.badge-action[data-action="api_key_reveal"] {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Secrets */
+.badge-action[data-action="system_secret_reveal"] {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.badge-action[data-action="system_secret_regenerate"] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Wiki Actions */
+.badge-action[data-action="page_save"] {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.badge-action[data-action="page_delete"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.badge-action[data-action="page_export"] {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+.badge-action[data-action="wiki_create"] {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+.badge-action[data-action="wiki_sync"] {
+  background: rgba(20, 184, 166, 0.12);
+  color: #2dd4bf;
+  border-color: rgba(20, 184, 166, 0.25);
+}
+
+/* System */
+.badge-action[data-action="activity_log_clear"] {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.badge-action[data-action="theme_change"] {
+  background: rgba(107, 114, 128, 0.12);
+  color: #9ca3af;
+  border-color: rgba(107, 114, 128, 0.25);
+}
+.badge-action[data-action="audit_prune"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Unknown actions */
+.badge-action {
+  background: rgba(75, 85, 99, 0.12);
+  color: #6b7280;
+  border-color: rgba(75, 85, 99, 0.25);
+}
+
+/* ── Table Row Highlights ── */
+.audit-row[data-action="login_failed"] {
+  background: rgba(239, 68, 68, 0.03);
+}
+.audit-row[data-action="system_secret_regenerate"],
+.audit-row[data-action="system_secret_reveal"] {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+/* ── Hover Expand for Details ── */
+.audit-row td span.truncate {
+  cursor: default;
+}
+
+/* ── IP Address Styling ── */
+.audit-ip {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 0.7rem;
+}

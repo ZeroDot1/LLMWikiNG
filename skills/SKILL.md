@@ -209,6 +209,28 @@ curl -X POST \
   "$SERVER_URL/api/v1/system/sync"
 ```
 
+#### 19. Audit-Logs abrufen (Admin-API-Key erforderlich)
+```bash
+# Neueste 50 Einträge abrufen:
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/audit"
+
+# Mit Filtern (action, username, start_date, end_date):
+curl -H "X-API-Key: $API_KEY" \
+  "$SERVER_URL/api/v1/system/audit?action=login_failed&limit=100"
+
+# Zeitraum-Filter:
+curl -H "X-API-Key: $API_KEY" \
+  "$SERVER_URL/api/v1/system/audit?start_date=2026-07-01&end_date=2026-07-31"
+```
+
+Query-Parameter:
+- `limit` (default: 50) – Maximale Anzahl Einträge
+- `offset` (default: 0) – Pagination-Offset
+- `action` – Filter auf Aktionstyp (z.B. `login`, `login_failed`, `page_delete`)
+- `username` – Filter auf bestimmten Benutzernamen
+- `start_date` – Startzeit (ISO-Format: `YYYY-MM-DD`)
+- `end_date` – Endzeit (ISO-Format: `YYYY-MM-DD`)
+
 #### 19. Cache-Statistiken abrufen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/cache/stats"

@@ -31,7 +31,8 @@ from core.config import (
     save_wiki_meta,
 )
 from web import templates, render, abort, redirect, urlencode
-from api.deps import require_login
+from api.deps import require_login, require_admin
+from services.audit import log_action
 from core.storage import list_users, list_keys
 from services.wiki import (
     get_all_wiki_pages,
@@ -141,6 +142,7 @@ def wiki_new_form(request: Request):
 
 @router.post("/wikis/new")
 async def wiki_new_create(request: Request):
+    user = require_login(request)
     form = await request.form()
     name = (form.get("name") or "").strip()
     description = (form.get("description") or "").strip()
@@ -159,6 +161,7 @@ async def wiki_new_create(request: Request):
             encoding="utf-8",
         )
     save_wiki_meta(safe, name, description)
+    log_action(action="wiki_create", details=f"Neues Wiki '{name}' (Slug: {safe}) angelegt", user_id=user["id"], username=user["username"], request=request)
     return redirect(f"{BASE_PATH}/wiki/{safe}/")
 
 
@@ -259,6 +262,7 @@ def _render_page(wiki_name: str, page_name: str, request: Request):
 
 @router.get("/wiki/{wiki_name}/{page_name}/export")
 def wiki_export(wiki_name: str, page_name: str, request: Request):
+    user = require_login(request)
     page_name = re.sub(r"\.md$", "", page_name)
     src_file = wiki_path(wiki_name) / f"{page_name}.md"
     if not src_file.exists():
@@ -270,6 +274,7 @@ def wiki_export(wiki_name: str, page_name: str, request: Request):
         dest_file.write_text(src_file.read_text(encoding="utf-8"), encoding="utf-8")
         try:
             append_okf_log("export", page_name, f"Seite exportiert nach {dest_file.relative_to(PROJECT_ROOT)}", wiki_name)
+            log_action(action="page_export", details=f"Seite '{page_name}' (Wiki: {wiki_name}) exportiert nach output_docs/", user_id=user["id"], username=user["username"], request=request)
         except Exception:
             pass
         success_msg = f"Seite '{page_name}.md' erfolgreich nach output_docs/ exportiert!"
@@ -280,6 +285,7 @@ def wiki_export(wiki_name: str, page_name: str, request: Request):
 
 @router.get("/wiki/{wiki_name}/{page_name}/delete")
 def wiki_delete(wiki_name: str, page_name: str, request: Request):
+    user = require_login(request)
     page_name = re.sub(r"\.md$", "", page_name)
     if page_name in ("index", "log", "ingestlater"):
         abort(403, "System-Dateien können nicht gelöscht werden.")
@@ -292,6 +298,7 @@ def wiki_delete(wiki_name: str, page_name: str, request: Request):
         src_file.unlink()
         try:
             append_okf_log("delete", page_name, "Seite gelöscht", wiki_name)
+            log_action(action="page_delete", details=f"Seite '{page_name}' (Wiki: {wiki_name}) gelöscht", user_id=user["id"], username=user["username"], request=request)
         except Exception:
             pass
         do_sync(wiki_name)
@@ -851,11 +858,12 @@ def admin_status(request: Request):
 
 
 @router.get("/admin/sync")
-def admin_sync(request: Request):
+def admin_sync(request: Request, admin: dict = Depends(require_admin)):
     from fastapi.responses import JSONResponse
 
     wiki = request.query_params.get("wiki") or _default_wiki()
     results = do_sync(wiki)
+    log_action(action="wiki_sync", details=f"Wiki '{wiki}' manuell synchronisiert", user_id=admin["id"], username=admin["username"], request=request)
     fmt = request.query_params.get("format", "html")
     if fmt == "json":
         return JSONResponse({
@@ -1406,6 +1414,7 @@ async def edit_preview(request: Request):
 
 @router.post("/edit/save")
 async def edit_save(request: Request):
+    user = require_login(request)
     form = await request.form()
     filename = (form.get("filename") or "").strip()
     content = form.get("content", "")
@@ -1426,12 +1435,14 @@ async def edit_save(request: Request):
         if folder == "wiki":
             page_title = filename[:-3]
             content = ensure_okf_frontmatter(content, title=page_title)
+        
+        action_type = "Update" if filepath.exists() else "Creation"
         filepath.write_text(content, encoding="utf-8")
 
         try:
-            action_type = "Update" if filepath.exists() else "Creation"
             append_okf_log(action_type, filename, f"Datei im Browser-Editor bearbeitet ({folder})", wiki)
             do_sync(wiki)
+            log_action(action="page_save", details=f"Datei '{filename}' in '{folder}' (Wiki: {wiki}) als {action_type} gespeichert", user_id=user["id"], username=user["username"], request=request)
         except Exception:
             pass
 
@@ -1449,7 +1460,7 @@ async def edit_save(request: Request):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/admin/clear-log")
-def clear_log(request: Request):
+def clear_log(request: Request, admin: dict = Depends(require_admin)):
     wiki = request.query_params.get("wiki") or "main"
     log_path = wiki_path(wiki) / "log.md"
     today = date.today().isoformat()
@@ -1464,6 +1475,7 @@ def clear_log(request: Request):
         )
         log_path.write_text(template, encoding="utf-8")
         do_sync(wiki)
+        log_action(action="activity_log_clear", details=f"Aktivitätslogbuch für Wiki '{wiki}' geleert", user_id=admin["id"], username=admin["username"], request=request)
         return redirect(f"{BASE_PATH}/wiki/{wiki}/log?success_msg={urlencode('Logbuch erfolgreich geleert!')}")
     except Exception as e:
         return redirect(f"{BASE_PATH}/wiki/{wiki}/log?error_msg={urlencode(f'Fehler beim Leeren des Logbuchs: {e}')}")
@@ -1549,6 +1561,66 @@ async def settings_restore(request: Request, backup_file: UploadFile = File(...)
         if temp_archive.exists():
             temp_archive.unlink()
         return redirect(f"{BASE_PATH}/settings?error_msg={urlencode(f'Restore fehlgeschlagen: {e}')}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Audit-Logs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/audit")
+def audit_dashboard(
+    request: Request,
+    admin: dict = Depends(require_admin),
+    limit: int = 50,
+    offset: int = 0,
+    action: str | None = None,
+    username: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    from services.audit import get_logs
+    
+    logs, total = get_logs(
+        limit=limit,
+        offset=offset,
+        action=action,
+        username=username,
+        start_date=start_date,
+        end_date=end_date
+    )
+    
+    return render(
+        request, "audit.html",
+        active_page="audit",
+        wiki=_default_wiki(),
+        wikis=list_wikis(),
+        logs=logs,
+        total=total,
+        limit=limit,
+        offset=offset,
+        action_filter=action,
+        user_filter=username,
+        start_date=start_date,
+        end_date=end_date,
+        success_msg=request.query_params.get("success_msg"),
+        error_msg=request.query_params.get("error_msg")
+    )
+
+@router.post("/audit/prune")
+async def audit_prune(request: Request, admin: dict = Depends(require_admin)):
+    from services.audit import prune_logs
+    form = await request.form()
+    try:
+        year = int(form.get("year", "2026"))
+        month_str = form.get("month", "")
+        month = int(month_str) if month_str else None
+        
+        deleted = prune_logs(year, month)
+        details = f"Logs gelöscht vor {month_str + '/' if month_str else ''}{year}"
+        log_action(action="audit_prune", details=details, user_id=admin["id"], username=admin["username"], request=request)
+        return redirect(f"{BASE_PATH}/audit?success_msg={urlencode(f'{deleted} Log-Einträge erfolgreich gelöscht.')}")
+    except Exception as e:
+        return redirect(f"{BASE_PATH}/audit?error_msg={urlencode(f'Fehler beim Löschen: {e}')}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

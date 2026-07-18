@@ -5,6 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] – 2026-07-18
+
+### Added
+- **Sicherheits-Audit-Logging (SQLite-basiert)**: Vollständige Audit-Trail-Implementierung zur lückenlosen Aufzeichnung aller sicherheitsrelevanten Aktionen (Logins, Logout, Benutzerverwaltung, API-Key-Aktionen, Seitenänderungen, Exporte, Wiki-Erstellungen und Logbuch-Bereinigungen).
+- **IPv4- & IPv6-Protokollierung**: Erfasst die Client-IP-Adresse des Anfordernden sowie den User-Agent für verbesserte Nachvollziehbarkeit.
+- **Admin-Oberfläche für Audit-Logs (`/audit`)**: Eine neue, exklusiv für Administratoren sichtbare Weboberfläche mit Filtermöglichkeiten nach Aktion, Benutzer und Zeiträumen, Paginierung und Pruning-Optionen (Löschen nach Jahr/Monat) mit Bestätigungsabfrage (`static/js/audit.js`, `static/css/audit.css`).
+- **Pruning-Funktion für alte Logs**: Logdaten werden standardmäßig unbegrenzt gespeichert, können jedoch nach Jahr/Monat über die Admin-Oberfläche bereinigt werden.
+- **API-Schnittstelle für Audit-Logs**: Ein neuer Endpunkt `/api/v1/system/audit` (abrufbar mittels Admin-API-Key) liefert die Logdaten strukturiert als JSON zurück.
+
+---
+
 ## [2.6.3] – 2026-07-18
 
 ### Added

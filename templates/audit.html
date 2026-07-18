@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Audit-Logbuch{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ base_path }}/static/css/audit.css?v={{ app_version }}">
+{% endblock %}
+
+{% block content %}
+<div class="wiki-content">
+
+    <!-- Header -->
+    <header class="border-b border-border pb-5 mb-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">🛡️ Audit-Logbuch
+                    <span class="text-xs bg-primary-subtle text-primary font-semibold px-2.5 py-0.5 rounded-full ml-1">Admin</span>
+                </h1>
+                <p class="text-text-secondary mt-1 text-sm">Sicherheitsrelevante Ereignisse, API-Aktivitäten und administrative Aktionen</p>
+            </div>
+            <div class="text-right text-xs text-text-muted font-mono">
+                <div class="font-semibold text-text">{{ total }} Einträge gesamt</div>
+                <div>Unbegrenzte Aufbewahrung · SQLite-Backend</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Status Messages -->
+    {% if success_msg %}
+    <div class="rounded-lg border border-success/40 bg-success-subtle px-4 py-3 mb-4 text-sm flex items-start gap-2">
+        <span class="text-success mt-0.5">✓</span>
+        <span>{{ success_msg }}</span>
+    </div>
+    {% endif %}
+    {% if error_msg %}
+    <div class="rounded-lg border border-danger/40 bg-danger-subtle px-4 py-3 mb-4 text-sm flex items-start gap-2">
+        <span class="text-danger mt-0.5">✗</span>
+        <span>{{ error_msg }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Action Type Summary Cards -->
+    <div id="audit-action-summary" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-6 hidden">
+        <!-- Filled by audit.js dynamically -->
+    </div>
+
+    <!-- Filter Form -->
+    <div class="rounded-xl border border-border bg-bg-sunken p-4 mb-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Filter &amp; Suche</span>
+            {% if action_filter or user_filter or start_date or end_date %}
+            <a href="{{ base_path }}/audit" class="text-xs text-primary hover:underline">Filter zurücksetzen</a>
+            {% endif %}
+        </div>
+        <form action="{{ base_path }}/audit" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+            <div>
+                <label for="filter-action" class="block text-xs font-semibold text-text-muted mb-1">Aktion</label>
+                <select id="filter-action" name="action" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+                    <option value="">Alle Aktionen</option>
+                    <optgroup label="Authentifizierung">
+                        <option value="login" {% if action_filter == 'login' %}selected{% endif %}>login</option>
+                        <option value="login_failed" {% if action_filter == 'login_failed' %}selected{% endif %}>login_failed</option>
+                        <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>logout</option>
+                        <option value="setup_admin" {% if action_filter == 'setup_admin' %}selected{% endif %}>setup_admin</option>
+                    </optgroup>
+                    <optgroup label="Benutzerverwaltung">
+                        <option value="user_create" {% if action_filter == 'user_create' %}selected{% endif %}>user_create</option>
+                        <option value="user_delete" {% if action_filter == 'user_delete' %}selected{% endif %}>user_delete</option>
+                    </optgroup>
+                    <optgroup label="API-Keys &amp; Secrets">
+                        <option value="api_key_create" {% if action_filter == 'api_key_create' %}selected{% endif %}>api_key_create</option>
+                        <option value="api_key_delete" {% if action_filter == 'api_key_delete' %}selected{% endif %}>api_key_delete</option>
+                        <option value="api_key_reveal" {% if action_filter == 'api_key_reveal' %}selected{% endif %}>api_key_reveal</option>
+                        <option value="system_secret_reveal" {% if action_filter == 'system_secret_reveal' %}selected{% endif %}>system_secret_reveal</option>
+                        <option value="system_secret_regenerate" {% if action_filter == 'system_secret_regenerate' %}selected{% endif %}>system_secret_regenerate</option>
+                    </optgroup>
+                    <optgroup label="Wiki-Aktivitäten">
+                        <option value="wiki_create" {% if action_filter == 'wiki_create' %}selected{% endif %}>wiki_create</option>
+                        <option value="wiki_sync" {% if action_filter == 'wiki_sync' %}selected{% endif %}>wiki_sync</option>
+                        <option value="page_save" {% if action_filter == 'page_save' %}selected{% endif %}>page_save</option>
+                        <option value="page_delete" {% if action_filter == 'page_delete' %}selected{% endif %}>page_delete</option>
+                        <option value="page_export" {% if action_filter == 'page_export' %}selected{% endif %}>page_export</option>
+                        <option value="activity_log_clear" {% if action_filter == 'activity_log_clear' %}selected{% endif %}>activity_log_clear</option>
+                        <option value="api_ingest_upload" {% if action_filter == 'api_ingest_upload' %}selected{% endif %}>api_ingest_upload</option>
+                    </optgroup>
+                    <optgroup label="System">
+                        <option value="theme_change" {% if action_filter == 'theme_change' %}selected{% endif %}>theme_change</option>
+                        <option value="audit_prune" {% if action_filter == 'audit_prune' %}selected{% endif %}>audit_prune</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div>
+                <label for="filter-user" class="block text-xs font-semibold text-text-muted mb-1">Benutzer</label>
+                <input type="text" id="filter-user" name="username" value="{{ user_filter|default('') }}" placeholder="Benutzername" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+            </div>
+            <div>
+                <label for="filter-start" class="block text-xs font-semibold text-text-muted mb-1">Von (Datum)</label>
+                <input type="date" id="filter-start" name="start_date" value="{{ start_date|default('') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+            </div>
+            <div>
+                <label for="filter-end" class="block text-xs font-semibold text-text-muted mb-1">Bis (Datum)</label>
+                <input type="date" id="filter-end" name="end_date" value="{{ end_date|default('') }}" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-1.5 px-3 shadow-sm transition-colors">Filtern</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden mb-5">
+        <div class="bg-bg-sunken border-b border-border px-4 py-2.5 flex items-center justify-between">
+            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Audit-Einträge</span>
+            <span class="text-xs text-text-muted">
+                {% if total > 0 %}
+                    Einträge {{ offset + 1 }}–{% if offset + limit < total %}{{ offset + limit }}{% else %}{{ total }}{% endif %} von {{ total }}
+                {% else %}
+                    Keine Einträge
+                {% endif %}
+            </span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left" id="audit-table">
+                <thead class="border-b border-border">
+                    <tr>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">#</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">Zeitstempel</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Benutzer</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Aktion</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Details</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">IP-Adresse</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Browser/Client</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border font-mono text-xs" id="audit-tbody">
+                    {% for log in logs %}
+                    <tr class="hover:bg-bg-sunken/50 transition-colors audit-row" data-action="{{ log.action }}">
+                        <td class="px-3 py-2.5 text-text-muted select-none">{{ log.id }}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-text-secondary">
+                            <span class="audit-date" data-ts="{{ log.timestamp }}">{{ log.timestamp }}</span>
+                        </td>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            {% if log.username %}
+                            <span class="font-semibold text-primary">{{ log.username }}</span>
+                            {% if log.user_id %}<span class="text-text-muted ml-1 text-xs">({{ log.user_id[:6] }}…)</span>{% endif %}
+                            {% else %}
+                            <span class="text-text-muted italic">system</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            <span class="badge-action" data-action="{{ log.action }}">{{ log.action }}</span>
+                        </td>
+                        <td class="px-3 py-2.5 text-text-secondary max-w-xs">
+                            <span class="block truncate" title="{{ log.details }}">{{ log.details|default('–') }}</span>
+                        </td>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            <span class="audit-ip {% if ':' in (log.ip_address or '') %}text-warning{% else %}text-text-secondary{% endif %}" title="{% if ':' in (log.ip_address or '') %}IPv6{% else %}IPv4{% endif %}">
+                                {% if ':' in (log.ip_address or '') %}
+                                <span class="text-warning text-xs mr-0.5">v6</span>
+                                {% else %}
+                                <span class="text-text-muted text-xs mr-0.5">v4</span>
+                                {% endif %}
+                                {{ log.ip_address|default('–') }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2.5 max-w-[160px]">
+                            <span class="block truncate text-text-muted" title="{{ log.user_agent }}">{{ log.user_agent|default('–') }}</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-10 text-center text-text-muted font-sans text-sm">
+                            <div class="text-3xl mb-2">🛡️</div>
+                            <div class="font-semibold text-text">Keine Audit-Logs gefunden</div>
+                            <div class="text-xs mt-1">Aktionen werden ab sofort automatisch aufgezeichnet.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total > limit %}
+        <div class="bg-bg-sunken border-t border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs text-text-muted">
+                Seite {{ (offset // limit) + 1 }} von {{ ((total - 1) // limit) + 1 }}
+            </div>
+            <div class="flex gap-2">
+                {% if offset > 0 %}
+                <a href="{{ base_path }}/audit?limit={{ limit }}&offset=0{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" class="audit-page-btn">«</a>
+                <a href="{{ base_path }}/audit?limit={{ limit }}&offset={{ offset - limit }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" class="audit-page-btn">‹ Zurück</a>
+                {% endif %}
+                {% if offset + limit < total %}
+                <a href="{{ base_path }}/audit?limit={{ limit }}&offset={{ offset + limit }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" class="audit-page-btn">Weiter ›</a>
+                <a href="{{ base_path }}/audit?limit={{ limit }}&offset={{ ((total - 1) // limit) * limit }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" class="audit-page-btn">»</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pruning Section -->
+    <div class="rounded-xl border border-warning/30 bg-surface shadow-sm overflow-hidden">
+        <div class="bg-warning/5 border-b border-warning/30 px-4 py-3 flex items-center gap-2">
+            <span class="text-warning">⚠</span>
+            <span class="text-sm font-semibold text-warning">Log-Bereinigung (unwiderruflich)</span>
+        </div>
+        <div class="p-4">
+            <p class="text-sm text-text-secondary mb-4">
+                Audit-Logs werden standardmäßig <strong>unbegrenzt</strong> aufbewahrt. Hier kannst du ältere Einträge nach Jahr/Monat dauerhaft löschen. Diese Aktion wird selbst im Audit-Log erfasst.
+            </p>
+            <form action="{{ base_path }}/audit/prune" method="post" id="pruneForm" class="flex flex-wrap gap-3 items-end">
+                <div>
+                    <label for="prune-year" class="block text-xs font-semibold text-text-muted uppercase mb-1">Jahr (löscht VOR diesem Jahr)</label>
+                    <select id="prune-year" name="year" class="rounded-lg border border-border bg-bg-sunken px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-warning-subtle">
+                        {% for y in range(2025, 2037) %}
+                        <option value="{{ y }}">{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="prune-month" class="block text-xs font-semibold text-text-muted uppercase mb-1">Monat (optional)</label>
+                    <select id="prune-month" name="month" class="rounded-lg border border-border bg-bg-sunken px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-warning-subtle">
+                        <option value="">– Alle Monate –</option>
+                        <option value="1">Januar</option>
+                        <option value="2">Februar</option>
+                        <option value="3">März</option>
+                        <option value="4">April</option>
+                        <option value="5">Mai</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Dezember</option>
+                    </select>
+                </div>
+                <button type="submit" id="pruneBtn" class="rounded-lg bg-warning/90 hover:bg-warning text-black text-sm font-bold py-1.5 px-5 shadow-sm transition-colors">
+                    🗑 Alte Logs löschen
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Hint -->
+    <div class="mt-4 rounded-xl border border-border bg-bg-sunken p-4 text-xs font-mono text-text-secondary">
+        <div class="font-semibold text-text-muted uppercase tracking-wider text-xs mb-2">API-Zugriff (Admin-Key erforderlich)</div>
+        <code>curl -H "X-API-Key: &lt;admin_key&gt;" "{{ request.url.scheme }}://{{ request.url.netloc }}{{ base_path }}/api/v1/system/audit?limit=100&amp;action=login_failed"</code>
+    </div>
+
+</div>
+<script type="module" src="{{ base_path }}/static/js/audit.js"></script>
+{% endblock %}

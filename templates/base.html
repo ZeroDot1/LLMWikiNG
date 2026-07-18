@@ -57,6 +57,9 @@
         <div class="pt-3 mt-3 border-t border-border text-xs font-semibold text-text-muted uppercase tracking-wide">{{ _('sidebar.system_tools') }}</div>
         <a href="{{ base_path }}/search" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'search' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.search') }}</a>
         <a href="{{ base_path }}/settings" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'settings' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">⚙️ {{ _('sidebar.settings') }}</a>
+        {% if current_user and current_user.role == 'admin' %}
+        <a href="{{ base_path }}/audit" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'audit' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">🛡️ {{ _('sidebar.audit_log')|default('Audit-Log') }}</a>
+        {% endif %}
         <a href="{{ base_path }}/status" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'status' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.status_stats') }}</a>
         <a href="{{ base_path }}/briefings" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if active_page == 'briefings' %}bg-primary-subtle text-primary font-semibold{% else %}text-text-secondary{% endif %}">{{ _('sidebar.weekly_reports') }}</a>
         <a href="{{ base_path }}/admin/sync" id="syncBtn" class="block rounded-lg px-3 py-2 hover:bg-bg-sunken {% if sync_needed %}text-warning font-semibold{% else %}text-success{% endif %}">{% if sync_needed %}{{ _('sidebar.sync_needed') }}{% else %}{{ _('sidebar.sync_ok') }}{% endif %}</a>

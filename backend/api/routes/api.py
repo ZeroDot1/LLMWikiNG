@@ -30,6 +30,7 @@ from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.editor import ensure_okf_frontmatter
 from services.sync import do_sync, append_okf_log
+from services.audit import log_action
 
 router = APIRouter(prefix=f"{BASE_PATH}/api/v1")
 
@@ -242,6 +243,8 @@ async def api_ingest_upload(wiki: str, request: Request, user: dict = Depends(ge
             dest = RAW_DIR / os.path.basename(upload.filename)
             dest.write_bytes(await upload.read())
             saved.append(upload.filename)
+    if saved:
+        log_action(action="api_ingest_upload", details=f"{len(saved)} Datei(en) via API nach raw/ hochgeladen: {', '.join(saved)} (Wiki: {wiki})", user_id=user.get("id"), username=user.get("username"), request=request)
     return {"ok": True, "wiki": wiki, "saved": saved}
 
 
@@ -327,6 +330,28 @@ def api_system_sync(user: dict = Depends(get_api_user)):
         except Exception as e:
             results[w["name"]] = f"fehler: {e}"
     return {"ok": True, "results": results}
+
+
+@router.get("/system/audit")
+def api_system_audit(
+    limit: int = 50,
+    offset: int = 0,
+    action: str | None = None,
+    username: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    admin: dict = Depends(require_api_admin),
+):
+    from services.audit import get_logs
+    logs, total = get_logs(
+        limit=limit,
+        offset=offset,
+        action=action,
+        username=username,
+        start_date=start_date,
+        end_date=end_date
+    )
+    return {"logs": logs, "total": total, "limit": limit, "offset": offset}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

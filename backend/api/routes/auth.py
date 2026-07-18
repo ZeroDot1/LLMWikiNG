@@ -11,6 +11,7 @@ import os
 from core.config import BASE_PATH, CONFIG_FILE, load_app_config, APP_VERSION, PROJECT_ROOT
 from web import render, redirect, urlencode
 from api.deps import require_login, require_admin
+from services.audit import log_action
 from core.security import verify_password, create_session
 from core.storage import (
     list_users,
@@ -56,12 +57,15 @@ async def login_post(request: Request):
             return redirect(f"{BASE_PATH}/login?error=Benutzername+und+Passwort+erforderlich")
         create_user(username, password, role="admin")
         user = get_user_by_name(username)
+        log_action(action="setup_admin", details=f"Erstes Administrator-Konto erstellt: {username}", user_id=user["id"], username=user["username"], request=request)
         return _set_session_and_redirect(user)
 
     user = get_user_by_name(username)
     if not user or not user.get("active", True) or not verify_password(password, user["password_hash"]):
+        log_action(action="login_failed", details=f"Fehlgeschlagener Login-Versuch für Benutzer: {username}", request=request)
         return redirect(f"{BASE_PATH}/login?error=Login+fehlgeschlagen")
 
+    log_action(action="login", details=f"Benutzer erfolgreich angemeldet", user_id=user["id"], username=user["username"], request=request)
     return _set_session_and_redirect(user)
 
 
@@ -77,9 +81,10 @@ def _set_session_and_redirect(user: dict) -> RedirectResponse:
 
 
 @router.get("/logout")
-def logout(request: Request):
+def logout(request: Request, user: dict = Depends(require_login)):
     from fastapi.responses import RedirectResponse
 
+    log_action(action="logout", details="Benutzer abgemeldet", user_id=user["id"], username=user["username"], request=request)
     resp = RedirectResponse(f"{BASE_PATH}/login", status_code=303)
     resp.delete_cookie("session")
     return resp
@@ -104,6 +109,7 @@ async def user_create(request: Request, admin: dict = Depends(require_admin)):
         return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzername+und+Passwort+erforderlich")
     try:
         create_user(username, password, role=role)
+        log_action(action="user_create", details=f"Benutzer '{username}' mit Rolle '{role}' angelegt", user_id=admin["id"], username=admin["username"], request=request)
     except ValueError as e:
         return redirect(f"{BASE_PATH}/settings?tab=users&error={urlencode(str(e))}")
     return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+angelegt")
@@ -113,7 +119,10 @@ async def user_create(request: Request, admin: dict = Depends(require_admin)):
 async def user_delete(user_id: str, request: Request, admin: dict = Depends(require_admin)):
     if user_id == admin["id"]:
         return redirect(f"{BASE_PATH}/settings?tab=users&error=Du+kannst+dich+nicht+selbst+löschen")
+    target_user = get_user(user_id)
+    target_username = target_user["username"] if target_user else user_id
     delete_user(user_id)
+    log_action(action="user_delete", details=f"Benutzer '{target_username}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+gelöscht")
 
 
@@ -151,6 +160,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         require_password=require_password,
         scopes=scopes,
     )
+    log_action(action="api_key_create", details=f"API-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt", user_id=admin["id"], username=admin["username"], request=request)
     smtp_config = load_smtp_config()
     health = {"orphans": [], "missing": [], "stale": [], "missing_raw": [], "issue_count": 0}
     return render(
@@ -176,12 +186,10 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
     )
 
 
-    return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=API-Key+gelöscht")
-
-
 @router.post("/api-keys/{key_id}/delete")
 async def api_key_delete(key_id: str, request: Request, admin: dict = Depends(require_admin)):
     delete_key(key_id)
+    log_action(action="api_key_delete", details=f"API-Key-ID '{key_id}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=API-Key+gelöscht")
 
 
@@ -222,6 +230,7 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
     if not raw_key:
         return JSONResponse({"error": "Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret (LLMWIKI_SECRET) wurde seit der Erstellung des Schlüssels geändert oder zurückgesetzt."}, status_code=500)
 
+    log_action(action="api_key_reveal", details=f"API-Key '{key_obj.get('name')}' (ID: {key_id}) entschlüsselt und angezeigt", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"raw_key": raw_key})
 
 
@@ -241,6 +250,7 @@ async def system_secret_reveal(request: Request, admin: dict = Depends(require_a
         return JSONResponse({"error": "Ungültiges Passwort"}, status_code=403)
 
     from core.security import SECRET
+    log_action(action="system_secret_reveal", details="System-Secret angezeigt", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"secret": SECRET})
 
 
@@ -276,6 +286,7 @@ async def system_secret_regenerate(request: Request, admin: dict = Depends(requi
     core.security._signer = URLSafeTimedSerializer(new_secret, salt="llmwikisession")
     core.security._key_cipher = URLSafeTimedSerializer(new_secret, salt="llmwikingapikey")
 
+    log_action(action="system_secret_regenerate", details="System-Secret neu generiert", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
 
 
@@ -286,7 +297,7 @@ async def system_secret_regenerate(request: Request, admin: dict = Depends(requi
 
 @router.get("/theme/set")
 @router.post("/theme/set")
-async def theme_set(request: Request, _: None = Depends(require_login)):
+async def theme_set(request: Request, user: dict = Depends(require_login)):
     if request.method == "POST":
         form = await request.form()
         value = form.get("value", "dark")
@@ -297,6 +308,7 @@ async def theme_set(request: Request, _: None = Depends(require_login)):
     data = load_app_config()
     data["theme"] = value
     CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    log_action(action="theme_change", details=f"Theme auf '{value}' geändert", user_id=user["id"], username=user["username"], request=request)
     if request.method == "POST":
         return redirect(f"{BASE_PATH}/settings?tab=theme")
     return JSONResponse({"theme": value})

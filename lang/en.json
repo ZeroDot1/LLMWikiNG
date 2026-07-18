@@ -35,6 +35,7 @@
     "about": "ℹ️ About LLMWiki",
     "docs": "📚 Documentation",
     "settings": "Settings",
+    "audit_log": "Audit Log",
     "wiki_pages": "Wiki Pages"
   },
   "searchbar": {

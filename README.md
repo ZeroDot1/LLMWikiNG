@@ -64,6 +64,7 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 *   **🔍 Search with Term Highlighting**: Lightning-fast BM25 search with a new **Cross-Wiki-Search** feature allowing you to search either a single specific wiki or all wikis at once (selecting "All Wikis" or `wiki=all` parameter). Shows colored highlights, displays matching wiki labels on the results, and supports arrow key navigation.
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
 *   **⚙️ Settings**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **User Management**, **API-Key Management** (with secure **API-Key Recovery** after password verification), SMTP email configuration, health check, and update function.
+*   **🛡️ Audit Logging**: SQLite-based logging system recording all security actions (logins, logouts, page creations, deletions, API-key actions, settings changes). Captures timestamps, usernames, IPv4/IPv6 addresses, and User Agents. Allows administrators to search, filter, and prune logs (clear by month/year) via an exclusive `/audit` interface or programmatically via a `/api/v1/system/audit` endpoint.
 *   **🌗 Appearance**: The theme (Dark/Light) is changed exclusively in the settings (`/settings?tab=theme`) and persisted in `config.json`. Dark mode is the default and is loaded server-side — without a toggle in the sidebar.
 
 ### Starting the Web Interface:
@@ -175,6 +176,7 @@ curl -X POST \
 | `GET`  | `/api/v1/status` | API key |
 | `GET`  | `/api/v1/system/status` | API key (admin) |
 | `POST` | `/api/v1/system/sync` | API key (admin) |
+| `GET`  | `/api/v1/system/audit` | API key (admin) |
 | `GET`  | `/api/v1/users` | API key (admin) |
 | `POST` | `/api/v1/users` | API key (admin) |
 | `DELETE` | `/api/v1/users/<id>` | API key (admin) |

@@ -32,7 +32,7 @@ from core.config import (
 )
 from web import templates, render, abort, redirect, urlencode
 from api.deps import require_login, require_admin
-from services.audit import log_action
+from services.audit import log_action, get_recent_audit_logs, ALL_CATEGORIES
 from core.storage import list_users, list_keys
 from services.wiki import (
     get_all_wiki_pages,
@@ -41,8 +41,8 @@ from services.wiki import (
     is_text_file,
     find_wiki_slug_for_raw,
     get_pending_files,
+    delete_wiki_data,
     save_to_ingestlater,
-    get_recent_logs,
     get_wiki_trails,
     extract_links_from_content,
     slugify_german,
@@ -112,7 +112,7 @@ def dashboard(request: Request):
         total_raw += s["raw_count"]
         total_export += s["export_count"]
 
-    recent_logs = get_recent_logs(default, 5)
+    recent_logs = get_recent_audit_logs(5)
     return render(
         request, "dashboard.html",
         active_page="home",
@@ -575,6 +575,7 @@ async def ingest_post(request: Request):
     is_later = False
     
     form = await request.form()
+    user = require_login(request)
     wiki = (form.get("wiki") or request.query_params.get("wiki") or _default_wiki())
     ingest_type = form.get("type")
     backend = form.get("backend", "ollama")
@@ -592,6 +593,7 @@ async def ingest_post(request: Request):
             if not url:
                 raise ValueError("URL darf nicht leer sein.")
             save_to_ingestlater("url", title, url, wiki)
+            log_action(action="ingest_save_later", details=f"URL zur späteren Verarbeitung gespeichert: '{title}' → {url} (Wiki: {wiki})", username=user.get("username"), user_id=user.get("id"), request=request)
             success_msg = "URL erfolgreich in ingestlater.md gespeichert!"
             is_later = True
 
@@ -601,6 +603,7 @@ async def ingest_post(request: Request):
             if not title or not content:
                 raise ValueError("Titel und Inhalt dürfen nicht leer sein.")
             save_to_ingestlater("text", title, content, wiki)
+            log_action(action="ingest_save_later", details=f"Text zur späteren Verarbeitung gespeichert: '{title}' ({len(content)} Zeichen, Wiki: {wiki})", username=user.get("username"), user_id=user.get("id"), request=request)
             success_msg = "Text erfolgreich in ingestlater.md gespeichert!"
             is_later = True
 
@@ -659,6 +662,7 @@ async def ingest_post(request: Request):
                 title_to_slug = Path(orig_filename).stem
 
             new_slug = slugify_german(title_to_slug)
+            log_action(action="ingest", details=f"Ingest: '{new_slug}.md' aus '{orig_filename}' (Typ: {ingest_type}, Backend: {backend}, Wiki: {wiki})", username=user.get("username"), user_id=user.get("id"), request=request)
             success_msg = f"Quelle erfolgreich eingespielt! ({new_slug}.md)"
             do_sync(wiki)
 
@@ -743,6 +747,15 @@ def search(request: Request):
             slug_exists = target_slug in all_slugs
         else:
             slug_exists = target_slug in {p["slug"] for p in get_all_wiki_pages(wiki)}
+            
+        _u = request.session.get("user") if hasattr(request, 'session') else {}
+        log_action(
+            action="search",
+            details=f"Suche '{query}' in '{wiki}' – {len(results)} Treffer",
+            username=(_u or {}).get("username"),
+            user_id=(_u or {}).get("id"),
+            request=request,
+        )
     else:
         raw_mentions_count = 0
         slug_exists = False
@@ -1068,12 +1081,15 @@ def settings_get(request: Request):
     env_user = os.environ.get("GMAIL_USER", "")
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
+    from core.config import load_app_config
     return render(
         request, "settings.html",
         active_page="settings",
         smtp_config=smtp_config_data,
         env_user=env_user,
         env_pass_exists=env_pass_exists,
+        audit_config=load_app_config(),
+        all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
         config_error_msg=None,
         health_run_check=health_run_check,
@@ -1142,6 +1158,16 @@ async def settings_post(request: Request):
         threading.Thread(target=kill_server).start()
         
         config_success_msg = "Server-Neustart wurde initiiert. Bitte lade die Seite in 5 Sekunden neu."
+    elif action == "save_audit_config":
+        from core.config import save_app_config
+        audit_enabled = form.get("audit_enabled") == "1"
+        enabled_cats = [c.strip() for c in form.getlist("audit_categories") if c.strip()]
+        disabled = [c for c in ALL_CATEGORIES if c not in enabled_cats]
+        save_app_config({"audit_enabled": audit_enabled, "audit_disabled_categories": disabled})
+        
+        user = request.session.get("user") if hasattr(request, "session") else {}
+        log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
+        config_success_msg = "Audit-Konfiguration gespeichert!"
     else:
         smtp_host = form.get("smtp_host", "smtp.gmail.com")
         try:
@@ -1177,12 +1203,15 @@ async def settings_post(request: Request):
     env_user = os.environ.get("GMAIL_USER", "")
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
+    from core.config import load_app_config
     return render(
         request, "settings.html",
         active_page="settings",
         smtp_config=smtp_config_data,
         env_user=env_user,
         env_pass_exists=env_pass_exists,
+        audit_config=load_app_config(),
+        all_audit_categories=ALL_CATEGORIES,
         config_success_msg=config_success_msg,
         config_error_msg=config_error_msg,
         health_run_check=health_run_check,
@@ -1476,9 +1505,9 @@ def clear_log(request: Request, admin: dict = Depends(require_admin)):
         log_path.write_text(template, encoding="utf-8")
         do_sync(wiki)
         log_action(action="activity_log_clear", details=f"Aktivitätslogbuch für Wiki '{wiki}' geleert", user_id=admin["id"], username=admin["username"], request=request)
-        return redirect(f"{BASE_PATH}/wiki/{wiki}/log?success_msg={urlencode('Logbuch erfolgreich geleert!')}")
+        return redirect(f"{BASE_PATH}/audit?success_msg={urlencode('Logbuch zurückgesetzt. Alle Aktivitäten werden im Audit-Log erfasst.')}")
     except Exception as e:
-        return redirect(f"{BASE_PATH}/wiki/{wiki}/log?error_msg={urlencode(f'Fehler beim Leeren des Logbuchs: {e}')}")
+        return redirect(f"{BASE_PATH}/audit?error_msg={urlencode(f'Fehler beim Leeren des Logbuchs: {e}')}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1574,19 +1603,23 @@ def audit_dashboard(
     limit: int = 50,
     offset: int = 0,
     action: str | None = None,
+    category: str | None = None,
     username: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
+    search: str | None = None,
 ):
-    from services.audit import get_logs
+    from services.audit import get_logs, ALL_CATEGORIES
     
     logs, total = get_logs(
         limit=limit,
         offset=offset,
         action=action,
+        category=category,
         username=username,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        search=search,
     )
     
     return render(
@@ -1599,9 +1632,12 @@ def audit_dashboard(
         limit=limit,
         offset=offset,
         action_filter=action,
+        category_filter=category,
+        search_filter=search,
         user_filter=username,
         start_date=start_date,
         end_date=end_date,
+        all_categories=ALL_CATEGORIES,
         success_msg=request.query_params.get("success_msg"),
         error_msg=request.query_params.get("error_msg")
     )

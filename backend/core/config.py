@@ -127,6 +127,8 @@ def load_app_config() -> dict[str, Any]:
         "use_tls": True,
         "recipients": "",
         "registration_enabled": True,
+        "audit_enabled": True,
+        "audit_disabled_categories": [],
     }
     if CONFIG_FILE.exists():
         try:

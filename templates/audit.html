@@ -51,7 +51,20 @@
             <a href="{{ base_path }}/audit" class="text-xs text-primary hover:underline">Filter zurücksetzen</a>
             {% endif %}
         </div>
-        <form action="{{ base_path }}/audit" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+        <form action="{{ base_path }}/audit" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+            <div>
+                <label for="filter-category" class="block text-xs font-semibold text-text-muted mb-1">{{ _('audit.category', 'Kategorie') }}</label>
+                <select id="filter-category" name="category" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+                    <option value="">Alle</option>
+                    {% for cat in all_categories %}
+                    <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filter-search" class="block text-xs font-semibold text-text-muted mb-1">{{ _('audit.search', 'Suche') }}</label>
+                <input type="text" id="filter-search" name="search" value="{{ search_filter|default('') }}" placeholder="Suchbegriff..." class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
+            </div>
             <div>
                 <label for="filter-action" class="block text-xs font-semibold text-text-muted mb-1">Aktion</label>
                 <select id="filter-action" name="action" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-primary-subtle">
@@ -125,6 +138,7 @@
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">#</th>
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">Zeitstempel</th>
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Benutzer</th>
+                        <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Kategorie</th>
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Aktion</th>
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider">Details</th>
                         <th class="px-3 py-2.5 font-semibold text-text-muted text-xs uppercase tracking-wider whitespace-nowrap">IP-Adresse</th>
@@ -133,7 +147,7 @@
                 </thead>
                 <tbody class="divide-y divide-border font-mono text-xs" id="audit-tbody">
                     {% for log in logs %}
-                    <tr class="hover:bg-bg-sunken/50 transition-colors audit-row" data-action="{{ log.action }}">
+                    <tr class="hover:bg-bg-sunken/50 transition-colors audit-row" data-action="{{ log.action }}" data-category="{{ log.category }}">
                         <td class="px-3 py-2.5 text-text-muted select-none">{{ log.id }}</td>
                         <td class="px-3 py-2.5 whitespace-nowrap text-text-secondary">
                             <span class="audit-date" data-ts="{{ log.timestamp }}">{{ log.timestamp }}</span>
@@ -145,6 +159,9 @@
                             {% else %}
                             <span class="text-text-muted italic">system</span>
                             {% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-border text-text-muted">{{ log.category }}</span>
                         </td>
                         <td class="px-3 py-2.5 whitespace-nowrap">
                             <span class="badge-action" data-action="{{ log.action }}">{{ log.action }}</span>

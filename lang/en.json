@@ -658,5 +658,12 @@
     "no_keys": "No API keys yet.",
     "success": "Success:",
     "error": "Error:"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "category": "Category",
+    "categories": "Categories",
+    "search": "Search",
+    "search_placeholder": "Search term..."
   }
 }

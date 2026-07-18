@@ -14,6 +14,7 @@
     <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-users">{{ _('settings.tab_users') }}</button>
     <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-apikeys">{{ _('settings.tab_apikeys') }}</button>
     <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-backup">{{ _('settings.tab_backup') }}</button>
+    <button class="settings-tab px-4 py-2 font-semibold border-b-2 border-transparent text-text-muted" data-tab="tab-audit">Audit</button>
 </div>
 
 <!-- Language -->
@@ -557,6 +558,41 @@
     </div>
 </div>
 
+<!-- Audit Config -->
+<div id="tab-audit" class="settings-tab-content hidden">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
+        <h2 class="text-lg font-semibold mb-2">Audit-Logging</h2>
+        <p class="text-text-secondary text-sm mb-4">Hier kannst du das Protokollieren von Ereignissen im Audit-Log konfigurieren.</p>
+        
+        <form action="{{ base_path }}/settings" method="post" class="space-y-4">
+            <input type="hidden" name="action" value="save_audit_config">
+            
+            <div class="flex items-center gap-2 mb-4">
+                <input type="checkbox" id="audit_enabled" name="audit_enabled" value="1" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if audit_config.get("audit_enabled", True) %}checked{% endif %}>
+                <label for="audit_enabled" class="font-medium text-text">Audit-Logging global aktivieren</label>
+            </div>
+            
+            <h3 class="text-md font-medium text-text mt-4 mb-2">Kategorien</h3>
+            <p class="text-xs text-text-muted mb-3">Wähle ab, um das Logging für bestimmte Kategorien zu deaktivieren.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% set disabled_cats = audit_config.get("audit_disabled_categories", []) %}
+                {% for cat in all_audit_categories %}
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="cat_{{ cat }}" name="audit_categories" value="{{ cat }}" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if cat not in disabled_cats %}checked{% endif %}>
+                    <label for="cat_{{ cat }}" class="text-sm text-text-secondary">{{ cat }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <p class="text-xs text-text-muted italic mt-2">Kategorien ohne Häkchen werden nicht protokolliert.</p>
+            
+            <div class="mt-4 pt-4 border-t border-border text-right">
+                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script type="module" src="{{ base_path }}/static/js/presets.js?v={{ app_version }}"></script>
 <script type="module" src="{{ base_path }}/static/js/update.js?v={{ app_version }}"></script>
 <script>
@@ -572,7 +608,8 @@
       "tab-apikeys": document.getElementById("tab-apikeys"),
       "tab-health": document.getElementById("tab-health"),
       "tab-update": document.getElementById("tab-update"),
-      "tab-backup": document.getElementById("tab-backup")
+      "tab-backup": document.getElementById("tab-backup"),
+      "tab-audit": document.getElementById("tab-audit")
     };
     var tabs = document.querySelectorAll(".settings-tab");
     Object.keys(panels).forEach(function (k) { if (panels[k]) panels[k].classList.add("hidden"); });
@@ -593,7 +630,7 @@
       t.addEventListener("click", function () { switchTab(t.dataset.tab); });
     });
     var params = new URLSearchParams(window.location.search);
-    var map = { language: "tab-language", theme: "tab-theme", config: "tab-config", users: "tab-users", apikeys: "tab-apikeys", health: "tab-health", update: "tab-update", backup: "tab-backup" };
+    var map = { language: "tab-language", theme: "tab-theme", config: "tab-config", users: "tab-users", apikeys: "tab-apikeys", health: "tab-health", update: "tab-update", backup: "tab-backup", audit: "tab-audit" };
     switchTab(map[params.get("tab")] || "tab-language");
   });
 })();

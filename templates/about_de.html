@@ -31,7 +31,7 @@
         <li>⬇️ <strong>Self-Update</strong> – Integrierte Update-Funktion per Klick. Sichert Datenbanken und Konfigurationen vor dem Update sicher nach <code>/tmp</code> und stellt sie danach wieder her.</li>
         <li>🐋 <strong>Docker &amp; UGreen NAS Optimierung</strong> – Speziell für <strong>UGreen NAS (UGOS)</strong> optimiertes Docker-Setup zur automatischen Volume-Erkennung und direkten Kompatibilität. Über die Pfadvariable <code>DOCKER_VOLUME_BASE</code> auch problemlos lokal einsetzbar.</li>
         <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprache, Erscheinungsbild, SMTP, Benutzerverwaltung, API-Schlüssel, Registrierungssteuerung, Gesundheitscheck und Update.</li>
-        <li>🛡️ <strong>Audit-Logging</strong> – SQLite-basiertes Sicherheits-Audit-Trail: Protokolliert lückenlos alle sicherheitsrelevanten Aktionen (Login/Logout, Benutzerverwaltung, API-Key-Aktionen, Seiten-Erstellungen/-Löschungen, Exporte). Erfasst IPv4/IPv6-Adressen und User-Agent. Admins können via <code>/audit</code> filtern, paginieren und Logs nach Jahr/Monat bereinigen. API-Zugriff via <code>/api/v1/system/audit</code> (Admin-API-Key erforderlich).</li>
+        <li>🛡️ <strong>Erweitertes Audit-Logging</strong> – SQLite-basiertes Logging (konfigurierbar pro Kategorie). Protokolliert Suchanfragen, Ingests, API-Keys, Seiten, Wikis, Logins. Mit Dashboard Widget und Kategorie-Filter.</li>
     </ul>
 
     <h2>{{ _('about.version_heading') }}</h2>

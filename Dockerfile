@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ripgrep \
     jq \
+    sqlite3 \
     xz-utils \
     libgomp1 \
     build-essential \

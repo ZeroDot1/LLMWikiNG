@@ -226,10 +226,12 @@ curl -H "X-API-Key: $API_KEY" \
 Query-Parameter:
 - `limit` (default: 50) – Maximale Anzahl Einträge
 - `offset` (default: 0) – Pagination-Offset
-- `action` – Filter auf Aktionstyp (z.B. `login`, `login_failed`, `page_delete`)
+- `action` – Filter auf Aktionstyp (z.B. `login`, `login_failed`, `page_delete`, `search`, `ingest`)
+- `category` – Filter auf Kategorie (z.B. `auth`, `pages`, `search`, `ingest`, `system`)
 - `username` – Filter auf bestimmten Benutzernamen
 - `start_date` – Startzeit (ISO-Format: `YYYY-MM-DD`)
 - `end_date` – Endzeit (ISO-Format: `YYYY-MM-DD`)
+- `search` – Volltextsuche in Details, Username, IP und Aktion
 
 #### 19. Cache-Statistiken abrufen
 ```bash

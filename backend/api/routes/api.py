@@ -337,9 +337,11 @@ def api_system_audit(
     limit: int = 50,
     offset: int = 0,
     action: str | None = None,
+    category: str | None = None,
     username: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
+    search: str | None = None,
     admin: dict = Depends(require_api_admin),
 ):
     from services.audit import get_logs
@@ -347,9 +349,11 @@ def api_system_audit(
         limit=limit,
         offset=offset,
         action=action,
+        category=category,
         username=username,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        search=search
     )
     return {"logs": logs, "total": total, "limit": limit, "offset": offset}
 

@@ -60,7 +60,7 @@
     "all_wiki_pages_heading": "📄 Alle Wiki-Seiten",
     "no_pages_yet": "📭 Noch keine Seiten im Wiki vorhanden.",
     "recent_activities_heading": "📜 Kürzliche Aktivitäten",
-    "show_full_log": "Gesamtes Logbuch anzeigen →",
+    "show_full_log": "Vollständiges Audit-Log anzeigen →",
     "no_activities_yet": "Noch keine Aktivitäten protokolliert.",
     "log_link": "→ Logbuch",
     "stat_wikis": "Wikis",
@@ -658,5 +658,12 @@
     "no_keys": "Noch keine API-Schlüssel vorhanden.",
     "success": "Erfolg:",
     "error": "Fehler:"
+  },
+  "audit": {
+    "title": "Audit-Log",
+    "category": "Kategorie",
+    "categories": "Kategorien",
+    "search": "Suche",
+    "search_placeholder": "Suchbegriff..."
   }
 }

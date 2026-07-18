@@ -68,16 +68,16 @@
       if (rows.length > 0) {
         const counts = {};
         rows.forEach(function (row) {
-          const action = row.getAttribute("data-action") || "unknown";
-          counts[action] = (counts[action] || 0) + 1;
+          const category = row.getAttribute("data-category") || "system";
+          counts[category] = (counts[category] || 0) + 1;
         });
 
         const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-        sorted.forEach(function ([action, count]) {
+        sorted.forEach(function ([category, count]) {
           const card = document.createElement("a");
-          card.href = `?action=${encodeURIComponent(action)}`;
-          card.className = "rounded-lg border border-border bg-surface p-2 text-center hover:border-primary transition-colors";
-          card.innerHTML = `<div class="text-lg font-bold text-text">${count}</div><div class="badge-action mt-1" data-action="${action}">${action}</div>`;
+          card.href = `?category=${encodeURIComponent(category)}`;
+          card.className = "rounded-lg border border-border bg-surface p-2 text-center hover:border-primary transition-colors flex flex-col justify-center";
+          card.innerHTML = `<div class="text-lg font-bold text-text">${count}</div><div class="text-[10px] font-semibold uppercase tracking-wider text-text-muted mt-1 truncate" title="${category}">${category}</div>`;
           summaryContainer.appendChild(card);
         });
 

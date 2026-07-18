@@ -79,16 +79,19 @@
             {% for log in recent_logs %}
             <div class="relative">
                 <div class="absolute -left-[1.6rem] top-1 h-2.5 w-2.5 rounded-full bg-accent border-2 border-surface"></div>
-                <div class="text-xs text-text-muted font-mono">{{ log.date }}</div>
-                <div class="text-sm font-semibold text-text mt-0.5">{{ log.action }}{% if log.details %} · <span class="font-normal text-text-secondary text-xs">{{ log.details }}</span>{% endif %}</div>
-                {% if log.body %}
-                <div class="text-xs text-text-secondary leading-relaxed mt-1 bg-bg-sunken border border-dashed border-border p-2 rounded">{{ log.body.replace('\n', '<br>')|safe }}</div>
-                {% endif %}
+                <div class="text-xs text-text-muted font-mono flex items-center space-x-2">
+                    <span>{{ log.timestamp }}</span>
+                    {% if log.username %}<span class="text-text-secondary">👤 {{ log.username }}</span>{% endif %}
+                </div>
+                <div class="text-sm font-semibold text-text mt-0.5">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-border text-text uppercase tracking-wider mr-1">{{ log.action }}</span>
+                    {% if log.details %}<span class="font-normal text-text-secondary text-xs ml-1">{{ log.details }}</span>{% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
         <div class="text-right mt-3 text-sm">
-            <a href="{{ base_path }}/wiki/{{ current_wiki }}/log" class="font-medium text-primary">{{ _('index.show_full_log') }}</a>
+            <a href="{{ base_path }}/audit" class="font-medium text-primary hover:underline">{{ _('index.show_full_log') }}</a>
         </div>
         {% else %}
         <p class="text-text-muted text-sm">{{ _('index.no_activities_yet') }}</p>

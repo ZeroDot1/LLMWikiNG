@@ -5,6 +5,16 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-07-18
+
+### Added
+- **Erweitertes Audit-Logging**: Alle Systemaktionen inklusive Suchanfragen (`search`), Ingest (`ingest`) werden nun protokolliert.
+- **Kategorien-System für Audit-Logs**: Per-Category Enable/Disable, Logbuch ersetzt durch umfassendes Audit-Log, neues Dashboard Widget.
+- **Settings-Erweiterung**: Neue Audit-Config-Optionen zum individuellen An/Abschalten einzelner Kategorien oder global.
+
+
+
+
 ## [2.7.0] – 2026-07-18
 
 ### Added

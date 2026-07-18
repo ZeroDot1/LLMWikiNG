@@ -44,33 +44,6 @@
     </div>
 </div>
 
-<!-- Bearbeiten-Modal -->
-<div id="wikiEditModal" class="wiki-edit-modal-overlay hidden" onclick="if(event.target===this)closeWikiEditModal()">
-    <div class="wiki-edit-modal">
-        <h3>{{ _('settings.wiki_edit_title') }}</h3>
-        <form id="editWikiForm">
-            <input type="hidden" id="editWikiSlug">
-            <div class="wiki-form-group">
-                <label>{{ _('settings.wiki_name') }}</label>
-                <input type="text" id="editWikiName" required>
-            </div>
-            <div class="wiki-form-group">
-                <label>{{ _('settings.wiki_slug') }}</label>
-                <input type="text" id="editWikiNewSlug" style="font-family: monospace;">
-            </div>
-            <div class="wiki-form-group">
-                <label>{{ _('settings.wiki_description') }}</label>
-                <input type="text" id="editWikiDescription">
-            </div>
-            <p id="wikiEditError" class="wiki-msg wiki-msg-error hidden"></p>
-            <div class="wiki-edit-actions">
-                <button type="button" class="wiki-btn wiki-btn-edit" onclick="closeWikiEditModal()">{{ _('settings.wiki_edit_cancel') }}</button>
-                <button type="submit" class="wiki-btn wiki-btn-primary">{{ _('settings.wiki_edit_save') }}</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
 (function() {
     "use strict";
@@ -79,8 +52,7 @@
     var tableWrap = document.getElementById("wikisTableWrap");
     var summary = document.getElementById("wikisSummary");
     var createForm = document.getElementById("createWikiForm");
-    var editModal = document.getElementById("wikiEditModal");
-    var editForm = document.getElementById("editWikiForm");
+    var editingSlug = null;
 
     function formatBytes(bytes) {
         if (!+bytes) return "0 Bytes";
@@ -97,7 +69,7 @@
     }
 
     function escAttr(s) {
-        return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
     }
 
     function renderSummary(wikis) {
@@ -141,27 +113,50 @@
 
         wikis.forEach(function(wiki) {
             var isMain = wiki.slug === "main";
-            html += '<tr class="hover:bg-bg-sunken/30 transition-colors' + (isMain ? ' wiki-row-main' : '') + '">' +
-                '<td class="py-3.5 px-3">' +
+            var isEditing = (editingSlug === wiki.slug);
+
+            html += '<tr class="hover:bg-bg-sunken/30 transition-colors' + (isMain ? ' wiki-row-main' : '') + (isEditing ? ' wiki-row-editing' : '') + '" data-slug="' + escAttr(wiki.slug) + '">';
+
+            if (isEditing) {
+                /* Inline-Edit-Zustand: Eingabefelder statt Text */
+                html += '<td class="py-2 px-3">' +
+                    '<input type="text" class="wiki-inline-input" id="editName_' + escAttr(wiki.slug) + '" value="' + escAttr(wiki.name) + '">' +
+                    '</td>' +
+                    '<td class="py-2 px-3">' +
+                    '<input type="text" class="wiki-inline-input wiki-inline-input-mono" id="editSlug_' + escAttr(wiki.slug) + '" value="' + escAttr(wiki.slug) + '">' +
+                    '</td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.page_count || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.file_count || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text-secondary">' + formatBytes(wiki.size || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 text-text-muted text-xs">' + (wiki.last_modified ? escHtml(wiki.last_modified) : '—') + '</td>' +
+                    '<td class="py-3.5 px-3 text-right whitespace-nowrap">' +
+                        '<button class="wiki-btn wiki-btn-primary" onclick="saveInlineEdit(\'' + escAttr(wiki.slug) + '\')" title="Speichern">&#10003; {{ _("settings.wiki_edit_save") }}</button> ' +
+                        '<button class="wiki-btn wiki-btn-edit" onclick="cancelInlineEdit()" title="Abbrechen">&#10005; {{ _("settings.wiki_edit_cancel") }}</button>' +
+                        '<span id="editError_' + escAttr(wiki.slug) + '" class="wiki-inline-error hidden"></span>' +
+                    '</td></tr>';
+            } else {
+                /* Normaler Anzeige-Zustand */
+                html += '<td class="py-3.5 px-3">' +
                     '<div class="font-semibold text-text">' + escHtml(wiki.name) + '</div>' +
                     (wiki.description ? '<div class="text-xs text-text-muted mt-0.5 truncate max-w-[240px]">' + escHtml(wiki.description) + '</div>' : '') +
-                '</td>' +
-                '<td class="py-3.5 px-3"><code class="text-xs text-text-secondary bg-bg-sunken px-1.5 py-0.5 rounded border border-border">' + escHtml(wiki.slug) + '</code></td>' +
-                '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.page_count || 0) + '</td>' +
-                '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.file_count || 0) + '</td>' +
-                '<td class="py-3.5 px-3 font-mono text-text-secondary">' + formatBytes(wiki.size || 0) + '</td>' +
-                '<td class="py-3.5 px-3 text-text-muted text-xs">' + (wiki.last_modified ? escHtml(wiki.last_modified) : '—') + '</td>' +
-                '<td class="py-3.5 px-3 text-right whitespace-nowrap">' +
-                    '<a href="' + BASE + '/wiki/' + escAttr(wiki.slug) + '/" class="wiki-btn wiki-btn-primary" title="{{ _("settings.wiki_action_open") }}">{{ _("settings.wiki_action_open") }}</a> ' +
-                    '<button class="wiki-btn wiki-btn-edit" onclick="openWikiEditModal(\'' + escAttr(wiki.slug) + '\', \'' + escAttr(wiki.name) + '\', \'' + escAttr(wiki.description || "") + '\')" title="{{ _("settings.wiki_action_edit") }}">{{ _("settings.wiki_action_edit") }}</button> ';
+                    '</td>' +
+                    '<td class="py-3.5 px-3"><code class="text-xs text-text-secondary bg-bg-sunken px-1.5 py-0.5 rounded border border-border">' + escHtml(wiki.slug) + '</code></td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.page_count || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text">' + (wiki.file_count || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 font-mono text-text-secondary">' + formatBytes(wiki.size || 0) + '</td>' +
+                    '<td class="py-3.5 px-3 text-text-muted text-xs">' + (wiki.last_modified ? escHtml(wiki.last_modified) : '—') + '</td>' +
+                    '<td class="py-3.5 px-3 text-right whitespace-nowrap">' +
+                        '<a href="' + BASE + '/wiki/' + escAttr(wiki.slug) + '/" class="wiki-btn wiki-btn-primary" title="{{ _("settings.wiki_action_open") }}">{{ _("settings.wiki_action_open") }}</a> ' +
+                        '<button class="wiki-btn wiki-btn-edit" onclick="startInlineEdit(\'' + escAttr(wiki.slug) + '\')" title="{{ _("settings.wiki_action_edit") }}">{{ _("settings.wiki_action_edit") }}</button> ';
 
-            if (isMain) {
-                html += '<span class="wiki-btn wiki-btn-main-badge">{{ _("settings.wiki_default_badge") }}</span>';
-            } else {
-                html += '<button class="wiki-btn wiki-btn-danger" onclick="deleteWiki(\'' + escAttr(wiki.slug) + '\')" title="{{ _("settings.wiki_action_delete") }}">{{ _("settings.wiki_action_delete") }}</button>';
+                if (isMain) {
+                    html += '<span class="wiki-btn wiki-btn-main-badge">{{ _("settings.wiki_default_badge") }}</span>';
+                } else {
+                    html += '<button class="wiki-btn wiki-btn-danger" onclick="deleteWiki(\'' + escAttr(wiki.slug) + '\')" title="{{ _("settings.wiki_action_delete") }}">{{ _("settings.wiki_action_delete") }}</button>';
+                }
+
+                html += '</td></tr>';
             }
-
-            html += '</td></tr>';
         });
 
         html += '</tbody></table></div>';
@@ -176,6 +171,7 @@
             .then(function(data) {
                 var wikis = data.wikis || [];
                 renderSummary(wikis);
+                window._currentWikis = wikis;
                 renderTable(wikis);
             })
             .catch(function(err) {
@@ -216,54 +212,62 @@
         });
     });
 
-    /* ── Bearbeiten ── */
-    window.openWikiEditModal = function(slug, name, description) {
-        document.getElementById("editWikiSlug").value = slug;
-        document.getElementById("editWikiName").value = name;
-        document.getElementById("editWikiNewSlug").value = slug;
-        document.getElementById("editWikiDescription").value = description;
-        document.getElementById("wikiEditError").classList.add("hidden");
-        editModal.classList.remove("hidden");
+    /* ── Inline-Edit: Start ── */
+    window.startInlineEdit = function(slug) {
+        editingSlug = slug;
+        renderTable(window._currentWikis || []);
+        var nameInput = document.getElementById("editName_" + slug);
+        if (nameInput) nameInput.focus();
     };
 
-    window.closeWikiEditModal = function() {
-        editModal.classList.add("hidden");
+    /* ── Inline-Edit: Abbrechen ── */
+    window.cancelInlineEdit = function() {
+        editingSlug = null;
+        renderTable(window._currentWikis || []);
     };
 
-    editForm.addEventListener("submit", function(e) {
-        e.preventDefault();
-        var errEl = document.getElementById("wikiEditError");
-        errEl.classList.add("hidden");
+    /* ── Inline-Edit: Speichern ── */
+    window.saveInlineEdit = function(oldSlug) {
+        var nameInput = document.getElementById("editName_" + oldSlug);
+        var slugInput = document.getElementById("editSlug_" + oldSlug);
+        var errEl = document.getElementById("editError_" + oldSlug);
 
-        var slug = document.getElementById("editWikiSlug").value;
-        var name = document.getElementById("editWikiName").value.trim();
-        var newSlug = document.getElementById("editWikiNewSlug").value.trim();
-        var description = document.getElementById("editWikiDescription").value.trim();
+        var newName = (nameInput.value || "").trim();
+        var newSlug = (slugInput.value || "").trim();
 
-        if (!name) return;
+        if (!newName) {
+            nameInput.classList.add("wiki-inline-input-error");
+            return;
+        }
+        if (!newSlug) {
+            slugInput.classList.add("wiki-inline-input-error");
+            return;
+        }
 
-        fetch(BASE + "/api/v1/wikis/" + slug, {
+        fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(oldSlug), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name, slug: newSlug, description: description })
+            body: JSON.stringify({ name: newName, slug: newSlug, description: "" })
         })
         .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
         .then(function(r) {
             if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_edit_error') }}");
-            closeWikiEditModal();
+            editingSlug = null;
             loadWikis();
         })
         .catch(function(err) {
-            errEl.textContent = err.message;
-            errEl.classList.remove("hidden");
+            if (errEl) {
+                errEl.textContent = err.message;
+                errEl.classList.remove("hidden");
+            }
         });
-    });
+    };
 
     /* ── Löschen ── */
     window.deleteWiki = function(slug) {
         if (!confirm("{{ _('settings.wiki_delete_confirm') }}")) return;
 
-        fetch(BASE + "/api/v1/wikis/" + slug, { method: "DELETE" })
+        fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(slug), { method: "DELETE" })
             .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
             .then(function(r) {
                 if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_delete_error') }}");

@@ -292,6 +292,45 @@
   font-family: monospace;
 }
 
+/* ── Inline-Edit-Zustand ── */
+.wiki-row-editing {
+  background: rgba(122, 162, 247, 0.06);
+}
+
+.wiki-inline-input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--color-primary, #7aa2f7);
+  background: var(--color-bg-sunken, #13141c);
+  color: var(--color-text, #c0caf5);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.wiki-inline-input:focus {
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.25);
+  border-color: var(--color-primary-hover, #89b4fa);
+}
+
+.wiki-inline-input-mono {
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.wiki-inline-input-error {
+  border-color: #f87171;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.wiki-inline-error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: #f87171;
+}
+
 /* ── Responsive: Tabelle auf Mobile ── */
 @media (max-width: 768px) {
   .wiki-form-row {

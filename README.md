@@ -180,6 +180,8 @@ curl -X POST \
 | `GET`  | `/api/v1/system/status` | API key (admin) |
 | `POST` | `/api/v1/system/sync` | API key (admin) |
 | `GET`  | `/api/v1/system/audit` | API key (admin) |
+| `GET`  | `/api/v1/system/update/check` | API key (admin) |
+| `POST` | `/api/v1/system/update/run` | API key (admin) |
 | `GET`  | `/api/v1/users` | API key (admin) |
 | `POST` | `/api/v1/users` | API key (admin) |
 | `DELETE` | `/api/v1/users/<id>` | API key (admin) |

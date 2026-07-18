@@ -95,6 +95,8 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System metrics &amp; traffic logs (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync all wiki indexes (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Retrieve audit logs – filterable by action, user, date range (Admin only)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/update/check</code></td><td class="p-2">Check if update is available (Admin only)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/update/run</code></td><td class="p-2">Run system update (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">List users (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Create user (Admin only)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/users/&lt;id&gt;</code></td><td class="p-2">Delete user (Admin only)</td></tr>
@@ -167,6 +169,14 @@ curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/api-keys"
 curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   -d '{"name":"New Key","require_password":false,"scopes":["read","write"]}' \
   "$SERVER_URL/api/v1/api-keys"</code></pre>
+        </div>
+        <div>
+          <strong>10. Check &amp; run system update (Admin only):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># Check if update is available:
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/check"
+
+# Run the update:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/run"</code></pre>
         </div>
       </div>
     </div>

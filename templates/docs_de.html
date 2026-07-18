@@ -99,6 +99,8 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System &amp; Traffic (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync aller Wikis (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Audit-Logs abrufen – filterbar nach Aktion, Benutzer, Zeitraum (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/update/check</code></td><td class="p-2">Update-Verfügbarkeit prüfen (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/update/run</code></td><td class="p-2">Update ausführen (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Benutzer (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Benutzer anlegen (Admin)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/users/&lt;id&gt;</code></td><td class="p-2">Benutzer löschen (Admin)</td></tr>
@@ -171,6 +173,14 @@ curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/api-keys"
 curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   -d '{"name":"Neuer Key","require_password":false,"scopes":["read","write"]}' \
   "$SERVER_URL/api/v1/api-keys"</code></pre>
+        </div>
+        <div>
+          <strong>10. Update prüfen &amp; ausführen (nur Admin):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># Update-Verfügbarkeit prüfen:
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/check"
+
+# Update ausführen:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/run"</code></pre>
         </div>
       </div>
     </div>

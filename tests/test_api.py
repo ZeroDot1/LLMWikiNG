@@ -861,6 +861,144 @@ class TestSystemApi:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# K. SYSTEM UPDATE API
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestSystemUpdateApi:
+    """Tests für System-Update-API-Endpunkte (check + run)."""
+
+    def test_update_check_returns_version_info(self, api_env, monkeypatch):
+        """GET /system/update/check liefert Versionen und Status."""
+        _, admin_key, _, client = api_env
+
+        def mock_run(cmd, **kwargs):
+            class FakeProc:
+                returncode = 0
+                stdout = "2.11.0"
+                stderr = ""
+            return FakeProc()
+
+        monkeypatch.setattr("subprocess.run", mock_run)
+
+        resp = client.get(
+            "/LLMWikiNG/api/v1/system/update/check",
+            headers={"X-API-Key": admin_key},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert "local_version" in data
+        assert "remote_version" in data
+        assert "update_available" in data
+        assert "up_to_date" in data
+        assert isinstance(data["update_available"], bool)
+        assert isinstance(data["up_to_date"], bool)
+
+    def test_update_check_requires_admin(self, api_env):
+        """Nur Admins dürfen Update-Check ausführen."""
+        _, _, editor_key, client = api_env
+        resp = client.get(
+            "/LLMWikiNG/api/v1/system/update/check",
+            headers={"X-API-Key": editor_key},
+        )
+        assert resp.status_code == 403
+
+    def test_update_check_no_key_returns_401(self, api_env):
+        """Ohne API-Key wird 401 zurückgegeben."""
+        _, _, _, client = api_env
+        resp = client.get("/LLMWikiNG/api/v1/system/update/check")
+        assert resp.status_code == 401
+
+    def test_update_run_executes_update(self, api_env, monkeypatch, tmp_path):
+        """POST /system/update/run führt das Update-Skript aus."""
+        _, admin_key, _, client = api_env
+
+        # update.sh muss im PROJECT_ROOT existieren – fake anlegen
+        import core.config as cfg
+        fake_script = cfg.PROJECT_ROOT / "update.sh"
+        fake_script.write_text("#!/bin/bash\necho 'done'", encoding="utf-8")
+
+        def mock_run(cmd, **kwargs):
+            class FakeProc:
+                returncode = 0
+                stdout = "===========================================================\n"
+                stdout += "           Update abgeschlossen!\n"
+                stdout += "===========================================================\n"
+                stdout += "  2.10.0 -> 2.11.0\n"
+                stderr = ""
+            return FakeProc()
+
+        monkeypatch.setattr("subprocess.run", mock_run)
+
+        resp = client.post(
+            "/LLMWikiNG/api/v1/system/update/run",
+            headers={"X-API-Key": admin_key},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert "old_version" in data
+        assert "new_version" in data
+        assert "output" in data
+
+    def test_update_run_requires_admin(self, api_env, monkeypatch):
+        """Nur Admins dürfen Updates ausführen."""
+        _, _, editor_key, client = api_env
+        resp = client.post(
+            "/LLMWikiNG/api/v1/system/update/run",
+            headers={"X-API-Key": editor_key},
+        )
+        assert resp.status_code == 403
+
+    def test_update_run_no_key_returns_401(self, api_env):
+        """Ohne API-Key wird 401 zurückgegeben."""
+        _, _, _, client = api_env
+        resp = client.post("/LLMWikiNG/api/v1/system/update/run")
+        assert resp.status_code == 401
+
+    def test_update_run_timeout(self, api_env, monkeypatch):
+        """Timeout bei Update-Skript liefert 504."""
+        _, admin_key, _, client = api_env
+
+        # update.sh muss existieren
+        import core.config as cfg
+        fake_script = cfg.PROJECT_ROOT / "update.sh"
+        fake_script.write_text("#!/bin/bash\necho 'done'", encoding="utf-8")
+
+        def mock_run_timeout(cmd, **kwargs):
+            import subprocess as _sp
+            raise _sp.TimeoutExpired(cmd, timeout=300)
+
+        monkeypatch.setattr("subprocess.run", mock_run_timeout)
+
+        resp = client.post(
+            "/LLMWikiNG/api/v1/system/update/run",
+            headers={"X-API-Key": admin_key},
+        )
+        assert resp.status_code == 504
+
+    def test_update_check_error_fetching(self, api_env, monkeypatch):
+        """502 wenn Git-Remote-Version nicht abrufbar ist."""
+        _, admin_key, _, client = api_env
+
+        def mock_run_fail(cmd, **kwargs):
+            class FakeProc:
+                returncode = 1
+                stdout = ""
+                stderr = "fatal: remote error"
+            return FakeProc()
+
+        monkeypatch.setattr("subprocess.run", mock_run_fail)
+
+        resp = client.get(
+            "/LLMWikiNG/api/v1/system/update/check",
+            headers={"X-API-Key": admin_key},
+        )
+        assert resp.status_code == 502
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # L. RAW INGEST & PENDING (V1 API)
 # ═══════════════════════════════════════════════════════════════════════════════
 

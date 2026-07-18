@@ -233,24 +233,55 @@ Query-Parameter:
 - `end_date` – Endzeit (ISO-Format: `YYYY-MM-DD`)
 - `search` – Volltextsuche in Details, Username, IP und Aktion
 
-#### 19. Cache-Statistiken abrufen
+#### 20. Update-Verfügbarkeit prüfen (Admin-API-Key erforderlich)
+```bash
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/check"
+```
+Antwort:
+```json
+{
+  "ok": true,
+  "local_version": "2.11.0",
+  "remote_version": "2.12.0",
+  "update_available": true,
+  "up_to_date": false
+}
+```
+
+#### 21. Update ausführen (Admin-API-Key erforderlich)
+```bash
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/run"
+```
+Antwort:
+```json
+{
+  "ok": true,
+  "old_version": "2.11.0",
+  "new_version": "2.12.0",
+  "updated": true,
+  "output": "... Update-Log ..."
+}
+```
+**Hinweis:** Das Update-Skript sichert Benutzerdaten, führt `git reset --hard origin/main` aus und installiert Python-Abhängigkeiten. Timeout: 300 Sekunden.
+
+#### 22. Cache-Statistiken abrufen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/cache/stats"
 ```
 
-#### 20. In-Memory Cache leeren
+#### 23. In-Memory Cache leeren
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
   "$SERVER_URL/api/v1/cache/clear"
 ```
 
-#### 21. Benutzer auflisten
+#### 24. Benutzer auflisten
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/users"
 ```
 
-#### 22. Neuen Benutzer anlegen
+#### 25. Neuen Benutzer anlegen
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -259,7 +290,7 @@ curl -X POST \
   "$SERVER_URL/api/v1/users"
 ```
 
-#### 23. Benutzer löschen
+#### 26. Benutzer löschen
 ```bash
 # Ersetze USER_ID durch die ID aus der Benutzerliste
 curl -X DELETE \
@@ -267,12 +298,12 @@ curl -X DELETE \
   "$SERVER_URL/api/v1/users/USER_ID"
 ```
 
-#### 24. API-Keys auflisten
+#### 27. API-Keys auflisten
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/api-keys"
 ```
 
-#### 25. Neuen API-Key generieren
+#### 28. Neuen API-Key generieren
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -281,7 +312,7 @@ curl -X POST \
   "$SERVER_URL/api/v1/api-keys"
 ```
 
-#### 26. API-Key löschen/widerrufen
+#### 29. API-Key löschen/widerrufen
 ```bash
 # Ersetze KEY_ID durch die ID aus der API-Key-Liste
 curl -X DELETE \

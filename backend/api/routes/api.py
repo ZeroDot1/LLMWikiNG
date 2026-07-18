@@ -458,6 +458,97 @@ def api_system_audit(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# System Update API
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/system/update/check")
+def api_update_check(admin: dict = Depends(require_api_admin)):
+    """Prüft, ob ein Update auf GitHub verfügbar ist.
+
+    Führt ``git fetch origin`` aus und vergleicht die lokale VERSION-Datei
+    mit ``origin/main:VERSION``.
+    """
+    version_file = PROJECT_ROOT / "VERSION"
+    local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+    try:
+        subprocess.run(
+            ["git", "fetch", "origin"],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(PROJECT_ROOT),
+        )
+        proc = subprocess.run(
+            ["git", "show", "origin/main:VERSION"],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_ROOT),
+        )
+        remote_version = proc.stdout.strip() if proc.returncode == 0 else None
+    except Exception:
+        remote_version = None
+
+    if not remote_version:
+        raise HTTPException(status_code=502, detail="Konnte Version von GitHub nicht abrufen.")
+
+    return {
+        "ok": True,
+        "local_version": local_version,
+        "remote_version": remote_version,
+        "update_available": local_version != remote_version,
+        "up_to_date": local_version == remote_version,
+    }
+
+
+@router.post("/system/update/run")
+def api_update_run(admin: dict = Depends(require_api_admin)):
+    """Führt das Update via ``update.sh`` aus.
+
+    Das Skript sichert Benutzerdaten, führt ``git reset --hard origin/main``
+    aus und installiert Python-Abhängigkeiten. Der Output wird bereinigt
+    (ANSI-Farbcodes entfernt) zurückgegeben.
+    """
+    update_script = PROJECT_ROOT / "update.sh"
+    if not update_script.exists():
+        raise HTTPException(status_code=404, detail="update.sh nicht gefunden.")
+
+    # Aktuelle Version vor dem Update auslesen
+    version_file = PROJECT_ROOT / "VERSION"
+    old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+    try:
+        proc = subprocess.run(
+            [str(update_script)],
+            capture_output=True, text=True, timeout=300,
+            cwd=str(PROJECT_ROOT),
+        )
+        raw_output = proc.stdout + proc.stderr
+        # ANSI-Farbcodes entfernen
+        clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
+
+        # Neue Version nach dem Update auslesen
+        new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+        log_action(
+            action="system_update",
+            details=f"Update von {old_version} nach {new_version} ausgeführt",
+            username=admin.get("username"),
+            user_id=admin.get("id"),
+        )
+
+        return {
+            "ok": True,
+            "old_version": old_version,
+            "new_version": new_version,
+            "updated": old_version != new_version,
+            "output": clean_output,
+        }
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Update-Skript hat 300 Sekunden überschritten.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Update fehlgeschlagen: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # D. Direct Wiki API Endpoints (e.g. /LLMWikiNG/wiki/{wiki_name}/api/...)
 # ═══════════════════════════════════════════════════════════════════════════════
 

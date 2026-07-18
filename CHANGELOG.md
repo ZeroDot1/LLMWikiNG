@@ -5,6 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.1] - 2026-07-19
+
+### Added
+- **System-Update API-Endpunkte** (`backend/api/routes/api.py`): Zwei neue Admin-Endpunkte für die automatisierte Update-Verwaltung über die JSON-API:
+  - `GET /api/v1/system/update/check` – Prüft, ob ein Update auf GitHub verfügbar ist (vergleicht lokale VERSION mit `origin/main:VERSION`). Liefert `local_version`, `remote_version`, `update_available` und `up_to_date`.
+  - `POST /api/v1/system/update/run` – Führt das komplette Update via `update.sh` aus (Backup, Git-Reset, Dependency-Install, Daten-Restore). Gibt `old_version`, `new_version`, `updated`-Status und den bereinigten Konsolen-Output zurück.
+  - Beide Endpunkte sind Admin-only (erfordern API-Key mit Admin-Rechten).
+- **8 neue Update-API-Tests** (`tests/test_api.py`, Klasse `TestSystemUpdateApi`): Testet Version-Check, Update-Ausführung, Admin-Berechtigung, 401 bei fehlendem Key, 403 für Editoren, 504 bei Timeout und 502 bei Git-Fehler.
+
+---
+
 ## [2.11.0] - 2026-07-19
 
 ### Changed

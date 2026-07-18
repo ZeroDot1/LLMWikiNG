@@ -60,25 +60,41 @@ Ersetze in den Beispielen die Variablen `$SERVER_URL`, `$API_KEY`, `$API_PASSWOR
 
 ### A. Direktes Wiki-Management (Multi-Wiki Support)
 
-#### 1. Direkter Ingest (Datei in spezifisches Wiki hochladen & sofort verarbeiten)
-Lädt eine Datei hoch und führt direkt das LLM-Ingest-Skript für dieses spezifische Wiki aus (jede Datei wird isoliert im entsprechenden Wiki verarbeitet).
+#### 1. Direkter Ingest (Datei, URL oder Text in spezifisches Wiki hochladen & sofort verarbeiten)
+Lädt Daten hoch und führt direkt das LLM-Ingest-Skript für dieses spezifische Wiki aus.
+
+**a) Datei-Upload:**
 ```bash
-# Mit Passwort-Schutz:
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
   -H "X-API-Password: $API_PASSWORD" \
   -F "file=@/pfad/zu/deiner/datei.md" \
+  -F "title=Optionale Dateibezeichnung" \
   "$SERVER_URL/wiki/$WIKI_NAME/api/ingest"
+```
 
-# Ohne Passwort-Schutz:
+**b) URL-Ingest (Lädt URL herunter, konvertiert in Markdown und ingestiert):**
+```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
-  -F "file=@/pfad/zu/deiner/datei.md" \
+  -H "X-API-Password: $API_PASSWORD" \
+  -F "url=https://example.com/artikellink" \
+  -F "title=Mein URL Ingest" \
+  "$SERVER_URL/wiki/$WIKI_NAME/api/ingest"
+```
+
+**c) Reiner Text-Ingest (Text-Paste):**
+```bash
+curl -X POST \
+  -H "X-API-Key: $API_KEY" \
+  -H "X-API-Password: $API_PASSWORD" \
+  -F "text=# Überschrift\nInhalt des kopierten Texts..." \
+  -F "title=Text-Paste-Titel" \
   "$SERVER_URL/wiki/$WIKI_NAME/api/ingest"
 ```
 
 #### 2. Direktes Syncen
-Synchronisiert Vektor-Embeddings und Index des Wikis.
+Synchronisiert Vektor-Embeddings und den Suchindex des Wikis.
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -122,7 +138,7 @@ curl -X POST \
   "$SERVER_URL/api/v1/wikis/$WIKI_NAME/pages/llm-wiki/export"
 ```
 
-#### 8. Rohdatei ins Archiv hochladen
+#### 8. Rohdatei ins Archiv hochladen (ohne sofortige Ingest-Verarbeitung)
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -135,7 +151,7 @@ curl -X POST \
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI_NAME/pending"
 ```
 
-#### 10. Ausstehende Ingests verarbeiten
+#### 10. Ausstehende Ingests verarbeiten (Startet Hintergrundprozess)
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -147,48 +163,66 @@ curl -X POST \
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/search?q=Suchbegriff&wiki=$WIKI_NAME"
 ```
 
-#### 12. Wissensgraph-Daten abrufen
+#### 12. Wissensgraph-Daten abrufen (Gesamter Graph)
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI_NAME/graph"
 ```
 
-#### 13. Wiki-Statistiken abrufen
+#### 13. Wissensgraph-Daten paginiert abrufen (Für große Wikis)
+```bash
+# Holt Seite 0 mit max. 200 Knoten, optional gefiltert nach einem Tag
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI_NAME/graph/paginated?page=0&page_size=200&tag=Concept"
+```
+
+#### 14. Wiki-Statistiken abrufen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI_NAME/stats"
 ```
 
-#### 14. Linter ausführen
+#### 15. Linter ausführen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/wikis/$WIKI_NAME/lint"
 ```
 
 ---
 
-### C. System- & Admin-Routen (Nur für Admin-Keys)
+### C. System-, Admin- & Cache-Routen (Nur für Admin-Keys)
 
-#### 15. Server-Status abrufen
+#### 16. Server-Status abrufen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/status"
 ```
 
-#### 16. Systemstatus & Traffic abrufen
+#### 17. Systemstatus & Traffic abrufen
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/status"
 ```
 
-#### 17. Alle Wikis synchronisieren
+#### 18. Alle Wikis synchronisieren
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
   "$SERVER_URL/api/v1/system/sync"
 ```
 
-#### 18. Benutzer auflisten
+#### 19. Cache-Statistiken abrufen
+```bash
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/cache/stats"
+```
+
+#### 20. In-Memory Cache leeren
+```bash
+curl -X POST \
+  -H "X-API-Key: $API_KEY" \
+  "$SERVER_URL/api/v1/cache/clear"
+```
+
+#### 21. Benutzer auflisten
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/users"
 ```
 
-#### 19. Neuen Benutzer anlegen
+#### 22. Neuen Benutzer anlegen
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -197,7 +231,7 @@ curl -X POST \
   "$SERVER_URL/api/v1/users"
 ```
 
-#### 20. Benutzer löschen
+#### 23. Benutzer löschen
 ```bash
 # Ersetze USER_ID durch die ID aus der Benutzerliste
 curl -X DELETE \
@@ -205,12 +239,12 @@ curl -X DELETE \
   "$SERVER_URL/api/v1/users/USER_ID"
 ```
 
-#### 21. API-Keys auflisten
+#### 24. API-Keys auflisten
 ```bash
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/api-keys"
 ```
 
-#### 22. Neuen API-Key generieren
+#### 25. Neuen API-Key generieren
 ```bash
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
@@ -219,7 +253,7 @@ curl -X POST \
   "$SERVER_URL/api/v1/api-keys"
 ```
 
-#### 23. API-Key löschen/widerrufen
+#### 26. API-Key löschen/widerrufen
 ```bash
 # Ersetze KEY_ID durch die ID aus der API-Key-Liste
 curl -X DELETE \
@@ -249,4 +283,3 @@ export LLMWIKI_API_KEY="llmw_dein_schluessel"
 export LLMWIKI_SERVER_URL="http://localhost:8081/LLMWikiNG"
 export LLMWIKI_API_PASSWORD="optionales_passwort"
 ```
-

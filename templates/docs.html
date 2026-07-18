@@ -195,6 +195,29 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   </section>
 
   <section>
+    <h2 class="text-2xl font-semibold mb-3">🐋 Docker &amp; UGreen NAS</h2>
+    <p class="text-text-secondary">The Docker configuration is explicitly optimized for <strong>UGreen NAS (UGOS)</strong> to guarantee out-of-the-box compatibility. The file structure is automatically set up under <code>volume1/docker/llmwiking/</code>.</p>
+    <h3 class="text-lg font-semibold mt-3 mb-1">UGreen NAS (UGOS) Setup:</h3>
+    <p class="text-text-secondary">When importing the image into the UGreen Container Manager, the following volumes are pre-defined:</p>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li><code>/app/data</code> ➜ <code>/volume1/docker/llmwiking/data</code> (User &amp; API-Key DBs)</li>
+      <li><code>/app/wikis</code> ➜ <code>/volume1/docker/llmwiking/wikis</code> (Wiki directories)</li>
+      <li><code>/app/raw</code> ➜ <code>/volume1/docker/llmwiking/raw</code> (Raw sources)</li>
+      <li><code>/app/output_docs</code> ➜ <code>/volume1/docker/llmwiking/output_docs</code> (Document exports)</li>
+    </ul>
+    <h3 class="text-lg font-semibold mt-3 mb-1">Local Deployment &amp; Development:</h3>
+    <p class="text-text-secondary">To run the Docker setup locally or on another host without file-over-directory mount conflicts (specifically with <code>config.json</code>), use the <code>DOCKER_VOLUME_BASE</code> environment variable:</p>
+    <ol class="list-decimal list-inside space-y-1 text-text-secondary">
+      <li>Create a local <code>.env</code> file in the project root:
+        <pre class="mt-1"><code>DOCKER_VOLUME_BASE=.</code></pre>
+      </li>
+      <li>Start the containers:
+        <pre class="mt-1"><code>docker compose up --build</code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <section>
     <h2 class="text-2xl font-semibold mb-3">🎨 Frontend (Tailwind CSS v4)</h2>
     <p class="text-text-secondary">The styling is built via a CSS-First compiler pipeline (using <code>@theme</code> directives with oklch values, Dark mode media-controls, and responsive parameters):</p>
     <pre class="mt-2"><code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code></pre>

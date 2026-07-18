@@ -202,6 +202,29 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   </section>
 
   <section>
+    <h2 class="text-2xl font-semibold mb-3">🐋 Docker &amp; UGreen NAS</h2>
+    <p class="text-text-secondary">Das Docker-Setup ist speziell für <strong>UGreen NAS-Systeme (UGOS)</strong> optimiert, um eine reibungslose Kompatibilität zu gewährleisten. Die Ordnerstruktur wird dabei automatisch unter <code>volume1/docker/llmwiking/</code> abgelegt.</p>
+    <h3 class="text-lg font-semibold mt-3 mb-1">UGreen NAS (UGOS) Einrichtung:</h3>
+    <p class="text-text-secondary">Beim Importieren des Images in den UGreen Container Manager werden folgende Volumes vordefiniert:</p>
+    <ul class="list-disc list-inside space-y-1 text-text-secondary">
+      <li><code>/app/data</code> ➜ <code>/volume1/docker/llmwiking/data</code> (Benutzer und API-Keys)</li>
+      <li><code>/app/wikis</code> ➜ <code>/volume1/docker/llmwiking/wikis</code> (Wiki-Inhalte)</li>
+      <li><code>/app/raw</code> ➜ <code>/volume1/docker/llmwiking/raw</code> (Rohquellen)</li>
+      <li><code>/app/output_docs</code> ➜ <code>/volume1/docker/llmwiking/output_docs</code> (Dokument-Exporte)</li>
+    </ul>
+    <h3 class="text-lg font-semibold mt-3 mb-1">Lokale Ausführung &amp; Entwicklung:</h3>
+    <p class="text-text-secondary">Um das Setup auf einem anderen Host (z. B. lokal) auszuführen, ohne dass Mount-Fehler (z. B. durch <code>config.json</code>) auftreten, kann die Umgebungsvariable <code>DOCKER_VOLUME_BASE</code> genutzt werden:</p>
+    <ol class="list-decimal list-inside space-y-1 text-text-secondary">
+      <li>Erstelle eine lokale <code>.env</code>-Datei im Projektverzeichnis:
+        <pre class="mt-1"><code>DOCKER_VOLUME_BASE=.</code></pre>
+      </li>
+      <li>Starte den Container:
+        <pre class="mt-1"><code>docker compose up --build</code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <section>
     <h2 class="text-2xl font-semibold mb-3">🎨 Frontend (Tailwind CSS v4)</h2>
     <p class="text-text-secondary">Das CSS wird über eine CSS-First-Pipeline gebaut
       (<code>@theme</code> mit oklch-Design-Tokens, Dark Mode, responsiv):</p>

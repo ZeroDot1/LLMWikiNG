@@ -303,6 +303,32 @@ cd frontend && npm install && npm run build   # produces static/css/tailwind-bui
 `base.html` includes exclusively `static/css/tailwind-build.css`; all
 JS is located as ES modules under `static/js/` (app.js, navigation.js, auth.js, editor.js, graph.js …).
 
+## 🐋 Docker & UGreen NAS Deployment
+
+The project provides direct support for Docker and is explicitly optimized for **UGreen NAS (UGOS)** to ensure out-of-the-box compatibility.
+
+### UGreen NAS (UGOS) Setup
+When importing the exported image into the UGreen Container Manager, the system automatically detects the pre-defined volumes from the `Dockerfile` and maps them correctly under `volume1/docker/llmwiking`:
+* `/app/data` -> `/volume1/docker/llmwiking/data` (user & API-key databases)
+* `/app/wikis` -> `/volume1/docker/llmwiking/wikis` (all wiki directories)
+* `/app/raw` -> `/volume1/docker/llmwiking/raw` (unprocessed sources)
+* `/app/output_docs` -> `/volume1/docker/llmwiking/output_docs` (exported documents)
+
+To run it via Docker Compose on your UGreen NAS, the default paths in `docker-compose.yml` are pre-configured to point directly to these directories.
+
+### Local Development / Alternative Host Setup
+If you want to build and run the Docker container locally on another host system, you can use the configurable environment variable `DOCKER_VOLUME_BASE` in the `docker-compose.yml`.
+
+1. Create a local `.env` file in the project root:
+   ```bash
+   DOCKER_VOLUME_BASE=.
+   ```
+2. Run your compose setup:
+   ```bash
+   docker compose up --build
+   ```
+This will mount the files and folders relative to the current project directory (preventing directory-over-file mount issues with `config.json` on local hosts).
+
 ## ⚙️ Configuration
 
 The settings of the LLM backend can be controlled via environment variables or stored directly in the configuration `.agy.yaml`:

@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] – 2026-07-18
+
+### Changed
+- **Konfigurierbare Docker-Volume-Pfade (`docker-compose.yml`)**: Einführung der Umgebungsvariable `${DOCKER_VOLUME_BASE}` (Standardwert: `/volume1/docker/llmwiking`) für Volume-Mounts. Dies ermöglicht lokale Ausführung mit relativen Pfaden (z.B. über eine lokale `.env` mit `DOCKER_VOLUME_BASE=.`) bei gleichzeitiger direkter Out-of-the-Box-Kompatibilität mit **UGreen NAS (UGOS)**.
+- **Fehlerbehebung bei Docker-Volume-Instruktion (`Dockerfile`)**: Die Datei `config.json` wurde aus der `VOLUME`-Instruktion im Dockerfile entfernt, da das Deklarieren einzelner Dateien als Dockerfile-Volume auf Host-Systemen zu Mount-Konflikten führt.
+
+---
+
 ## [2.6.1] – 2026-07-17
 
 ### Security: Auslagerung des Export-Verzeichnisses auf Host-Volumes

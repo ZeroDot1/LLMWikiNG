@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import re
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
@@ -35,6 +35,26 @@ def _save_sync_times(times: dict[str, str]) -> None:
     except Exception:
         pass
 
+def _wiki_content_hash(wiki: str = "main") -> str:
+    """Berechnet einen Hash über alle relevanten Wiki-Dateien (ohne index/log).
+
+    Wird genutzt, um Änderungen unabhängig von Datei-mtimes (die bei
+    Host/Container-Zeitverschiebungen unzuverlässig sind) zu erkennen.
+    """
+    import hashlib
+    root = wiki_path(wiki)
+    h = hashlib.sha256()
+    if root.exists():
+        for f in sorted(root.rglob("*.md")):
+            if f.stem in ("index", "log", "ingestlater"):
+                continue
+            try:
+                h.update(f.relative_to(root).as_posix().encode("utf-8"))
+                h.update(f.read_bytes())
+            except OSError:
+                pass
+    return h.hexdigest()
+
 def get_last_sync(wiki: str = "main") -> datetime | None:
     times = _load_sync_times()
     val = times.get(wiki)
@@ -46,11 +66,23 @@ def get_last_sync(wiki: str = "main") -> datetime | None:
     return None
 
 def is_sync_needed(wiki: str = "main") -> bool:
-    """Prüft, ob seit dem letzten Sync neue/geänderte Dateien im Wiki sind."""
-    last = get_last_sync(wiki)
-    if last is None:
+    """Prüft, ob seit dem letzten Sync neue/geänderte Dateien im Wiki sind.
+
+    Nutzt einen **Hash-basierten** Vergleich der Wiki-Inhalte (statt mtime),
+    um Zeitverschiebungen zwischen Host und Container (verschiedene Zeitzonen/
+    Clocks) zu umgehen. Ein frisch gelaufener Sync setzt den Referenz-Hash, sodass
+    danach kein falsches "Sync empfohlen" mehr erscheint.
+    """
+    times = _load_sync_times()
+    last_hash = times.get(f"{wiki}::hash")
+    if last_hash is None:
+        # Kein bekannter Sync-Zustand -> Sync empfohlen
         return True
-    root = wiki_path(wiki)
+    try:
+        current_hash = _wiki_content_hash(wiki)
+    except Exception:
+        return True
+    return current_hash != last_hash
     if not root.exists():
         return False
     for f in root.rglob("*.md"):
@@ -81,10 +113,17 @@ async def is_sync_needed_async(wiki: str = "main") -> bool:
 
 def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     times = _load_sync_times()
-    # Fügen wir einen kleinen Puffer von 5 Sekunden hinzu, um Dateisystem-Schreibverzögerungen auszugleichen
+    # Zeitstempel für Anzeige-Zwecke (mit 1h Puffer für Robustheit)
     import datetime as dt
-    ref_time = value or (dt.datetime.now() + dt.timedelta(seconds=5))
+    base = value or dt.datetime.now()
+    ref_time = base + dt.timedelta(seconds=3600)
     times[wiki] = ref_time.isoformat()
+    # Hash der Wiki-Inhalte speichern, damit is_sync_needed hash-basiert
+    # (zeitverschiebungs-unabhängig) erkennen kann, ob sich etwas geändert hat.
+    try:
+        times[f"{wiki}::hash"] = _wiki_content_hash(wiki)
+    except Exception:
+        pass
     _save_sync_times(times)
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
@@ -240,12 +279,13 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     except Exception as e:
         results["messages"].append(f"index.md Fehler: {e}")
 
-    set_last_sync(datetime.now(), wiki)
-
     try:
         append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}", wiki)
     except Exception:
         pass
+
+    # WICHTIG: set_last_sync nach allen Schreiboperationen (siehe do_sync_async)
+    set_last_sync(datetime.now(), wiki)
 
     return results
 
@@ -289,8 +329,6 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         except Exception as e:
             results["messages"].append(f"index.md Fehler: {e}")
 
-        await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
-
         try:
             log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}"
             await asyncio.to_thread(
@@ -302,6 +340,12 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             )
         except Exception:
             pass
+
+        # WICHTIG: set_last_sync MUSS nach allen Schreiboperationen (regenerate_index,
+        # append_okf_log) erfolgen, damit last_sync nach allen Sync-Schreibvorgängen
+        # liegt. Sonst meldet is_sync_needed sofort wieder "Sync empfohlen", weil
+        # log.md/index.md nach last_sync geschrieben wurden.
+        await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
 
         return results
 

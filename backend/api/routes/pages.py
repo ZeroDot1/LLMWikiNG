@@ -54,7 +54,7 @@ from services.wiki import (
 )
 from services.markdown import render_markdown, render_markdown_preview
 from services.search import qmd_search, local_search, run_qmd_search_async
-from services.sync import is_sync_needed, do_sync, append_okf_log
+from services.sync import is_sync_needed, append_okf_log, request_sync_background
 from services.wiki import run_sync_async
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
@@ -1603,7 +1603,7 @@ def _briefings(request: Request, form):
                 f"Automatisch generiertes Briefing für den Wissensspeicher.\n"
             )
             briefing_path.write_text(template, encoding="utf-8")
-            do_sync(wiki)
+            request_sync_background(wiki)
             return redirect(f"{BASE_PATH}/wiki/{wiki}/{urlencode(briefing_slug)}?success_msg={urlencode('Wochenbericht erfolgreich generiert!')}")
 
         elif action == "email":
@@ -1749,10 +1749,9 @@ async def edit_save(request: Request):
         
         action_type = "Update" if filepath.exists() else "Creation"
         filepath.write_text(content, encoding="utf-8")
-
         try:
             append_okf_log(action_type, filename, f"Datei im Browser-Editor bearbeitet ({folder})", wiki)
-            do_sync(wiki)
+            request_sync_background(wiki)
             log_action(action="page_save", details=f"Datei '{filename}' in '{folder}' (Wiki: {wiki}) als {action_type} gespeichert", user_id=user["id"], username=user["username"], request=request)
         except Exception:
             pass
@@ -1785,7 +1784,7 @@ def clear_log(request: Request, admin: dict = Depends(require_admin)):
             f"- **Clear**: Logbuch zurückgesetzt\n"
         )
         log_path.write_text(template, encoding="utf-8")
-        do_sync(wiki)
+        request_sync_background(wiki)
         log_action(action="activity_log_clear", details=f"Aktivitätslogbuch für Wiki '{wiki}' geleert", user_id=admin["id"], username=admin["username"], request=request)
         return redirect(f"{BASE_PATH}/audit?success_msg={urlencode('Logbuch zurückgesetzt. Alle Aktivitäten werden im Audit-Log erfasst.')}")
     except Exception as e:
@@ -1864,8 +1863,8 @@ async def settings_restore(request: Request, backup_file: UploadFile = File(...)
             temp_archive.unlink()
             
         # qmd Suchindizes neu synchronisieren nach dem Restore
-        from services.sync import do_sync
-        do_sync("main")
+        from services.sync import request_sync_background
+        request_sync_background("main")
             
         return redirect(f"{BASE_PATH}/settings?success_msg={urlencode('Backup erfolgreich wiederhergestellt!')}")
     except Exception as e:

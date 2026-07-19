@@ -9,6 +9,7 @@ import asyncio
 import re
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
 from services.wiki import get_all_wiki_pages
@@ -55,19 +56,28 @@ def is_sync_needed(wiki: str = "main") -> bool:
     for f in root.rglob("*.md"):
         if f.stem in ("index", "log", "ingestlater"):
             continue
-        mtime = datetime.fromtimestamp(f.stat().st_mtime)
-        if mtime > last:
-            return True
+        try:
+            mtime = datetime.fromtimestamp(f.stat().st_mtime)
+            if mtime > last:
+                return True
+        except OSError:
+            pass
     from core.config import RAW_DIR
 
     if RAW_DIR.exists():
         for f in RAW_DIR.iterdir():
             if f.is_file():
-                mtime = datetime.fromtimestamp(f.stat().st_mtime)
-                if mtime > last:
-                    return True
+                try:
+                    mtime = datetime.fromtimestamp(f.stat().st_mtime)
+                    if mtime > last:
+                        return True
+                except OSError:
+                    pass
     return False
 
+async def is_sync_needed_async(wiki: str = "main") -> bool:
+    """Async-Variante von :func:`is_sync_needed`."""
+    return await asyncio.to_thread(is_sync_needed, wiki)
 
 def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     times = _load_sync_times()
@@ -76,8 +86,6 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     ref_time = value or (dt.datetime.now() + dt.timedelta(seconds=5))
     times[wiki] = ref_time.isoformat()
     _save_sync_times(times)
-
-
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     """Führt qmd embed aus. Gibt (success, message) zurück."""
@@ -102,23 +110,53 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     except Exception as e:
         return False, str(e)
 
-
 async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
     """Async-Variante von :func:`run_qmd_embed`.
 
-    Der blockierende ``subprocess.run``-Aufruf wird über ``asyncio.to_thread``
-    in einen Worker-Thread ausgelagert, sodass die asyncio-Event-Loop während
-    des (potenziell langsamen) qmd-Embeddings frei bleibt und weitere Requests
-    bedienen kann.
-
-    Args:
-        wiki: Wiki-Slug, für den die Embeddings erzeugt werden.
-
-    Returns:
-        Tuple ``(success, message)`` – identisch zu :func:`run_qmd_embed`.
+    Nutzt asyncio.create_subprocess_exec für echte asynchrone Prozesssteuerung
+    ohne Blockieren von Threads.
     """
-    return await asyncio.to_thread(run_qmd_embed, wiki)
-
+    try:
+        import os
+        from core.config import wiki_path
+        env = os.environ.copy()
+        env["WIKI_DIR"] = str(wiki_path(wiki))
+        env["COLLECTION_NAME"] = f"wiki_{wiki}"
+        
+        # Start command asynchronously
+        process = await asyncio.create_subprocess_exec(
+            QMD_BIN, "embed",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=str(PROJECT_ROOT),
+            env=env
+        )
+        
+        try:
+            # 60s timeout
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(
+                process.communicate(),
+                timeout=60.0
+            )
+            returncode = process.returncode
+        except asyncio.TimeoutExpired:
+            try:
+                process.kill()
+                await process.wait()
+            except Exception:
+                pass
+            return False, "qmd embed Zeitüberschreitung (>60s)"
+            
+        stdout = stdout_bytes.decode(encoding="utf-8", errors="replace").strip()
+        stderr = stderr_bytes.decode(encoding="utf-8", errors="replace").strip()
+        
+        if returncode == 0:
+            return True, "qmd-Embeddings aktualisiert"
+        return False, stderr or stdout or "qmd embed fehlgeschlagen"
+    except FileNotFoundError:
+        return False, "qmd nicht installiert"
+    except Exception as e:
+        return False, str(e)
 
 def regenerate_index(wiki: str = "main") -> bool:
     """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf."""
@@ -165,10 +203,16 @@ def regenerate_index(wiki: str = "main") -> bool:
     idx_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return True
 
-
-def do_sync(wiki: str = "main") -> dict:
+def do_sync(wiki: str = "main", force: bool = False) -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
     results = {"qmd": False, "index": False, "messages": []}
+
+    # Prüfen ob ein Sync nötig ist (außer force=True)
+    if not is_sync_needed(wiki) and not force:
+        results["qmd"] = True
+        results["index"] = True
+        results["messages"].append("Sync nicht benötigt (keine Änderungen)")
+        return results
 
     # Cache für dieses Wiki sofort invalidieren, damit nach dem Sync
     # alle Leseanfragen frische Daten bekommen.
@@ -196,48 +240,61 @@ def do_sync(wiki: str = "main") -> dict:
 
     return results
 
-
-async def do_sync_async(wiki: str = "main") -> dict:
+async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
     """Async-Variante von :func:`do_sync`.
 
-    Führt den qmd-Embedding-Schritt über :func:`run_qmd_embed_async` aus, damit
-    der blockierende Subprozess die asyncio-Event-Loop nicht einfriert. Der
-    index-Aufbau (``regenerate_index``) ist reine Datei-I/O und wird ebenfalls
-    in einen Worker-Thread ausgelagert.
+    Führt den Sync asynchron aus. Nutzt einen Mutex pro Wiki, um konkurrierende
+    Ausführungen zu verhindern, und überspringt den Sync, falls keine Änderungen
+    vorliegen (es sei denn, force=True).
 
     Args:
         wiki: Wiki-Slug, das synchronisiert wird.
+        force: Erzwingt den Sync auch wenn keine Änderungen vorliegen.
 
     Returns:
-        Dict ``{"qmd": bool, "index": bool, "messages": list[str]}`` – identisch
-        zu :func:`do_sync`.
+        Dict {"qmd": bool, "index": bool, "messages": list[str]}
     """
     results = {"qmd": False, "index": False, "messages": []}
 
-    _cache = get_cache()
-    _cache.invalidate_prefix(f"pages:{wiki}")
-    _cache.invalidate(f"graph:{wiki}")
+    lock = await get_wiki_lock(wiki)
+    async with lock:
+        needed = await is_sync_needed_async(wiki)
+        if not needed and not force:
+            results["qmd"] = True
+            results["index"] = True
+            results["messages"].append("Sync nicht benötigt (keine Änderungen)")
+            return results
 
-    qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
-    results["qmd"] = qmd_ok
-    results["messages"].append(qmd_msg)
+        _cache = get_cache()
+        _cache.invalidate_prefix(f"pages:{wiki}")
+        _cache.invalidate(f"graph:{wiki}")
 
-    try:
-        await asyncio.to_thread(regenerate_index, wiki)
-        results["index"] = True
-        results["messages"].append("index.md neu aufgebaut")
-    except Exception as e:
-        results["messages"].append(f"index.md Fehler: {e}")
+        qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
+        results["qmd"] = qmd_ok
+        results["messages"].append(qmd_msg)
 
-    set_last_sync(datetime.now(), wiki)
+        try:
+            await asyncio.to_thread(regenerate_index, wiki)
+            results["index"] = True
+            results["messages"].append("index.md neu aufgebaut")
+        except Exception as e:
+            results["messages"].append(f"index.md Fehler: {e}")
 
-    try:
-        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}", wiki)
-    except Exception:
-        pass
+        await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
 
-    return results
+        try:
+            log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}"
+            await asyncio.to_thread(
+                append_okf_log,
+                "sync",
+                "Webserver-Sync",
+                log_msg,
+                wiki
+            )
+        except Exception:
+            pass
 
+        return results
 
 def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main") -> None:
     """Schreibt einen OKF-konformen Logbucheintrag (## YYYY-MM-DD mit Bullets)."""
@@ -288,3 +345,75 @@ def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main
         new_content = content.rstrip() + f"\n\n{header}\n{log_entry}\n"
 
     log_path.write_text(new_content, encoding="utf-8")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ASYNCHRONES MUTEX LOCK- & HINTERGRUND-SYNC-SYSTEM (COALESCING QUEUE)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_wiki_locks: dict[str, asyncio.Lock] = {}
+_wiki_locks_lock = asyncio.Lock()
+
+async def get_wiki_lock(wiki: str) -> asyncio.Lock:
+    """Liefert das asynchrone Lock für ein bestimmtes Wiki."""
+    async with _wiki_locks_lock:
+        if wiki not in _wiki_locks:
+            _wiki_locks[wiki] = asyncio.Lock()
+        return _wiki_locks[wiki]
+
+# Zustandsvariablen für das Coalescing (Zusammenfassen) von Hintergrund-Sync-Tasks
+_active_syncs: set[str] = set()
+_pending_syncs: set[str] = set()
+_sync_state_lock = asyncio.Lock()
+
+async def _run_bg_sync_loop(wiki: str) -> None:
+    """Interne Schleife, die den Hintergrund-Sync für ein Wiki ausführt und ggf. wiederholt."""
+    while True:
+        try:
+            await do_sync_async(wiki, force=False)
+        except Exception:
+            pass
+        
+        # Prüfen, ob während des Laufs ein weiterer Sync angefordert wurde
+        async with _sync_state_lock:
+            if wiki in _pending_syncs:
+                _pending_syncs.discard(wiki)
+                # Die Schleife läuft weiter für den nächsten Durchlauf
+            else:
+                _active_syncs.discard(wiki)
+                break
+
+def request_sync_background(wiki: str = "main") -> None:
+    """Fordert einen Wiki-Sync im Hintergrund an.
+    
+    Diese Funktion ist nicht-blockierend und kehrt sofort zurück. Wenn bereits
+    ein Sync für das Wiki läuft, wird ein weiterer Sync vorgemerkt und automatisch
+    nach dem aktuellen Lauf gestartet. Mehrere Anforderungen während eines Laufs
+    werden zu einem einzigen Folge-Lauf zusammengefasst (Coalescing), was
+    Ressourcen schont.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        loop.create_task(_trigger_bg_sync(wiki))
+    else:
+        # Kein laufender Loop (z.B. CLI/Skript-Kontext oder synchroner Thread) -> im Thread ausführen
+        # Wir rufen do_sync synchron auf, um die Dateischnittstelle zu bedienen
+        try:
+            do_sync(wiki, force=False)
+        except Exception:
+            pass
+
+async def _trigger_bg_sync(wiki: str) -> None:
+    """Hilfsfunktion, um die Hintergrundschleife atomar zu starten."""
+    async with _sync_state_lock:
+        if wiki in _active_syncs:
+            _pending_syncs.add(wiki)
+            return
+        _active_syncs.add(wiki)
+    
+    # Hintergrund-Loop starten
+    await _run_bg_sync_loop(wiki)

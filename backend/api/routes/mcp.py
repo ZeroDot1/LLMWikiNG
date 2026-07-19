@@ -37,6 +37,7 @@ Verfuegbare MCP-Tools (30):
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import json
 import os
@@ -65,9 +66,10 @@ from services.wiki import (
     extract_links_from_content,
     get_wiki_stats,
     slugify_german,
+    run_sync_async,
 )
 from services.search import local_search
-from services.sync import do_sync, append_okf_log
+from services.sync import do_sync, append_okf_log, request_sync_background
 from services.lint import run_lint
 from services.graph import build_graph_data
 
@@ -449,7 +451,7 @@ Willkommen im Wiki **{name}**.
 
         # Sync ausfuehren
         try:
-            do_sync(wiki_slug)
+            request_sync_background(wiki_slug)
         except Exception:
             pass
 
@@ -506,7 +508,7 @@ Willkommen im Wiki **{name}**.
             except Exception:
                 pass
             try:
-                do_sync(wiki_slug)
+                request_sync_background(wiki_slug)
             except Exception:
                 pass
             try:
@@ -631,7 +633,7 @@ Willkommen im Wiki **{name}**.
                 errors.append(f"{item['name']}: {str(e)}")
 
         try:
-            do_sync(slug)
+            request_sync_background(slug)
         except Exception:
             pass
 
@@ -698,7 +700,7 @@ Willkommen im Wiki **{name}**.
             )
             if result.returncode == 0:
                 try:
-                    do_sync(slug)
+                    request_sync_background(slug)
                 except Exception:
                     pass
                 return (

@@ -285,7 +285,7 @@ def get_pending_files() -> list[dict]:
 
 def save_to_ingestlater(item_type: str, title: str, content: str, wiki: str = "main") -> None:
     """Speichert eine URL oder einen Text in der Datei <wiki>/ingestlater.md."""
-    from services.sync import do_sync
+    from services.sync import request_sync_background
 
     file_path = wiki_path(wiki) / "ingestlater.md"
 
@@ -329,7 +329,7 @@ def save_to_ingestlater(item_type: str, title: str, content: str, wiki: str = "m
             new_lines.append(f"{content}\n")
 
     file_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    do_sync(wiki)
+    request_sync_background(wiki)
 
 
 def get_recent_logs(wiki: str = "main", limit: int = 5) -> list[dict]:

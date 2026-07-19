@@ -32,7 +32,7 @@ from services.search import local_search, qmd_search, run_qmd_search_async
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.editor import ensure_okf_frontmatter
-from services.sync import do_sync, append_okf_log
+from services.sync import append_okf_log, request_sync_background
 from services.audit import log_action
 
 router = APIRouter(prefix=f"{BASE_PATH}/api/v1")
@@ -173,7 +173,7 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
     filepath.write_text(ensure_okf_frontmatter(content, title=slug), encoding="utf-8")
     try:
         append_okf_log("api-create", f"{slug}.md", "Über API erstellt", wiki)
-        do_sync(wiki)
+        request_sync_background(wiki)
     except Exception:
         pass
     return {"ok": True, "wiki": wiki, "slug": slug}

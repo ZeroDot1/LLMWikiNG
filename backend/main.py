@@ -184,13 +184,24 @@ def create_app() -> FastAPI:
         if request.url.path.startswith(f"{BASE_PATH}/api/v1"):
             from fastapi.responses import JSONResponse
             return JSONResponse(status_code=500, content={"detail": "Interner Server-Fehler"})
+
+        from core.config import resolve_lang, Translator
+        lang = resolve_lang(
+            request.query_params.get("lang"),
+            request.cookies.get("llmwiki_lang"),
+        )
+        _t = Translator(lang)
+        title = _t("500_title") or "Server-Fehler"
+        heading = _t("500_heading") or "500 – Interner Server-Fehler"
+        detail = _t("500_detail") or "Bitte Logs prüfen."
+
         return render(
             request,
             "page.html",
             status_code=500,
             active_page="500",
-            page_title="Server-Fehler",
-            content=f"<h1>500 – Interner Server-Fehler</h1><p>Bitte Logs prüfen.</p><pre style='font-size:10px; text-align:left; background:#222; color:#fff; p:10px; overflow:auto;'>{tb}</pre>",
+            page_title=title,
+            content=f"<h1>{heading}</h1><p>{detail}</p><pre style='font-size:10px; text-align:left; background:#222; color:#fff; p:10px; overflow:auto;'>{tb}</pre>",
         )
 
     return app

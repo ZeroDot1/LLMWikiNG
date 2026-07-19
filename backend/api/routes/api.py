@@ -418,7 +418,7 @@ async def api_system_sync(user: dict = Depends(get_api_user)):
     results = {}
     for w in list_wikis():
         try:
-            await run_sync_async(w["name"])
+            await run_sync_async(w["name"], force=True)
             results[w["name"]] = "ok"
         except Exception as e:
             results[w["name"]] = f"fehler: {e}"
@@ -732,7 +732,7 @@ async def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
     slug = slugify_wiki(wiki_name)
     _wiki_or_404(slug)
     try:
-        await run_sync_async(slug)
+        await run_sync_async(slug, force=True)
         return {"ok": True, "wiki": slug}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

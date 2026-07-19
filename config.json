@@ -18,5 +18,9 @@
     "users",
     "wikis"
   ],
-  "secret_key": "99a3d8bbd2e1752e9e7f4774efad137632772bf02c9ca8b21ee297f963597d53"
+  "secret_key": "99a3d8bbd2e1752e9e7f4774efad137632772bf02c9ca8b21ee297f963597d53",
+  "ollama_host": "http://localhost:11434",
+  "ollama_model": "llama3.2:3b",
+  "enable_mcp_server": true,
+  "llmwiking_mcp_key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd"
 }

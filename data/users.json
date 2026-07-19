@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "test_user_id",
+    "username": "admin",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$dGVzdF9zYWx0$dummy_hash",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-19T19:00:00"
+  }
+]

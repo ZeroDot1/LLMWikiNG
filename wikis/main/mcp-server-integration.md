@@ -1,105 +1,54 @@
 ---
 type: Reference
 title: "LLMWikiNG MCP Server — Integration & Tool Reference"
-description: "Complete English guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into OpenCode, Antigravity agy, Cursor and other agents, plus a per-tool reference with copy-paste prompts."
+description: "Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts."
 tags: [mcp, okf, opencode, agy, integration, reference, ai-agent]
-timestamp: "2026-07-19T16:30:00Z"
+timestamp: "2026-07-19T18:50:00Z"
 author: "LLMWikiNG Documentation"
 status: AI-Generated
 ---
 
 # LLMWikiNG MCP Server — Integration & Tool Reference
 
-This page explains exactly how to connect the LLMWikiNG **MCP (Model Context
-Protocol)** server to AI coding agents such as **OpenCode**, **Antigravity
-`agy`**, **Cursor**, **Claude Code**, and any other MCP-compatible client. It
-also documents **every one of the 31 MCP tools** with ready-to-use prompts you
-can paste into your agent so it reads from and writes to your wiki
-automatically.
+This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 31 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
 
-LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a
-plain, human-readable Markdown file with a small YAML frontmatter block. That
-means the AI never works with a proprietary blob — it reads and writes normal
-Markdown, and you can open every page in any editor.
+LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a plain, human-readable Markdown file with a small YAML frontmatter block. That means the AI never works with a proprietary blob — it reads and writes normal Markdown, and you can open every page in any editor.
 
 ---
 
 ## 1. What the MCP server gives your agent
 
 Once connected, your agent can:
+*   **Read** any wiki page, raw source, or the knowledge graph.
+*   **Write / update** pages in OKF format (with correct frontmatter).
+*   **Search** the wiki (full-text + semantic via `qmd`).
+*   **Ingest** text, files, and URLs into the wiki.
+*   **Manage** wikis, users, API keys, and run system operations.
 
-- **Read** any wiki page, raw source, or the knowledge graph.
-- **Write / update** pages in OKF format (with correct frontmatter).
-- **Search** the wiki (full-text + semantic via `qmd`).
-- **Ingest** text, files, and URLs into the wiki.
-- **Manage** wikis, users, API keys, and run system operations.
-
-The agent does this by calling **MCP tools** over an **SSE** (Server-Sent
-Events) channel. You do not write HTTP code — you just configure the client
-once, and then talk to the wiki in natural language.
+The agent does this by calling **MCP tools** over an **SSE** (Server-Sent Events) channel. You do not write HTTP code — you just configure the client once, and then talk to the wiki in natural language.
 
 ---
 
 ## 2. Prerequisites
 
-1. LLMWikiNG is running and reachable at its base path (default
-   `/LLMWikiNG`). The MCP endpoints are:
-   - SSE channel: `http://<host>:<port>/LLMWikiNG/mcp/sse`
-   - Message channel: `http://<host>:<port>/LLMWikiNG/mcp/messages`
-2. You have two keys:
-   - **MCP Key** (`X-MCP-Key`) — set in `config.json` as `llmwiking_mcp_key`.
-   - **API Key** (`X-API-Key`) — a normal user API key (create one under
-     *Settings → Users / API Keys*).
-3. The MCP server is enabled (`ENABLE_MCP_SERVER=true`, the default).
+1.  LLMWikiNG is running and reachable at its base path (default `/LLMWikiNG`). The MCP endpoints are:
+    *   SSE channel: `http://<host>:<port>/LLMWikiNG/mcp/sse`
+    *   Message channel: `http://<host>:<port>/LLMWikiNG/mcp/messages`
+2.  You have two keys:
+    *   **MCP Key** (`X-MCP-Key`) — set in `config.json` as `llmwiking_mcp_key`.
+    *   **API Key** (`X-API-Key`) — a normal user API key (create one under *Settings → Users / API Keys*).
+3.  The MCP server is enabled (`ENABLE_MCP_SERVER=true`, the default).
 
 > [!IMPORTANT]
-> **Security:** Create a **dedicated low-privilege user + API key** for each
-> agent instead of reusing the admin key. This isolates the agent's
-> permissions and produces a clean, audited action log.
+> **Security:** Create a **dedicated low-privilege user + API key** for each agent instead of reusing the admin key. This isolates the agent's permissions and produces a clean, audited action log.
 
 ---
 
-## 3. Connect OpenCode
+## 3. Connect Antigravity `agy` (and Antigravity IDE)
 
-OpenCode reads MCP servers from its config file. Use the **global** config at
-`~/.config/opencode/opencode.json` or a **project-level** `opencode.json` in
-your repo root.
+Both the `agy` CLI and the Antigravity IDE consume MCP servers from a configuration file. Use the **global** file `~/.gemini/antigravity-cli/settings.json` or a **workspace** file `.agents/mcp_config.json`.
 
-```json
-{
-  "mcp": {
-    "llmwiking-okf": {
-      "type": "remote",
-      "url": "http://192.168.2.247:44419/LLMWikiNG/mcp/sse",
-      "enabled": true,
-      "environment": {
-        "X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
-        "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"
-      }
-    }
-  }
-}
-```
-
-Alternatively, add it interactively from the terminal:
-
-```bash
-opencode mcp add
-```
-
-Once saved, OpenCode auto-discovers the 31 tools. You can then simply say:
-
-> "Read the page `python` from the `main` wiki and summarize it."
-
-OpenCode will call `okf_read_concept` for you — no manual HTTP calls.
-
----
-
-## 4. Connect Antigravity `agy` (and Antigravity IDE)
-
-Both the `agy` CLI and the Antigravity IDE consume MCP servers from a config
-file. Use the **global** file `~/.gemini/config/mcp_config.json` or a
-**workspace** file `.agents/mcp_config.json`.
+Add the following config block:
 
 ```json
 {
@@ -117,38 +66,57 @@ file. Use the **global** file `~/.gemini/config/mcp_config.json` or a
 ```
 
 After saving, the tools are available inside `agy`. Example session:
-
 ```text
 $ agy
-> Ingest the URL https://example.com/whitepaper.html into the main wiki
-  as a Reference page titled "Example Whitepaper".
+> Ingest the URL https://example.com/whitepaper.html into the main wiki as a Reference page titled "Example Whitepaper".
 ```
+`agy` will call `okf_ingest_text` (or `okf_process_pending` after dropping a raw file) and then `okf_system_sync`.
 
-`agy` will call `okf_ingest_text` (or `okf_process_pending` after dropping a
-raw file) and then `okf_system_sync`.
+---
+
+## 4. Connect Claude Desktop
+
+Claude Desktop reads MCP servers from its global config file.
+*   **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+*   **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add the following config block:
+
+```json
+{
+  "mcpServers": {
+    "llmwiking-okf": {
+      "type": "sse",
+      "url": "http://192.168.2.247:44419/LLMWikiNG/mcp/sse",
+      "env": {
+        "X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
+        "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"
+      }
+    }
+  }
+}
+```
 
 ---
 
 ## 5. Connect Cursor (and other SSE clients)
 
-In Cursor: *Settings → Features → MCP → Add Server*.
+In Cursor: *Settings → Features → MCP → Add New MCP Server*.
 
-| Field   | Value                                                  |
-|---------|-------------------------------------------------------|
-| Name    | `LLMWikiNG-OKF`                                        |
-| Type    | `SSE`                                                 |
-| URL     | `http://192.168.2.247:44419/LLMWikiNG/mcp/sse`        |
-| Headers | `{"X-MCP-Key": "...", "X-API-Key": "..."}`            |
+| Field | Value |
+| :--- | :--- |
+| **Name** | `LLMWikiNG-OKF` |
+| **Type** | `SSE` |
+| **URL** | `http://192.168.2.247:44419/LLMWikiNG/mcp/sse` |
+| **Headers** | `{"X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd", "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"}` |
 
-Any other MCP client that supports the `sse` transport uses the same shape as
-the `agy` config above.
+Any other MCP client that supports the `sse` transport uses the same configuration parameters.
 
 ---
 
 ## 6. Copy-paste "self-configuration" prompt
 
-Paste this into your agent's chat so it configures itself (adjust the URL and
-keys):
+Paste this into your agent's chat so it configures itself (adjust the URL and keys as needed):
 
 ```text
 Configure yourself to use the LLMWikiNG MCP server.
@@ -157,10 +125,8 @@ Configure yourself to use the LLMWikiNG MCP server.
 - Send two headers with every request:
     X-MCP-Key: mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd
     X-API-Key: llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y
-In OpenCode add it under the "mcp" key of opencode.json.
-In agy add it under "mcpServers" in ~/.gemini/config/mcp_config.json.
-Once connected, use the okf_* tools to read, search, write and ingest
-wiki pages in OKF v0.1 format.
+In Claude Desktop / agy add it under "mcpServers" in the configuration file.
+Once connected, use the okf_* tools to read, search, write and ingest wiki pages in OKF v0.1 format.
 ```
 
 ---
@@ -168,171 +134,112 @@ wiki pages in OKF v0.1 format.
 ## 7. How agents use the wiki automatically (workflows)
 
 ### 7.1 Read data from the wiki
-
 An agent that needs project knowledge just asks in plain language:
-
 > "What does our wiki say about the Rust deployment pipeline?"
 
-The agent calls `okf_search({ query: "Rust deployment pipeline", wiki: "main" })`
-and then `okf_read_concept` on the best match. Because pages are Markdown, the
-agent can quote, summarize, or refactor based on them — and you can open the
-same file yourself.
+The agent calls `okf_search({ query: "Rust deployment pipeline", wiki: "main" })` and then `okf_read_concept` on the best match. Because pages are Markdown, the agent can quote, summarize, or refactor based on them — and you can open the same file yourself.
 
 ### 7.2 Ingest a file, URL, or pasted text via a prompt
-
 You do **not** need the terminal. Just tell the agent what to ingest:
-
 > **Prompt A — file:**
-> "Ingest the file `./notes/architecture.md` into the `main` wiki as a Concept
-> page titled 'System Architecture'."
+> "Ingest the file `./notes/architecture.md` into the `main` wiki as a Concept page titled 'System Architecture'."
 
 > **Prompt B — URL:**
-> "Fetch https://docs.python.org/3/library/asyncio.html and ingest the content
-> into the `main` wiki as a Reference page titled 'Python asyncio'."
+> "Fetch https://docs.python.org/3/library/asyncio.html and ingest the content into the `main` wiki as a Reference page titled 'Python asyncio'."
 
 > **Prompt C — pasted text:**
-> "Take the following text and ingest it into the `main` wiki as a Concept
-> page titled 'Meeting Notes 2026-07-19':
-> <paste your text here>"
+> "Take the following text and ingest it into the `main` wiki as a Concept page titled 'Meeting Notes 2026-07-19': <paste your text here>"
 
-Under the hood the agent uses `okf_ingest_text` (for text/URL content) or
-writes a raw file and calls `okf_process_pending` (for batch ingestion). After
-ingesting, it runs `okf_system_sync` so the search index and embeddings are
-up to date.
+Under the hood, the agent uses `okf_ingest_text` (for text/URL content) or writes a raw file and calls `okf_process_pending` (for batch ingestion). After ingesting, it runs `okf_system_sync` so the search index and embeddings are up to date.
 
 ### 7.3 Keep the wiki in sync
-
 After any write or ingest, ask:
-
 > "Sync the main wiki so the index and embeddings are refreshed."
 
 → `okf_system_sync({ wiki: "main" })`.
-
-### 7.4 Automated knowledge loop
-
-A typical autonomous loop an agent can run:
-
-1. `okf_list_pending` → find unprocessed raw sources.
-2. `okf_process_pending` → ingest them all.
-3. `okf_system_sync` → rebuild index + embeddings.
-4. `okf_lint` → health-check the wiki.
-5. `okf_write_concept` → add a synthesized "summary" page.
 
 ---
 
 ## 8. Full tool reference (31 tools)
 
-Each entry shows the tool, what it does, and a **copy-paste prompt** you can
-give your agent.
+Each entry shows the tool, what it does, and a **copy-paste prompt** you can give your agent.
 
 ### Wikis
-
-- **`okf_list_wikis`** — List all wikis with metadata.
-  > "List all wikis."
-
-- **`okf_create_wiki`** — Create a new wiki (slug auto-generated).
-  > "Create a wiki called 'Project Phoenix'."
-
-- **`okf_update_wiki`** — Rename / re-describe / re-slug a wiki.
-  > "Rename the wiki 'phoenix' to 'Project Phoenix'."
-
-- **`okf_delete_wiki`** — Delete a wiki (never `main`).
-  > "Delete the wiki 'old-draft'."
+*   **`okf_list_wikis`** — List all wikis with metadata.
+    > "List all wikis."
+*   **`okf_create_wiki`** — Create a new wiki (slug auto-generated).
+    > "Create a wiki called 'Project Phoenix'."
+*   **`okf_update_wiki`** — Rename / re-describe / re-slug a wiki.
+    > "Rename the wiki 'phoenix' to 'Project Phoenix'."
+*   **`okf_delete_wiki`** — Delete a wiki (never `main`).
+    > "Delete the wiki 'old-draft'."
 
 ### Pages
-
-- **`okf_list_pages`** — List pages in a wiki (with type info).
-  > "List all pages in the main wiki."
-
-- **`okf_read_concept`** — Read a page (frontmatter + Markdown body).
-  > "Read the page 'python' from the main wiki."
-
-- **`okf_write_concept`** — Create or update a page in OKF format.
-  > "Create a Reference page 'API Design' in main with tags [api, design]
-  > and this content: <text>."
-
-- **`okf_delete_page`** — Delete a page (system pages protected).
-  > "Delete the page 'draft-notes' from main."
-
-- **`okf_export_page`** — Export a page to `output_docs/`.
-  > "Export the page 'python' to a file."
+*   **`okf_list_pages`** — List pages in a wiki (with type info).
+    > "List all pages in the main wiki."
+*   **`okf_read_concept`** — Read a page (frontmatter + Markdown body).
+    > "Read the page 'python' from the main wiki."
+*   **`okf_write_concept`** — Create or update a page in OKF format.
+    > "Create a Reference page 'API Design' in main with tags [api, design] and this content: <text>."
+*   **`okf_delete_page`** — Delete a page (system pages protected).
+    > "Delete the page 'draft-notes' from main."
+*   **`okf_export_page`** — Export a page to `output_docs/`.
+    > "Export the page 'python' to a file."
 
 ### Ingestion & Raw sources
-
-- **`okf_list_pending`** — List raw sources waiting for ingest.
-  > "What raw files are waiting to be ingested?"
-
-- **`okf_process_pending`** — Ingest all pending raw sources.
-  > "Process all pending raw sources in the main wiki."
-
-- **`okf_ingest_text`** — Ingest raw text/URL into a wiki.
-  > "Ingest this text into main as a Concept titled 'Daily Log': <text>."
-  > "Ingest the URL https://example.com/article into main as a Reference."
-
-- **`okf_read_raw`** — Read a raw source file from `raw/`.
-  > "Show me the raw file 'spec.txt'."
-
-- **`okf_list_raw`** — List all raw source files.
-  > "List the raw sources."
+*   **`okf_list_pending`** — List raw sources waiting for ingest.
+    > "What raw files are waiting to be ingested?"
+*   **`okf_process_pending`** — Ingest all pending raw sources.
+    > "Process all pending raw sources in the main wiki."
+*   **`okf_ingest_text`** — Ingest raw text/URL into a wiki.
+    > "Ingest this text into main as a Concept titled 'Daily Log': <text>."
+    > "Ingest the URL https://example.com/article into main as a Reference."
+*   **`okf_read_raw`** — Read a raw source file from `raw/`.
+    > "Show me the raw file 'spec.txt'."
+*   **`okf_list_raw`** — List all raw source files.
+    > "List the raw sources."
 
 ### Search & Knowledge
-
-- **`okf_search`** — Full-text + semantic search across pages.
-  > "Search the main wiki for 'deployment pipeline'."
-
-- **`okf_wiki_stats`** — Wiki statistics (pages, words, types).
-  > "Show stats for the main wiki."
-
-- **`okf_graph`** — Knowledge graph (nodes + edges / links).
-  > "Show the knowledge graph of the main wiki."
-
-- **`okf_lint`** — Wiki health check (orphans, missing links, stale).
-  > "Run a lint/health check on the main wiki."
+*   **`okf_search`** — Full-text + semantic search across pages.
+    > "Search the main wiki for 'deployment pipeline'."
+*   **`okf_wiki_stats`** — Wiki statistics (pages, words, types).
+    > "Show stats for the main wiki."
+*   **`okf_graph`** — Knowledge graph (nodes + edges / links).
+    > "Show the knowledge graph of the main wiki."
+*   **`okf_lint`** — Wiki health check (orphans, missing links, stale).
+    > "Run a lint/health check on the main wiki."
 
 ### System
-
-- **`okf_system_status`** — System status (version, users, wikis).
-  > "What's the system status?"
-
-- **`okf_system_sync`** — Synchronize a wiki (index + embeddings).
-  > "Sync the main wiki."
-
-- **`okf_audit_logs`** — Show audit logs (optionally filtered by action).
-  > "Show the audit logs."
-
-- **`okf_cache_stats`** — Cache statistics.
-  > "Show cache stats."
-
-- **`okf_cache_clear`** — Clear the cache.
-  > "Clear the cache."
+*   **`okf_system_status`** — System status (version, users, wikis).
+    > "What's the system status?"
+*   **`okf_system_sync`** — Synchronize a wiki (index + embeddings).
+    > "Sync the main wiki."
+*   **`okf_audit_logs`** — Show audit logs (optionally filtered by action).
+    > "Show the audit logs."
+*   **`okf_cache_stats`** — Cache statistics.
+    > "Show cache stats."
+*   **`okf_cache_clear`** — Clear the cache.
+    > "Clear the cache."
 
 ### Users & API Keys
-
-- **`okf_list_users`** — List users.
-  > "List all users."
-
-- **`okf_create_user`** — Create a user.
-  > "Create a user 'ci-bot' with role 'user'."
-
-- **`okf_delete_user`** — Delete a user.
-  > "Delete the user 'ci-bot'."
-
-- **`okf_list_api_keys`** — List API keys (no secrets shown).
-  > "List API keys."
-
-- **`okf_create_api_key`** — Create an API key.
-  > "Create an API key for user 'ci-bot' named 'ci-key'."
-
-- **`okf_delete_api_key`** — Delete an API key.
-  > "Delete the API key 'ci-key'."
+*   **`okf_list_users`** — List users.
+    > "List all users."
+*   **`okf_create_user`** — Create a user.
+    > "Create a user 'ci-bot' with role 'user'."
+*   **`okf_delete_user`** — Delete a user.
+    > "Delete the user 'ci-bot'."
+*   **`okf_list_api_keys`** — List API keys (no secrets shown).
+    > "List API keys."
+*   **`okf_create_api_key`** — Create an API key.
+    > "Create an API key for user 'ci-bot' named 'ci-key'."
+*   **`okf_delete_api_key`** — Delete an API key.
+    > "Delete the API key 'ci-key'."
 
 ### Updates
-
-- **`okf_check_update`** — Check GitHub for a newer version.
-  > "Is there an update available?"
-
-- **`okf_run_update`** — Run the Git-based system update.
-  > "Run the system update."
+*   **`okf_check_update`** — Check GitHub for a newer version.
+    > "Is there an update available?"
+*   **`okf_run_update`** — Run the Git-based system update.
+    > "Run the system update."
 
 ---
 
@@ -356,24 +263,17 @@ status: AI-Generated
 Here begins the free, human-readable Markdown body.
 ```
 
-Required field: `type` (one of `Concept`, `Reference`, `Playbook`, `API-Doc`,
-`Trail`, …). The agent sets these automatically when you use
-`okf_write_concept`.
+Required field: `type` (one of `Concept`, `Reference`, `Playbook`, `API-Doc`, `Trail`, …). The agent sets these automatically when you use `okf_write_concept`.
 
 ---
 
 ## 10. Troubleshooting
 
-- **401 Unauthorized** — wrong `X-MCP-Key` or `X-API-Key`. Regenerate the API
-  key under *Settings → API Keys*.
-- **Connection refused** — check the host/port and that the server is up
-  (`okf_system_status` via the REST API or the Web UI).
-- **Agent can't find the tools** — confirm the MCP block is saved in the
-  correct config file for your client and restart the client.
-- **Ingest seems to do nothing** — run `okf_system_sync` afterwards; search
-  index updates only on sync.
+*   **401 Unauthorized** — wrong `X-MCP-Key` or `X-API-Key`. Check `config.json` or regenerate the API key under *Settings → API Keys*.
+*   **Connection refused** — check the host/port and that the server is up (`okf_system_status` via the REST API or the Web UI).
+*   **Agent can't find the tools** — confirm the MCP block is saved in the correct config file for your client and restart the client.
+*   **Ingest seems to do nothing** — run `okf_system_sync` afterwards; search index updates only on sync.
 
 ---
 
-*This page is part of the LLMWikiNG source tree and is kept in the `main` wiki
-so it is always available to both humans and agents.*
+*This page is part of the LLMWikiNG source tree and is kept in the `main` wiki so it is always available to both humans and agents.*

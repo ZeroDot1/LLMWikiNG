@@ -1044,7 +1044,7 @@ async def admin_sync(request: Request, admin: dict = Depends(require_admin)):
     from fastapi.responses import JSONResponse
 
     wiki = request.query_params.get("wiki") or _default_wiki()
-    results = await run_sync_async(wiki)
+    results = await run_sync_async(wiki, force=True)
     log_action(action="wiki_sync", details=f"Wiki '{wiki}' manuell synchronisiert", user_id=admin["id"], username=admin["username"], request=request)
     fmt = request.query_params.get("format", "html")
     if fmt == "json":

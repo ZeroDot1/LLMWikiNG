@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "test_key_id",
+    "hash": "0f9e6a1d15778f93da2225b47ec3629669cdbd0881702c9e797109efeabb4381",
+    "encrypted_key": "",
+    "user_id": "test_user_id",
+    "name": "Testing Key",
+    "require_password": false,
+    "scopes": ["read", "write"],
+    "active": true,
+    "created_at": "2026-07-19T19:00:00",
+    "last_used": null
+  }
+]

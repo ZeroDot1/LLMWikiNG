@@ -7,7 +7,7 @@ Windsurf, Claude Code etc.) erlaubt, das Wiki im Open Knowledge Format
 Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
 
-Verfuegbare MCP-Tools (30):
+Verfuegbare MCP-Tools (31):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -938,7 +938,7 @@ Willkommen im Wiki **{name}**.
             if err:
                 return err
             try:
-                do_sync(slug)
+                do_sync(slug, force=True)
                 return f"Wiki '{wiki}' erfolgreich synchronisiert."
             except Exception as e:
                 return f"Fehler bei der Synchronisation: {e}"
@@ -946,7 +946,7 @@ Willkommen im Wiki **{name}**.
             results = {}
             for w in list_wikis():
                 try:
-                    do_sync(w["slug"])
+                    do_sync(w["slug"], force=True)
                     results[w["slug"]] = "ok"
                 except Exception as e:
                     results[w["slug"]] = f"fehler: {e}"

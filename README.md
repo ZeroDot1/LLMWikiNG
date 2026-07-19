@@ -220,80 +220,135 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 ## 🤖 Model Context Protocol (MCP) & Open Knowledge Format (OKF)
 
-LLMWikiNG implementiert nativ das **Open Knowledge Format (OKF v0.1)** für KI-gestützte Wissensallokation. Alle Seiten werden als offene, portable Markdown-Dateien mit standardisiertem YAML-Frontmatter gespeichert. Dies sichert eine lückenlose menschliche Lesbarkeit und verhindert proprietären Vendor-Lock-in.
+LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
-### 🔌 MCP-Server über HTTP-SSE aktivieren
+### 🔌 Enable MCP Server via HTTP-SSE
 
-Der MCP-Server ist standardmäßig aktiviert. Konfiguriere ihn über Umgebungsvariablen:
+The MCP server is enabled by default. Configure it via environment variables:
 
 ```bash
-# MCP aktivieren (Default: true)
+# Enable MCP (Default: true)
 ENABLE_MCP_SERVER=true
 
-# API-Key für KI-Agenten setzen
-LLMWIKING_MCP_KEY=dein_sicherer_mcp_key_2026
+# Set API Key for AI Agents
+LLMWIKING_MCP_KEY=your_secure_mcp_key_2026
 ```
 
-Starte die Anwendung neu. Der Server stellt nun zwei Endpunkte bereit:
-- **SSE-Kanal:** `http://localhost:8080/LLMWikiNG/mcp/sse`
-- **Message-Kanal:** `http://localhost:8080/LLMWikiNG/mcp/messages`
+Restart the application. The server now exposes two endpoints:
+- **SSE Channel:** `http://localhost:8080/LLMWikiNG/mcp/sse`
+- **Message Channel:** `http://localhost:8080/LLMWikiNG/mcp/messages`
 
-### 💻 Client-Einbindung (Beispiel: Cursor)
+### 💻 Client Integration (Cursor, OpenCode & Antigravity `agy`)
 
-Füge in Cursor unter *Settings → Features → MCP* einen neuen Server hinzu:
+The LLMWikiNG MCP server can be used by any standard MCP client. Here are the configuration details for supported environments:
 
-| Feld | Wert |
+#### 1. Cursor
+Add a new server in Cursor under *Settings → Features → MCP*:
+
+| Field | Value |
 |------|------|
 | Name | LLMWikiNG-OKF |
 | Type | SSE |
-| URL | http://localhost:8080/LLMWikiNG/mcp/sse |
-| Headers | `{"X-API-Key": "dein_sicherer_mcp_key_2026"}` |
+| URL | `http://localhost:8080/LLMWikiNG/mcp/sse` |
+| Headers | `{"X-API-Key": "your_secure_mcp_key_2026"}` |
 
-### 📋 Verfügbare MCP-Tools (31 Stück)
+#### 2. OpenCode
+Add the MCP server under the `"mcp"` key in your global (`~/.config/opencode/opencode.json`) or project-level (`opencode.json` in project root) configuration file:
 
-| Tool | Beschreibung |
+```json
+{
+  "mcp": {
+    "llmwiking-okf": {
+      "type": "remote",
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "enabled": true,
+      "environment": {
+        "X-API-Key": "your_secure_mcp_key_2026"
+      }
+    }
+  }
+}
+```
+
+Alternatively, add the server interactively via the terminal:
+```bash
+opencode mcp add
+```
+
+#### 3. Antigravity CLI (`agy`) & Antigravity IDE
+Both the `agy` CLI tool and the Antigravity IDE can consume global or local MCP servers.
+
+Add the configuration to your global MCP configuration file `~/.gemini/config/mcp_config.json` (or workspace-specific under `.agents/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "llmwiking-okf": {
+      "type": "sse",
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "env": {
+        "X-API-Key": "your_secure_mcp_key_2026"
+      }
+    }
+  }
+}
+```
+The configured tools will then be automatically available to the agent inside `agy`.
+
+> [!IMPORTANT]
+> **Security Recommendation:** It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (in the WebUI under *Settings ➜ Users / API Keys*) instead of sharing main administrator credentials or using the global config key. This isolates agent permissions and ensures clean, audit-logged actions.
+
+#### 💬 Copy-Paste AI Configuration Prompt
+You can copy and paste the following instruction directly into your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to tell it to configure itself:
+```text
+Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the header 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.
+```
+
+### 📋 Available MCP Tools (31 Tools)
+
+| Tool | Description |
 |------|-------------|
-| `okf_list_wikis` | Listet alle Wikis mit Metadaten auf |
-| `okf_create_wiki` | Erstellt ein neues Wiki |
-| `okf_update_wiki` | Bearbeitet Name/Beschreibung/Slug eines Wikis |
-| `okf_delete_wiki` | Loescht ein Wiki (nicht main) |
-| `okf_list_pages` | Listet alle Seiten eines Wikis |
-| `okf_read_concept` | Liest ein OKF-Konzept (Frontmatter + Markdown) |
-| `okf_write_concept` | Erstellt/Aktualisiert ein OKF-Konzept |
-| `okf_delete_page` | Loescht eine Wiki-Seite |
-| `okf_export_page` | Exportiert eine Seite nach output_docs/ |
-| `okf_list_pending` | Listet Rohquellen auf Ingest |
-| `okf_process_pending` | Verarbeitet alle ausstehenden Rohquellen |
-| `okf_ingest_text` | Ingest von reinem Text |
-| `okf_search` | Volltextsuche ueber Wiki-Seiten |
-| `okf_wiki_stats` | Zeigt Wiki-Statistiken |
-| `okf_graph` | Zeigt den Wissensgraphen |
-| `okf_lint` | Fuehrt Gesundheitspruefung durch |
-| `okf_read_raw` | Liest Rohquellen aus raw/ |
-| `okf_list_raw` | Listet alle Rohquellen-Dateien |
-| `okf_system_status` | Zeigt Systemstatus |
-| `okf_system_sync` | Synchronisiert Wikis |
-| `okf_audit_logs` | Zeigt Audit-Protokolle |
-| `okf_cache_stats` | Zeigt Cache-Statistiken |
-| `okf_cache_clear` | Leert den Cache |
-| `okf_list_users` | Listet alle Benutzer |
-| `okf_create_user` | Erstellt einen Benutzer |
-| `okf_delete_user` | Loescht einen Benutzer |
-| `okf_list_api_keys` | Listet alle API-Keys |
-| `okf_create_api_key` | Erstellt einen API-Key |
-| `okf_delete_api_key` | Loescht einen API-Key |
-| `okf_check_update` | Prueft auf Update via Git |
-| `okf_run_update` | Fuehrt das System-Update aus |
+| `okf_list_wikis` | Lists all wikis with metadata |
+| `okf_create_wiki` | Creates a new wiki |
+| `okf_update_wiki` | Edits name/description/slug of a wiki |
+| `okf_delete_wiki` | Deletes a wiki (except main) |
+| `okf_list_pages` | Lists all pages in a wiki |
+| `okf_read_concept` | Reads an OKF concept (frontmatter + markdown) |
+| `okf_write_concept` | Creates/updates an OKF concept |
+| `okf_delete_page` | Deletes a wiki page |
+| `okf_export_page` | Exports a page to output_docs/ |
+| `okf_list_pending` | Lists raw sources waiting for ingest |
+| `okf_process_pending` | Processes all pending raw sources |
+| `okf_ingest_text` | Ingests raw text into a wiki |
+| `okf_search` | Full-text search across wiki pages |
+| `okf_wiki_stats` | Shows wiki statistics |
+| `okf_graph` | Visualizes the knowledge graph |
+| `okf_lint` | Runs a wiki health check |
+| `okf_read_raw` | Reads a raw source from raw/ |
+| `okf_list_raw` | Lists all raw source files |
+| `okf_system_status` | Shows system status |
+| `okf_system_sync` | Synchronizes wikis |
+| `okf_audit_logs` | Shows system audit logs |
+| `okf_cache_stats` | Shows cache statistics |
+| `okf_cache_clear` | Clears the cache |
+| `okf_list_users` | Lists all users |
+| `okf_create_user` | Creates a user |
+| `okf_delete_user` | Deletes a user |
+| `okf_list_api_keys` | Lists all API keys |
+| `okf_create_api_key` | Creates an API key |
+| `okf_delete_api_key` | Deletes an API key |
+| `okf_check_update` | Checks for update via Git |
+| `okf_run_update` | Runs the system update |
 
-### 📄 OKF v0.1 Dokumentenformat
+### 📄 OKF v0.1 Document Format
 
-Jede Wiki-Seite folgt dem Open Knowledge Format:
+Every wiki page follows the Open Knowledge Format:
 
 ```markdown
 ---
 type: Concept
-title: MCP Architektur 2026
-description: Technische Spezifikation des SSE-basierten Protokolls
+title: MCP Architecture 2026
+description: Technical specification of the SSE-based protocol
 tags: [backend, mcp, security]
 timestamp: 2026-07-18T16:43:00Z
 author: Agent (Cursor-Dev)

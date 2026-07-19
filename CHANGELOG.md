@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.2] - 2026-07-19
+
+### Fixed
+- **Veraltetes `utcnow()` behoben** (`backend/api/routes/mcp.py`): Die Warnung bezüglich der Verwendung des veralteten `datetime.datetime.utcnow()` wurde behoben, indem auf die zeitzonenbewusste Variante `datetime.datetime.now(datetime.timezone.utc)` migriert wurde.
+
+### Added
+- **MCP Client-Integrations-Dokumentation**: Der Setup-Prozess für MCP mit OpenCode und Antigravitys `agy` CLI wurde detailliert in der README.md dokumentiert.
+
 ## [2.12.1] - 2026-07-19
 
 ### Added

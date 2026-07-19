@@ -14,7 +14,7 @@ from core.config import DATA_DIR, load_app_config
 
 AUDIT_DB = DATA_DIR / "audit_log.db"
 
-ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit"])
+ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit", "mcp"])
 
 ACTION_CATEGORIES = {
     # auth
@@ -58,7 +58,17 @@ ACTION_CATEGORIES = {
     
     # audit
     "audit_prune": "audit",
-    "audit_export": "audit"
+    "audit_export": "audit",
+
+    # mcp
+    "mcp_tool_call": "mcp",
+    "mcp_write_concept": "mcp",
+    "mcp_delete_page": "mcp",
+    "mcp_create_wiki": "mcp",
+    "mcp_delete_wiki": "mcp",
+    "mcp_sync": "mcp",
+    "mcp_update": "mcp",
+    "mcp_clear_cache": "mcp"
 }
 
 def is_audit_enabled(action: str) -> bool:

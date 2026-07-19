@@ -186,6 +186,85 @@ curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/run"</co
   </section>
 
   <section>
+    <h2 class="text-2xl font-semibold mb-3">🤖 Model Context Protocol (MCP)</h2>
+    <p class="text-text-secondary">LLMWikiNG provides a native <strong>Model Context Protocol (MCP)</strong> server over HTTP-SSE. This allows AI assistants (like Cursor, OpenCode, and the Antigravity <code>agy</code> CLI) to access, read, write, and search the wiki via the Open Knowledge Format (OKF v0.1).</p>
+    
+    <div class="mt-4 space-y-4">
+      <h3 class="text-xl font-semibold">🔌 Endpoint Configuration</h3>
+      <p class="text-text-secondary text-sm">Configure the MCP server using environment variables before launching LLMWikiNG:</p>
+      <pre class="bg-bg-sunken p-3 rounded-lg text-xs"><code># Enable MCP (Default: true)
+ENABLE_MCP_SERVER=true
+
+# Secure your endpoints (X-API-Key required)
+LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
+      <p class="text-text-secondary text-sm">This exposes the SSE endpoints at:</p>
+      <ul class="list-disc list-inside space-y-1 text-sm text-text-secondary">
+        <li><strong>SSE Channel:</strong> <code>http://localhost:8080/LLMWikiNG/mcp/sse</code></li>
+        <li><strong>Message Channel:</strong> <code>http://localhost:8080/LLMWikiNG/mcp/messages</code></li>
+      </ul>
+
+      <h3 class="text-xl font-semibold mt-4">💻 Client Setup Examples</h3>
+      
+      <div class="space-y-3 text-sm">
+        <div>
+          <strong>1. Cursor IDE</strong>
+          <p class="text-text-secondary text-xs mt-1">Go to <em>Settings ➜ Features ➜ MCP</em>, click "+ Add New MCP Server":</p>
+          <ul class="list-disc list-inside text-xs text-text-secondary mt-1">
+            <li><strong>Name:</strong> <code>LLMWikiNG-OKF</code></li>
+            <li><strong>Type:</strong> <code>SSE</code></li>
+            <li><strong>URL:</strong> <code>http://localhost:8080/LLMWikiNG/mcp/sse</code></li>
+            <li><strong>Headers:</strong> <code>{"X-API-Key": "your_secure_mcp_key_2026"}</code></li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>2. OpenCode</strong>
+          <p class="text-text-secondary text-xs mt-1">Add the server block to your global (<code>~/.config/opencode/opencode.json</code>) or project-specific (<code>opencode.json</code>) configuration:</p>
+          <pre class="bg-bg-sunken p-3 rounded-lg text-xs mt-1"><code>{
+  "mcp": {
+    "llmwiking-okf": {
+      "type": "remote",
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "enabled": true,
+      "environment": {
+        "X-API-Key": "your_secure_mcp_key_2026"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <strong>3. Antigravity CLI (<code>agy</code>) &amp; Antigravity IDE</strong>
+          <p class="text-text-secondary text-xs mt-1">Register the SSE server in your global config file at <code>~/.gemini/config/mcp_config.json</code> (or in your project workspace under <code>.agents/mcp_config.json</code>):</p>
+          <pre class="bg-bg-sunken p-3 rounded-lg text-xs mt-1"><code>{
+  "mcpServers": {
+    "llmwiking-okf": {
+      "type": "sse",
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "env": {
+        "X-API-Key": "your_secure_mcp_key_2026"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 text-xs text-text-secondary leading-relaxed">
+        <strong>🛡️ Security Recommendation:</strong><br>
+        It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (via the web UI under <em>Settings ➜ Users / API Keys</em>) instead of reusing your main administrator credentials or a global shared key. This ensures clean audit logs and limits the potential impact of any single agent.
+      </div>
+
+      <div class="mt-3">
+        <strong>💬 Copy-Paste AI Configuration Prompt:</strong><br>
+        <p class="text-xs text-text-secondary mt-1">Copy and paste this prompt directly to your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to instruct it to configure itself:</p>
+        <pre class="bg-bg-sunken p-3 rounded-lg text-xs mt-1"><code>Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the header 'X-API-Key' set to '&lt;YOUR_AGENT_API_KEY&gt;'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2 class="text-2xl font-semibold mb-3">🔑 Cryptographic Secret (LLMWIKI_SECRET)</h2>
     <p class="text-text-secondary">The system uses a central key to sign browser session cookies and encrypt API keys. It is read from the <code>LLMWIKI_SECRET</code> environment variable or dynamically generated and persisted inside <code>config.json</code> (under the key <code>"secret_key"</code>) upon the first launch.</p>
     <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 my-3 text-xs text-text-secondary leading-relaxed">

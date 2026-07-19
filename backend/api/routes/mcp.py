@@ -189,6 +189,15 @@ title: "Index"
 Willkommen im Wiki **{name}**.
 """
             (root / "index.md").write_text(index_content, encoding="utf-8")
+            try:
+                from services.audit import log_action
+                log_action(
+                    action="mcp_create_wiki",
+                    details=f"Wiki '{name}' (slug: {slug}) via MCP erstellt",
+                    username="mcp-agent"
+                )
+            except Exception:
+                pass
             return (
                 f"Wiki '{name}' erfolgreich erstellt.\n"
                 f"Slug: `{slug}`\n"
@@ -277,6 +286,15 @@ Willkommen im Wiki **{name}**.
             return f"Wiki '{wiki}' nicht gefunden."
         try:
             delete_wiki(slug)
+            try:
+                from services.audit import log_action
+                log_action(
+                    action="mcp_delete_wiki",
+                    details=f"Wiki '{wiki}' (slug: `{slug}`) via MCP gelöscht",
+                    username="mcp-agent"
+                )
+            except Exception:
+                pass
             return f"Wiki '{wiki}' (slug: `{slug}`) erfolgreich geloescht."
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
@@ -393,7 +411,7 @@ Willkommen im Wiki **{name}**.
         existed = filepath.exists()
 
         # OKF v0.1 Frontmatter erstellen
-        now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         post = frontmatter.Post(
             content=f"\n# {title}\n\n{content}",
             type=concept_type,
@@ -422,6 +440,16 @@ Willkommen im Wiki **{name}**.
         # Sync ausfuehren
         try:
             do_sync(wiki_slug)
+        except Exception:
+            pass
+
+        try:
+            from services.audit import log_action
+            log_action(
+                action="mcp_write_concept",
+                details=f"Concept '{title}' ({raw_slug}.md) in Wiki '{wiki_slug}' via MCP geschrieben ({action})",
+                username=f"mcp-agent ({agent_name})"
+            )
         except Exception:
             pass
 
@@ -469,6 +497,15 @@ Willkommen im Wiki **{name}**.
                 pass
             try:
                 do_sync(wiki_slug)
+            except Exception:
+                pass
+            try:
+                from services.audit import log_action
+                log_action(
+                    action="mcp_delete_page",
+                    details=f"Seite '{raw_slug}' aus Wiki '{wiki_slug}' via MCP gelöscht",
+                    username="mcp-agent"
+                )
             except Exception:
                 pass
             return (
@@ -1181,8 +1218,9 @@ Willkommen im Wiki **{name}**.
 
             from services.audit import log_action
             log_action(
-                action="system_update",
+                action="mcp_update",
                 details=f"MCP: Update von {old_version} nach {new_version}",
+                username="mcp-agent"
             )
 
             lines = ["# Update-Ergebnis\n"]

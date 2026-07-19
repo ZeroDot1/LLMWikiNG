@@ -32,6 +32,7 @@
         <li>🐋 <strong>Docker &amp; UGreen NAS Optimierung</strong> – Speziell für <strong>UGreen NAS (UGOS)</strong> optimiertes Docker-Setup zur automatischen Volume-Erkennung und direkten Kompatibilität. Über die Pfadvariable <code>DOCKER_VOLUME_BASE</code> auch problemlos lokal einsetzbar.</li>
         <li>⚙️ <strong>Einstellungen (Settings)</strong> – Zentrale Konfigurationsseite mit Tabs für Sprache, Erscheinungsbild, SMTP, Wiki-Verwaltung (Tabelle mit Name, Slug, Seiten, Dateien, Größe), Benutzerverwaltung, API-Schlüssel, Registrierungssteuerung, Gesundheitscheck und Update.</li>
         <li>🛡️ <strong>Erweitertes Audit-Logging</strong> – SQLite-basiertes Logging (konfigurierbar pro Kategorie). Protokolliert Suchanfragen, Ingests, API-Keys, Seiten, Wikis, Logins. Mit Dashboard Widget und Kategorie-Filter.</li>
+        <li>🤖 <strong>Model Context Protocol (MCP)</strong> – Nativer HTTP-SSE-basierter MCP-Server mit 31 Tools für KI-Assistenten (Cursor, OpenCode, agy) zum Lesen, Schreiben, Suchen und Verwalten des Wikis im OKF v0.1-Format.</li>
     </ul>
 
     <h2>{{ _('about.version_heading') }}</h2>
@@ -96,6 +97,7 @@
         <tr><td><code>/docs</code></td><td>📚 Dokumentation</td></tr>
         <tr><td><code>/about</code></td><td>ℹ️ Über-Seite</td></tr>
         <tr><td><code>/api/v1/*</code></td><td>🔌 JSON-API (Key-geschützt oder Session-Cookie): Wikis, Seiten, Suche, Graph, Stats, Lint, Status, User, API-Keys, Ingest, Export, System</td></tr>
+        <tr><td><code>/mcp/sse</code>, <code>/mcp/messages</code></td><td>🤖 Model Context Protocol (MCP) SSE/JSON-RPC Kanäle (Key-geschützt)</td></tr>
     </table>
 
     <h2>🚀 Server-Parameter</h2>

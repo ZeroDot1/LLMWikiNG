@@ -534,7 +534,15 @@
     "restore_warning": "⚠️ WARNING: Restoring a backup permanently overwrites all current wiki pages, settings, and user accounts! To prevent session loss, your current login session remains active (your user account will be merged into the restored system).",
     "restore_file_label": "Select tar.xz backup file:",
     "restore_btn": "📤 Restore Backup",
-    "restore_confirm": "Are you sure you want to restore this backup? All current data will be overwritten!"
+    "restore_confirm": "Are you sure you want to restore this backup? All current data will be overwritten!",
+    "tab_mcp": "🔌 MCP",
+    "mcp_heading": "🔌 Model Context Protocol (MCP)",
+    "mcp_subtitle": "Here you can configure the integrated MCP server. Changes are saved in config.json and require a server restart to take effect.",
+    "mcp_enable_label": "Enable MCP Server globally",
+    "mcp_key_label": "MCP API Key",
+    "mcp_key_placeholder": "e.g. your_secure_mcp_key_2026",
+    "mcp_key_hint": "Important: This key protects your MCP endpoints. Without a key, no access is allowed.",
+    "mcp_save_btn": "Save"
   },
   "register": {
     "title": "Register",

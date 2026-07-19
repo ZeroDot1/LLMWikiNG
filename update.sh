@@ -236,7 +236,7 @@ fi
 
 # 3) Fallback: laufenden uvicorn/gunicorn-Prozess ueber den Port oder Prozessname finden
 if [ "$RESTART_DONE" -eq 0 ]; then
-    UVICORN_PID=$(pgrep -f "uvicorn.*main:main\|uvicorn.*app:app\|gunicorn.*main" 2>/dev/null | head -1 || true)
+    UVICORN_PID=$(pgrep -f "uvicorn.*main:main\|uvicorn.*app:app\|gunicorn.*main\|run.py" 2>/dev/null | head -1 || true)
     if [ -n "$UVICORN_PID" ]; then
         echo -e "  -> Beende laufenden Server-Prozess (PID $UVICORN_PID)..."
         kill -TERM "$UVICORN_PID" 2>/dev/null || true
@@ -245,6 +245,18 @@ if [ "$RESTART_DONE" -eq 0 ]; then
             ( cd "$PROJECT_DIR" && nohup ./start.sh >/dev/null 2>&1 & )
             RESTART_DONE=1
         fi
+    fi
+fi
+
+# 4) Container-Modus: uvicorn laeuft als PID 1 (CMD python run.py).
+#    Ein kill von PID 1 beendet den Container; docker-compose (restart:
+#    unless-stopped) baut ihn mit dem NEUEN Code automatisch wieder auf.
+if [ "$RESTART_DONE" -eq 0 ] && [ -f "/.dockerenv" ]; then
+    if kill -0 1 2>/dev/null; then
+        echo -e "  -> Container-Modus erkannt: beende PID 1 (uvicorn) -> Container restartet."
+        # Kurze Pause, damit update.sh sauber beenden kann
+        ( sleep 2; kill -TERM 1 2>/dev/null || kill -KILL 1 2>/dev/null ) &
+        RESTART_DONE=1
     fi
 fi
 

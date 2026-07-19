@@ -449,9 +449,10 @@ Willkommen im Wiki **{name}**.
         except Exception:
             pass
 
-        # Sync ausfuehren
+        # Sync ausfuehren – force=True, damit index.md nach dem Schreiben
+        # garantiert neu aufgebaut wird (sonst fehlt die neue Seite im Index).
         try:
-            request_sync_background(wiki_slug)
+            request_sync_background(wiki_slug, force=True)
         except Exception:
             pass
 

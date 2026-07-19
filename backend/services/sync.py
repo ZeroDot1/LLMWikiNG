@@ -159,9 +159,18 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         return False, str(e)
 
 def regenerate_index(wiki: str = "main") -> bool:
-    """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf."""
+    """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf.
+
+    Nutzt bewusst die **un-cached** Variante ``_get_all_wiki_pages_uncached``,
+    damit der Index garantiert *alle* physisch vorhandenen Seiten enthält –
+    unabhängig von einem evtl. veralteten mtime-basierten Seiten-Cache. Sonst
+    kann es passieren, dass neu hinzugefügte Seiten (z. B. per MCP geschrieben)
+    im Index fehlen, obwohl sie auf der Platte liegen.
+    """
+    from services.wiki import _get_all_wiki_pages_uncached
+
     idx_path = wiki_path(wiki) / "index.md"
-    pages = get_all_wiki_pages(wiki)
+    pages = _get_all_wiki_pages_uncached(wiki)
 
     lines = [
         "---",
@@ -364,13 +373,18 @@ async def get_wiki_lock(wiki: str) -> asyncio.Lock:
 # Zustandsvariablen für das Coalescing (Zusammenfassen) von Hintergrund-Sync-Tasks
 _active_syncs: set[str] = set()
 _pending_syncs: set[str] = set()
+_pending_force: set[str] = set()
 _sync_state_lock = asyncio.Lock()
 
 async def _run_bg_sync_loop(wiki: str) -> None:
     """Interne Schleife, die den Hintergrund-Sync für ein Wiki ausführt und ggf. wiederholt."""
     while True:
+        # Force-Flag für diesen Durchlauf aus den Pending-Daten lesen
+        async with _sync_state_lock:
+            force = wiki in _pending_force
+            _pending_force.discard(wiki)
         try:
-            await do_sync_async(wiki, force=False)
+            await do_sync_async(wiki, force=force)
         except Exception:
             pass
         
@@ -383,7 +397,7 @@ async def _run_bg_sync_loop(wiki: str) -> None:
                 _active_syncs.discard(wiki)
                 break
 
-def request_sync_background(wiki: str = "main") -> None:
+def request_sync_background(wiki: str = "main", force: bool = False) -> None:
     """Fordert einen Wiki-Sync im Hintergrund an.
     
     Diese Funktion ist nicht-blockierend und kehrt sofort zurück. Wenn bereits
@@ -391,6 +405,13 @@ def request_sync_background(wiki: str = "main") -> None:
     nach dem aktuellen Lauf gestartet. Mehrere Anforderungen während eines Laufs
     werden zu einem einzigen Folge-Lauf zusammengefasst (Coalescing), was
     Ressourcen schont.
+
+    Args:
+        wiki: Slug des Wikis.
+        force: Wenn True, wird der Sync erzwungen (index.md wird immer neu
+            aufgebaut). Sollte bei expliziten Schreiboperationen (z. B. MCP
+            okf_write_concept) gesetzt werden, damit neu hinzugefügte Seiten
+            garantiert im Index landen.
     """
     try:
         loop = asyncio.get_running_loop()
@@ -398,22 +419,27 @@ def request_sync_background(wiki: str = "main") -> None:
         loop = None
 
     if loop and loop.is_running():
-        loop.create_task(_trigger_bg_sync(wiki))
+        loop.create_task(_trigger_bg_sync(wiki, force=force))
     else:
         # Kein laufender Loop (z.B. CLI/Skript-Kontext oder synchroner Thread) -> im Thread ausführen
         # Wir rufen do_sync synchron auf, um die Dateischnittstelle zu bedienen
         try:
-            do_sync(wiki, force=False)
+            do_sync(wiki, force=force)
         except Exception:
             pass
 
-async def _trigger_bg_sync(wiki: str) -> None:
+async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
     """Hilfsfunktion, um die Hintergrundschleife atomar zu starten."""
     async with _sync_state_lock:
         if wiki in _active_syncs:
+            # Force-Flag für den nachfolgenden Pending-Lauf merken
+            if force:
+                _pending_force.add(wiki)
             _pending_syncs.add(wiki)
             return
         _active_syncs.add(wiki)
+        if force:
+            _pending_force.add(wiki)
     
     # Hintergrund-Loop starten
     await _run_bg_sync_loop(wiki)

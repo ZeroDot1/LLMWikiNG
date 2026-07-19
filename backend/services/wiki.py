@@ -57,11 +57,17 @@ async def run_ingest_async(
     )
 
 
-async def run_sync_async(wiki: str) -> None:
-    """Führt ``do_sync`` asynchron aus, ohne den Event-Loop zu blockieren."""
-    from services.sync import do_sync
+async def run_sync_async(wiki: str) -> dict:
+    """Führt den Sync asynchron aus, ohne den Event-Loop zu blockieren.
 
-    await asyncio.to_thread(do_sync, wiki)
+    Nutzt :func:`services.sync.do_sync_async`, das den qmd-Embedding-Schritt
+    über ``asyncio.to_thread`` auslagert. Gibt das Ergebnis-Dict von
+    ``do_sync`` zurück (``{"qmd": bool, "index": bool, "messages": [...]}``),
+    damit Aufrufer (z. B. ``admin_sync``) den Status auswerten können.
+    """
+    from services.sync import do_sync_async
+
+    return await do_sync_async(wiki)
 
 
 def slugify_path(value: str) -> str:

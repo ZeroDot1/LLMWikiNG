@@ -5,6 +5,7 @@ Portiert aus llmWiki.py.
 
 from __future__ import annotations
 
+import asyncio
 import re
 import subprocess
 from datetime import datetime
@@ -102,6 +103,23 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
         return False, str(e)
 
 
+async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
+    """Async-Variante von :func:`run_qmd_embed`.
+
+    Der blockierende ``subprocess.run``-Aufruf wird über ``asyncio.to_thread``
+    in einen Worker-Thread ausgelagert, sodass die asyncio-Event-Loop während
+    des (potenziell langsamen) qmd-Embeddings frei bleibt und weitere Requests
+    bedienen kann.
+
+    Args:
+        wiki: Wiki-Slug, für den die Embeddings erzeugt werden.
+
+    Returns:
+        Tuple ``(success, message)`` – identisch zu :func:`run_qmd_embed`.
+    """
+    return await asyncio.to_thread(run_qmd_embed, wiki)
+
+
 def regenerate_index(wiki: str = "main") -> bool:
     """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf."""
     idx_path = wiki_path(wiki) / "index.md"
@@ -164,6 +182,48 @@ def do_sync(wiki: str = "main") -> dict:
 
     try:
         regenerate_index(wiki)
+        results["index"] = True
+        results["messages"].append("index.md neu aufgebaut")
+    except Exception as e:
+        results["messages"].append(f"index.md Fehler: {e}")
+
+    set_last_sync(datetime.now(), wiki)
+
+    try:
+        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}", wiki)
+    except Exception:
+        pass
+
+    return results
+
+
+async def do_sync_async(wiki: str = "main") -> dict:
+    """Async-Variante von :func:`do_sync`.
+
+    Führt den qmd-Embedding-Schritt über :func:`run_qmd_embed_async` aus, damit
+    der blockierende Subprozess die asyncio-Event-Loop nicht einfriert. Der
+    index-Aufbau (``regenerate_index``) ist reine Datei-I/O und wird ebenfalls
+    in einen Worker-Thread ausgelagert.
+
+    Args:
+        wiki: Wiki-Slug, das synchronisiert wird.
+
+    Returns:
+        Dict ``{"qmd": bool, "index": bool, "messages": list[str]}`` – identisch
+        zu :func:`do_sync`.
+    """
+    results = {"qmd": False, "index": False, "messages": []}
+
+    _cache = get_cache()
+    _cache.invalidate_prefix(f"pages:{wiki}")
+    _cache.invalidate(f"graph:{wiki}")
+
+    qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
+    results["qmd"] = qmd_ok
+    results["messages"].append(qmd_msg)
+
+    try:
+        await asyncio.to_thread(regenerate_index, wiki)
         results["index"] = True
         results["messages"].append("index.md neu aufgebaut")
     except Exception as e:

@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.4] - 2026-07-19
+
+### Fixed
+- **500-Fehler beim manuellen Sync über die Web-UI** (`backend/api/routes/pages.py`, `backend/services/wiki.py`): `admin_sync` stürzte mit `TypeError: 'NoneType' object is not subscriptable` ab, weil `run_sync_async()` das Ergebnis-Dict von `do_sync()` verwarf (gab `None` zurück) und `admin_sync` anschließend `results["qmd"]` / `results["index"]` abfragte. `run_sync_async()` gibt nun das Dict `{"qmd", "index", "messages"}` korrekt zurück.
+
+### Changed
+- **Sync-Prozess vollständig async (inkl. qmd-Embedding)** (`backend/services/sync.py`, `backend/services/wiki.py`): Neu sind `run_qmd_embed_async()` und `do_sync_async()`, die den blockierenden `subprocess.run`-Aufruf von `qmd embed` über `asyncio.to_thread` auslagern. `run_sync_async()` nutzt nun `do_sync_async()`, sodass der qmd-Schritt die asyncio-Event-Loop nicht mehr einfriert (verhindert Hänger bei großen Wikis/Installationen ohne qmd).
+
 ## [2.12.3] - 2026-07-19
 
 ### Fixed

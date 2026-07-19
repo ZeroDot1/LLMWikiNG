@@ -352,6 +352,7 @@
     "tag_filter_label": "Nach Tag filtern",
     "filter_label": "Filter:",
     "filter_all": "Alle",
+    "filter_all_wikis": "🌐 Alle Wikis",
     "canvas_aria": "Wissensgraph – interaktive Knotenansicht",
     "stat_nodes": "Knoten",
     "stat_edges": "Kanten",

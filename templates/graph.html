@@ -19,6 +19,7 @@
         <div class="graph-toolbar-wiki">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
             <select id="graph-wiki-select" aria-label="{{ _('graph.wiki_select_label') }}">
+                <option value="__all__" {% if wiki == '__all__' %}selected{% endif %}>{{ _('graph.filter_all_wikis') }}</option>
                 {% for w in wikis %}
                 <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}

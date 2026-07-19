@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 
-from core.config import WIKI_DIR, BASE_PATH, wiki_path
+from core.config import WIKI_DIR, BASE_PATH, wiki_path, list_wikis
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
@@ -56,7 +56,10 @@ def build_graph_data_paginated(
         Dict mit ``nodes``, ``edges``, ``total_nodes``, ``page``,
         ``page_size``, ``total_pages``.
     """
-    full = build_graph_data(wiki)
+    if wiki == "__all__":
+        full = build_graph_data_all()
+    else:
+        full = build_graph_data(wiki)
     all_nodes: list[dict] = full["nodes"]
     all_edges: list[dict] = full["edges"]
 
@@ -154,3 +157,54 @@ def _build_graph_uncached(wiki: str) -> dict:
         nodes.append({"id": slug, "label": title, "group": group, "url": f"{BASE_PATH}/wiki/{wiki}/{slug}"})
 
     return {"nodes": nodes, "edges": edges}
+
+
+def build_graph_data_all() -> dict:
+    """Kombinierter Graph über ALLE Wikis.
+
+    Node-IDs werden mit dem Wiki-Slug praefixiert (``wiki::slug``), damit
+    es keine Kollisionen zwischen verschiedenen Wikis gibt.
+    Die URL zeigt weiterhin auf das korrekte Wiki.
+    """
+    cache = get_cache()
+    cache_key = "graph:__all__"
+    # Kein einzelnes root für Cache-Invalidierung – wir geben None
+    cached = cache.get(cache_key, None)
+    if cached is not None:
+        return cached
+
+    all_nodes: list[dict] = []
+    all_edges: list[dict] = []
+    known_ids: set[str] = set()
+
+    for w in list_wikis():
+        wiki_name = w["name"]
+        wiki_slug = w["slug"]
+
+        try:
+            full = _build_graph_uncached(wiki_name)
+        except Exception:
+            continue
+
+        # Prefix nodes with wiki slug
+        for n in full.get("nodes", []):
+            orig_id = n["id"]
+            prefixed = f"{wiki_slug}::{orig_id}"
+            n["id"] = prefixed
+            n["wiki"] = wiki_name
+            n["original_id"] = orig_id
+            # Update URL to keep it working
+            if orig_id in n.get("url", ""):
+                n["url"] = f"{BASE_PATH}/wiki/{wiki_name}/{orig_id}"
+            all_nodes.append(n)
+            known_ids.add(prefixed)
+
+        # Prefix edges
+        for e in full.get("edges", []):
+            e["from"] = f"{wiki_slug}::{e['from']}" if e.get("from") else e.get("from")
+            e["to"] = f"{wiki_slug}::{e['to']}" if e.get("to") else e.get("to")
+            all_edges.append(e)
+
+    result = {"nodes": all_nodes, "edges": all_edges}
+    cache.set(cache_key, result, None)
+    return result

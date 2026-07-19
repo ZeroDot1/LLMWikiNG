@@ -352,6 +352,7 @@
     "tag_filter_label": "Filter by tag",
     "filter_label": "Filter:",
     "filter_all": "All",
+    "filter_all_wikis": "🌐 All Wikis",
     "canvas_aria": "Knowledge graph – interactive node view",
     "stat_nodes": "nodes",
     "stat_edges": "edges",

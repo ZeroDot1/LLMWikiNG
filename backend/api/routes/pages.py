@@ -56,7 +56,7 @@ from services.markdown import render_markdown, render_markdown_preview
 from services.search import qmd_search, local_search, run_qmd_search_async
 from services.sync import is_sync_needed, append_okf_log, request_sync_background
 from services.wiki import run_sync_async
-from services.graph import build_graph_data, build_graph_data_paginated
+from services.graph import build_graph_data, build_graph_data_paginated, build_graph_data_all
 from services.lint import run_lint
 from services.analytics import get_wiki_analytics
 from services.editor import ensure_okf_frontmatter
@@ -682,6 +682,8 @@ async def graph_data(request: Request):
     from fastapi.responses import JSONResponse
 
     wiki = request.query_params.get("wiki") or _default_wiki()
+    if wiki == "__all__":
+        return JSONResponse(await asyncio.to_thread(build_graph_data_all))
     return JSONResponse(await asyncio.to_thread(build_graph_data, wiki))
 
 

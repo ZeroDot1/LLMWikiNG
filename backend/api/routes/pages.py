@@ -1946,5 +1946,5 @@ async def audit_prune(request: Request, admin: dict = Depends(require_admin)):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/wiki/{wiki_name}/{page_name}")
-def wiki_page(wiki_name: str, page_name: str, request: Request):
-    return _render_page(wiki_name, page_name, request)
+async def wiki_page(wiki_name: str, page_name: str, request: Request):
+    return await _render_page(wiki_name, page_name, request)

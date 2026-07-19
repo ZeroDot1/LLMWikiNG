@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.8] - 2026-07-19
+
+### Fixed
+- **500 `TypeError: 'coroutine' object is not iterable` beim Aufrufen einzelner Wiki-Seiten** (`backend/api/routes/pages.py`): Die Route `wiki_page` (`GET /wiki/{wiki_name}/{page_name}`) war eine synchronize `def`-Funktion, rief aber das in 2.12.3 zu `async def` umgewandelte `_render_page` **ohne `await`** auf. Dadurch wurde eine Coroutine zurückgegeben, die FastAPI nicht serialisieren konnte → 500. `wiki_page` ist nun `async def` mit `await _render_page(...)`. Betroffen war jede Wiki-Seiten-URL (z. B. `/wiki/main/<page>`).
+
 ## [2.12.7] - 2026-07-19
 
 ### Fixed

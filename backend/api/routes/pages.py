@@ -1267,14 +1267,16 @@ def settings_get(request: Request):
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
     from core.config import load_app_config
+    cfg = load_app_config()
     return render(
         request, "settings.html",
         active_page="settings",
         smtp_config=smtp_config_data,
         env_user=env_user,
         env_pass_exists=env_pass_exists,
-        audit_config=load_app_config(),
-        mcp_config=load_app_config(),
+        audit_config=cfg,
+        mcp_config=cfg,
+        syntax_highlighting=cfg.get("syntax_highlighting", True),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
         config_error_msg=None,
@@ -1292,7 +1294,22 @@ def settings_get(request: Request):
         new_key=None,
         new_generated_mcp_key=None,
         new_generated_api_key=None,
+        syntax_msg=request.query_params.get("syntax_msg"),
     )
+
+
+@router.post("/settings/syntax-highlighting/set")
+async def settings_syntax_highlighting_set(request: Request):
+    """Speichert die globale Option für Syntax-Highlighting in config.json."""
+    user = require_login(request)
+    form = await request.form()
+    enabled = form.get("value") == "1" or form.get("enabled") == "1" or form.get("value") == "on"
+    from core.config import save_app_config
+    ok = save_app_config({"syntax_highlighting": bool(enabled)})
+    msg = "Syntax-Highlighting aktiviert." if enabled else "Syntax-Highlighting deaktiviert."
+    if not ok:
+        msg = "Fehler beim Speichern der Einstellung."
+    return redirect(f"{BASE_PATH}/settings?syntax_msg={urlencode(msg)}")
 
 
 def _trigger_server_restart() -> None:

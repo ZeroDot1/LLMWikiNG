@@ -275,6 +275,7 @@ def load_app_config() -> dict[str, Any]:
         "ollama_model": "llama3.2:3b",
         "enable_mcp_server": os.getenv("ENABLE_MCP_SERVER", "true").lower() == "true",
         "llmwiking_mcp_key": os.getenv("LLMWIKING_MCP_KEY", ""),
+        "syntax_highlighting": True,
     }
     if CONFIG_FILE.exists():
         try:

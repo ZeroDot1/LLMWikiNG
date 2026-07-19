@@ -751,5 +751,9 @@
     "action_group_keys": "API Keys & Secrets",
     "action_group_wiki": "Wiki Activities",
     "action_group_system": "System"
-  }
+  },
+  "settings.syntax_heading": "Syntax Highlighting",
+  "settings.syntax_subtitle": "Colorize code blocks on all wiki pages (Python, JS, JSON, Bash, and more).",
+  "settings.syntax_on": "Enabled",
+  "settings.syntax_off": "Disabled"
 }

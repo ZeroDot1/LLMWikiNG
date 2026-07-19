@@ -18,3 +18,18 @@
         </div>
     </form>
 </div>
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mt-6">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.syntax_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('settings.syntax_subtitle') }}</p>
+    <form action="{{ base_path }}/settings/syntax-highlighting/set" method="post" class="space-y-4">
+        <div class="flex flex-wrap gap-2.5">
+            <button type="submit" name="value" value="1" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if syntax_highlighting %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
+                ✅ {{ _('settings.syntax_on') }}{% if syntax_highlighting %} ✓{% endif %}
+            </button>
+            <button type="submit" name="value" value="0" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if not syntax_highlighting %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
+                ⛔ {{ _('settings.syntax_off') }}{% if not syntax_highlighting %} ✓{% endif %}
+            </button>
+        </div>
+    </form>
+</div>

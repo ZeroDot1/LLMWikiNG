@@ -164,12 +164,13 @@ export function highlightCode(code, lang) {
 }
 
 /**
- * Highlight all <pre><code> blocks that were NOT already highlighted by the
- * server (no `.codehilite` ancestor and no `.hl-*` spans inside). This is the
- * fallback path for editor previews and dynamically injected content.
+ * Highlight all <pre><code> (and bare <pre>) blocks that were NOT already
+ * highlighted by the server (no `.codehilite` ancestor and no `.hl-*` spans
+ * inside). This is the fallback path for editor previews and dynamically
+ * injected content.
  */
 export function highlightAllPending(root = document) {
-    const blocks = root.querySelectorAll('pre > code, pre code');
+    const blocks = root.querySelectorAll('pre > code, pre code, pre:not(:has(code))');
     blocks.forEach(codeEl => {
         const pre = codeEl.closest('pre');
         // Skip blocks already highlighted by the server (codehilite) or by us
@@ -195,6 +196,9 @@ window.highlightAllPending = highlightAllPending;
 // also observe dynamically injected content (e.g. SPA-like navigation,
 // editor preview, search results).
 function init() {
+    // Respect the global setting from config.json (window.SYNTAX_HIGHLIGHTING).
+    // When disabled, we leave code blocks untouched.
+    if (window.SYNTAX_HIGHLIGHTING === false) return;
     highlightAllPending(document);
     if ('MutationObserver' in window) {
         const observer = new MutationObserver((mutations) => {

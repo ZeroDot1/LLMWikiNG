@@ -71,6 +71,7 @@ def base_context(request: Request, wiki: str = "main") -> dict:
         "app_version": APP_VERSION,
         "base_path": BASE_PATH,
         "theme": load_app_config().get("theme", "dark"),
+        "syntax_highlighting": load_app_config().get("syntax_highlighting", True),
         "sync_needed": is_sync_needed(wiki),
         "current_user": current_user,
         "_": _t,

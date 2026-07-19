@@ -1270,6 +1270,8 @@ def settings_get(request: Request):
         users=list_users(),
         keys=list_keys(),
         new_key=None,
+        new_generated_mcp_key=None,
+        new_generated_api_key=None,
     )
 
 
@@ -1283,6 +1285,8 @@ async def settings_post(request: Request):
     update_log_output = None
     config_success_msg = None
     config_error_msg = None
+    new_generated_mcp_key = None
+    new_generated_api_key = None
 
     if action == "run_update":
         update_script = PROJECT_ROOT / "update.sh"
@@ -1337,6 +1341,41 @@ async def settings_post(request: Request):
         user = request.session.get("user") if hasattr(request, "session") else {}
         log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
         config_success_msg = "Audit-Konfiguration gespeichert!"
+    elif action == "generate_mcp_keys":
+        from core.config import save_app_config
+        from core.storage import create_key
+        import secrets as _secrets
+        
+        new_mcp_key = "mcp_" + _secrets.token_urlsafe(24)
+        user = request.session.get("user") if hasattr(request, "session") else {}
+        user_id = user.get("id")
+        if not user_id:
+            from core.storage import list_users
+            admins = [u for u in list_users() if u.get("role") == "admin"]
+            user_id = admins[0]["id"] if admins else "admin"
+            
+        key_obj, raw_api_key = create_key(
+            user_id=user_id,
+            name="MCP-Agent-Key-Auto",
+            require_password=False,
+            scopes=["read", "write"]
+        )
+        
+        save_app_config({
+            "enable_mcp_server": True,
+            "llmwiking_mcp_key": new_mcp_key,
+        })
+        
+        log_action(
+            action="settings_change",
+            details="Sicherer MCP-Key und passender API-Key generiert",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+        config_success_msg = "Sicherer MCP-Key und passender API-Key wurden erfolgreich generiert!"
+        new_generated_mcp_key = new_mcp_key
+        new_generated_api_key = raw_api_key
     elif action == "save_mcp_config":
         from core.config import save_app_config
         enable_mcp_server = form.get("enable_mcp_server") == "1"
@@ -1414,6 +1453,8 @@ async def settings_post(request: Request):
         users=list_users(),
         keys=list_keys(),
         new_key=None,
+        new_generated_mcp_key=new_generated_mcp_key,
+        new_generated_api_key=new_generated_api_key,
     )
 
 

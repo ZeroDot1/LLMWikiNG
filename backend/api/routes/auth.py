@@ -185,6 +185,8 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         users=list_users(),
         keys=list_keys(),
         new_key=raw,
+        new_generated_mcp_key=None,
+        new_generated_api_key=None,
     )
 
 

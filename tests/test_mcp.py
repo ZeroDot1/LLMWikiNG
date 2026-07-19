@@ -950,11 +950,26 @@ class TestMcpApiKeyMiddleware:
         resp = client.get("/LLMWikiNG/mcp/sse")
         assert resp.status_code in (401, 503)
 
-    def test_mcp_sse_rejects_wrong_key(self, client, mcp_wiki: Path):
-        """SSE-Endpunkt sollte falschen Key ablehnen."""
+    def test_mcp_sse_rejects_wrong_mcp_key(self, client, mcp_wiki: Path, sample_api_keys):
+        """SSE-Endpunkt sollte falschen MCP-Key ablehnen."""
+        _, keys_info = sample_api_keys
         resp = client.get(
             "/LLMWikiNG/mcp/sse",
-            headers={"X-API-Key": "falscher_key"},
+            headers={
+                "X-MCP-Key": "falscher_key",
+                "X-API-Key": keys_info["raw_key"]
+            },
+        )
+        assert resp.status_code == 401
+
+    def test_mcp_sse_rejects_wrong_api_key(self, client, mcp_wiki: Path):
+        """SSE-Endpunkt sollte falschen API-Key ablehnen."""
+        resp = client.get(
+            "/LLMWikiNG/mcp/sse",
+            headers={
+                "X-MCP-Key": "test_mcp_key_2026",
+                "X-API-Key": "falscher_key"
+            },
         )
         assert resp.status_code == 401
 
@@ -967,15 +982,22 @@ class TestMcpApiKeyMiddleware:
         """Messages-Endpunkt sollte falschen Key ablehnen."""
         resp = client.post(
             "/LLMWikiNG/mcp/messages",
-            headers={"X-API-Key": "falscher_key"},
+            headers={
+                "X-MCP-Key": "test_mcp_key_2026",
+                "X-API-Key": "falscher_key"
+            },
         )
         assert resp.status_code == 401
 
-    def test_mcp_sse_accepts_correct_key(self, client, mcp_wiki: Path):
-        """SSE-Endpunkt sollte korrekten Key akzeptieren."""
+    def test_mcp_sse_accepts_correct_keys(self, client, mcp_wiki: Path, sample_api_keys):
+        """SSE-Endpunkt sollte korrekte Keys akzeptieren."""
+        _, keys_info = sample_api_keys
         resp = client.get(
             "/LLMWikiNG/mcp/sse",
-            headers={"X-API-Key": "test_mcp_key_2026"},
+            headers={
+                "X-MCP-Key": "test_mcp_key_2026",
+                "X-API-Key": keys_info["raw_key"]
+            },
         )
         # 200 = SSE-Stream gestartet, 503 = MCP-App-Problem, aber KEIN 401
         assert resp.status_code != 401

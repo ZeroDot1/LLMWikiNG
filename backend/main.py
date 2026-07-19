@@ -87,17 +87,43 @@ def create_app() -> FastAPI:
                     async def dispatch(self, request, call_next):
                         if "/mcp/" in request.url.path:
                             from core.config import LLMWIKING_MCP_KEY as _KEY
-                            key = request.headers.get("X-API-Key", "")
+                            # 1. MCP Key check
+                            mcp_key = request.headers.get("X-MCP-Key") or request.headers.get("x-mcp-key") or request.query_params.get("mcp_key")
                             if not _KEY:
                                 return StarletteJSON(
                                     {"detail": "MCP nicht konfiguriert (LLMWIKING_MCP_KEY fehlt)"},
                                     status_code=503,
                                 )
-                            if key != _KEY:
+                            if mcp_key != _KEY:
                                 return StarletteJSON(
-                                    {"detail": "Ungueltiger MCP API-Key"},
+                                    {"detail": "Ungueltiger oder fehlender MCP-Key (X-MCP-Key)"},
                                     status_code=401,
                                 )
+                            
+                            # 2. Database API-Key check (X-API-Key)
+                            api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key") or request.query_params.get("api_key")
+                            if not api_key:
+                                return StarletteJSON(
+                                    {"detail": "API-Key erforderlich (X-API-Key)"},
+                                    status_code=401,
+                                )
+                            
+                            import hashlib
+                            from core.storage import get_key_by_hash, get_user
+                            h = hashlib.sha256(api_key.encode()).hexdigest()
+                            db_key = get_key_by_hash(h)
+                            if not db_key or not db_key.get("active", True):
+                                return StarletteJSON(
+                                    {"detail": "Ungueltiger API-Key (X-API-Key)"},
+                                    status_code=401,
+                                )
+                            user = get_user(db_key["user_id"])
+                            if not user or not user.get("active", True):
+                                return StarletteJSON(
+                                    {"detail": "Benutzer inaktiv"},
+                                    status_code=401,
+                                )
+                            request.state.mcp_user = user
                         return await call_next(request)
 
                 app.add_middleware(McpApiKeyMiddleware)

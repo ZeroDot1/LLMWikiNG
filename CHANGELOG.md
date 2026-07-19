@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.7] - 2026-07-19
+
+### Fixed
+- **Version-Anzeige desynchron (hartcodiert)** (`backend/core/config.py`): `APP_VERSION` war fest auf `2.12.1` codiert, während die `VERSION`-Datei bereits höher war. Die API-Status-Antwort und das Settings-Template zeigten daher fälschlich 2.12.1. `APP_VERSION` wird nun dynamisch aus der `VERSION`-Datei gelesen (Fallback auf 2.12.7), sodass ein VERSION-Bump künftig automatisch übernommen wird.
+
 ## [2.12.6] - 2026-07-19
 
 ### Added

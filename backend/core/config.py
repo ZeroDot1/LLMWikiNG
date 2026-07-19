@@ -33,7 +33,25 @@ DATA_DIR = PROJECT_ROOT / "data"
 QMD_BIN = "qmd"
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
-APP_VERSION = "2.12.1"
+
+
+def _read_app_version() -> str:
+    """Liest die Version aus der VERSION-Datei im Projektroot.
+
+    Fällt auf einen hartcodierten Fallback zurück, falls die Datei fehlt.
+    Damit bleiben ``config.APP_VERSION`` und die ``VERSION``-Datei stets
+    synchron – ein manuelles Bump der VERSION-Datei reicht.
+    """
+    try:
+        version_file = PROJECT_ROOT / "VERSION"
+        if version_file.exists():
+            return version_file.read_text(encoding="utf-8").strip() or "2.12.6"
+    except Exception:
+        pass
+    return "2.12.6"
+
+
+APP_VERSION = _read_app_version()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MCP (Model Context Protocol) – Open Knowledge Format Server

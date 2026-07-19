@@ -395,6 +395,24 @@ ingest_wiki() {
         PAGE_TITLE=$(head -1 "$SOURCE_FILE" | sed 's/^#\+\s*//; s/^# //' || echo "$SOURCE_BASENAME")
     fi
 
+    # ─── 6c-i. Quelltext bereinigen (Scrape-Artefakte, kaputte URLs) ──────
+    # Entfernt Navigation/Menü-Reste und repariert durch Zeilenumbrüche
+    # zerrissene Markdown-URLs, damit die Seite menschenlesbar wird.
+    local CLEANED_TEXT
+    CLEANED_TEXT=$(python3 -c "
+import sys, json
+sys.path.insert(0, '$PROJECT_ROOT/backend')
+from services.wiki import clean_ingest_content
+text = open('$SOURCE_FILE', encoding='utf-8').read()
+print(clean_ingest_content(text, '''$PAGE_TITLE'''))
+" 2>/dev/null)
+
+    if [ -n "$CLEANED_TEXT" ]; then
+        SOURCE_TEXT="$CLEANED_TEXT"
+        # Bereinigten Text temporär speichern, damit das Template ihn nutzt
+        printf '%s\n' "$SOURCE_TEXT" > "$SOURCE_FILE.clean"
+    fi
+
     local PAGE_SLUG=$(slugify "$PAGE_TITLE")
     local PAGE_FILE="$WIKI_DIR/${PAGE_SLUG}.md"
 
@@ -417,6 +435,9 @@ ingest_wiki() {
     fi
 
     # Wiki-Seite schreiben
+    # Hinweis: "Original-Inhalt" nutzt den bereinigten Text (SOURCE_TEXT),
+    # nicht die ungefilterte Quelldatei, damit Navigation/Scrape-Artefakte
+    # und zerrissene URLs entfernt sind.
     cat > "$PAGE_FILE" <<-PAGEEOF
 ---
 type: Concept
@@ -438,9 +459,9 @@ $(if [ -n "$SUMMARY" ]; then echo "$SUMMARY"; else echo "_Keine Zusammenfassung 
 
 ---
 
-## Original-Inhalt
+## Inhalt
 
-$(cat "$SOURCE_FILE")
+$(printf '%s\n' "$SOURCE_TEXT")
 
 ---
 
@@ -451,6 +472,9 @@ $(cat "$SOURCE_FILE")
 PAGEEOF
 
     echo -e "${GREEN}✓ ${MODE} Seite: $PAGE_FILE${NC}"
+
+    # Temporäre Bereinigungs-Datei aufräumen
+    [ -f "$SOURCE_FILE.clean" ] && rm -f "$SOURCE_FILE.clean"
 
     # ─── 6d. index.md aktualisieren ──────────────────────────────────────
     update_index

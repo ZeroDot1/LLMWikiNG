@@ -19,6 +19,107 @@ from services.cache import get_cache
 SYSTEM_PAGES = ("index", "log", "ingestlater")
 
 
+def clean_ingest_content(text: str, title: str = "") -> str:
+    """Bereinigt rohen Ingest-Text (Web-Scrapes, Paste, Blog-Exports) für
+    menschenlesbare Wiki-Seiten.
+
+    Entfernt typische Scrape-Artefakte und repariert häufige Markdown-Fehler:
+
+    * Navigation/Menü-Reste (``Direkt zum Hauptbereich``, ``Suchen``,
+      ``Mehr…``, Blog-Menüs, "Dieses Blog durchsuchen")
+    * Kaputte URLs durch Zeilenumbrüche in Markdown-Links
+      (``https://der-\\nhoerold.blogspot.com/`` → ``https://der-hoerold.blogspot.com/``)
+    * Doppelte Überschriften (wenn die erste H1 == Seitentitel)
+    * Überflüssige Leerzeilen-Häufungen
+
+    Args:
+        text:  Der rohe Quelltext (Markdown oder Plaintext).
+        title: Optionaler Seitentitel, dessen Duplikat-Überschrift entfernt wird.
+
+    Returns:
+        Bereinigter Markdown-Text.
+    """
+    if not text:
+        return text
+
+    lines = text.splitlines()
+    cleaned: list[str] = []
+    skipped_menu = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # --- Scrape-Artefakte / Navigation entfernen -----------------------
+        # Blog-/Web-Menü-Reste und Boilerplate ignorieren
+        if stripped in (
+            "Direkt zum Hauptbereich",
+            "Suchen",
+            "Mehr…",
+            "Mehr...",
+            "Dieses Blog durchsuchen",
+            "Startseite",
+            "Impressum, Haftungsauschluss und Datenschutz",
+        ):
+            continue
+        # Menü-ähnliche Zeilen mit "Suchen" / "Mehr" am Anfang
+        if stripped.startswith("Suchen") or stripped.startswith("Mehr"):
+            continue
+        # Blog-Menü: " * [Startseite](...)" etc. (Bullet + Link auf sich selbst)
+        if re.match(r"^[\*\-]\s*\[(?:Startseite|Neuer Blog|Hörspiele|Hörbücher|Podcasts|Impressum)[^\]]*\]\(https?://", stripped):
+            continue
+        # Überschriften-artige Menü-Reste ("### Dieses Blog durchsuchen")
+        if re.match(r"^#{1,4}\s*Dieses Blog durchsuchen\s*$", stripped):
+            continue
+        # Blog-Titel als H1-Link (z.B. "# [ Der Hörold - ... ](https://...)")
+        # ist kein Seiteninhalt, sondern Boilerplate-Navigation
+        if re.match(r"^#\s*\[\s*[^]]*\]\s*\(https?://", stripped):
+            continue
+
+        cleaned.append(line)
+
+    text = "\n".join(cleaned)
+
+    # --- Kaputte URLs durch Zeilenumbrüche reparieren ----------------------
+    # Markdown-Links: [text](url\nmit umbruch) -> [text](urlmitumbruch)
+    text = re.sub(
+        r"\]\((\s*https?://[^\n]*?)\n\s*([^\n]*?)\)",
+        lambda m: f"]({m.group(1).strip()}{m.group(2).strip()})",
+        text,
+    )
+    # Nackte URLs mit Umbruch: https://der-\nhoerold... -> https://der-hoerold...
+    text = re.sub(
+        r"(https?://[^\s)\]]*?)\n\s*([^\s)\]]+)",
+        lambda m: f"{m.group(1).rstrip('-_')}{m.group(2)}",
+        text,
+    )
+
+    # --- Doppelte H1 entfernen (erste Überschrift == Titel) ---------------
+    if title:
+        title_norm = title.strip().lower()
+        # Finde die erste H1-Zeile und prüfe, ob sie dem Titel entspricht
+        def _h1_match(l: str) -> bool:
+            m = re.match(r"^#\s+(.+)$", l.strip())
+            return bool(m) and m.group(1).strip().lower() == title_norm
+
+        first_h1_idx = None
+        for i, l in enumerate(text.splitlines()):
+            if _h1_match(l):
+                first_h1_idx = i
+                break
+        if first_h1_idx is not None:
+            # Entferne diese eine Zeile (der Seitentitel wird ohnehin als H1 gesetzt)
+            text_lines = text.splitlines()
+            del text_lines[first_h1_idx]
+            text = "\n".join(text_lines)
+
+    # --- Mehrfache Leerzeilen reduzieren -----------------------------------
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    if not text.endswith("\n"):
+        text += "\n"
+
+    return text
+
+
 async def run_ingest_async(
     filepath: str | Path,
     *,

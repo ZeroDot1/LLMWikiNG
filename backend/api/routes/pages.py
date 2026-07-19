@@ -1254,6 +1254,7 @@ def settings_get(request: Request):
         env_user=env_user,
         env_pass_exists=env_pass_exists,
         audit_config=load_app_config(),
+        mcp_config=load_app_config(),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
         config_error_msg=None,
@@ -1336,6 +1337,24 @@ async def settings_post(request: Request):
         user = request.session.get("user") if hasattr(request, "session") else {}
         log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
         config_success_msg = "Audit-Konfiguration gespeichert!"
+    elif action == "save_mcp_config":
+        from core.config import save_app_config
+        enable_mcp_server = form.get("enable_mcp_server") == "1"
+        llmwiking_mcp_key = (form.get("llmwiking_mcp_key") or "").strip()
+        save_app_config({
+            "enable_mcp_server": enable_mcp_server,
+            "llmwiking_mcp_key": llmwiking_mcp_key,
+        })
+        
+        user = request.session.get("user") if hasattr(request, "session") else {}
+        log_action(
+            action="settings_change",
+            details=f"MCP-Konfiguration gespeichert: enabled={enable_mcp_server}",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+        config_success_msg = "MCP-Konfiguration erfolgreich gespeichert!"
     else:
         smtp_host = form.get("smtp_host", "smtp.gmail.com")
         try:
@@ -1379,6 +1398,7 @@ async def settings_post(request: Request):
         env_user=env_user,
         env_pass_exists=env_pass_exists,
         audit_config=load_app_config(),
+        mcp_config=load_app_config(),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=config_success_msg,
         config_error_msg=config_error_msg,

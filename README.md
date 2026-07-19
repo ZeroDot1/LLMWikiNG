@@ -222,9 +222,12 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
-### 🔌 Enable MCP Server via HTTP-SSE
+### 🔌 Enable & Configure MCP Server
 
-The MCP server is enabled by default. Configure it via environment variables:
+The MCP server is enabled by default. You can configure it in two ways:
+
+1. **Via Web UI (Recommended):** Go to `Settings ➜ MCP` in the Web interface, toggle the server activation state, and define your API Key. This persists settings in `config.json`.
+2. **Via Environment Variables:** Set the following variables in your environment before startup:
 
 ```bash
 # Enable MCP (Default: true)

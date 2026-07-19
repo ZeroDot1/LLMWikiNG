@@ -1,0 +1,23 @@
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
+    <h2 class="text-lg font-semibold mb-2 text-primary">🔌 Model Context Protocol (MCP)</h2>
+    <p class="text-text-secondary text-sm mb-4">Hier kannst du den integrierten MCP-Server konfigurieren. Änderungen werden in der <code>config.json</code> gespeichert und erfordern einen Server-Neustart, um wirksam zu werden.</p>
+    
+    <form action="{{ base_path }}/settings" method="post" class="space-y-4">
+        <input type="hidden" name="action" value="save_mcp_config">
+        
+        <label class="flex items-center gap-2 mb-4 cursor-pointer select-none">
+            <input type="checkbox" id="enable_mcp_server" name="enable_mcp_server" value="1" class="rounded text-primary focus:ring-primary bg-surface border-border" {% if mcp_config.get("enable_mcp_server", True) %}checked{% endif %}>
+            <span class="font-medium text-sm text-text">MCP-Server global aktivieren (Enable MCP Server)</span>
+        </label>
+        
+        <div class="space-y-2">
+            <label for="llmwiking_mcp_key" class="block text-sm font-medium text-text">MCP API-Schlüssel (API Key for Agents)</label>
+            <input type="text" id="llmwiking_mcp_key" name="llmwiking_mcp_key" value="{{ mcp_config.get('llmwiking_mcp_key', '') }}" placeholder="z.B. dein_sicherer_mcp_key_2026" class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono">
+            <p class="text-xs text-text-secondary">Wichtig: Dieser Schlüssel schützt deine MCP-Endpunkte. Ohne Schlüssel ist kein Zugriff möglich.</p>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-border flex gap-3">
+            <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">Speichern (Save)</button>
+        </div>
+    </form>
+</div>

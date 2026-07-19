@@ -6,10 +6,16 @@
     var tabs = document.querySelectorAll(".settings-tab");
     var panels = {
       "tab-language": document.getElementById("tab-language"),
-      "tab-config": document.getElementById("tab-config"),
       "tab-theme": document.getElementById("tab-theme"),
+      "tab-config": document.getElementById("tab-config"),
+      "tab-users": document.getElementById("tab-users"),
+      "tab-apikeys": document.getElementById("tab-apikeys"),
       "tab-health": document.getElementById("tab-health"),
-      "tab-update": document.getElementById("tab-update")
+      "tab-update": document.getElementById("tab-update"),
+      "tab-backup": document.getElementById("tab-backup"),
+      "tab-wikis": document.getElementById("tab-wikis"),
+      "tab-audit": document.getElementById("tab-audit"),
+      "tab-mcp": document.getElementById("tab-mcp")
     };
 
     function switchTab(id) {
@@ -32,7 +38,19 @@
     });
 
     var params = new URLSearchParams(window.location.search);
-    var map = { language: "tab-language", theme: "tab-theme", config: "tab-config", health: "tab-health", update: "tab-update", users: "tab-users", apikeys: "tab-apikeys" };
+    var map = {
+      language: "tab-language",
+      theme: "tab-theme",
+      config: "tab-config",
+      users: "tab-users",
+      apikeys: "tab-apikeys",
+      health: "tab-health",
+      update: "tab-update",
+      backup: "tab-backup",
+      wikis: "tab-wikis",
+      audit: "tab-audit",
+      mcp: "tab-mcp"
+    };
     switchTab(map[params.get("tab")] || "tab-language");
   }
 

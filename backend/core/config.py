@@ -39,11 +39,19 @@ APP_VERSION = "2.12.1"
 # MCP (Model Context Protocol) – Open Knowledge Format Server
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Steuert die Verfügbarkeit des MCP-Endpunkts (SSE-basiert)
-ENABLE_MCP_SERVER: bool = os.getenv("ENABLE_MCP_SERVER", "true").lower() == "true"
-
-# API-Key für externe KI-Agenten (Cursor, Windsurf, Claude Code etc.)
-LLMWIKING_MCP_KEY: str = os.getenv("LLMWIKING_MCP_KEY", "")
+# Steuert die Verfügbarkeit des MCP-Endpunkts und den Key dynamisch via config.json
+def __getattr__(name: str) -> Any:
+    if name == "ENABLE_MCP_SERVER":
+        cfg = load_app_config()
+        if "enable_mcp_server" in cfg:
+            return bool(cfg["enable_mcp_server"])
+        return os.getenv("ENABLE_MCP_SERVER", "true").lower() == "true"
+    elif name == "LLMWIKING_MCP_KEY":
+        cfg = load_app_config()
+        if "llmwiking_mcp_key" in cfg:
+            return str(cfg["llmwiking_mcp_key"])
+        return os.getenv("LLMWIKING_MCP_KEY", "")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 DEFAULT_LANG = "en"  # Kann via config.json oder --lang CLI überschrieben werden
 
 # Zur Laufzeit durch run.py gesetzt (CLI --lang / config.json)
@@ -247,7 +255,8 @@ def load_app_config() -> dict[str, Any]:
         "audit_disabled_categories": [],
         "ollama_host": "http://localhost:11434",
         "ollama_model": "llama3.2:3b",
-
+        "enable_mcp_server": os.getenv("ENABLE_MCP_SERVER", "true").lower() == "true",
+        "llmwiking_mcp_key": os.getenv("LLMWIKING_MCP_KEY", ""),
     }
     if CONFIG_FILE.exists():
         try:

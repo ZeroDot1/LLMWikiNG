@@ -169,6 +169,18 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def server_error_handler(request: Request, exc: Exception):
+        import traceback
+        from pathlib import Path
+        tb = traceback.format_exc()
+        print(f"Exception caught in server_error_handler:\n{tb}", flush=True)
+        try:
+            log_file = Path(__file__).resolve().parent.parent / "data" / "error.log"
+            with open(log_file, "a", encoding="utf-8") as f:
+                import datetime
+                f.write(f"=== {datetime.datetime.now()} ===\n{tb}\n")
+        except Exception as log_ex:
+            print(f"Failed to write to error.log: {log_ex}", flush=True)
+
         if request.url.path.startswith(f"{BASE_PATH}/api/v1"):
             from fastapi.responses import JSONResponse
             return JSONResponse(status_code=500, content={"detail": "Interner Server-Fehler"})
@@ -178,7 +190,7 @@ def create_app() -> FastAPI:
             status_code=500,
             active_page="500",
             page_title="Server-Fehler",
-            content="<h1>500 – Interner Server-Fehler</h1><p>Bitte Logs prüfen.</p>",
+            content=f"<h1>500 – Interner Server-Fehler</h1><p>Bitte Logs prüfen.</p><pre style='font-size:10px; text-align:left; background:#222; color:#fff; p:10px; overflow:auto;'>{tb}</pre>",
         )
 
     return app

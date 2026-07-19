@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from contextlib import asynccontextmanager
 from html import escape as h_escape
 from pathlib import Path
 
@@ -34,8 +35,41 @@ from web import templates, render
 STATIC_DIR = PROJECT_ROOT / "static"
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """App-Lebenszyklus: beim Start alle Wiki-Indizes neu aufbauen.
+
+    Nach einem Container-/Server-Neustart kann der auf Platte liegende
+    ``index.md`` veraltet sein (z. B. weil der letzte Sync den Index nicht
+    neu gebaut hat, oder weil ``is_sync_needed`` keine Änderung erkannt hat).
+    Da die Web-UI den Index direkt rendert, fehlen dann ingestierte Seiten
+    in der Anzeige – obwohl sie auf der Platte vorhanden sind.
+
+    Wir regenerieren daher beim Start **alle** Wiki-Indizes aus den physisch
+    vorhandenen Dateien (``regenerate_index`` nutzt die un-cached Variante),
+    damit der Index nach jedem Neustart garantiert mit der Realität auf der
+    Platte übereinstimmt.
+    """
+    try:
+        from core.config import list_wikis
+        from services.sync import regenerate_index
+
+        wikis = list_wikis() or [{"slug": "main"}]
+        for w in wikis:
+            slug = w.get("slug") or "main"
+            try:
+                regenerate_index(slug)
+            except Exception as e:  # ein fehlerhaftes Wiki darf den Start nicht blockieren
+                print(f"[lifespan] WARN: Index-Regeneration für '{slug}' fehlgeschlagen: {e}", flush=True)
+        print(f"[lifespan] Wiki-Indizes für {len(wikis)} Wiki(s) neu aufgebaut.", flush=True)
+    except Exception as e:
+        print(f"[lifespan] WARN: Index-Regeneration übersprungen: {e}", flush=True)
+
+    yield
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(title=f"{APP_NAME} {APP_EDITION}", version=APP_VERSION)
+    app = FastAPI(title=f"{APP_NAME} {APP_EDITION}", version=APP_VERSION, lifespan=lifespan)
 
     # Templates immer neu laden (auch im Produktionsmodus)
     templates.env.auto_reload = True

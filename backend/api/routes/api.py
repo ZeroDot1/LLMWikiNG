@@ -545,6 +545,35 @@ async def api_update_run(admin: dict = Depends(require_api_admin)):
         raise HTTPException(status_code=500, detail=f"Update fehlgeschlagen: {e}")
 
 
+import signal as _signal
+import threading as _threading
+
+
+@router.post("/system/restart")
+async def api_system_restart(admin: dict = Depends(require_api_admin)):
+    """Startet den Webserver neu, damit neuer Code aktiv wird.
+
+    Beendet den aktuellen uvicorn-Worker nach kurzer Verzögerung per
+    ``SIGTERM`` (im Hintergrund-Thread, damit die Response gesendet wird).
+    Im Docker-Container (``restart: unless-stopped``) oder via Systemd/start.sh
+    fährt der Prozess mit dem NEUEN Code neu hoch. Nützlich nach einem Update,
+    wenn der laufende Prozess noch alten Code im Speicher hat.
+
+    ACHTUNG: Der Aufruf beendet den Server kurzzeitig – die Antwort wird aber
+    noch vor dem Beenden zugestellt.
+    """
+    def _kill():
+        import time
+        time.sleep(1)
+        try:
+            os.kill(os.getpid(), _signal.SIGTERM)
+        except Exception:
+            pass
+
+    _threading.Thread(target=_kill, daemon=True).start()
+    return {"ok": True, "message": "Server-Neustart eingeleitet. Bitte in 5 Sekunden neu laden."}
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # D. Direct Wiki API Endpoints (e.g. /LLMWikiNG/wiki/{wiki_name}/api/...)
 # ═══════════════════════════════════════════════════════════════════════════════

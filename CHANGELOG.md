@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.6] - 2026-07-19
+
+### Added
+- **API-Key-geschützter Restart-Endpoint** (`backend/api/routes/api.py`): `POST /LLMWikiNG/api/v1/system/restart` (via `require_api_admin`) beendet den uvicorn-Worker nach kurzer Verzögerung per `SIGTERM`. Im Docker-Container (`restart: unless-stopped`) oder via Systemd/start.sh fährt der Prozess mit dem neuen Code neu hoch. Ermöglicht einen Remote-Neustart nach einem Update ohne Login-Session.
+
+### Fixed
+- **`update.sh` restartet Container-Modus zuverlässig** (`update.sh`): Erkennt nun Container-Modus (`/.dockerenv`) und beendet PID 1 (uvicorn via `CMD python run.py`); `docker-compose` baut den Container mit dem neuen Code neu auf. Fallback-`pgrep`-Pattern wurde auf `run.py` erweitert.
+
 ## [2.12.5] - 2026-07-19
 
 ### Fixed

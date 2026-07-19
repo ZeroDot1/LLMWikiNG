@@ -1350,7 +1350,6 @@ async def settings_post(request: Request):
         user = request.session.get("user") if "session" in request.scope else {}
         user_id = user.get("id")
         if not user_id:
-            from core.storage import list_users
             admins = [u for u in list_users() if u.get("role") == "admin"]
             user_id = admins[0]["id"] if admins else "admin"
             

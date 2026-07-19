@@ -1,3 +1,14 @@
+{% if config_success_msg %}
+<div class="rounded-xl border border-success/40 bg-success-subtle p-4 text-sm text-success mb-6 max-w-2xl">
+    <strong>Success:</strong> {{ config_success_msg }}
+</div>
+{% endif %}
+{% if config_error_msg %}
+<div class="rounded-xl border border-danger/40 bg-danger-subtle p-4 text-sm text-danger mb-6 max-w-2xl">
+    <strong>Error:</strong> {{ config_error_msg }}
+</div>
+{% endif %}
+
 {% if new_generated_mcp_key and new_generated_api_key %}
 <div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6 max-w-2xl animate-fade-in">
     <p class="mb-2 font-semibold text-success flex items-center gap-1.5">
@@ -7,13 +18,13 @@
         <div>
             <label class="block text-xs font-semibold text-text-muted uppercase mb-1">Generierter MCP-Schlüssel (X-MCP-Key):</label>
             <div class="flex gap-2 items-center">
-                <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all">{{ new_generated_mcp_key }}</code>
+                <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all" id="gen-mcp-key">{{ new_generated_mcp_key }}</code>
             </div>
         </div>
         <div>
             <label class="block text-xs font-semibold text-text-muted uppercase mb-1">Generierter API-Schlüssel (X-API-Key):</label>
             <div class="flex gap-2 items-center">
-                <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all">{{ new_generated_api_key }}</code>
+                <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all" id="gen-api-key">{{ new_generated_api_key }}</code>
                 <span class="text-xs text-text-muted italic">(Dieser API-Schlüssel wurde dem Admin zugewiesen und kann nur jetzt kopiert werden!)</span>
             </div>
         </div>
@@ -25,7 +36,7 @@
     <h2 class="text-lg font-semibold mb-2 text-primary">{{ _('settings.mcp_heading') }}</h2>
     <p class="text-text-secondary text-sm mb-4">{{ _('settings.mcp_subtitle') }}</p>
     
-    <form action="{{ base_path }}/settings" method="post" class="space-y-4">
+    <form action="{{ base_path }}/settings?tab=mcp" method="post" class="space-y-4">
         <input type="hidden" name="action" value="save_mcp_config">
         
         <label class="flex items-center gap-2 mb-4 cursor-pointer select-none">
@@ -54,36 +65,95 @@
         <div>
             <strong class="text-sm block mb-1">1. Antigravity CLI (<code>agy</code>) &amp; Antigravity IDE</strong>
             <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>mcpServers</code> in deiner <code>~/.gemini/config/mcp_config.json</code> ein:</p>
-            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code>{
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
   "mcpServers": {
     "llmwiking-okf": {
       "type": "sse",
-      "url": "{{ request.base_url }}LLMWikiNG/mcp/sse",
+      "url": "{BASE_URL}LLMWikiNG/mcp/sse",
       "env": {
-        "X-MCP-Key": "{{ new_generated_mcp_key or mcp_config.get('llmwiking_mcp_key') or 'DEIN_MCP_KEY' }}",
-        "X-API-Key": "{{ new_generated_api_key or 'DEIN_API_KEY' }}"
+        "X-MCP-Key": "{MCP_KEY}",
+        "X-API-Key": "{API_KEY}"
       }
     }
   }
-}</code></pre>
+}'></code></pre>
         </div>
 
         <div>
             <strong class="text-sm block mb-1">2. OpenCode</strong>
             <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>mcp</code> in deiner <code>opencode.json</code> Konfiguration hinzu:</p>
-            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code>{
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
   "mcp": {
     "llmwiking-okf": {
       "type": "remote",
-      "url": "{{ request.base_url }}LLMWikiNG/mcp/sse",
+      "url": "{BASE_URL}LLMWikiNG/mcp/sse",
       "enabled": true,
       "environment": {
-        "X-MCP-Key": "{{ new_generated_mcp_key or mcp_config.get('llmwiking_mcp_key') or 'DEIN_MCP_KEY' }}",
-        "X-API-Key": "{{ new_generated_api_key or 'DEIN_API_KEY' }}"
+        "X-MCP-Key": "{MCP_KEY}",
+        "X-API-Key": "{API_KEY}"
       }
     }
   }
-}</code></pre>
+}'></code></pre>
+        </div>
+
+        <div>
+            <strong class="text-sm block mb-1">3. Hermes Agent</strong>
+            <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>servers</code> in deiner <code>~/.hermes/mcp/config.json</code> Konfiguration hinzu:</p>
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
+  "servers": {
+    "llmwiking-okf": {
+      "url": "{BASE_URL}LLMWikiNG/mcp/sse",
+      "headers": {
+        "X-MCP-Key": "{MCP_KEY}",
+        "X-API-Key": "{API_KEY}"
+      }
+    }
+  }
+}'></code></pre>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    // SessionStorage Caching for generated keys to preserve them across form submissions/saves
+    var base_url = "{{ request.base_url }}";
+    
+    // 1. Store newly generated keys if they are rendered in the DOM
+    var mcpKeyElem = document.getElementById("gen-mcp-key");
+    var apiKeyElem = document.getElementById("gen-api-key");
+    
+    if (mcpKeyElem && mcpKeyElem.textContent) {
+        sessionStorage.setItem("mcp_cached_mcp_key", mcpKeyElem.textContent.trim());
+    }
+    if (apiKeyElem && apiKeyElem.textContent) {
+        sessionStorage.setItem("mcp_cached_api_key", apiKeyElem.textContent.trim());
+    }
+    
+    // 2. Resolve final keys to display in examples
+    var activeMcpKey = "{{ new_generated_mcp_key or mcp_config.get('llmwiking_mcp_key') or '' }}";
+    if (!activeMcpKey) {
+        activeMcpKey = sessionStorage.getItem("mcp_cached_mcp_key") || "DEIN_MCP_KEY";
+    } else {
+        sessionStorage.setItem("mcp_cached_mcp_key", activeMcpKey);
+    }
+    
+    var activeApiKey = "{{ new_generated_api_key or '' }}";
+    if (!activeApiKey) {
+        activeApiKey = sessionStorage.getItem("mcp_cached_api_key") || "DEIN_API_KEY";
+    }
+    
+    // 3. Render all config code templates
+    document.querySelectorAll(".mcp-config-code").forEach(function(codeBlock) {
+        var template = codeBlock.getAttribute("data-template");
+        if (template) {
+            var rendered = template
+                .replace(/{BASE_URL}/g, base_url)
+                .replace(/{MCP_KEY}/g, activeMcpKey)
+                .replace(/{API_KEY}/g, activeApiKey);
+            codeBlock.textContent = rendered;
+        }
+    });
+})();
+</script>

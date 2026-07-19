@@ -51,4 +51,5 @@ data/
 data/*
 *.db
 scratch.py
+scratch/
 

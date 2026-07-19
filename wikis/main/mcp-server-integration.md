@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "LLMWikiNG MCP Server — Integration & Tool Reference"
-description: "Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts."
+description: "Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts. Replace the example host/keys with your own."
 tags: [mcp, okf, opencode, agy, integration, reference, ai-agent]
 timestamp: "2026-07-19T20:05:00Z"
 author: "LLMWikiNG Documentation"
@@ -13,6 +13,24 @@ status: AI-Generated
 This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 31 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
 
 LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a plain, human-readable Markdown file with a small YAML frontmatter block. That means the AI never works with a proprietary blob — it reads and writes normal Markdown, and you can open every page in any editor.
+
+> [!NOTE]
+> **Placeholders in this guide:** Replace `<host>:<port>` with your server's address and `X-MCP-Key` / `X-API-Key` with your own credentials. The example values shown here are **illustrative only** — never paste real keys into a wiki page that others can read.
+
+---
+
+## Inhaltsverzeichnis
+
+1. [What the MCP server gives your agent](#1-what-the-mcp-server-gives-your-agent)
+2. [Prerequisites](#2-prerequisites)
+3. [Connect Antigravity `agy` (and Antigravity IDE)](#3-connect-antigravity-agy-and-antigravity-ide)
+4. [Connect Claude Desktop](#4-connect-claude-desktop)
+5. [Connect Cursor (and other SSE clients)](#5-connect-cursor-and-other-sse-clients)
+6. [Copy-paste "self-configuration" prompt](#6-copy-paste-self-configuration-prompt)
+7. [How agents use the wiki automatically (workflows)](#7-how-agents-use-the-wiki-automatically-workflows)
+8. [Full tool reference](#8-full-tool-reference)
+9. [OKF v0.1 page format](#9-okf-v01-page-format)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
@@ -48,17 +66,17 @@ The agent does this by calling **MCP tools** over an **SSE** (Server-Sent Events
 
 Both the `agy` CLI and the Antigravity IDE consume MCP servers from a configuration file. Use the **global** file `~/.gemini/antigravity-cli/settings.json` or a **workspace** file `.agents/mcp_config.json`.
 
-Add the following config block:
+Add the following config block (replace `<host>:<port>` and the keys with your own):
 
 ```json
 {
   "mcpServers": {
     "llmwiking-okf": {
       "type": "sse",
-      "url": "http://192.168.2.247:44419/LLMWikiNG/mcp/sse",
+      "url": "http://<host>:<port>/LLMWikiNG/mcp/sse",
       "env": {
-        "X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
-        "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"
+        "X-MCP-Key": "YOUR_MCP_KEY",
+        "X-API-Key": "YOUR_API_KEY"
       }
     }
   }
@@ -80,17 +98,17 @@ Claude Desktop reads MCP servers from its global config file.
 *   **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 *   **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
-Add the following config block:
+Add the following config block (replace `<host>:<port>` and the keys with your own):
 
 ```json
 {
   "mcpServers": {
     "llmwiking-okf": {
       "type": "sse",
-      "url": "http://192.168.2.247:44419/LLMWikiNG/mcp/sse",
+      "url": "http://<host>:<port>/LLMWikiNG/mcp/sse",
       "env": {
-        "X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
-        "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"
+        "X-MCP-Key": "YOUR_MCP_KEY",
+        "X-API-Key": "YOUR_API_KEY"
       }
     }
   }
@@ -107,8 +125,8 @@ In Cursor: *Settings → Features → MCP → Add New MCP Server*.
 | :--- | :--- |
 | **Name** | `LLMWikiNG-OKF` |
 | **Type** | `SSE` |
-| **URL** | `http://192.168.2.247:44419/LLMWikiNG/mcp/sse` |
-| **Headers** | `{"X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd", "X-API-Key": "llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y"}` |
+| **URL** | `http://<host>:<port>/LLMWikiNG/mcp/sse` |
+| **Headers** | `{"X-MCP-Key": "YOUR_MCP_KEY", "X-API-Key": "YOUR_API_KEY"}` |
 
 Any other MCP client that supports the `sse` transport uses the same configuration parameters.
 
@@ -121,10 +139,10 @@ Paste this into your agent's chat so it configures itself (adjust the URL and ke
 ```text
 Configure yourself to use the LLMWikiNG MCP server.
 - Transport: SSE
-- URL: http://192.168.2.247:44419/LLMWikiNG/mcp/sse
+- URL: http://<host>:<port>/LLMWikiNG/mcp/sse
 - Send two headers with every request:
-    X-MCP-Key: mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd
-    X-API-Key: llmw_qajgNXD2rT8I8jkFCsLbYyMc9A92xNq8qCYswuEA93Y
+    X-MCP-Key: YOUR_MCP_KEY
+    X-API-Key: YOUR_API_KEY
 In Claude Desktop / agy add it under "mcpServers" in the configuration file.
 Once connected, use the okf_* tools to read, search, write and ingest wiki pages in OKF v0.1 format.
 ```

@@ -5,6 +5,15 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.9] - 2026-07-19
+
+### Fixed
+- **Neue über MCP geschriebene Seiten fehlten im Wiki-Index** (`backend/api/routes/mcp.py`, `backend/services/sync.py`): `okf_write_concept` rief `request_sync_background` ohne `force=True` auf, wodurch `do_sync(force=False)` bei `is_sync_needed() == False` den Index-Bau übersprang. Neu hinzugefügte Seiten (z. B. `mcp-server-integration.md`) landeten auf der Platte, aber nie in `index.md`. `okf_write_concept` ruft nun `request_sync_background(force=True)`; `regenerate_index` nutzt zusätzlich die un-cached Seitenliste, sodass der Index garantiert alle physisch vorhandenen Seiten enthält.
+- **Falsches "Sync Recommended" nach erfolgreichem Sync** (`backend/services/sync.py`): `is_sync_needed()` verglich Datei-mtimes mit `last_sync`. Bei Zeitverschiebungen zwischen Host und Container (verschiedene Zeitzonen/Clocks) lagen Datei-mtimes in Host-Zeit nach dem in Container-Zeit gesetzten `last_sync` → UI zeigte nach dem Sync fälschlicherweise weiter "Sync empfohlen". `is_sync_needed()` nutzt nun einen **hash-basierten** Vergleich der Wiki-Inhalte (zeitverschiebungs-unabhängig); `set_last_sync` speichert den Hash und wird nach allen Schreiboperationen (`regenerate_index`, `append_okf_log`) aufgerufen.
+
+### Added
+- **Englische MCP-Server-Integrationsseite** (`wikis/main/mcp-server-integration.md`): Vollständiger Leitfaden zum Einbinden des LLMWikiNG MCP-Servers in Antigravity agy, Claude Desktop, Cursor, OpenCode und andere Agents — inkl. Per-Tool-Reference (31 Tools) und Copy-Paste-Ingest-Prompts. Über das Web-UI unter `/LLMWikiNG/wiki/main/mcp-server-integration` erreichbar.
+
 ## [2.12.8] - 2026-07-19
 
 ### Fixed

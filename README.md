@@ -222,6 +222,8 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
+> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (31 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
+
 ### 🔌 Enable & Configure MCP Server
 
 The MCP server is enabled by default. You can configure it in two ways:

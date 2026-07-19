@@ -3,7 +3,7 @@ type: Reference
 title: "LLMWikiNG MCP Server — Integration & Tool Reference"
 description: "Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts."
 tags: [mcp, okf, opencode, agy, integration, reference, ai-agent]
-timestamp: "2026-07-19T18:50:00Z"
+timestamp: "2026-07-19T20:05:00Z"
 author: "LLMWikiNG Documentation"
 status: AI-Generated
 ---

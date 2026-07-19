@@ -1295,6 +1295,42 @@ def settings_get(request: Request):
     )
 
 
+def _trigger_server_restart() -> None:
+    """Leitet einen sauberen Server-Neustart ein.
+
+    Der aktuelle uvicorn-Worker wird nach einer kurzen Verzögerung mit
+    ``SIGTERM`` beendet, sodass der Browser die Response noch empfangen kann.
+    Im Docker-Container (``restart: always``) oder via Systemd/start.sh wird
+    der Prozess dadurch automatisch mit dem NEUEN Code neu hochgefahren –
+    das verhindert, dass nach einem Update weiterhin der alte (fehlerhafte)
+    Code im Speicher läuft.
+    """
+    import os
+    import signal
+    import time
+    import threading
+
+    pid_file = PROJECT_ROOT / "llmwiking.pid"
+
+    def _kill():
+        time.sleep(1)  # Browser Zeit geben, die Response zu empfangen
+        try:
+            if pid_file.exists():
+                try:
+                    pid = int(pid_file.read_text(encoding="utf-8").strip())
+                    if pid and pid != os.getpid() and os.kill(pid, 0):
+                        os.kill(pid, signal.SIGTERM)
+                        return
+                except (ValueError, ProcessLookupError, PermissionError):
+                    pass
+        except Exception:
+            pass
+        # Fallback: eigenen Prozess beenden
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    threading.Thread(target=_kill, daemon=True).start()
+
+
 @router.post("/settings")
 async def settings_post(request: Request):
     form = await request.form()
@@ -1311,7 +1347,7 @@ async def settings_post(request: Request):
     if action == "run_update":
         update_script = PROJECT_ROOT / "update.sh"
         github_token = (form.get("github_token") or "").strip()
-        
+
         env = os.environ.copy()
         if github_token:
             env["GITHUB_TOKEN"] = github_token
@@ -1320,18 +1356,26 @@ async def settings_post(request: Request):
             update_log_output = "FEHLER: update.sh nicht gefunden."
         else:
             try:
-                proc = subprocess.run(
+                # ACHTUNG: async-Route -> blockierenden Subprozess via to_thread
+                # auslagern, sonst friert die Event-Loop (Hänger) ein.
+                proc = await asyncio.to_thread(
+                    subprocess.run,
                     [str(update_script)],
                     capture_output=True,
                     text=True,
                     timeout=300,
                     cwd=str(PROJECT_ROOT),
-                    env=env
+                    env=env,
                 )
                 # ANSI-Farbcodes aus Output entfernen (fuer saubere HTML-Anzeige)
                 import re as _re
                 raw_output = proc.stdout + proc.stderr
                 update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
+
+                # update.sh startet den Server selbst neu (Container/uvicorn).
+                # Falls es im aktuellen Kontext nicht klappte, hier nachhelfen.
+                if "Neustart" not in update_log_output and "restart" not in update_log_output.lower():
+                    _trigger_server_restart()
             except subprocess.TimeoutExpired:
                 update_log_output = "FEHLER: Update-Skript hat 300 Sekunden ueberschritten."
             except Exception as e:
@@ -1339,17 +1383,7 @@ async def settings_post(request: Request):
     elif action == "restart_server":
         # Startet den Server neu, indem der Hauptprozess beendet wird.
         # Im Docker-Container (restart: always) oder via Systemd wird der Prozess sofort neu gestartet.
-        import sys
-        import signal
-        import time
-        
-        def kill_server():
-            time.sleep(1) # Ermöglicht dem Browser, die Response noch zu empfangen
-            os.kill(os.getpid(), signal.SIGTERM)
-            
-        import threading
-        threading.Thread(target=kill_server).start()
-        
+        _trigger_server_restart()
         config_success_msg = "Server-Neustart wurde initiiert. Bitte lade die Seite in 5 Sekunden neu."
     elif action == "save_audit_config":
         from core.config import save_app_config

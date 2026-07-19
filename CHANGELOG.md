@@ -5,6 +5,16 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.5] - 2026-07-19
+
+### Fixed
+- **Update hinterließ alten Code im Speicher (Coroutine-500 nach Update)** (`update.sh`, `backend/api/routes/pages.py`): `update.sh` machte `git reset --hard` + `pip install`, startete den uvicorn-Server aber **nicht** neu. Der laufende Prozess behielt den alten (fehlerhaften) Code im Speicher, sodass Bugs (z. B. der `'coroutine' object is not iterable`-500) trotz Update bestehen blieben. `update.sh` startet den Server nun am Ende sauber neu (Docker-Container via `docker restart`, sonst uvicorn-PID-Datei/`pgrep` + `start.sh`).
+- **`run_update` blockierte die Event-Loop** (`backend/api/routes/pages.py`): Die Route rief `subprocess.run([update.sh], ...)` synchron in einer `async def` auf → Hänger. Nun via `await asyncio.to_thread` ausgelagert; nach dem Update wird zusätzlich ein Server-Neustart angestoßen.
+- **`restart_server` robuster gemacht** (`backend/api/routes/pages.py`): Neue Hilfsfunktion `_trigger_server_restart()` beendet den uvicorn-Worker nach kurzer Verzögerung sauber per `SIGTERM` (PID-Datei bevorzugt, Fallback auf eigene PID). Im Container/Systemd fährt der Prozess mit dem neuen Code neu hoch.
+
+### Changed
+- **Settings → Update UX verbessert** (`templates/settings/update.html`, `lang/de.json`, `lang/en.json`): Hinweis klärt, dass der Server nach dem Update **automatisch** neu startet; der manuelle "Server neu starten"-Button bleibt als Fallback. `run_confirm`-Text und `restart_warning`-Text angepasst (de/en).
+
 ## [2.12.4] - 2026-07-19
 
 ### Fixed

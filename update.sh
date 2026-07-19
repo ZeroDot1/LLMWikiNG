@@ -199,6 +199,62 @@ fi
 # Ausfuehrbare Berechtigungen setzen
 chmod +x wiki.sh start.sh tools/*.sh update.sh clean_release.sh 2>/dev/null || true
 
+# ─── Webserver neu starten (falls er laeuft) ─────────────────────────────────
+# WICHTIG: Nach git reset --hard liegt der NEUE Code auf der Platte, aber der
+# laufende uvicorn-Prozess hat den ALTEN Code noch im Speicher. Ohne Neustart
+# bleiben Bugs (z. B. Coroutine-500) trotz Update bestehen. Daher wird der
+# Server hier sauber neu gestartet – sofern er erkannt wird.
+
+echo ""
+echo -e "  ${YELLOW}Starte Webserver neu, damit der neue Code aktiv wird...${NC}"
+
+RESTART_DONE=0
+
+# 1) Docker-Container: docker restart (Container hat restart: always / start.sh)
+if [ -f "/.dockerenv" ] && command -v docker &>/dev/null; then
+    CONTAINER_ID=$(cat /proc/self/cgroup 2>/dev/null | grep -oP 'docker[/-]\K[0-9a-f]{12,}' | head -1)
+    if [ -n "$CONTAINER_ID" ]; then
+        echo -e "  -> Docker-Container erkannt, starte neu..."
+        docker restart "$CONTAINER_ID" >/dev/null 2>&1 && RESTART_DONE=1 || true
+    fi
+fi
+
+# 2) uvicorn-PID-Datei (sofern start.sh/main.py eine schreibt)
+if [ "$RESTART_DONE" -eq 0 ] && [ -f "$PROJECT_DIR/llmwiking.pid" ]; then
+    OLD_PID=$(cat "$PROJECT_DIR/llmwiking.pid" 2>/dev/null || echo "")
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+        echo -e "  -> Beende laufenden uvicorn (PID $OLD_PID)..."
+        kill -TERM "$OLD_PID" 2>/dev/null || true
+        sleep 2
+        # Neu starten im Hintergrund (nohup, damit es das Terminal überlebt)
+        if [ -f "$PROJECT_DIR/start.sh" ]; then
+            ( cd "$PROJECT_DIR" && nohup ./start.sh >/dev/null 2>&1 & )
+            RESTART_DONE=1
+        fi
+    fi
+fi
+
+# 3) Fallback: laufenden uvicorn/gunicorn-Prozess ueber den Port oder Prozessname finden
+if [ "$RESTART_DONE" -eq 0 ]; then
+    UVICORN_PID=$(pgrep -f "uvicorn.*main:main\|uvicorn.*app:app\|gunicorn.*main" 2>/dev/null | head -1 || true)
+    if [ -n "$UVICORN_PID" ]; then
+        echo -e "  -> Beende laufenden Server-Prozess (PID $UVICORN_PID)..."
+        kill -TERM "$UVICORN_PID" 2>/dev/null || true
+        sleep 2
+        if [ -f "$PROJECT_DIR/start.sh" ]; then
+            ( cd "$PROJECT_DIR" && nohup ./start.sh >/dev/null 2>&1 & )
+            RESTART_DONE=1
+        fi
+    fi
+fi
+
+if [ "$RESTART_DONE" -eq 1 ]; then
+    echo -e "${GREEN}Webserver-Neustart eingeleitet.${NC}"
+else
+    echo -e "${YELLOW}Kein laufender Webserver erkannt – starte ihn bei Bedarf manuell:${NC}"
+    echo -e "    ./start.sh"
+fi
+
 # ─── Fertig ───────────────────────────────────────────────────────────────────
 
 echo ""
@@ -210,6 +266,10 @@ echo -e "  ${YELLOW}${CURRENT_VERSION}${NC} -> ${YELLOW}${NEW_VERSION}${NC}"
 echo ""
 echo -e "  Backup-Pfad: ${CYAN}${BACKUP_DIR}${NC}"
 echo ""
-echo -e "  ${YELLOW}-> Bitte starte den Webserver neu, falls er laeuft:${NC}"
-echo -e "    ./start.sh"
+if [ "$RESTART_DONE" -eq 1 ]; then
+    echo -e "  ${GREEN}Der Webserver wurde neu gestartet – der neue Code ist jetzt aktiv.${NC}"
+else
+    echo -e "  ${YELLOW}-> Bitte starte den Webserver neu, falls er laeuft:${NC}"
+    echo -e "    ./start.sh"
+fi
 echo ""

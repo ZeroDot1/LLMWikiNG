@@ -95,7 +95,7 @@
     <pre class="whitespace-pre-wrap text-xs bg-surface border border-border p-3 rounded font-mono text-text max-h-60 overflow-y-auto">{{ update_log }}</pre>
     <p class="mt-3 p-3 bg-error-subtle rounded-lg text-xs border border-error/20 flex flex-col gap-1">
         <strong class="text-error font-bold">⚠ {{ _('update.restart_warning') }}</strong>
-        <span class="text-text-secondary">Starte den Server neu um die Änderungen anzuwenden: <code class="bg-bg-sunken px-1 rounded border border-border font-mono">./start.sh</code></span>
+        <span class="text-text-secondary">Starte den Server manuell neu: <code class="bg-bg-sunken px-1 rounded border border-border font-mono">./start.sh</code></span>
     </p>
     <form action="{{ base_path }}/settings?tab=update" method="post" onsubmit="return confirm('Möchtest du den Webserver jetzt neu starten? Im Container-Modus wird er automatisch wieder hochgefahren.');">
         <input type="hidden" name="action" value="restart_server">

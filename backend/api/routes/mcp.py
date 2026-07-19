@@ -65,6 +65,8 @@ from services.wiki import (
     extract_links_from_content,
     get_wiki_stats,
     slugify_german,
+    run_ingest_async,
+    run_sync_async,
 )
 from services.search import local_search
 from services.sync import do_sync, append_okf_log
@@ -79,6 +81,15 @@ import frontmatter
 
 try:
     from mcp.server.fastmcp import FastMCP
+    
+    kwargs = {}
+    try:
+        from mcp.server.transport_security import TransportSecuritySettings
+        kwargs["transport_security"] = TransportSecuritySettings(
+            enable_dns_rebinding_protection=False
+        )
+    except ImportError:
+        pass
 
     mcp_server = FastMCP(
         "LLMWikiNG-OKF",
@@ -88,6 +99,7 @@ try:
             "mit YAML-Frontmatter. Alle Dokumente sind menschenlesbar und "
             "maschineninterpretierbar."
         ),
+        **kwargs
     )
     _MCP_AVAILABLE = True
 except ImportError:
@@ -569,7 +581,7 @@ Willkommen im Wiki **{name}**.
 
     # --- A11: Process Pending ---
     @mcp_server.tool()
-    def okf_process_pending(wiki: str = "main") -> str:
+    async def okf_process_pending(wiki: str = "main") -> str:
         """Verarbeitet alle ausstehenden Rohquellen-Dateien (Ingest).
 
         Fuehrt den automatisierten Ingest-Prozess fuer alle Dateien
@@ -603,11 +615,7 @@ Willkommen im Wiki **{name}**.
             if not filepath.exists():
                 continue
             try:
-                result = subprocess.run(
-                    ["./wiki.sh", "ingest", str(filepath)],
-                    capture_output=True, text=True, timeout=120,
-                    cwd=str(PROJECT_ROOT), env=env,
-                )
+                result = await run_ingest_async(filepath, timeout=120, env=env)
                 if result.returncode == 0:
                     processed.append(item["name"])
                 else:
@@ -616,7 +624,7 @@ Willkommen im Wiki **{name}**.
                 errors.append(f"{item['name']}: {str(e)}")
 
         try:
-            do_sync(slug)
+            await run_sync_async(slug)
         except Exception:
             pass
 
@@ -631,7 +639,7 @@ Willkommen im Wiki **{name}**.
 
     # --- A12: Ingest Text ---
     @mcp_server.tool()
-    def okf_ingest_text(
+    async def okf_ingest_text(
         text: str,
         wiki: str = "main",
         title: str = "",
@@ -671,14 +679,10 @@ Willkommen im Wiki **{name}**.
         env["RAW_DIR"] = str(RAW_DIR)
 
         try:
-            result = subprocess.run(
-                ["./wiki.sh", "ingest", str(temp_file)],
-                capture_output=True, text=True, timeout=120,
-                cwd=str(PROJECT_ROOT), env=env,
-            )
+            result = await run_ingest_async(temp_file, timeout=120, env=env)
             if result.returncode == 0:
                 try:
-                    do_sync(slug)
+                    await run_sync_async(slug)
                 except Exception:
                     pass
                 return (

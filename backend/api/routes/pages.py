@@ -47,6 +47,8 @@ from services.wiki import (
     get_wiki_trails,
     extract_links_from_content,
     slugify_german,
+    run_ingest_async,
+    run_sync_async,
 )
 from services.markdown import render_markdown, render_markdown_preview
 from services.search import qmd_search, local_search
@@ -523,7 +525,7 @@ def pending_list(request: Request):
 
 
 @router.get("/pending/ingest/{filename}")
-def pending_ingest_single(filename: str, request: Request):
+async def pending_ingest_single(filename: str, request: Request):
     filepath = RAW_DIR / filename
     if not filepath.exists() or not filepath.is_file():
         abort(404, f"Datei '{filename}' nicht im raw/ Ordner gefunden.")
@@ -532,11 +534,7 @@ def pending_ingest_single(filename: str, request: Request):
         backend = os.environ.get("LLM_BACKEND", "ollama")
         env = os.environ.copy()
         env["LLM_BACKEND"] = backend
-        result = subprocess.run(
-            ["./wiki.sh", "ingest", str(filepath)],
-            capture_output=True, text=True, timeout=120,
-            cwd=str(PROJECT_ROOT), env=env,
-        )
+        result = await run_ingest_async(filepath, timeout=120, env=env)
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or f"Ingest fehlgeschlagen (Exitcode {result.returncode})")
 
@@ -547,7 +545,7 @@ def pending_ingest_single(filename: str, request: Request):
             except Exception:
                 pass
 
-        do_sync("main")
+        await run_sync_async("main")
         success_msg = f"Datei '{filename}' wurde erfolgreich ingestiert!"
         return redirect(f"{BASE_PATH}/pending?success_msg={urlencode(success_msg)}")
     except Exception as e:
@@ -578,7 +576,7 @@ def pending_delete_single(filename: str, request: Request):
 
 
 @router.get("/pending/ingest-all")
-def pending_ingest_all(request: Request):
+async def pending_ingest_all(request: Request):
     files = get_pending_files()
     if not files:
         return redirect(f"{BASE_PATH}/pending?error_msg=" + urlencode("Keine ausstehenden Dateien zum Ingestieren gefunden."))
@@ -593,11 +591,7 @@ def pending_ingest_all(request: Request):
         try:
             env = os.environ.copy()
             env["LLM_BACKEND"] = backend
-            result = subprocess.run(
-                ["./wiki.sh", "ingest", str(filepath)],
-                capture_output=True, text=True, timeout=120,
-                cwd=str(PROJECT_ROOT), env=env,
-            )
+            result = await run_ingest_async(filepath, timeout=120, env=env)
             if result.returncode == 0:
                 success_count += 1
                 today_prefix = datetime.now().strftime("%Y-%m-%d")
@@ -611,7 +605,7 @@ def pending_ingest_all(request: Request):
         except Exception as e:
             errors.append(f"{filename}: {e}")
 
-    do_sync("main")
+    await run_sync_async("main")
 
     if success_count > 0:
         msg = f"{success_count} Datei(en) erfolgreich ingestiert!"
@@ -807,10 +801,7 @@ async def ingest_post(request: Request):
             custom_title = (form.get("title") or "").strip()
             if custom_title and ingest_type == "file":
                 cmd += ["--title", custom_title]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=120,
-                cwd=str(PROJECT_ROOT), env=env,
-            )
+            result = await run_ingest_async(filepath, title=custom_title or None, timeout=120, env=env)
             if result.returncode != 0:
                 raise RuntimeError(result.stderr.strip() or f"Ingest fehlgeschlagen mit Exitcode {result.returncode}")
 
@@ -829,7 +820,7 @@ async def ingest_post(request: Request):
             new_slug = slugify_german(title_to_slug)
             log_action(action="ingest", details=f"Ingest: '{new_slug}.md' aus '{orig_filename}' (Typ: {ingest_type}, Backend: {backend}, Wiki: {wiki})", username=user.get("username"), user_id=user.get("id"), request=request)
             success_msg = f"Quelle erfolgreich eingespielt! ({new_slug}.md)"
-            do_sync(wiki)
+            await run_sync_async(wiki)
 
     except Exception as e:
         error_msg = str(e)

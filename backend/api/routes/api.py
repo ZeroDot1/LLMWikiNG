@@ -26,7 +26,7 @@ from core.storage import (
     create_key,
     delete_key,
 )
-from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german
+from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german, run_ingest_async, run_sync_async
 from services.search import local_search, qmd_search
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
@@ -350,7 +350,7 @@ def api_pending(wiki: str, user: dict = Depends(get_api_user)):
 
 
 @router.post("/wikis/{wiki}/ingest/process")
-def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
+async def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
     pending = get_pending_files()
     processed = []
@@ -368,14 +368,7 @@ def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
         if not filepath.exists():
             continue
         try:
-            result = subprocess.run(
-                ["./wiki.sh", "ingest", str(filepath)],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                cwd=str(PROJECT_ROOT),
-                env=env,
-            )
+            result = await run_ingest_async(filepath, timeout=120, env=env)
             if result.returncode == 0:
                 processed.append(item["name"])
             else:
@@ -383,7 +376,7 @@ def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
         except Exception as e:
             errors.append(f"{item['name']}: {str(e)}")
     try:
-        do_sync(wiki)
+        await run_sync_async(wiki)
     except Exception:
         pass
     return {"ok": True, "wiki": wiki, "processed": processed, "errors": errors}
@@ -561,7 +554,7 @@ wiki_api_router = APIRouter(prefix=f"{BASE_PATH}/wiki/{{wiki_name}}/api")
 async def api_direct_ingest(
     wiki_name: str,
     request: Request,
-    user: dict = Depends(get_api_user)
+    user: dict = Depends(get_api_user),
 ):
     """Direkter Ingest von Dateien, URLs oder reinem Text für ein spezifisches Wiki."""
     slug = slugify_wiki(wiki_name)
@@ -630,7 +623,7 @@ async def api_direct_ingest(
             cmd = ["./wiki.sh", "ingest", str(temp_filepath)]
             if title:
                 cmd += ["--title", title]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(PROJECT_ROOT), env=env)
+            result = await run_ingest_async(temp_filepath, title=title or None, timeout=120, env=env)
             if result.returncode == 0:
                 processed.append(url)
                 # Slug ermitteln
@@ -655,7 +648,7 @@ async def api_direct_ingest(
             cmd = ["./wiki.sh", "ingest", str(temp_filepath)]
             if title:
                 cmd += ["--title", title]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(PROJECT_ROOT), env=env)
+            result = await run_ingest_async(temp_filepath, title=title or None, timeout=120, env=env)
             if result.returncode == 0:
                 processed.append(safe_title)
                 new_slugs.append(slugify_german(safe_title))
@@ -677,7 +670,7 @@ async def api_direct_ingest(
                     cmd = ["./wiki.sh", "ingest", str(temp_filepath)]
                     if title:
                         cmd += ["--title", title]
-                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=str(PROJECT_ROOT), env=env)
+                    result = await run_ingest_async(temp_filepath, title=title or None, timeout=120, env=env)
                     if result.returncode == 0:
                         processed.append(upload.filename)
                         new_slugs.append(slugify_german(title or Path(upload.filename).stem))
@@ -691,7 +684,7 @@ async def api_direct_ingest(
                         
     if processed:
         try:
-            do_sync(slug)
+            await run_sync_async(slug)
         except Exception:
             pass
             
@@ -701,12 +694,12 @@ async def api_direct_ingest(
 
 
 @wiki_api_router.post("/sync")
-def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
+async def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
     """Direktes Syncen (Embedding-Updates) für ein spezifisches Wiki."""
     slug = slugify_wiki(wiki_name)
     _wiki_or_404(slug)
     try:
-        do_sync(slug)
+        await run_sync_async(slug)
         return {"ok": True, "wiki": slug}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

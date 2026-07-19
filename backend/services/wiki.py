@@ -6,7 +6,10 @@ Portiert aus llmWiki.py. Alle Funktionen akzeptieren einen optionalen `wiki`-Nam
 
 from __future__ import annotations
 
+import asyncio
+import os
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -14,6 +17,51 @@ from core.config import WIKI_DIR, RAW_DIR, PROJECT_ROOT, wiki_path
 from services.cache import get_cache
 
 SYSTEM_PAGES = ("index", "log", "ingestlater")
+
+
+async def run_ingest_async(
+    filepath: str | Path,
+    *,
+    title: str | None = None,
+    timeout: int = 120,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Führt `wiki.sh ingest` asynchron aus, ohne den Event-Loop zu blockieren.
+
+    Der blockierende ``subprocess.run``-Aufruf wird via ``asyncio.to_thread``
+    in einen Worker-Thread ausgelagert, sodass die asyncio-Event-Loop während
+    des (potenziell langsamen) Ingest-Prozesses frei bleibt und weitere
+    Requests bedienen kann.
+
+    Args:
+        filepath: Pfad zur zu ingestierenden Datei.
+        title:    Optionale Überschrift (``--title``).
+        timeout:  Timeout in Sekunden für den Subprozess.
+        env:      Optionale Umgebungsvariablen (kopiert + ergänzt).
+
+    Returns:
+        Das ``subprocess.CompletedProcess``-Ergebnis.
+    """
+    cmd = ["./wiki.sh", "ingest", str(filepath)]
+    if title:
+        cmd += ["--title", title]
+    run_env = env if env is not None else os.environ.copy()
+    return await asyncio.to_thread(
+        subprocess.run,
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        cwd=str(PROJECT_ROOT),
+        env=run_env,
+    )
+
+
+async def run_sync_async(wiki: str) -> None:
+    """Führt ``do_sync`` asynchron aus, ohne den Event-Loop zu blockieren."""
+    from services.sync import do_sync
+
+    await asyncio.to_thread(do_sync, wiki)
 
 
 def slugify_path(value: str) -> str:

@@ -5,6 +5,12 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.10] - 2026-07-19
+
+### Fixed
+
+- **Dauerhaftes "Sync Recommended"-Banner nach erfolgreichem Sync** (`backend/services/sync.py`): In `set_last_sync()` führte eine Exception in `_wiki_content_hash()` zu einem `UnboundLocalError` (weil `content_hash` nie zugewiesen wurde), der von `except Exception: pass` geschluckt wurde. Der Hash wurde weder in `sync_status.json` noch in `.sync_hash` gespeichert, sodass `is_sync_needed()` bei jedem Aufruf `True` zurückgab – das Banner blieb permanent sichtbar. Fix: `content_hash` vor dem `try` mit `None` initialisieren, Hash-Speicherung nur bei erfolgreicher Berechnung. Zusätzlich wurden stille `except: pass` durch `logging` ersetzt und `_wiki_content_hash()` gegen `rglob`-Fehler (PermissionError etc.) abgesichert.
+
 ## [2.12.9] - 2026-07-19
 
 ### Fixed

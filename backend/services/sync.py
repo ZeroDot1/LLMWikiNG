@@ -23,7 +23,8 @@ def _load_sync_times() -> dict[str, str]:
         try:
             import json
             return json.loads(SYNC_STATUS_FILE.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as e:
+            print(f"[sync] WARN: sync_status.json fehlerhaft: {e}", flush=True)
             return {}
     return {}
 
@@ -32,11 +33,11 @@ def _save_sync_times(times: dict[str, str]) -> None:
         import json
         SYNC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         SYNC_STATUS_FILE.write_text(json.dumps(times, indent=2), encoding="utf-8")
-    except Exception:
+    except Exception as e:
         # Fallback: DATA_DIR evtl. nicht beschreibbar (read-only Mount im Container).
         # In diesem Fall bleibt der Hash-Vergleich deaktiviert; is_sync_needed
         # greift dann auf den mtime-Fallback zurück (siehe unten).
-        pass
+        print(f"[sync] WARN: Konnte sync_status.json nicht schreiben: {e}", flush=True)
 
 def _wiki_sync_hash_file(wiki: str = "main") -> "Path":
     """Pfad zur Hash-Statusdatei im Wiki-Verzeichnis.
@@ -61,8 +62,8 @@ def _save_wiki_sync_hash(wiki: str = "main", value: str = "") -> None:
     p = _wiki_sync_hash_file(wiki)
     try:
         p.write_text(value, encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[sync] WARN: Konnte .sync_hash für Wiki '{wiki}' nicht schreiben: {e}", flush=True)
 
 def _wiki_content_hash(wiki: str = "main") -> str:
     """Berechnet einen Hash über alle relevanten Wiki-Dateien (ohne index/log).
@@ -74,13 +75,19 @@ def _wiki_content_hash(wiki: str = "main") -> str:
     root = wiki_path(wiki)
     h = hashlib.sha256()
     if root.exists():
-        for f in sorted(root.rglob("*.md")):
+        try:
+            files = sorted(root.rglob("*.md"))
+        except OSError as e:
+            print(f"[sync] WARN: rglob fehlgeschlagen für Wiki '{wiki}': {e}", flush=True)
+            files = []
+        for f in files:
             if f.stem in ("index", "log", "ingestlater"):
                 continue
             try:
                 h.update(f.relative_to(root).as_posix().encode("utf-8"))
                 h.update(f.read_bytes())
-            except OSError:
+            except OSError as e:
+                print(f"[sync] WARN: Datei '{f}' nicht lesbar für Hash: {e}", flush=True)
                 pass
     return h.hexdigest()
 
@@ -105,6 +112,9 @@ def is_sync_needed(wiki: str = "main") -> bool:
     Der Hash wird primär in ``SYNC_STATUS_FILE`` (DATA_DIR) gespeichert und als
     robuster Fallback zusätzlich in ``.sync_hash`` im Wiki-Verzeichnis selbst
     (garantiert gemountet/beschreibbar im Container).
+
+    Returns:
+        True, wenn ein Sync empfohlen wird (kein Hash bekannt oder Inhalt geändert).
     """
     # 1. Hash aus Wiki-Verzeichnis (robuster Fallback)
     last_hash = _load_wiki_sync_hash(wiki)
@@ -112,14 +122,21 @@ def is_sync_needed(wiki: str = "main") -> bool:
     if last_hash is None:
         times = _load_sync_times()
         last_hash = times.get(f"{wiki}::hash")
+
     if last_hash is None:
         # Kein bekannter Sync-Zustand -> Sync empfohlen
+        print(f"[sync] INFO: Kein Hash für Wiki '{wiki}' gefunden -> Sync empfohlen", flush=True)
         return True
+
     try:
         current_hash = _wiki_content_hash(wiki)
-    except Exception:
+    except Exception as e:
+        print(f"[sync] ERROR: Aktuellen Hash für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
         return True
-    return current_hash != last_hash
+
+    if current_hash != last_hash:
+        return True
+    return False
 
 async def is_sync_needed_async(wiki: str = "main") -> bool:
     """Async-Variante von :func:`is_sync_needed`."""
@@ -132,16 +149,24 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     base = value or dt.datetime.now()
     ref_time = base + dt.timedelta(seconds=3600)
     times[wiki] = ref_time.isoformat()
+
     # Hash der Wiki-Inhalte speichern, damit is_sync_needed hash-basiert
     # (zeitverschiebungs-unabhängig) erkennen kann, ob sich etwas geändert hat.
+    # WICHTIG: content_hash VOR try initialisieren, damit bei Exception in
+    # _wiki_content_hash kein UnboundLocalError auftritt (der sonst von
+    # except geschluckt würde und der Hash ungespeichert bliebe).
+    content_hash: str | None = None
     try:
         content_hash = _wiki_content_hash(wiki)
+    except Exception as e:
+        print(f"[sync] ERROR: Hash-Berechnung für Wiki '{wiki}' fehlgeschlagen: {e}", flush=True)
+
+    if content_hash is not None:
         times[f"{wiki}::hash"] = content_hash
         # Robuster Fallback: Hash zusätzlich im Wiki-Verzeichnis speichern
         # (garantiert gemountet/beschreibbar, auch wenn DATA_DIR read-only ist).
         _save_wiki_sync_hash(wiki, content_hash)
-    except Exception:
-        pass
+
     _save_sync_times(times)
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:

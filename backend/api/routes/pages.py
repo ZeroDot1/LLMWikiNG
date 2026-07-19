@@ -1338,7 +1338,7 @@ async def settings_post(request: Request):
         disabled = [c for c in ALL_CATEGORIES if c not in enabled_cats]
         save_app_config({"audit_enabled": audit_enabled, "audit_disabled_categories": disabled})
         
-        user = request.session.get("user") if hasattr(request, "session") else {}
+        user = request.session.get("user") if "session" in request.scope else {}
         log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
         config_success_msg = "Audit-Konfiguration gespeichert!"
     elif action == "generate_mcp_keys":
@@ -1347,7 +1347,7 @@ async def settings_post(request: Request):
         import secrets as _secrets
         
         new_mcp_key = "mcp_" + _secrets.token_urlsafe(24)
-        user = request.session.get("user") if hasattr(request, "session") else {}
+        user = request.session.get("user") if "session" in request.scope else {}
         user_id = user.get("id")
         if not user_id:
             from core.storage import list_users
@@ -1385,7 +1385,7 @@ async def settings_post(request: Request):
             "llmwiking_mcp_key": llmwiking_mcp_key,
         })
         
-        user = request.session.get("user") if hasattr(request, "session") else {}
+        user = request.session.get("user") if "session" in request.scope else {}
         log_action(
             action="settings_change",
             details=f"MCP-Konfiguration gespeichert: enabled={enable_mcp_server}",

@@ -7,6 +7,7 @@ bzw. `api_password` (Anforderung 4).
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import json
 import os
@@ -27,7 +28,7 @@ from core.storage import (
     delete_key,
 )
 from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german, run_ingest_async, run_sync_async
-from services.search import local_search, qmd_search
+from services.search import local_search, qmd_search, run_qmd_search_async
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.editor import ensure_okf_frontmatter
@@ -237,10 +238,10 @@ def api_lint(wiki: str, user: dict = Depends(get_api_user)):
 
 
 @router.get("/search")
-def api_search(q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
+async def api_search(q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
     if not q:
         return {"query": q, "results": [], "local": []}
-    result = qmd_search(q, wiki)
+    result = await run_qmd_search_async(q, wiki)
     local = local_search(q, wiki)
     return {"query": q, "wiki": wiki, "results": result.get("results", []), "local": local.get("results", [])}
 
@@ -413,11 +414,11 @@ def api_system_status(user: dict = Depends(get_api_user)):
 
 
 @router.post("/system/sync")
-def api_system_sync(user: dict = Depends(get_api_user)):
+async def api_system_sync(user: dict = Depends(get_api_user)):
     results = {}
     for w in list_wikis():
         try:
-            do_sync(w["name"])
+            await run_sync_async(w["name"])
             results[w["name"]] = "ok"
         except Exception as e:
             results[w["name"]] = f"fehler: {e}"
@@ -456,7 +457,7 @@ def api_system_audit(
 
 
 @router.get("/system/update/check")
-def api_update_check(admin: dict = Depends(require_api_admin)):
+async def api_update_check(admin: dict = Depends(require_api_admin)):
     """Prüft, ob ein Update auf GitHub verfügbar ist.
 
     Führt ``git fetch origin`` aus und vergleicht die lokale VERSION-Datei
@@ -466,12 +467,14 @@ def api_update_check(admin: dict = Depends(require_api_admin)):
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
     try:
-        subprocess.run(
+        await asyncio.to_thread(
+            subprocess.run,
             ["git", "fetch", "origin"],
             capture_output=True, text=True, timeout=30,
             cwd=str(PROJECT_ROOT),
         )
-        proc = subprocess.run(
+        proc = await asyncio.to_thread(
+            subprocess.run,
             ["git", "show", "origin/main:VERSION"],
             capture_output=True, text=True, timeout=15,
             cwd=str(PROJECT_ROOT),
@@ -493,7 +496,7 @@ def api_update_check(admin: dict = Depends(require_api_admin)):
 
 
 @router.post("/system/update/run")
-def api_update_run(admin: dict = Depends(require_api_admin)):
+async def api_update_run(admin: dict = Depends(require_api_admin)):
     """Führt das Update via ``update.sh`` aus.
 
     Das Skript sichert Benutzerdaten, führt ``git reset --hard origin/main``
@@ -509,7 +512,8 @@ def api_update_run(admin: dict = Depends(require_api_admin)):
     old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
     try:
-        proc = subprocess.run(
+        proc = await asyncio.to_thread(
+            subprocess.run,
             [str(update_script)],
             capture_output=True, text=True, timeout=300,
             cwd=str(PROJECT_ROOT),

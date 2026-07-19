@@ -5,6 +5,21 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.3] - 2026-07-19
+
+### Fixed
+- **Blockierende synchrone Subprozesse in Routen behoben (Hänger/Abstürze)** (`backend/api/routes/api.py`, `backend/api/routes/pages.py`, `backend/services/search.py`): Routen, die `subprocess.run` / `qmd_search` / `do_sync` synchron aufriefen, blockierten die asyncio-Event-Loop und ließen Worker hängen. Betroffene Routen sind nun `async` und lagern die blockierenden Aufrufe über `asyncio.to_thread` bzw. dedizierte Async-Helper aus:
+  - `api.py`: `api_search`, `api_system_sync`, `api_system_status`, `api_update_check`, `api_update_run`
+  - `pages.py`: `wiki_home`, `_render_page`, `wiki_delete`, `search`, `graph_data`, `graph_data_paginated`, `about`, `admin_sync`, `admin_update_check`, `status_dashboard`
+  - `search.py`: neue `run_qmd_search_async()`-Wrapper-Funktion
+- **MCP-Tools nicht awaited (Absturz)** (`backend/api/routes/mcp.py`): `okf_ingest_text` und `okf_process_pending` waren `async def`, aber FastMCP ruft Tools synchron → Coroutine wurde nie awaited (führte zu `TypeError` und Hängern). Beide sind nun reguläre `def`-Funktionen mit direktem `subprocess.run` / `do_sync`.
+- **`wiki.sh` ollama ohne Timeout (Hänger bei Ingest)** (`wiki.sh`): `llm_summarize` ruft nun `timeout 110 ollama run ...` auf, um endlose Hänger bei nicht erreichbarem ollama-Server zu verhindern.
+- **`status_dashboard` unsicherer/sperrender Tool-Check** (`backend/api/routes/pages.py`): `subprocess.run(["command", "-v", tool], shell=True)` ersetzt durch `shutil.which(tool)`.
+- **Test-Suite hing bei `test_mcp_sse_accepts_correct_keys`** (`tests/test_mcp.py`): Der SSE-Endpunkt startet einen nie endenden Stream, der im synchronen TestClient blockiert. Der Test läuft den Request nun in einem Hintergrund-Thread mit Timeout; bei erwartetem Blockieren (kein 401) wird der Stream-Start gewertet.
+
+### Added
+- **Reverse-Proxy-Unterstützung** (`backend/main.py`): uvicorn startet nun mit `proxy_headers=True` und `forwarded_allow_ips` (Standard `*`, via `--forwarded-allow-ips` konfigurierbar). Behebt den harten 421-"Invalid Host header"-Fehler bei Zugriff über LAN-IP (z. B. 192.168.x.x) und korrigiert `X-Forwarded-*`-Handling für MCP-SSE-Clients hinter nginx/Traefik/Synology.
+
 ## [2.12.2] - 2026-07-19
 
 ### Fixed

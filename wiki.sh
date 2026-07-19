@@ -95,7 +95,9 @@ llm_summarize() {
     case "$LLM_BACKEND" in
         ollama)
             if command -v ollama &>/dev/null; then
-                ollama run "$OLLAMA_MODEL" \
+                # Timeout schützt vor endlosem Hängen, falls ollama
+                # nicht erreichbar ist (Modell nicht geladen, Server tot).
+                timeout 110 ollama run "$OLLAMA_MODEL" \
                     "Fasse den folgenden Text auf Deutsch kurz und präzise zusammen (max. 5 Sätze). Gib auch 3-5 Schlüsselbegriffe als Tags an.
 
 Titel: $title

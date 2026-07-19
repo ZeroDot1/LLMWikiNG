@@ -65,8 +65,6 @@ from services.wiki import (
     extract_links_from_content,
     get_wiki_stats,
     slugify_german,
-    run_ingest_async,
-    run_sync_async,
 )
 from services.search import local_search
 from services.sync import do_sync, append_okf_log
@@ -581,11 +579,16 @@ Willkommen im Wiki **{name}**.
 
     # --- A11: Process Pending ---
     @mcp_server.tool()
-    async def okf_process_pending(wiki: str = "main") -> str:
+    def okf_process_pending(wiki: str = "main") -> str:
         """Verarbeitet alle ausstehenden Rohquellen-Dateien (Ingest).
 
         Fuehrt den automatisierten Ingest-Prozess fuer alle Dateien
         im raw/ Verzeichnis aus.
+
+        WICHTIG: FastMCP ruft Tools synchron auf. Daher ist diese Funktion
+        ein regulaeres ``def``. Die blockierenden Subprozesse (Ingest, Sync)
+        werden ueber ``subprocess.run`` direkt ausgefuehrt, da der MCP-Server
+        die Tools ohnehin synchron aufruft.
 
         Args:
             wiki: Slug des Wikis (Default: 'main').
@@ -615,7 +618,11 @@ Willkommen im Wiki **{name}**.
             if not filepath.exists():
                 continue
             try:
-                result = await run_ingest_async(filepath, timeout=120, env=env)
+                result = subprocess.run(
+                    ["./wiki.sh", "ingest", str(filepath)],
+                    capture_output=True, text=True, timeout=120,
+                    cwd=str(PROJECT_ROOT), env=env,
+                )
                 if result.returncode == 0:
                     processed.append(item["name"])
                 else:
@@ -624,7 +631,7 @@ Willkommen im Wiki **{name}**.
                 errors.append(f"{item['name']}: {str(e)}")
 
         try:
-            await run_sync_async(slug)
+            do_sync(slug)
         except Exception:
             pass
 
@@ -639,7 +646,7 @@ Willkommen im Wiki **{name}**.
 
     # --- A12: Ingest Text ---
     @mcp_server.tool()
-    async def okf_ingest_text(
+    def okf_ingest_text(
         text: str,
         wiki: str = "main",
         title: str = "",
@@ -647,6 +654,11 @@ Willkommen im Wiki **{name}**.
         """Ingest von reinem Text in ein Wiki.
 
         Speichert den Text als Markdown-Datei und fuehrt den Ingest-Prozess aus.
+
+        WICHTIG: FastMCP ruft Tools synchron auf. Daher ist diese Funktion
+        ein regulaeres ``def``. Die blockierenden Subprozesse (Ingest, Sync)
+        werden ueber ``subprocess.run`` direkt ausgefuehrt, da der MCP-Server
+        die Tools ohnehin synchron aufruft.
 
         Args:
             text: Der einzulesende Text (wird als Markdown behandelt).
@@ -679,10 +691,14 @@ Willkommen im Wiki **{name}**.
         env["RAW_DIR"] = str(RAW_DIR)
 
         try:
-            result = await run_ingest_async(temp_file, timeout=120, env=env)
+            result = subprocess.run(
+                ["./wiki.sh", "ingest", str(temp_file)],
+                capture_output=True, text=True, timeout=120,
+                cwd=str(PROJECT_ROOT), env=env,
+            )
             if result.returncode == 0:
                 try:
-                    await run_sync_async(slug)
+                    do_sync(slug)
                 except Exception:
                     pass
                 return (

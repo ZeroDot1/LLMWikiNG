@@ -253,6 +253,13 @@ def main() -> None:
     parser.add_argument("--host", "-H", default="0.0.0.0", help="Host (Standard: 0.0.0.0)")
     parser.add_argument("--debug", "-d", action="store_true", help="Debug-Modus (Auto-Reload)")
     parser.add_argument("--lang", "-l", default=None, help="Startsprache (z. B. de, en) – überschreibt config.json")
+    parser.add_argument(
+        "--forwarded-allow-ips",
+        default="*",
+        help="IPs/Netze, denen Proxy-Header (X-Forwarded-*) vertraut wird "
+             "(Standard: '*' = alle, z. B. für LAN/Reverse-Proxy). "
+             "Setze auf die Proxy-IP für mehr Sicherheit.",
+    )
     args = parser.parse_args()
 
     # Sprache ermitteln: CLI-Argument überschreibt config.json
@@ -293,6 +300,13 @@ def main() -> None:
         port=args.port,
         log_level="debug" if args.debug else "info",
         reload=args.debug,
+        # Proxy-Header (X-Forwarded-For/Host/Proto) verarbeiten, damit der
+        # Server korrekt hinter einem Reverse-Proxy (nginx, Traefik, Synology)
+        # läuft. forwarded_allow_ips="*" akzeptiert LAN-/Docker-Hosts und
+        # verhindert den harten 421-"Invalid Host header"-Fehler bei Zugriff
+        # über die LAN-IP (z. B. 192.168.x.x) – wichtig für MCP-SSE-Clients.
+        proxy_headers=True,
+        forwarded_allow_ips=args.forwarded_allow_ips,
     )
 
 

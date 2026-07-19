@@ -5,9 +5,11 @@ Multi-Wiki-fähig, unter BASE_PATH gemountet und durch require_login geschützt.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import json
 import re
+import shutil
 import subprocess
 from datetime import date, datetime
 from pathlib import Path
@@ -51,8 +53,9 @@ from services.wiki import (
     run_sync_async,
 )
 from services.markdown import render_markdown, render_markdown_preview
-from services.search import qmd_search, local_search
+from services.search import qmd_search, local_search, run_qmd_search_async
 from services.sync import is_sync_needed, do_sync, append_okf_log
+from services.wiki import run_sync_async
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.analytics import get_wiki_analytics
@@ -310,11 +313,11 @@ async def wiki_new_create(request: Request):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/wiki/{wiki_name}/")
-def wiki_home(wiki_name: str, request: Request):
-    return _render_page(wiki_name, "index", request)
+async def wiki_home(wiki_name: str, request: Request):
+    return await _render_page(wiki_name, "index", request)
 
 
-def _render_page(wiki_name: str, page_name: str, request: Request):
+async def _render_page(wiki_name: str, page_name: str, request: Request):
     page_name = re.sub(r"\.md$", "", page_name)
     data = read_wiki_file(f"{page_name}.md", wiki_name)
     if not data:
@@ -327,7 +330,7 @@ def _render_page(wiki_name: str, page_name: str, request: Request):
                 "## 📝 Gemerkte Texte und Notizen\n\n"
             )
             file_path.write_text(template, encoding="utf-8")
-            subprocess.run(["./wiki.sh", "sync"], capture_output=True, cwd=str(PROJECT_ROOT))
+            await run_sync_async(wiki_name)
             data = read_wiki_file("ingestlater.md", wiki_name)
         else:
             abort(404, f"Seite '{page_name}' nicht im Wiki '{wiki_name}' gefunden.")
@@ -424,7 +427,7 @@ def wiki_export(wiki_name: str, page_name: str, request: Request):
 
 
 @router.get("/wiki/{wiki_name}/{page_name}/delete")
-def wiki_delete(wiki_name: str, page_name: str, request: Request):
+async def wiki_delete(wiki_name: str, page_name: str, request: Request):
     user = require_login(request)
     page_name = re.sub(r"\.md$", "", page_name)
     if page_name in ("index", "log", "ingestlater"):
@@ -441,7 +444,7 @@ def wiki_delete(wiki_name: str, page_name: str, request: Request):
             log_action(action="page_delete", details=f"Seite '{page_name}' (Wiki: {wiki_name}) gelöscht", user_id=user["id"], username=user["username"], request=request)
         except Exception:
             pass
-        do_sync(wiki_name)
+        await run_sync_async(wiki_name)
         success_msg = f"Seite '{page_name}.md' erfolgreich gelöscht."
         return redirect(f"{BASE_PATH}/wiki/{wiki_name}/?sync_status={urlencode(success_msg)}")
     except Exception as e:
@@ -675,15 +678,15 @@ def graph_page(request: Request):
 
 
 @router.get("/graph/data")
-def graph_data(request: Request):
+async def graph_data(request: Request):
     from fastapi.responses import JSONResponse
 
     wiki = request.query_params.get("wiki") or _default_wiki()
-    return JSONResponse(build_graph_data(wiki))
+    return JSONResponse(await asyncio.to_thread(build_graph_data, wiki))
 
 
 @router.get("/graph/data/paginated")
-def graph_data_paginated(request: Request):
+async def graph_data_paginated(request: Request):
     """Paginierter Graph-Endpunkt für Lazy-Loading im Frontend.
 
     Query-Parameter:
@@ -704,7 +707,12 @@ def graph_data_paginated(request: Request):
     except (ValueError, TypeError):
         page_size = 200
     tag = request.query_params.get("tag", "") or None
-    return JSONResponse(build_graph_data_paginated(wiki, page=page, page_size=page_size, tag_filter=tag))
+    return JSONResponse(
+        await asyncio.to_thread(
+            build_graph_data_paginated,
+            wiki, page=page, page_size=page_size, tag_filter=tag,
+        )
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -844,7 +852,7 @@ async def ingest_post(request: Request):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/search")
-def search(request: Request):
+async def search(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     query = request.query_params.get("q", "").strip()
     results = []
@@ -862,15 +870,15 @@ def search(request: Request):
         if page_count > 0 and sync_needed_flag:
             sync_hint = True
 
-        search_result = qmd_search(query, wiki)
+        search_result = await run_qmd_search_async(query, wiki)
         if search_result.get("error"):
             if "not found" in search_result.get("error", "").lower() or "timeout" in search_result.get("error", "").lower():
                 if wiki == "all":
                     for w in list_wikis():
-                        do_sync(w["name"])
+                        await run_sync_async(w["name"])
                 else:
-                    do_sync(wiki)
-                search_result = qmd_search(query, wiki)
+                    await run_sync_async(wiki)
+                search_result = await run_qmd_search_async(query, wiki)
                 sync_hint = False
             else:
                 error = search_result["error"]
@@ -971,7 +979,7 @@ def docs_page(request: Request):
 
 
 @router.get("/about")
-def about(request: Request):
+async def about(request: Request):
     from core.config import resolve_lang
     lang = resolve_lang(
         request.query_params.get("lang"),
@@ -979,7 +987,12 @@ def about(request: Request):
     )
     template = "about_de.html" if lang == "de" else "about.html"
     try:
-        qmd_ver = subprocess.run([QMD_BIN, "--version"], capture_output=True, text=True, timeout=5).stdout.strip()
+        proc = await asyncio.to_thread(
+            subprocess.run,
+            [QMD_BIN, "--version"],
+            capture_output=True, text=True, timeout=5,
+        )
+        qmd_ver = proc.stdout.strip()
     except Exception:
         qmd_ver = "nicht gefunden"
 
@@ -1027,11 +1040,11 @@ def admin_status(request: Request):
 
 
 @router.get("/admin/sync")
-def admin_sync(request: Request, admin: dict = Depends(require_admin)):
+async def admin_sync(request: Request, admin: dict = Depends(require_admin)):
     from fastapi.responses import JSONResponse
 
     wiki = request.query_params.get("wiki") or _default_wiki()
-    results = do_sync(wiki)
+    results = await run_sync_async(wiki)
     log_action(action="wiki_sync", details=f"Wiki '{wiki}' manuell synchronisiert", user_id=admin["id"], username=admin["username"], request=request)
     fmt = request.query_params.get("format", "html")
     if fmt == "json":
@@ -1057,7 +1070,7 @@ def admin_update_run(request: Request):
 
 
 @router.get("/admin/update/check")
-def admin_update_check(request: Request):
+async def admin_update_check(request: Request):
     from fastapi.responses import JSONResponse
     import re
     github_token = request.query_params.get("github_token", "").strip()
@@ -1071,13 +1084,29 @@ def admin_update_check(request: Request):
     try:
         # Falls ein Token übergeben wurde, die Git Remote-URL anpassen
         if github_token:
-            original_url = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT)).stdout.strip()
+            original_url = (await asyncio.to_thread(
+                subprocess.run,
+                ["git", "remote", "get-url", "origin"],
+                capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
+            )).stdout.strip()
             clean_url = re.sub(r"https://[^@]+@", "https://", original_url)
             auth_url = clean_url.replace("https://", f"https://{github_token}@")
-            subprocess.run(["git", "remote", "set-url", "origin", auth_url], timeout=5, cwd=str(PROJECT_ROOT))
+            await asyncio.to_thread(
+                subprocess.run,
+                ["git", "remote", "set-url", "origin", auth_url],
+                timeout=5, cwd=str(PROJECT_ROOT),
+            )
 
-        subprocess.run(["git", "fetch", "origin"], capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), env=env)
-        proc = subprocess.run(["git", "show", "origin/main:VERSION"], capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), env=env)
+        await asyncio.to_thread(
+            subprocess.run,
+            ["git", "fetch", "origin"],
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), env=env,
+        )
+        proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "show", "origin/main:VERSION"],
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), env=env,
+        )
         github_version = proc.stdout.strip()
         if not github_version or proc.returncode != 0:
             github_version = None
@@ -1104,7 +1133,7 @@ def status_dashboard(request: Request):
 
     tools = {}
     for tool in ("qmd", "jq", "ollama", "agy", "opencode"):
-        tools[tool] = subprocess.run(["command", "-v", tool], shell=True, capture_output=True).returncode == 0
+        tools[tool] = shutil.which(tool) is not None
 
     config_data = {
         "backend": os.environ.get("LLM_BACKEND", "ollama"),

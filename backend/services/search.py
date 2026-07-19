@@ -5,6 +5,7 @@ Portiert aus llmWiki.py.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import subprocess
@@ -231,3 +232,22 @@ def qmd_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
         return local_search(query, wiki)
     except Exception as e:
         return {"error": str(e)}
+
+
+async def run_qmd_search_async(query: str, wiki: str = "main", num_results: int = 10) -> dict:
+    """Async-Variante von :func:`qmd_search`.
+
+    Der blockierende ``subprocess.run``-Aufruf wird ueber ``asyncio.to_thread``
+    in einen Worker-Thread ausgelagert, sodass die asyncio-Event-Loop während
+    der (potenziell langsamen) qmd-Suche frei bleibt und weitere Requests
+    bedienen kann.
+
+    Args:
+        query: Suchbegriff.
+        wiki: Wiki-Filter (``"main"``, ``"all"`` oder spezifischer Slug).
+        num_results: Maximale Anzahl an Ergebnissen.
+
+    Returns:
+        Gleiches Dict-Format wie :func:`qmd_search`.
+    """
+    return await asyncio.to_thread(qmd_search, query, wiki, num_results)

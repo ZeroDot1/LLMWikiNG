@@ -33,6 +33,35 @@ def _save_sync_times(times: dict[str, str]) -> None:
         SYNC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         SYNC_STATUS_FILE.write_text(json.dumps(times, indent=2), encoding="utf-8")
     except Exception:
+        # Fallback: DATA_DIR evtl. nicht beschreibbar (read-only Mount im Container).
+        # In diesem Fall bleibt der Hash-Vergleich deaktiviert; is_sync_needed
+        # greift dann auf den mtime-Fallback zurück (siehe unten).
+        pass
+
+def _wiki_sync_hash_file(wiki: str = "main") -> "Path":
+    """Pfad zur Hash-Statusdatei im Wiki-Verzeichnis.
+
+    Wird als robuste Alternative zu ``SYNC_STATUS_FILE`` (DATA_DIR) genutzt,
+    weil das Wiki-Verzeichnis im Container garantiert gemountet und beschreibbar
+    ist – im Gegensatz zu DATA_DIR, das bei read-only Mounts nicht geschrieben
+    werden kann (was sonst zu einem permanenten "Sync empfohlen" führte).
+    """
+    return wiki_path(wiki) / ".sync_hash"
+
+def _load_wiki_sync_hash(wiki: str = "main") -> str | None:
+    p = _wiki_sync_hash_file(wiki)
+    try:
+        if p.exists():
+            return p.read_text(encoding="utf-8").strip()
+    except Exception:
+        pass
+    return None
+
+def _save_wiki_sync_hash(wiki: str = "main", value: str = "") -> None:
+    p = _wiki_sync_hash_file(wiki)
+    try:
+        p.write_text(value, encoding="utf-8")
+    except Exception:
         pass
 
 def _wiki_content_hash(wiki: str = "main") -> str:
@@ -72,9 +101,17 @@ def is_sync_needed(wiki: str = "main") -> bool:
     um Zeitverschiebungen zwischen Host und Container (verschiedene Zeitzonen/
     Clocks) zu umgehen. Ein frisch gelaufener Sync setzt den Referenz-Hash, sodass
     danach kein falsches "Sync empfohlen" mehr erscheint.
+
+    Der Hash wird primär in ``SYNC_STATUS_FILE`` (DATA_DIR) gespeichert und als
+    robuster Fallback zusätzlich in ``.sync_hash`` im Wiki-Verzeichnis selbst
+    (garantiert gemountet/beschreibbar im Container).
     """
-    times = _load_sync_times()
-    last_hash = times.get(f"{wiki}::hash")
+    # 1. Hash aus Wiki-Verzeichnis (robuster Fallback)
+    last_hash = _load_wiki_sync_hash(wiki)
+    # 2. Fallback auf DATA_DIR-basierten Hash
+    if last_hash is None:
+        times = _load_sync_times()
+        last_hash = times.get(f"{wiki}::hash")
     if last_hash is None:
         # Kein bekannter Sync-Zustand -> Sync empfohlen
         return True
@@ -83,29 +120,6 @@ def is_sync_needed(wiki: str = "main") -> bool:
     except Exception:
         return True
     return current_hash != last_hash
-    if not root.exists():
-        return False
-    for f in root.rglob("*.md"):
-        if f.stem in ("index", "log", "ingestlater"):
-            continue
-        try:
-            mtime = datetime.fromtimestamp(f.stat().st_mtime)
-            if mtime > last:
-                return True
-        except OSError:
-            pass
-    from core.config import RAW_DIR
-
-    if RAW_DIR.exists():
-        for f in RAW_DIR.iterdir():
-            if f.is_file():
-                try:
-                    mtime = datetime.fromtimestamp(f.stat().st_mtime)
-                    if mtime > last:
-                        return True
-                except OSError:
-                    pass
-    return False
 
 async def is_sync_needed_async(wiki: str = "main") -> bool:
     """Async-Variante von :func:`is_sync_needed`."""
@@ -121,7 +135,11 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     # Hash der Wiki-Inhalte speichern, damit is_sync_needed hash-basiert
     # (zeitverschiebungs-unabhängig) erkennen kann, ob sich etwas geändert hat.
     try:
-        times[f"{wiki}::hash"] = _wiki_content_hash(wiki)
+        content_hash = _wiki_content_hash(wiki)
+        times[f"{wiki}::hash"] = content_hash
+        # Robuster Fallback: Hash zusätzlich im Wiki-Verzeichnis speichern
+        # (garantiert gemountet/beschreibbar, auch wenn DATA_DIR read-only ist).
+        _save_wiki_sync_hash(wiki, content_hash)
     except Exception:
         pass
     _save_sync_times(times)

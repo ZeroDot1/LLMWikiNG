@@ -173,10 +173,17 @@ export function highlightAllPending(root = document) {
     const blocks = root.querySelectorAll('pre > code, pre code, pre:not(:has(code))');
     blocks.forEach(codeEl => {
         const pre = codeEl.closest('pre');
-        // Skip blocks already highlighted by the server (codehilite) or by us
-        if (pre && (pre.classList.contains('codehilite') || pre.querySelector('.hl-') || codeEl.querySelector('.hl-'))) {
+        // Skip blocks already processed by the server (codehilite) or by us
+        if (codeEl.classList.contains('hl-processed') || (pre && (pre.classList.contains('codehilite') || pre.classList.contains('hl-processed')))) {
             return;
         }
+        
+        // Mark as processed immediately to prevent recursive loops
+        codeEl.classList.add('hl-processed');
+        if (pre) {
+            pre.classList.add('hl-processed');
+        }
+
         // Determine language from class="language-xxx" or class="xxx"
         let lang = '';
         const cls = (codeEl.className || '');
@@ -204,9 +211,21 @@ function init() {
         const observer = new MutationObserver((mutations) => {
             let shouldRun = false;
             for (const mut of mutations) {
-                if (mut.addedNodes.length) { shouldRun = true; break; }
+                let hasExternalAdd = false;
+                mut.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (!node.classList.contains('hl-processed') && !node.classList.contains('hl-keyword') && !node.classList.contains('hl-string') && !node.classList.contains('hl-comment') && !node.classList.contains('hl-number') && !node.classList.contains('hl-function') && !node.classList.contains('hl-decorator') && !node.classList.contains('hl-tag') && !node.classList.contains('hl-attribute') && !node.classList.contains('hl-selector') && !node.classList.contains('hl-property') && !node.classList.contains('hl-value')) {
+                            hasExternalAdd = true;
+                        }
+                    }
+                });
+                if (hasExternalAdd) { shouldRun = true; break; }
             }
-            if (shouldRun) highlightAllPending(document);
+            if (shouldRun) {
+                observer.disconnect();
+                highlightAllPending(document);
+                observer.observe(document.body, { childList: true, subtree: true });
+            }
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }

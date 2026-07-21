@@ -5,6 +5,13 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.11] - 2026-07-21
+
+### Fixed
+
+- **Starlette BaseHTTPMiddleware Stream-Fehler (AssertionError)** in [backend/main.py](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/main.py): Behebung eines Absturzes (`AssertionError: Unexpected message`) bei der Übertragung von SSE (Server-Sent Events) über die MCP-Schnittstelle. Die [McpApiKeyMiddleware](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/main.py#L114) wurde zu einer reinen ASGI-Middleware refaktorisiert, wodurch Streaming-Antworten unterbrechungsfrei durchgeleitet werden.
+- **Session-Abhängigkeit entfernt (AssertionError)** in [backend/api/routes/pages.py](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/api/routes/pages.py): Behebung von `AssertionError: SessionMiddleware must be installed to access request.session` bei Aufruf der Suchfunktion und Einstellungsseiten. Die hartcodierten Verweise auf `request.session` wurden durch die Projekt-eigene, cookie-basierte Hilfsfunktion [get_current_user](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/api/deps.py#L27) ersetzt.
+
 ## [2.12.10] - 2026-07-19
 
 ### Fixed

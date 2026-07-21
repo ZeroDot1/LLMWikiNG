@@ -217,7 +217,7 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
             <li><strong>Name:</strong> <code>LLMWikiNG-OKF</code></li>
             <li><strong>Type:</strong> <code>SSE</code></li>
             <li><strong>URL:</strong> <code>http://localhost:8080/LLMWikiNG/mcp/sse</code></li>
-            <li><strong>Headers:</strong> <code>{"X-API-Key": "dein_sicherer_mcp_key_2026"}</code></li>
+            <li><strong>Headers:</strong> <code>{"X-MCP-Key": "dein_sicherer_mcp_key_2026", "X-API-Key": "dein_datenbank_api_schluessel"}</code></li>
           </ul>
         </div>
 
@@ -231,7 +231,8 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "enabled": true,
       "environment": {
-        "X-API-Key": "dein_sicherer_mcp_key_2026"
+        "X-MCP-Key": "dein_sicherer_mcp_key_2026",
+        "X-API-Key": "dein_datenbank_api_schluessel"
       }
     }
   }
@@ -247,7 +248,8 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
       "type": "sse",
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "env": {
-        "X-API-Key": "dein_sicherer_mcp_key_2026"
+        "X-MCP-Key": "dein_sicherer_mcp_key_2026",
+        "X-API-Key": "dein_datenbank_api_schluessel"
       }
     }
   }
@@ -263,7 +265,7 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
       <div class="mt-3">
         <strong>💬 Kopierbarer Prompt für KI-Assistenten (zur MCP-Einbindung):</strong><br>
         <p class="text-xs text-text-secondary mt-1">Kopiere diesen Prompt und füge ihn in deinen KI-Assistenten (z. B. Cursor Chat, Claude Code, OpenCode oder agy) ein, damit dieser sich selbst mit dem MCP-Server verbindet:</p>
-        <pre class="bg-bg-sunken p-3 rounded-lg text-xs mt-1"><code>Konfiguriere dich so, dass du dich mit dem LLMWikiNG-MCP-Server verbindest. Der Server nutzt SSE (Server-Sent Events) unter der URL: http://localhost:8080/LLMWikiNG/mcp/sse. Du musst den Header 'X-API-Key' mit dem Wert '&lt;DEIN_AGENT_API_KEY&gt;' mitsenden. In OpenCode füge dies unter 'mcp' in deiner Konfigurationsdatei hinzu. In Antigravity (agy) füge es unter 'mcpServers' in der Datei ~/.gemini/config/mcp_config.json hinzu.</code></pre>
+        <pre class="bg-bg-sunken p-3 rounded-lg text-xs mt-1"><code>Konfiguriere dich so, dass du dich mit dem LLMWikiNG-MCP-Server verbindest. Der Server nutzt SSE (Server-Sent Events) unter der URL: http://localhost:8080/LLMWikiNG/mcp/sse. Du musst die Header 'X-MCP-Key' mit dem Wert '&lt;DEIN_MCP_SERVER_KEY&gt;' und 'X-API-Key' mit dem Wert '&lt;DEIN_AGENT_API_KEY&gt;' mitsenden. In OpenCode füge dies unter 'mcp' in deiner Konfigurationsdatei hinzu. In Antigravity (agy) füge es unter 'mcpServers' in der Datei ~/.gemini/config/mcp_config.json hinzu.</code></pre>
       </div>
     </div>
   </section>

@@ -255,7 +255,7 @@ Add a new server in Cursor under *Settings → Features → MCP*:
 | Name | LLMWikiNG-OKF |
 | Type | SSE |
 | URL | `http://localhost:8080/LLMWikiNG/mcp/sse` |
-| Headers | `{"X-API-Key": "your_secure_mcp_key_2026"}` |
+| Headers | `{"X-MCP-Key": "your_secure_mcp_key_2026", "X-API-Key": "your_database_api_key"}` |
 
 #### 2. OpenCode
 Add the MCP server under the `"mcp"` key in your global (`~/.config/opencode/opencode.json`) or project-level (`opencode.json` in project root) configuration file:
@@ -268,7 +268,8 @@ Add the MCP server under the `"mcp"` key in your global (`~/.config/opencode/ope
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "enabled": true,
       "environment": {
-        "X-API-Key": "your_secure_mcp_key_2026"
+        "X-MCP-Key": "your_secure_mcp_key_2026",
+        "X-API-Key": "your_database_api_key"
       }
     }
   }
@@ -292,7 +293,8 @@ Add the configuration to your global MCP configuration file `~/.gemini/config/mc
       "type": "sse",
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "env": {
-        "X-API-Key": "your_secure_mcp_key_2026"
+        "X-MCP-Key": "your_secure_mcp_key_2026",
+        "X-API-Key": "your_database_api_key"
       }
     }
   }
@@ -306,7 +308,7 @@ The configured tools will then be automatically available to the agent inside `a
 #### 💬 Copy-Paste AI Configuration Prompt
 You can copy and paste the following instruction directly into your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to tell it to configure itself:
 ```text
-Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the header 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.
+Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.
 ```
 
 ### 📋 Available MCP Tools (31 Tools)

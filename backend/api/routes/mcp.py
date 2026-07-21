@@ -356,7 +356,25 @@ Willkommen im Wiki **{name}**.
         raw_slug = re.sub(r"\.md$", "", slug)
         data = read_wiki_file(f"{raw_slug}.md", wiki_slug)
         if not data:
-            return f"Seite '{slug}' in Wiki '{wiki}' nicht gefunden."
+            all_pages = get_all_wiki_pages(wiki_slug)
+            slugs = [p["slug"] for p in all_pages]
+            import difflib
+            matches = difflib.get_close_matches(raw_slug, slugs, n=5, cutoff=0.3)
+            
+            lines = [f"Seite '{slug}' in Wiki '{wiki}' nicht gefunden."]
+            if matches:
+                lines.append("\nMeintest du vielleicht:")
+                for m in matches:
+                    p_info = next((p for p in all_pages if p["slug"] == m), None)
+                    title = p_info["title"] if p_info else m
+                    lines.append(f"- **{title}** (Slug: `{m}`)")
+            else:
+                lines.append("\nVerfuegbare Seiten:")
+                for p in all_pages[:10]:
+                    lines.append(f"- **{p['title']}** (Slug: `{p['slug']}`)")
+                if len(all_pages) > 10:
+                    lines.append(f"- ... und {len(all_pages) - 10} weitere Seiten.")
+            return "\n".join(lines)
         content = data.get("content", "")
         # Frontmatter parsen fuer saubere Ausgabe
         post = frontmatter.loads(content)
@@ -615,6 +633,7 @@ Willkommen im Wiki **{name}**.
         env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
         env["WIKI_DIR"] = str(wiki_path(slug))
         env["RAW_DIR"] = str(RAW_DIR)
+        env["PROJECT_ROOT"] = str(PROJECT_ROOT)
 
         for item in pending:
             filepath = RAW_DIR / item["name"]
@@ -692,6 +711,7 @@ Willkommen im Wiki **{name}**.
         env = os.environ.copy()
         env["WIKI_DIR"] = str(root)
         env["RAW_DIR"] = str(RAW_DIR)
+        env["PROJECT_ROOT"] = str(PROJECT_ROOT)
 
         try:
             result = subprocess.run(
@@ -814,13 +834,14 @@ Willkommen im Wiki **{name}**.
     def okf_lint(wiki: str = "main") -> str:
         """Fuehrt eine Gesundheitspruefung des Wikis durch (Lint).
 
-        Findet verwaiste Seiten, fehlende Verknuepfungen, tote Links etc.
+        Findet verwaiste Seiten, fehlende Verknuepfungen, tote Links,
+        Seiten ohne Tags, zu kurze Seiten und schlaegt Querverlinkungen vor.
 
         Args:
             wiki: Slug des Wikis (Default: 'main').
 
         Returns:
-            Detaillierten Lint-Bericht.
+            Detaillierten Lint-Bericht im Markdown-Format.
         """
         slug = slugify_wiki(wiki)
         err = _ensure_wiki_exists(wiki)
@@ -832,25 +853,75 @@ Willkommen im Wiki **{name}**.
         orphans = result.get("orphans", [])
         if orphans:
             lines.append(f"## Verwaiste Seiten ({len(orphans)})\n")
+            lines.append("Seiten, auf die keine andere Seite im Wiki verweist:\n")
             for o in orphans:
-                lines.append(f"- `{o}`")
+                lines.append(f"- **{o['title']}** (Slug: `{o['slug']}`)")
+            lines.append("")
 
         missing = result.get("missing", [])
         if missing:
-            lines.append(f"\n## Fehlende Verknuepfungen ({len(missing)})\n")
+            lines.append(f"## Fehlende Verknuepfungen ({len(missing)})\n")
+            lines.append("Verlinkte Seiten-Slugs, die im Wiki nicht existieren:\n")
             for m in missing:
-                lines.append(f"- `{m}`")
+                sources_str = ", ".join(f"**{src_title}** (Slug: `{src_slug}`)" for src_title, src_slug in m["sources"])
+                lines.append(f"- **[[{m['title']}]]** (verlinkt von: {sources_str})")
+            lines.append("")
 
-        broken = result.get("broken", [])
+        broken = result.get("broken_links", [])
         if broken:
-            lines.append(f"\n## Tote Links ({len(broken)})\n")
+            lines.append(f"## Defekte Markdown-Links ({len(broken)})\n")
             for b in broken:
-                lines.append(f"- `{b}`")
+                lines.append(f"- In **{b['page_title']}** (Slug: `{b['page_slug']}`): Link `{b['target']}` existiert nicht.")
+            lines.append("")
 
-        if not orphans and not missing and not broken:
+        missing_raw = result.get("missing_raw", [])
+        if missing_raw:
+            lines.append(f"## Fehlende Rohquellen ({len(missing_raw)})\n")
+            for mr in missing_raw:
+                lines.append(f"- In **{mr['page_title']}** (Slug: `{mr['page_slug']}`): Datei `{mr['raw_file']}` fehlt im raw-Verzeichnis.")
+            lines.append("")
+
+        missing_type = result.get("missing_type", [])
+        if missing_type:
+            lines.append(f"## Fehlende Typ-Deklarationen ({len(missing_type)})\n")
+            lines.append("OKF-Seiten, die kein `type`-Feld im Frontmatter haben:\n")
+            for mt in missing_type:
+                lines.append(f"- **{mt['title']}** (Slug: `{mt['slug']}`)")
+            lines.append("")
+
+        no_tags = result.get("no_tags", [])
+        if no_tags:
+            lines.append(f"## Seiten ohne Tags ({len(no_tags)})\n")
+            for nt in no_tags:
+                lines.append(f"- **{nt['title']}** (Slug: `{nt['slug']}`)")
+            lines.append("")
+
+        short_pages = result.get("short_pages", [])
+        if short_pages:
+            lines.append(f"## Kurze Seiten (< 100 Woerter) ({len(short_pages)})\n")
+            for sp in short_pages:
+                lines.append(f"- **{sp['title']}** (Slug: `{sp['slug']}`): {sp['words']} Woerter")
+            lines.append("")
+
+        link_suggestions = result.get("link_suggestions", [])
+        if link_suggestions:
+            lines.append(f"## Vorschlaege fuer Querverlinkungen ({len(link_suggestions)})\n")
+            lines.append("Verwaiste Seiten, deren Titel im Text anderer Seiten erwaehnt wird:\n")
+            for sug in link_suggestions:
+                lines.append(f"- Verlinke von **{sug['from_title']}** (Slug: `{sug['from_slug']}`) zu **{sug['to_title']}** (Slug: `{sug['to_slug']}`), da der Begriff '{sug['keyword']}' dort erwaehnt wird.")
+            lines.append("")
+
+        stale = result.get("stale", [])
+        if stale:
+            lines.append(f"## Aelteste/Veraltete Seiten (Top {len(stale)})\n")
+            for s in stale:
+                lines.append(f"- **{s['title']}** (Slug: `{s['slug']}`): Zuletzt geaendert am {s['mtime_formatted']}")
+            lines.append("")
+
+        if not orphans and not missing and not broken and not missing_raw and not missing_type and not no_tags and not short_pages:
             lines.append("Alle Pruefungen bestanden. Keine Probleme gefunden.")
 
-        return "\n".join(lines)
+        return "\n".join(lines).strip()
 
     # --- A17: Read Raw ---
     @mcp_server.tool()
@@ -960,6 +1031,7 @@ Willkommen im Wiki **{name}**.
     @mcp_server.tool()
     def okf_audit_logs(
         limit: int = 20,
+        offset: int = 0,
         action: str = "",
         username: str = "",
     ) -> str:
@@ -967,6 +1039,7 @@ Willkommen im Wiki **{name}**.
 
         Args:
             limit: Maximale Anzahl Eintraege (Default: 20).
+            offset: Start-Offset fuer Pagination (Default: 0).
             action: Filter nach Aktionstyp (z.B. 'login', 'create').
             username: Filter nach Benutzername.
 
@@ -976,12 +1049,13 @@ Willkommen im Wiki **{name}**.
         from services.audit import get_logs
         logs, total = get_logs(
             limit=min(limit, 100),
+            offset=offset,
             action=action or None,
             username=username or None,
         )
         if not logs:
             return "Keine Audit-Eintraege vorhanden."
-        lines = [f"# Audit-Protokoll ({total} Eintraege, zeige {len(logs)})\n"]
+        lines = [f"# Audit-Protokoll ({total} Eintraege, zeige {len(logs)} ab Offset {offset})\n"]
         for log in logs:
             ts = log.get("timestamp", "?")
             act = log.get("action", "?")

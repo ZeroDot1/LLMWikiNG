@@ -53,3 +53,12 @@ data/*
 scratch.py
 scratch/
 
+# ─── Audit-Berichte (MCP-Tests, Code-Reviews) ──────────────
+audit/
+audit/*
+!audit/.gitkeep
+
+# ─── Temporäre Wiki-Testverzeichnisse ──────────────────────
+wiki/
+wiki/*
+

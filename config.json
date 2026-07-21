@@ -22,5 +22,6 @@
   "ollama_host": "http://localhost:11434",
   "ollama_model": "llama3.2:3b",
   "enable_mcp_server": true,
-  "llmwiking_mcp_key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd"
+  "llmwiking_mcp_key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
+  "syntax_highlighting": true
 }

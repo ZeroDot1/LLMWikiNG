@@ -24,6 +24,9 @@ def run_lint(wiki: str = "main") -> dict:
     missing_raw_files: list[dict] = []
     missing_type: list[dict] = []
     broken_links: list[dict] = []
+    no_tags: list[dict] = []
+    short_pages: list[dict] = []
+    link_suggestions: list[dict] = []
     issue_count = 0
 
     root = wiki_path(wiki)
@@ -35,6 +38,9 @@ def run_lint(wiki: str = "main") -> dict:
             "missing_raw": missing_raw_files,
             "missing_type": missing_type,
             "broken_links": broken_links,
+            "no_tags": no_tags,
+            "short_pages": short_pages,
+            "link_suggestions": link_suggestions,
             "issue_count": issue_count,
         }
 
@@ -130,7 +136,7 @@ def run_lint(wiki: str = "main") -> dict:
         except Exception:
             pass
 
-    # 5. OKF-Pflichtfeld `type`
+    # 5. OKF-Pflichtfeld `type` und `tags`
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
             continue
@@ -139,18 +145,25 @@ def run_lint(wiki: str = "main") -> dict:
             content = file_path.read_text(encoding="utf-8", errors="replace")
             fm_match = re.search(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
             has_type = False
+            has_tags = False
             if fm_match:
                 for line in fm_match.group(1).splitlines():
                     if line.strip().startswith("type:"):
                         has_type = True
-                        break
+                    if line.strip().startswith("tags:"):
+                        val = line.split(":", 1)[1].strip()
+                        if val and val != "[]":
+                            has_tags = True
             if not has_type:
                 missing_type.append(p)
+                issue_count += 1
+            if not has_tags:
+                no_tags.append(p)
                 issue_count += 1
         except Exception:
             pass
 
-    # 6. Defekte absolute/relative Markdown-Links
+    # 6. Defekte absolute/relative Markdown-Links und Wortanzahl-Check
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
             continue
@@ -158,6 +171,17 @@ def run_lint(wiki: str = "main") -> dict:
         try:
             content = file_path.read_text(encoding="utf-8", errors="replace")
             body = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
+            
+            # Wortanzahl
+            words_count = len(body.split())
+            if words_count < 100:
+                short_pages.append({
+                    "title": p["title"],
+                    "slug": p["slug"],
+                    "words": words_count,
+                })
+                issue_count += 1
+
             for target in re.findall(r"\[.*?\]\(((\.|/).*?\.md)\)", body):
                 clean = target.lstrip("/")
                 clean = re.sub(r"\.md$", "", clean).lower()
@@ -172,6 +196,27 @@ def run_lint(wiki: str = "main") -> dict:
         except Exception:
             pass
 
+    # 7. Querverlinkungen vorschlagen (für verwaiste Seiten)
+    for o in orphans:
+        o_title_lower = o["title"].lower()
+        for p in pages:
+            if p["slug"] == o["slug"] or p["slug"] in SYSTEM_PAGES:
+                continue
+            p_file = root / f"{p['slug']}.md"
+            try:
+                p_content = p_file.read_text(encoding="utf-8", errors="replace").lower()
+                p_body = re.sub(r"^---.*?---\s*", "", p_content, flags=re.DOTALL)
+                if o_title_lower in p_body:
+                    link_suggestions.append({
+                        "from_title": p["title"],
+                        "from_slug": p["slug"],
+                        "to_title": o["title"],
+                        "to_slug": o["slug"],
+                        "keyword": o["title"]
+                    })
+            except Exception:
+                pass
+
     return {
         "orphans": orphans,
         "missing": missing_pages,
@@ -179,5 +224,8 @@ def run_lint(wiki: str = "main") -> dict:
         "missing_raw": missing_raw_files,
         "missing_type": missing_type,
         "broken_links": broken_links,
+        "no_tags": no_tags,
+        "short_pages": short_pages,
+        "link_suggestions": link_suggestions,
         "issue_count": issue_count,
     }

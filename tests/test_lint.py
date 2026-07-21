@@ -12,7 +12,8 @@ class TestRunLint:
         from services.lint import run_lint
         result = run_lint("main")
         expected_keys = {"orphans", "missing", "stale", "missing_raw",
-                         "missing_type", "broken_links", "issue_count"}
+                         "missing_type", "broken_links", "no_tags",
+                         "short_pages", "link_suggestions", "issue_count"}
         assert set(result.keys()) == expected_keys
 
     def test_finds_missing_pages(self, wiki_with_pages):

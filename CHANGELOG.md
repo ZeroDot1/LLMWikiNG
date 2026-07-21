@@ -5,6 +5,16 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.14] - 2026-07-21
+
+### Added
+- **Erweiterter Linter & Cross-Linking Vorschläge**: Der Wiki-Linter ([backend/services/lint.py](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/services/lint.py)) prüft nun auch auf Seiten ohne Tags, zu kurze Seiten (< 100 Wörter) und generiert intelligente Vorschläge für Querverlinkungen verwaister Seiten. Die Ergebnisse werden im [Web-Dashboard](file:///home/user/Dokumente/GitHub/LLMWikiNG/templates/lint.html) und über das MCP-Tool `okf_lint` schön formatiert als Markdown ausgegeben.
+- **Paginierung für Audit-Logs (MCP)**: Das MCP-Tool `okf_audit_logs` unterstützt nun den Parameter `offset` für Pagination bei großen Wikis.
+- **Ähnlichkeitssuche bei nicht gefundenen Seiten**: Das MCP-Tool `okf_read_concept` schlägt bei nicht gefundenen Seiten-Slugs automatisch ähnliche existierende Seiten vor.
+
+### Fixed
+- **PROJECT_ROOT in Ingest-Tools behoben**: Behebung des Fehlers `PROJECT_ROOT: unbound variable` beim Aufruf von `okf_ingest_text` und `okf_process_pending` durch Übergabe von `PROJECT_ROOT` an die Environment-Map des Subprozess-Aufrufs in `mcp.py`.
+
 ## [2.12.13] - 2026-07-21
 
 ### Fixed

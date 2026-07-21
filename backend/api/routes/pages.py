@@ -1173,21 +1173,23 @@ def lint_dashboard(request: Request):
     else:
         res = {
             "orphans": [], "missing": [], "stale": [], "missing_raw": [],
-            "missing_type": [], "broken_links": [], "issue_count": 0,
+            "missing_type": [], "broken_links": [], "no_tags": [], "short_pages": [], "link_suggestions": [], "issue_count": 0,
         }
     return render(
         request, "lint.html",
         active_page="lint", wiki=wiki, wikis=list_wikis(),
         run_check=run_check,
-        orphans=res["orphans"],
-        missing=res["missing"],
-        stale=res["stale"],
-        missing_raw=res["missing_raw"],
-        missing_type=res["missing_type"],
-        broken_links=res["broken_links"],
-        issue_count=res["issue_count"],
+        orphans=res.get("orphans", []),
+        missing=res.get("missing", []),
+        stale=res.get("stale", []),
+        missing_raw=res.get("missing_raw", []),
+        missing_type=res.get("missing_type", []),
+        broken_links=res.get("broken_links", []),
+        no_tags=res.get("no_tags", []),
+        short_pages=res.get("short_pages", []),
+        link_suggestions=res.get("link_suggestions", []),
+        issue_count=res.get("issue_count", 0),
     )
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # E-Mail-Konfiguration (/config)

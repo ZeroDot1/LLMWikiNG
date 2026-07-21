@@ -5,6 +5,12 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.12] - 2026-07-21
+
+### Fixed
+
+- **Endlosschleife / Einfrieren der Web-UI (highlighter.js)** in [static/js/highlighter.js](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/js/highlighter.js): Behebung eines vollständigen Einfrierens des Webbrowsers beim Laden von Einstellungsseiten oder Seiten mit Code-Blöcken. Der `MutationObserver` triggerte sich selbst unendlich durch die DOM-Aktualisierungen von `highlightAllPending()` auf plain-text Code-Blöcken. Gefixt durch Hinzufügen einer `hl-processed` Klasse auf verarbeiteten Elementen und temporärem `disconnect()` des Observers während der Highlight-Aktualisierungen.
+
 ## [2.12.11] - 2026-07-21
 
 ### Fixed

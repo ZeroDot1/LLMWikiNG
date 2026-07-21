@@ -316,10 +316,10 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | Tool | Description |
 |------|-------------|
 | `okf_list_wikis` | Lists all wikis with metadata |
-| `okf_create_wiki` | Creates a new wiki |
+| `okf_create_wiki` | Creates a new wiki (updates metadata if slug exists) |
 | `okf_update_wiki` | Edits name/description/slug of a wiki |
 | `okf_delete_wiki` | Deletes a wiki (except main) |
-| `okf_list_pages` | Lists all pages in a wiki |
+| `okf_list_pages` | Lists all pages in a wiki (supports type filtering and pagination) |
 | `okf_read_concept` | Reads an OKF concept (frontmatter + markdown) |
 | `okf_write_concept` | Creates/updates an OKF concept |
 | `okf_delete_page` | Deletes a wiki page |

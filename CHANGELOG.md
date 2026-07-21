@@ -5,6 +5,13 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.15] - 2026-07-21
+
+### Added
+- **Tag-basierte Kanten im Wissensgraph**: Seiten mit gemeinsamen Tags werden nun im Wissensgraph automatisch über dünne, gestrichelte blaue Kanten miteinander verknüpft, falls keine direkte Markdown-Verlinkung besteht ([backend/services/graph.py](file:///home/user/Dokumente/GitHub/LLMWikiNG/backend/services/graph.py)).
+- **Verbessertes okf_create_wiki**: Das MCP-Tool aktualisiert nun automatisch die Metadaten (Name und Beschreibung) eines Wikis, falls der angegebene Slug bereits existiert, anstatt mit einer Fehlermeldung abzubrechen.
+- **Typ-Filter & Pagination für okf_list_pages**: Das MCP-Tool unterstützt nun das Filtern nach Typ (Parameter `type_filter`) sowie Pagination (Parameter `limit` und `offset`).
+
 ## [2.12.14] - 2026-07-21
 
 ### Added

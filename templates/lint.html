@@ -84,8 +84,53 @@
                 <code class="text-xs font-mono text-error bg-error-subtle px-1.5 py-0.5 rounded">{{ ref.raw_file }}</code>
             </li>
             {% endfor %}
-        </ul>
         {% else %}<p class="text-sm text-success">{{ _('lint.raw_refs_empty') }}</p>{% endif %}
+    </div>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">🏷️ {{ _('lint.no_tags_heading')|default('Seiten ohne Tags') }}</h2>
+        <p class="text-xs text-text-muted mb-3">Seiten, die keine Tags im YAML-Frontmatter deklariert haben.</p>
+        {% if no_tags %}
+        <ul class="space-y-2">
+            {% for page in no_tags %}
+            <li class="rounded-lg border border-border p-2.5 bg-bg-sunken flex justify-between items-center">
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-warning font-medium no-underline">📄 {{ page.title }}</a>
+                <span class="text-xs text-text-muted">Keine Tags</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">Alle Seiten haben Tags.</p>{% endif %}
+    </div>
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">📝 {{ _('lint.short_pages_heading')|default('Kurze Seiten (< 100 Wörter)') }}</h2>
+        <p class="text-xs text-text-muted mb-3">Seiten, deren Hauptinhalt sehr kurz ist und eventuell erweitert werden sollte.</p>
+        {% if short_pages %}
+        <ul class="space-y-2">
+            {% for page in short_pages %}
+            <li class="rounded-lg border border-border p-2.5 bg-bg-sunken flex justify-between items-center">
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-warning font-medium no-underline">📄 {{ page.title }}</a>
+                <span class="text-xs bg-warning-subtle text-warning rounded-full px-2 py-0.5">{{ page.words }} Wörter</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">Keine extrem kurzen Seiten vorhanden.</p>{% endif %}
+    </div>
+
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-success">💡 {{ _('lint.link_suggestions_heading')|default('Vorschläge für Querverlinkungen') }}</h2>
+        <p class="text-xs text-text-muted mb-3">Vorschläge, um verwaiste Seiten mit anderen Seiten zu verlinken, da deren Name dort erwähnt wird.</p>
+        {% if link_suggestions %}
+        <ul class="space-y-2">
+            {% for sug in link_suggestions %}
+            <li class="rounded-lg border border-success/20 p-3 bg-bg-sunken">
+                <div class="text-sm">
+                    Verlinke von <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ sug.from_slug }}" class="text-primary font-semibold no-underline border-b border-dotted border-primary">{{ sug.from_title }}</a> zu <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ sug.to_slug }}" class="text-success font-semibold no-underline border-b border-dotted border-success">{{ sug.to_title }}</a>
+                </div>
+                <div class="text-xs text-text-muted mt-1">Grund: Erwähnung des Begriffs "{{ sug.keyword }}" im Text.</div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">Keine Vorschläge für Querverlinkungen verfügbar.</p>{% endif %}
     </div>
 {% else %}
     <div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">

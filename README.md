@@ -330,12 +330,12 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_search` | Full-text search across wiki pages |
 | `okf_wiki_stats` | Shows wiki statistics |
 | `okf_graph` | Visualizes the knowledge graph |
-| `okf_lint` | Runs a wiki health check |
+| `okf_lint` | Runs a wiki health check (orphans, tag checks, word count, and cross-linking suggestions) |
 | `okf_read_raw` | Reads a raw source from raw/ |
 | `okf_list_raw` | Lists all raw source files |
 | `okf_system_status` | Shows system status |
 | `okf_system_sync` | Synchronizes wikis |
-| `okf_audit_logs` | Shows system audit logs |
+| `okf_audit_logs` | Shows system audit logs (supports pagination via limit/offset) |
 | `okf_cache_stats` | Shows cache statistics |
 | `okf_cache_clear` | Clears the cache |
 | `okf_list_users` | Lists all users |

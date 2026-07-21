@@ -1,4 +1,6 @@
-/* audit.css – Audit-Logbuch Styles (Kompatibel mit LLMWikiNG Dark/Light-Theme) */
+/* audit.css – Audit-Logbuch Styles (Kompatibel mit LLMWikiNG Dark/Light-Theme)
+ * Version: 2.12.16
+ */
 
 /* ── Pagination Button ── */
 .audit-page-btn {
@@ -10,12 +12,16 @@
   background: var(--color-surface, #1a1b26);
   border: 1px solid var(--color-border, #2e3244);
   color: var(--color-text-secondary, #9aa5ce);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.1s ease;
   text-decoration: none;
 }
 .audit-page-btn:hover {
   background: var(--color-bg-sunken, #13141c);
   color: var(--color-primary, #7aa2f7);
+  transform: translateY(-1px);
+}
+.audit-page-btn:active {
+  transform: translateY(1px);
 }
 
 /* ── Action Badges ── */

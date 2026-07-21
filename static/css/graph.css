@@ -1,4 +1,5 @@
 /* graph.css – Dediziertes Stylesheet für die Knowledge-Graph-Seite.
+ * Version: 2.12.16
  * Importiert Basis-CSS-Variablen aus tailwind-build.css (via :root Cascade).
  * Alle Graph-spezifischen Stile hier – kein Tailwind-Utility-Chaos im Template.
  */
@@ -56,13 +57,17 @@
   border-radius: 0.5rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s ease;
   text-decoration: none;
   user-select: none;
 }
 .graph-btn:hover {
   background: var(--color-bg-sunken);
   color: var(--color-text);
+  transform: translateY(-1px);
+}
+.graph-btn:active {
+  transform: translateY(1px);
 }
 .graph-btn:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -174,13 +179,17 @@
   background: var(--color-surface);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s ease;
   white-space: nowrap;
   user-select: none;
 }
 .graph-tag-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  transform: scale(1.02);
+}
+.graph-tag-btn:active {
+  transform: scale(0.98);
 }
 .graph-tag-btn.is-active {
   border-color: var(--color-primary);
@@ -256,7 +265,6 @@
   position: absolute;
   top: 0.75rem;
   left: 0.75rem;
-  display: none;  /* via JS auf block gesetzt */
   background: color-mix(in oklch, var(--color-bg-sunken) 85%, transparent);
   border: 1px solid color-mix(in oklch, var(--color-border) 60%, transparent);
   border-radius: 0.5rem;
@@ -269,9 +277,17 @@
   z-index: 20;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+
+  /* Smooth Slide & Fade */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
 }
 .graph-stats.is-visible {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .graph-stats-value {
@@ -335,7 +351,6 @@
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  display: none;   /* via JS gesetzt */
   width: 13rem;    /* 208px */
   background: color-mix(in oklch, var(--color-surface) 96%, transparent);
   border: 1px solid var(--color-border);
@@ -346,9 +361,19 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 4px 24px color-mix(in oklch, var(--color-text) 8%, transparent);
+
+  /* Smooth Slide & Fade */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+  pointer-events: none;
 }
 .graph-detail-panel.is-visible {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .graph-detail-header {

@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.17] - 2026-07-21
+
+### Changed
+- **CSS-Dateien verbessert**: Überarbeitung und Optimierung der CSS-Stylesheets für den Wissensgraphen ([static/css/graph.css](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/css/graph.css)), das Audit-Logbuch ([static/css/audit.css](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/css/audit.css)) und die Wiki-Verwaltung ([static/css/wikis.css](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/css/wikis.css)) mit geschmeidigen CSS-Transitions, Premium-Glassmorphism und Micro-Animations auf Buttons.
+
 ## [2.12.16] - 2026-07-21
 
 ### Changed

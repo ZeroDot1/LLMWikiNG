@@ -48,7 +48,7 @@ const languages = {
         { type: 'string', regex: rxStrings },
         { type: 'selector', regex: /([a-zA-Z0-9\-\.\#\:\,\s\+\[\]\=\"\']+)(?=\s*\{)/g },
         { type: 'property', regex: /[a-zA-Z\-]+(?=\s*\:)/g },
-        { type: 'value', regex: /(?<=\:\s*)([^\;\}]+)/g }
+        { type: 'value', regex: /\:\s*([^\;\}]+)/g }
     ],
     json: [
         { type: 'string', regex: rxStrings },
@@ -121,11 +121,22 @@ export function highlightCode(code, lang) {
         let match;
         while ((match = rx.exec(code)) !== null) {
             if (match[0].length === 0) { rx.lastIndex++; continue; }
+            let start = match.index;
+            let text = match[0];
+            if (rule.type === 'value' && text.startsWith(':')) {
+                const prefixMatch = text.match(/^\:\s*/);
+                if (prefixMatch) {
+                    const skipLen = prefixMatch[0].length;
+                    start += skipLen;
+                    text = text.substring(skipLen);
+                }
+            }
+            if (text.length === 0) continue;
             matches.push({
                 type: rule.type,
-                start: match.index,
-                end: match.index + match[0].length,
-                text: match[0]
+                start: start,
+                end: start + text.length,
+                text: text
             });
         }
     });
@@ -214,7 +225,8 @@ function init() {
                 let hasExternalAdd = false;
                 mut.addedNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        if (!node.classList.contains('hl-processed') && !node.classList.contains('hl-keyword') && !node.classList.contains('hl-string') && !node.classList.contains('hl-comment') && !node.classList.contains('hl-number') && !node.classList.contains('hl-function') && !node.classList.contains('hl-decorator') && !node.classList.contains('hl-tag') && !node.classList.contains('hl-attribute') && !node.classList.contains('hl-selector') && !node.classList.contains('hl-property') && !node.classList.contains('hl-value')) {
+                        const isHlSpan = node.tagName === 'SPAN' && Array.from(node.classList).some(c => c.startsWith('hl-'));
+                        if (!isHlSpan) {
                             hasExternalAdd = true;
                         }
                     }

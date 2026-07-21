@@ -5,6 +5,12 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.13] - 2026-07-21
+
+### Fixed
+
+- **Chrome SIGILL Renderer-Absturz behoben (highlighter.js)** in [static/js/highlighter.js](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/js/highlighter.js): Behebung eines Absturzes des Chrome-Renderer-Prozesses (Fehlercode: `SIGILL`). Dieser trat durch inkompatible JIT-Kompilierung von variablen Lookbehind-Assertions (im CSS-Value-Regex) und komplexen Verkettungen im `MutationObserver` auf. Gefixt durch Ersetzen des Lookbehinds durch ein Standard-Präfix-Pattern mit manuellem Offset-Skipping im Match-Loop, sowie Vereinfachung des Element-Checks im Observer.
+
 ## [2.12.12] - 2026-07-21
 
 ### Fixed

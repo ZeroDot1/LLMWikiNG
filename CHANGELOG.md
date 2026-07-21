@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.16] - 2026-07-21
+
+### Changed
+- **Tailwind CSS rekompiliert**: Die minimierte Tailwind-Builddatei ([static/css/tailwind-build.css](file:///home/user/Dokumente/GitHub/LLMWikiNG/static/css/tailwind-build.css)) wurde mit dem CSS-Compiler auf den neuesten Stand gebracht.
+
 ## [2.12.15] - 2026-07-21
 
 ### Added

@@ -95,6 +95,7 @@ def _build_graph_uncached(wiki: str) -> dict:
     """Interne Funktion – baut Graph-Daten ohne Cache."""
     nodes: list[dict] = []
     edges: list[dict] = []
+    page_tags: dict[str, list[str]] = {}
 
     wiki_pages = get_all_wiki_pages(wiki)
     wiki_slugs = {page["slug"]: page["title"] for page in wiki_pages}
@@ -118,6 +119,7 @@ def _build_graph_uncached(wiki: str) -> dict:
                             t_line = line.split(":", 1)[1].strip()
                             t_line = t_line.strip("[]").replace('"', '').replace("'", "")
                             tags = [t.strip() for t in t_line.split(",") if t.strip()]
+                            page_tags[slug] = tags
                         elif line.startswith("source:"):
                             group = "source"
 
@@ -155,6 +157,27 @@ def _build_graph_uncached(wiki: str) -> dict:
             group = f"tag-{tags[0]}"
 
         nodes.append({"id": slug, "label": title, "group": group, "url": f"{BASE_PATH}/wiki/{wiki}/{slug}"})
+
+    # Tag-basierte Kanten hinzufügen (Verknüpfung von Seiten mit gemeinsamen Tags)
+    existing_edges = {(e["from"], e["to"]) for e in edges}
+    existing_edges.update({(e["to"], e["from"]) for e in edges})
+
+    for i in range(len(wiki_pages)):
+        for j in range(i + 1, len(wiki_pages)):
+            slug1 = wiki_pages[i]["slug"]
+            slug2 = wiki_pages[j]["slug"]
+            tags1 = page_tags.get(slug1, [])
+            tags2 = page_tags.get(slug2, [])
+            shared_tags = set(tags1).intersection(tags2)
+            if shared_tags and (slug1, slug2) not in existing_edges and (slug2, slug1) not in existing_edges:
+                edges.append({
+                    "from": slug1,
+                    "to": slug2,
+                    "color": "#a0c0f0",
+                    "dashes": True,
+                    "title": f"Gemeinsame Tags: {', '.join(shared_tags)}"
+                })
+                existing_edges.add((slug1, slug2))
 
     return {"nodes": nodes, "edges": edges}
 

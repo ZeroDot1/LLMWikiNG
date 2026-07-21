@@ -186,7 +186,16 @@ if _MCP_AVAILABLE:
             root = wiki_path(slug)
 
         if root.exists():
-            return f"Wiki mit Slug '{slug}' existiert bereits."
+            try:
+                save_wiki_meta(slug, name, description)
+                try:
+                    from services.audit import log_action
+                    log_action("update_wiki", "mcp", f"Wiki '{slug}' existiert bereits, Metadaten aktualisiert (Name: {name}, Desc: {description})")
+                except Exception:
+                    pass
+                return f"Wiki mit Slug '{slug}' existiert bereits. Metadaten (Name, Beschreibung) wurden erfolgreich aktualisiert."
+            except Exception as e:
+                return f"Wiki mit Slug '{slug}' existiert bereits. Aktualisierung fehlgeschlagen: {str(e)}"
 
         try:
             root.mkdir(parents=True, exist_ok=True)
@@ -313,11 +322,19 @@ Willkommen im Wiki **{name}**.
 
     # --- A5: List Pages ---
     @mcp_server.tool()
-    def okf_list_pages(wiki: str = "main") -> str:
+    def okf_list_pages(
+        wiki: str = "main",
+        type_filter: str = "",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> str:
         """Listet alle Seiten eines Wikis auf (ohne Systemseiten).
 
         Args:
             wiki: Slug des Wikis (z.B. 'main', 'hoerspiele').
+            type_filter: Filter nach Dokumenttyp (z.B. 'reference', 'concept').
+            limit: Maximale Anzahl auszugebender Seiten (Default: 100).
+            offset: Start-Offset fuer Pagination (Default: 0).
 
         Returns:
             Eine geordnete Liste aller Seiten mit Titel, Typ und Slug.
@@ -329,7 +346,18 @@ Willkommen im Wiki **{name}**.
         pages = get_all_wiki_pages(slug)
         if not pages:
             return f"Keine Seiten im Wiki '{wiki}'."
-        lines = [f"# Seiten im Wiki '{wiki}'\n"]
+        
+        if type_filter:
+            tf_lower = type_filter.strip().lower()
+            pages = [p for p in pages if p.get('type', '').lower() == tf_lower]
+            if not pages:
+                return f"Keine Seiten mit Typ '{type_filter}' im Wiki '{wiki}'."
+
+        total_count = len(pages)
+        if offset > 0 or limit < total_count:
+            pages = pages[offset : offset + limit]
+
+        lines = [f"# Seiten im Wiki '{wiki}'" + (f" (Typ-Filter: '{type_filter}')" if type_filter else "") + f" ({len(pages)} von {total_count} Seiten ab Offset {offset})\n"]
         for p in pages:
             lines.append(
                 f"- [{p['title']}](./{p['slug']}.md) - "

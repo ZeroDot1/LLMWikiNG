@@ -35,7 +35,7 @@ from core.config import (
     delete_wiki,
 )
 from web import templates, render, abort, redirect, urlencode
-from api.deps import require_login, require_admin
+from api.deps import require_login, require_admin, get_current_user
 from services.audit import log_action, get_recent_audit_logs, ALL_CATEGORIES
 from core.storage import list_users, list_keys
 from services.wiki import (
@@ -914,7 +914,7 @@ async def search(request: Request):
         else:
             slug_exists = target_slug in {p["slug"] for p in get_all_wiki_pages(wiki)}
             
-        _u = request.session.get("user") if hasattr(request, 'session') else {}
+        _u = get_current_user(request) or {}
         log_action(
             action="search",
             details=f"Suche '{query}' in '{wiki}' – {len(results)} Treffer",
@@ -1411,7 +1411,7 @@ async def settings_post(request: Request):
         disabled = [c for c in ALL_CATEGORIES if c not in enabled_cats]
         save_app_config({"audit_enabled": audit_enabled, "audit_disabled_categories": disabled})
         
-        user = request.session.get("user") if "session" in request.scope else {}
+        user = get_current_user(request) or {}
         log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
         config_success_msg = "Audit-Konfiguration gespeichert!"
     elif action == "generate_mcp_keys":
@@ -1420,7 +1420,7 @@ async def settings_post(request: Request):
         import secrets as _secrets
         
         new_mcp_key = "mcp_" + _secrets.token_urlsafe(24)
-        user = request.session.get("user") if "session" in request.scope else {}
+        user = get_current_user(request) or {}
         user_id = user.get("id")
         if not user_id:
             admins = [u for u in list_users() if u.get("role") == "admin"]
@@ -1457,7 +1457,7 @@ async def settings_post(request: Request):
             "llmwiking_mcp_key": llmwiking_mcp_key,
         })
         
-        user = request.session.get("user") if "session" in request.scope else {}
+        user = get_current_user(request) or {}
         log_action(
             action="settings_change",
             details=f"MCP-Konfiguration gespeichert: enabled={enable_mcp_server}",

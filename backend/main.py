@@ -108,57 +108,88 @@ def create_app() -> FastAPI:
             if mcp_sse_app is not None:
                 # MCP API-Key Middleware: Prueft X-API-Key Header auf allen
                 # /mcp/ Routen, bevor die SSE-App den Request verarbeitet.
-                from starlette.middleware.base import BaseHTTPMiddleware
                 from starlette.responses import JSONResponse as StarletteJSON
 
-                class McpApiKeyMiddleware(BaseHTTPMiddleware):
+                class McpApiKeyMiddleware:
                     """Middleware fuer MCP-Endpunkte: Prueft API-Key.
 
                     Liest LLMWIKING_MCP_KEY zur Laufzeit aus core.config,
                     damit Monkeypatches in Tests wirksam werden.
                     """
+                    def __init__(self, app):
+                        self.app = app
 
-                    async def dispatch(self, request, call_next):
-                        if "/mcp/" in request.url.path:
+                    async def __call__(self, scope, receive, send):
+                        if scope["type"] == "http" and "/mcp/" in scope.get("path", ""):
                             from core.config import LLMWIKING_MCP_KEY as _KEY
+                            headers_dict = dict(scope.get("headers", []))
+                            
                             # 1. MCP Key check
-                            mcp_key = request.headers.get("X-MCP-Key") or request.headers.get("x-mcp-key") or request.query_params.get("mcp_key")
+                            mcp_key_bytes = headers_dict.get(b"x-mcp-key")
+                            mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
+                            if not mcp_key:
+                                from urllib.parse import parse_qs
+                                query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
+                                query_params = parse_qs(query_string)
+                                mcp_key = query_params.get("mcp_key", [None])[0]
+
                             if not _KEY:
-                                return StarletteJSON(
+                                response = StarletteJSON(
                                     {"detail": "MCP nicht konfiguriert (LLMWIKING_MCP_KEY fehlt)"},
                                     status_code=503,
                                 )
+                                await response(scope, receive, send)
+                                return
                             if mcp_key != _KEY:
-                                return StarletteJSON(
+                                response = StarletteJSON(
                                     {"detail": "Ungueltiger oder fehlender MCP-Key (X-MCP-Key)"},
                                     status_code=401,
                                 )
+                                await response(scope, receive, send)
+                                return
                             
                             # 2. Database API-Key check (X-API-Key)
-                            api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key") or request.query_params.get("api_key")
+                            api_key_bytes = headers_dict.get(b"x-api-key")
+                            api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
                             if not api_key:
-                                return StarletteJSON(
+                                from urllib.parse import parse_qs
+                                query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
+                                query_params = parse_qs(query_string)
+                                api_key = query_params.get("api_key", [None])[0]
+
+                            if not api_key:
+                                response = StarletteJSON(
                                     {"detail": "API-Key erforderlich (X-API-Key)"},
                                     status_code=401,
                                 )
+                                await response(scope, receive, send)
+                                return
                             
                             import hashlib
                             from core.storage import get_key_by_hash, get_user
                             h = hashlib.sha256(api_key.encode()).hexdigest()
                             db_key = get_key_by_hash(h)
                             if not db_key or not db_key.get("active", True):
-                                return StarletteJSON(
+                                response = StarletteJSON(
                                     {"detail": "Ungueltiger API-Key (X-API-Key)"},
                                     status_code=401,
                                 )
+                                await response(scope, receive, send)
+                                return
                             user = get_user(db_key["user_id"])
                             if not user or not user.get("active", True):
-                                return StarletteJSON(
+                                response = StarletteJSON(
                                     {"detail": "Benutzer inaktiv"},
                                     status_code=401,
                                 )
-                            request.state.mcp_user = user
-                        return await call_next(request)
+                                await response(scope, receive, send)
+                                return
+                            
+                            if "state" not in scope:
+                                scope["state"] = {}
+                            scope["state"]["mcp_user"] = user
+
+                        await self.app(scope, receive, send)
 
                 app.add_middleware(McpApiKeyMiddleware)
                 app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")

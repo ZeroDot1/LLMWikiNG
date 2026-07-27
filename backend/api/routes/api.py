@@ -56,7 +56,6 @@ def api_list_wikis(user: dict = Depends(get_api_user)):
 
 @router.post("/wikis")
 async def api_create_wiki(request: Request, admin: dict = Depends(require_api_admin)):
-    import json
     try:
         body = await request.json()
     except Exception:

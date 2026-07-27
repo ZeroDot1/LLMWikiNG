@@ -366,6 +366,7 @@ def get_pending_files() -> list[dict]:
                     mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                     files.append({
                         "name": f.name,
+                        "size": stat.st_size,
                         "size_formatted": size_formatted,
                         "mtime_formatted": mtime_formatted,
                     })

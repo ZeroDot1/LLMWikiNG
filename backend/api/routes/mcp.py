@@ -58,6 +58,7 @@ import asyncio
 import contextvars
 import datetime
 import functools
+import inspect
 import json
 import os
 import re
@@ -100,6 +101,10 @@ mcp_allowed_tools_ctx: contextvars.ContextVar[list[str]] = contextvars.ContextVa
     "mcp_allowed_tools", default=[]
 )
 
+mcp_user_ctx: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
+    "mcp_user", default=None
+)
+
 
 def _check_tool_permission(tool_name: str) -> str | None:
     """Prueft ob das angegebene Tool fuer den aktuellen MCP-Key erlaubt ist.
@@ -137,6 +142,16 @@ def _require_tool(tool_name: str):
             if err:
                 return err
             return func(*args, **kwargs)
+
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            err = _check_tool_permission(tool_name)
+            if err:
+                return err
+            return await func(*args, **kwargs)
+
+        if inspect.iscoroutinefunction(func):
+            return async_wrapper
         return wrapper
     return decorator
 
@@ -243,7 +258,7 @@ if _MCP_AVAILABLE:
                 save_wiki_meta(slug, name, description)
                 try:
                     from services.audit import log_action
-                    log_action("update_wiki", "mcp", f"Wiki '{slug}' existiert bereits, Metadaten aktualisiert (Name: {name}, Desc: {description})")
+                    log_action("update_wiki", details=f"Wiki '{slug}' existiert bereits, Metadaten aktualisiert (Name: {name}, Desc: {description})", username="mcp-agent")
                 except Exception:
                     pass
                 return f"Wiki mit Slug '{slug}' existiert bereits. Metadaten (Name, Beschreibung) wurden erfolgreich aktualisiert."
@@ -516,8 +531,11 @@ Willkommen im Wiki **{name}**.
         existed = filepath.exists()
 
         now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        content_body = content
+        if not content.startswith("#"):
+            content_body = f"\n# {title}\n\n{content}"
         post = frontmatter.Post(
-            content=f"\n# {title}\n\n{content}",
+            content=content_body,
             type=concept_type,
             title=title,
             description=description,
@@ -1008,7 +1026,9 @@ Willkommen im Wiki **{name}**.
         """
         if not RAW_DIR.exists():
             return "Rohquellen-Verzeichnis (raw/) nicht vorhanden."
-        filepath = RAW_DIR / filename
+        filepath = (RAW_DIR / filename).resolve()
+        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+            return "Fehler: Ungueltiger Dateipfad (keine Pfad-Traversale erlaubt)."
         if not filepath.exists() or not filepath.is_file():
             return f"Rohquelle '{filename}' nicht gefunden."
         try:
@@ -1032,7 +1052,7 @@ Willkommen im Wiki **{name}**.
         """
         if not RAW_DIR.exists():
             return "Rohquellen-Verzeichnis (raw/) nicht vorhanden."
-        files = sorted(RAW_DIR.iterdir()) if RAW_DIR.exists() else []
+        files = sorted(RAW_DIR.iterdir())
         files = [f for f in files if f.is_file()]
         if not files:
             return "Keine Rohquellen vorhanden."
@@ -1087,15 +1107,25 @@ Willkommen im Wiki **{name}**.
             except Exception as e:
                 return f"Fehler bei der Synchronisation: {e}"
         else:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
             results = {}
-            for w in list_wikis():
+            all_wikis = list_wikis()
+
+            def _sync_one(w):
                 try:
                     do_sync(w["slug"], force=True)
-                    results[w["slug"]] = "ok"
+                    return w["slug"], "ok"
                 except Exception as e:
-                    results[w["slug"]] = f"fehler: {e}"
+                    return w["slug"], f"fehler: {e}"
+
+            with ThreadPoolExecutor(max_workers=min(len(all_wikis) or 1, 8)) as executor:
+                futures = {executor.submit(_sync_one, w): w for w in all_wikis}
+                for future in as_completed(futures):
+                    slug_name, status = future.result()
+                    results[slug_name] = status
+
             lines = ["# Synchronisation aller Wikis\n"]
-            for slug_name, status in results.items():
+            for slug_name, status in sorted(results.items()):
                 lines.append(f"- `{slug_name}`: {status}")
             return "\n".join(lines)
 
@@ -1106,6 +1136,7 @@ Willkommen im Wiki **{name}**.
         offset: int = 0,
         action: str = "",
         username: str = "",
+        category: str = "",
     ) -> str:
         """Zeigt die letzten Audit-Protokolle an.
 
@@ -1114,6 +1145,7 @@ Willkommen im Wiki **{name}**.
             offset: Start-Offset fuer Pagination (Default: 0).
             action: Filter nach Aktionstyp (z.B. 'login', 'create').
             username: Filter nach Benutzername.
+            category: Filter nach Kategorie (z.B. 'auth', 'wiki').
 
         Returns:
             Die letzten Audit-Eintraege.
@@ -1124,6 +1156,7 @@ Willkommen im Wiki **{name}**.
             offset=offset,
             action=action or None,
             username=username or None,
+            category=category or None,
         )
         if not logs:
             return "Keine Audit-Eintraege vorhanden."
@@ -1215,6 +1248,8 @@ Willkommen im Wiki **{name}**.
     def okf_delete_user(username: str) -> str:
         """Loescht einen Benutzer.
 
+        ACHTUNG: Selbst-Loeschung und Loeschen des letzten Admins sind nicht erlaubt.
+
         Args:
             username: Benutzername.
 
@@ -1222,6 +1257,9 @@ Willkommen im Wiki **{name}**.
             Bestaetigung der Loeschung.
         """
         from core.storage import list_users, delete_user
+        current_user = mcp_user_ctx.get()
+        if current_user and current_user.get("username") == username:
+            return "Fehler: Du kannst dich nicht selbst loeschen."
         users = list_users()
         target = None
         for u in users:
@@ -1230,6 +1268,10 @@ Willkommen im Wiki **{name}**.
                 break
         if not target:
             return f"Benutzer '{username}' nicht gefunden."
+        if target.get("role") == "admin":
+            admin_count = sum(1 for u in users if u.get("role") == "admin")
+            if admin_count <= 1:
+                return "Fehler: Der letzte Admin kann nicht geloescht werden."
         try:
             delete_user(target["id"])
             return f"Benutzer '{username}' erfolgreich geloescht."
@@ -1270,14 +1312,21 @@ Willkommen im Wiki **{name}**.
         Args:
             name: Bezeichnung fuer den Key.
             require_password: Passwort-Zusatz erforderlich.
-            scopes: Bereiche (Default: read, write).
+            scopes: Bereiche (Default: read, write). Erlaubt: read, write, admin.
 
         Returns:
             Der vollstaendige API-Key (einmalig angezeigt!).
         """
         from core.storage import create_key
+        valid_scopes = {"read", "write", "admin"}
+        if scopes:
+            invalid = [s for s in scopes if s not in valid_scopes]
+            if invalid:
+                return f"Fehler: Ungueltige Scopes: {', '.join(invalid)}. Erlaubt: {', '.join(sorted(valid_scopes))}"
+        current_user = mcp_user_ctx.get()
+        user_id = current_user["id"] if current_user else "mcp-agent"
         key_obj, raw = create_key(
-            user_id="mcp-agent",
+            user_id=user_id,
             name=name,
             require_password=require_password,
             scopes=scopes or ["read", "write"],
@@ -1370,8 +1419,11 @@ Willkommen im Wiki **{name}**.
 
         key_obj, raw_key = create_mcp_key(user_id=user_id, name=name, allowed_tools=final_tools)
 
-        from services.audit import log_action
-        log_action(action="mcp_key_create", details=f"MCP: MCP-Key '{name}' erstellt", username="mcp-agent")
+        try:
+            from services.audit import log_action
+            log_action(action="mcp_key_create", details=f"MCP: MCP-Key '{name}' erstellt", username="mcp-agent")
+        except Exception:
+            pass
 
         return f"MCP-Key '{name}' erfolgreich erstellt!\n\n**Roher MCP-Key (jetzt sichern):** `{raw_key}`"
 
@@ -1389,8 +1441,11 @@ Willkommen im Wiki **{name}**.
         from core.storage import delete_mcp_key
         success = delete_mcp_key(key_id)
         if success:
-            from services.audit import log_action
-            log_action(action="mcp_key_delete", details=f"MCP: MCP-Key ID '{key_id}' geloescht", username="mcp-agent")
+            try:
+                from services.audit import log_action
+                log_action(action="mcp_key_delete", details=f"MCP: MCP-Key ID '{key_id}' geloescht", username="mcp-agent")
+            except Exception:
+                pass
             return f"MCP-Key '{key_id}' wurde erfolgreich geloescht."
         return f"MCP-Key '{key_id}' konnte nicht gefunden werden."
 
@@ -1421,25 +1476,22 @@ Willkommen im Wiki **{name}**.
             pass
 
         try:
-            subprocess.run(
-                ["git", "fetch", "origin"],
-                capture_output=True, text=True, timeout=30,
-                cwd=str(PROJECT_ROOT),
-            )
-            proc = subprocess.run(
-                ["git", "show", "origin/main:VERSION"],
+            proc_remote = subprocess.run(
+                ["git", "ls-remote", "origin", "main"],
                 capture_output=True, text=True, timeout=15,
                 cwd=str(PROJECT_ROOT),
             )
-            remote_version = proc.stdout.strip() if proc.returncode == 0 else None
-
-            p_remote_c = subprocess.run(
-                ["git", "rev-parse", "origin/main"],
-                capture_output=True, text=True, timeout=15,
-                cwd=str(PROJECT_ROOT),
-            )
-            if p_remote_c.returncode == 0:
-                remote_commit = p_remote_c.stdout.strip()
+            remote_commit = None
+            remote_version = None
+            if proc_remote.returncode == 0 and proc_remote.stdout.strip():
+                remote_commit = proc_remote.stdout.strip().split()[0]
+                proc_version = subprocess.run(
+                    ["git", "show", f"{remote_commit}:VERSION"],
+                    capture_output=True, text=True, timeout=15,
+                    cwd=str(PROJECT_ROOT),
+                )
+                if proc_version.returncode == 0:
+                    remote_version = proc_version.stdout.strip()
         except Exception:
             remote_version = None
 
@@ -1576,62 +1628,63 @@ Willkommen im Wiki **{name}**.
             log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
             return f"Update fehlgeschlagen: {e}"
 
+    @mcp_server.tool(
+        name="okf_run_update_stream",
+        description="Fuehrt ein System-Update (update.sh) mit Echtzeit-Fortschrittsanzeige durch."
+    )
+    @_require_tool("okf_run_update_stream")
+    async def okf_run_update_stream():
+        """Streaming-Variante fuer okf_run_update mit Live-Fortschrittsmeldungen."""
+        update_script = PROJECT_ROOT / "update.sh"
+        if not update_script.exists():
+            return "FEHLER: update.sh nicht im Projekt-Stammverzeichnis gefunden."
 
-        @mcp_server.tool(
-            name="okf_run_update_stream",
-            description="Fuehrt ein System-Update (update.sh) mit Echtzeit-Fortschrittsanzeige durch."
-        )
-        @_require_tool("okf_run_update")
-        async def okf_run_update_stream():
-            """Streaming-Variante fuer okf_run_update mit Live-Fortschrittsmeldungen."""
-            update_script = PROJECT_ROOT / "update.sh"
-            if not update_script.exists():
-                return "FEHLER: update.sh nicht im Projekt-Stammverzeichnis gefunden."
+        from core.config import DATA_DIR as _DATA_DIR
+        version_file_stream = PROJECT_ROOT / "VERSION"
+        old_version = version_file_stream.read_text(encoding="utf-8").strip() if version_file_stream.exists() else "unbekannt"
+        log_file = _DATA_DIR / "update.log"
+        log_file.write_text("Starte Update via MCP Stream...\n", encoding="utf-8")
 
-            old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
-            log_file = DATA_DIR / "update.log"
-            log_file.write_text("Starte Update via MCP Stream...\n", encoding="utf-8")
+        try:
+            process = await asyncio.create_subprocess_exec(
+                str(update_script),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=str(PROJECT_ROOT)
+            )
 
-            try:
-                process = await asyncio.create_subprocess_exec(
-                    str(update_script),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                    cwd=str(PROJECT_ROOT)
-                )
+            output_chunks = []
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                decoded_line = line.decode("utf-8", errors="replace")
+                clean_line = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", decoded_line)
+                output_chunks.append(clean_line)
 
-                output_chunks = []
-                while True:
-                    line = await process.stdout.readline()
-                    if not line:
-                        break
-                    decoded_line = line.decode("utf-8", errors="replace")
-                    clean_line = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", decoded_line)
-                    output_chunks.append(clean_line)
+            await process.wait()
+            clean_output = "".join(output_chunks)
+            log_file.write_text(clean_output, encoding="utf-8")
 
-                await process.wait()
-                clean_output = "".join(output_chunks)
-                log_file.write_text(clean_output, encoding="utf-8")
+            new_version = version_file_stream.read_text(encoding="utf-8").strip() if version_file_stream.exists() else "unbekannt"
 
-                new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+            from services.audit import log_action
+            log_action(
+                action="mcp_update_stream",
+                details=f"MCP Stream: Update von {old_version} nach {new_version}",
+                username="mcp-agent"
+            )
 
-                from services.audit import log_action
-                log_action(
-                    action="mcp_update_stream",
-                    details=f"MCP Stream: Update von {old_version} nach {new_version}",
-                    username="mcp-agent"
-                )
-
-                lines = ["# Update-Ergebnis (Streamed)\n"]
-                lines.append(f"- **Alte Version:** {old_version}")
-                lines.append(f"- **Neue Version:** {new_version}")
-                lines.append(f"- **Update ausgefuehrt:** {'Ja' if old_version != new_version else 'Keine Aenderung'}")
-                if clean_output.strip():
-                    lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")
-                return "\n".join(lines)
-            except Exception as e:
-                log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
-                return f"Streaming Update fehlgeschlagen: {e}"
+            lines = ["# Update-Ergebnis (Streamed)\n"]
+            lines.append(f"- **Alte Version:** {old_version}")
+            lines.append(f"- **Neue Version:** {new_version}")
+            lines.append(f"- **Update ausgefuehrt:** {'Ja' if old_version != new_version else 'Keine Aenderung'}")
+            if clean_output.strip():
+                lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")
+            return "\n".join(lines)
+        except Exception as e:
+            log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
+            return f"Streaming Update fehlgeschlagen: {e}"
 
 
 
@@ -1996,16 +2049,33 @@ if _MCP_AVAILABLE and mcp_server is not None:
             )))]
 
         @mcp_server.prompt(name="update", description="Fuehrt ein System-Update aus (update.sh).")
-        @mcp_server.prompt(name="update-lwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
-        @mcp_server.prompt(name="updatelwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
         async def prompt_update() -> list[PromptMessage]:
-            """Slash-Command: /update /update-lwk /updatelwk"""
+            """Slash-Command: /update"""
             return [PromptMessage(role="user", content=TextContent(type="text", text=(
                 "Bitte fuehre ein LLMWikiNG-System-Update durch:\n"
                 "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"
                 "2. `okf_run_update()` – Update ausfuehren (falls verfuegbar).\n"
                 "3. Berichte das Ergebnis und den Update-Log.\n"
-                "4. Weise auf eventuelle Fehler hin."
+            )))]
+
+        @mcp_server.prompt(name="update-lwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
+        async def prompt_update_lwk() -> list[PromptMessage]:
+            """Slash-Command: /update-lwk"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte fuehre ein LLMWikiNG-System-Update durch:\n"
+                "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"
+                "2. `okf_run_update()` – Update ausfuehren (falls verfuegbar).\n"
+                "3. Berichte das Ergebnis und den Update-Log.\n"
+            )))]
+
+        @mcp_server.prompt(name="updatelwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
+        async def prompt_updatelwk() -> list[PromptMessage]:
+            """Slash-Command: /updatelwk"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte fuehre ein LLMWikiNG-System-Update durch:\n"
+                "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"
+                "2. `okf_run_update()` – Update ausfuehren (falls verfuegbar).\n"
+                "3. Berichte das Ergebnis und den Update-Log.\n"
             )))]
 
     except ImportError:

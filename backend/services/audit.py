@@ -108,34 +108,32 @@ def init_db():
     if _db_initialized:
         return
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(AUDIT_DB)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS audit_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT NOT NULL,
-            user_id TEXT,
-            username TEXT,
-            action TEXT NOT NULL,
-            details TEXT,
-            ip_address TEXT,
-            user_agent TEXT
-        )
-    """)
-    
-    # Migration: category column
-    cursor.execute("PRAGMA table_info(audit_logs)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if "category" not in columns:
-        cursor.execute("ALTER TABLE audit_logs ADD COLUMN category TEXT DEFAULT 'system'")
-        
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON audit_logs(timestamp)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_action ON audit_logs(action)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_username ON audit_logs(username)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_category ON audit_logs(category)")
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(AUDIT_DB) as conn:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                user_id TEXT,
+                username TEXT,
+                action TEXT NOT NULL,
+                details TEXT,
+                ip_address TEXT,
+                user_agent TEXT
+            )
+        """)
+
+        # Migration: category column
+        cursor.execute("PRAGMA table_info(audit_logs)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if "category" not in columns:
+            cursor.execute("ALTER TABLE audit_logs ADD COLUMN category TEXT DEFAULT 'system'")
+
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON audit_logs(timestamp)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_action ON audit_logs(action)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_username ON audit_logs(username)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_category ON audit_logs(category)")
     _db_initialized = True
 
 
@@ -171,25 +169,27 @@ def log_action(
 
         conn = sqlite3.connect(AUDIT_DB)
         conn.execute("PRAGMA journal_mode=WAL;")
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO audit_logs (timestamp, user_id, username, action, details, ip_address, user_agent, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                datetime.now().isoformat(timespec="seconds"),
-                user_id,
-                username,
-                action,
-                details,
-                ip_address,
-                user_agent,
-                category
-            ),
-        )
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO audit_logs (timestamp, user_id, username, action, details, ip_address, user_agent, category)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    datetime.now().isoformat(timespec="seconds"),
+                    user_id,
+                    username,
+                    action,
+                    details,
+                    ip_address,
+                    user_agent,
+                    category
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
     except Exception as e:
         # Fehler beim Logging dürfen die Hauptanwendung nicht blockieren
         print(f"[AUDIT ERROR] {e}")
@@ -210,50 +210,52 @@ def get_logs(
         init_db()
         conn = sqlite3.connect(AUDIT_DB)
         conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        query = "SELECT * FROM audit_logs WHERE 1=1"
-        count_query = "SELECT COUNT(*) FROM audit_logs WHERE 1=1"
-        params = []
+            query = "SELECT * FROM audit_logs WHERE 1=1"
+            count_query = "SELECT COUNT(*) FROM audit_logs WHERE 1=1"
+            params = []
 
-        if action:
-            query += " AND action LIKE ?"
-            count_query += " AND action LIKE ?"
-            params.append(f"%{action}%")
-        if category:
-            query += " AND category = ?"
-            count_query += " AND category = ?"
-            params.append(category)
-        if username:
-            query += " AND username = ?"
-            count_query += " AND username = ?"
-            params.append(username)
-        if start_date:
-            query += " AND timestamp >= ?"
-            count_query += " AND timestamp >= ?"
-            params.append(start_date)
-        if end_date:
-            query += " AND timestamp <= ?"
-            count_query += " AND timestamp <= ?"
-            params.append(end_date)
-            
-        if search:
-            search_term = f"%{search}%"
-            search_clause = " AND (details LIKE ? OR username LIKE ? OR action LIKE ? OR ip_address LIKE ?)"
-            query += search_clause
-            count_query += search_clause
-            params.extend([search_term, search_term, search_term, search_term])
+            if action:
+                query += " AND action LIKE ?"
+                count_query += " AND action LIKE ?"
+                params.append(f"%{action}%")
+            if category:
+                query += " AND category = ?"
+                count_query += " AND category = ?"
+                params.append(category)
+            if username:
+                query += " AND username = ?"
+                count_query += " AND username = ?"
+                params.append(username)
+            if start_date:
+                query += " AND timestamp >= ?"
+                count_query += " AND timestamp >= ?"
+                params.append(start_date)
+            if end_date:
+                query += " AND timestamp <= ?"
+                count_query += " AND timestamp <= ?"
+                params.append(end_date)
 
-        cursor.execute(count_query, params)
-        total = cursor.fetchone()[0]
+            if search:
+                search_term = f"%{search}%"
+                search_clause = " AND (details LIKE ? OR username LIKE ? OR action LIKE ? OR ip_address LIKE ?)"
+                query += search_clause
+                count_query += search_clause
+                params.extend([search_term, search_term, search_term, search_term])
 
-        query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
-        cursor.execute(query, params + [limit, offset])
-        rows = cursor.fetchall()
-        
-        logs = [dict(r) for r in rows]
-        conn.close()
-        return logs, total
+            cursor.execute(count_query, params)
+            total = cursor.fetchone()[0]
+
+            query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+            cursor.execute(query, params + [limit, offset])
+            rows = cursor.fetchall()
+
+            logs = [dict(r) for r in rows]
+            return logs, total
+        finally:
+            conn.close()
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return [], 0
@@ -272,38 +274,40 @@ def get_all_logs(
         init_db()
         conn = sqlite3.connect(AUDIT_DB)
         conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        query = "SELECT * FROM audit_logs WHERE 1=1"
-        params = []
+            query = "SELECT * FROM audit_logs WHERE 1=1"
+            params = []
 
-        if action:
-            query += " AND action LIKE ?"
-            params.append(f"%{action}%")
-        if category:
-            query += " AND category = ?"
-            params.append(category)
-        if username:
-            query += " AND username = ?"
-            params.append(username)
-        if start_date:
-            query += " AND timestamp >= ?"
-            params.append(start_date)
-        if end_date:
-            query += " AND timestamp <= ?"
-            params.append(end_date)
-        if search:
-            search_term = f"%{search}%"
-            query += " AND (details LIKE ? OR username LIKE ? OR action LIKE ? OR ip_address LIKE ?)"
-            params.extend([search_term, search_term, search_term, search_term])
+            if action:
+                query += " AND action LIKE ?"
+                params.append(f"%{action}%")
+            if category:
+                query += " AND category = ?"
+                params.append(category)
+            if username:
+                query += " AND username = ?"
+                params.append(username)
+            if start_date:
+                query += " AND timestamp >= ?"
+                params.append(start_date)
+            if end_date:
+                query += " AND timestamp <= ?"
+                params.append(end_date)
+            if search:
+                search_term = f"%{search}%"
+                query += " AND (details LIKE ? OR username LIKE ? OR action LIKE ? OR ip_address LIKE ?)"
+                params.extend([search_term, search_term, search_term, search_term])
 
-        query += " ORDER BY timestamp DESC"
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        
-        logs = [dict(r) for r in rows]
-        conn.close()
-        return logs
+            query += " ORDER BY timestamp DESC"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            logs = [dict(r) for r in rows]
+            return logs
+        finally:
+            conn.close()
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return []
@@ -319,12 +323,11 @@ def get_category_stats() -> dict[str, int]:
     """Gibt die Anzahl der Logs pro Kategorie zurück."""
     try:
         init_db()
-        conn = sqlite3.connect(AUDIT_DB)
-        cursor = conn.cursor()
-        cursor.execute("SELECT category, COUNT(*) FROM audit_logs GROUP BY category")
-        rows = cursor.fetchall()
-        conn.close()
-        return {row[0] or "system": row[1] for row in rows}
+        with sqlite3.connect(AUDIT_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT category, COUNT(*) FROM audit_logs GROUP BY category")
+            rows = cursor.fetchall()
+            return {row[0] or "system": row[1] for row in rows}
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return {}
@@ -334,12 +337,11 @@ def get_total_count() -> int:
     """Gibt die Gesamtanzahl aller Audit-Logs zurück."""
     try:
         init_db()
-        conn = sqlite3.connect(AUDIT_DB)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM audit_logs")
-        total = cursor.fetchone()[0]
-        conn.close()
-        return total
+        with sqlite3.connect(AUDIT_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM audit_logs")
+            total = cursor.fetchone()[0]
+            return total
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return 0
@@ -350,20 +352,22 @@ def prune_logs(year: int, month: int | None = None) -> int:
     try:
         init_db()
         conn = sqlite3.connect(AUDIT_DB)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        if month:
-            # Löscht alles vor dem Ende des angegebenen Monats (z. B. vor YYYY-MM-31T23:59:59)
-            target = f"{year}-{month:02d}-31T23:59:59"
-        else:
-            # Löscht alles vor dem angegebenen Jahr
-            target = f"{year}-01-01T00:00:00"
+            if month:
+                # Löscht alles vor dem Ende des angegebenen Monats (z. B. vor YYYY-MM-31T23:59:59)
+                target = f"{year}-{month:02d}-31T23:59:59"
+            else:
+                # Löscht alles vor dem angegebenen Jahr
+                target = f"{year}-01-01T00:00:00"
 
-        cursor.execute("DELETE FROM audit_logs WHERE timestamp < ?", (target,))
-        deleted = cursor.rowcount
-        conn.commit()
-        conn.close()
-        return deleted
+            cursor.execute("DELETE FROM audit_logs WHERE timestamp < ?", (target,))
+            deleted = cursor.rowcount
+            conn.commit()
+            return deleted
+        finally:
+            conn.close()
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return 0

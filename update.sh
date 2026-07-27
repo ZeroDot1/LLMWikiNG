@@ -108,10 +108,10 @@ echo -e "  Hole neueste Aenderungen von GitHub..."
 # Lokale Aenderungen an Benutzerdateien stashen (data/, config.json, .agy.yaml)
 # Nur stashen wenn es tatsaechlich Aenderungen gibt
 STASHED=0
-if ! git diff --quiet -- data config.json .agy.yaml 2>/dev/null || \
-   ! git diff --cached --quiet -- data config.json .agy.yaml 2>/dev/null; then
-    echo -e "  -> Lokale Aenderungen an Benutzerdateien werden gestashed..."
-    git stash push -m "Auto-Stash vor Update $(date '+%Y-%m-%d %H:%M:%S')" -- data config.json .agy.yaml 2>/dev/null && STASHED=1 || true
+# Alle lokalen Aenderungen sichern (nicht nur ausgewaehlte Dateien)
+if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+    echo -e "  -> Lokale Aenderungen werden gestashed..."
+    git stash push -m "Auto-Stash vor Update $(date '+%Y-%m-%d %H:%M:%S')" 2>/dev/null && STASHED=1 || true
 fi
 
 if ! git fetch origin 2>&1; then

@@ -80,7 +80,7 @@ def _set_session_and_redirect(user: dict) -> RedirectResponse:
     resp = RedirectResponse(f"{BASE_PATH}/", status_code=303)
     resp.set_cookie(
         "session", create_session(user["id"]),
-        httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7,
+        httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7, secure=True,
     )
     return resp
 

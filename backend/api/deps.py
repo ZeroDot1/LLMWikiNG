@@ -14,6 +14,8 @@ from core.config import wiki_path, slugify_wiki, BASE_PATH
 from core.security import read_session, verify_password
 from core.storage import get_user, get_key_by_hash, list_users
 
+_no_users_cache: bool | None = None
+
 def update_key_last_used(key_id: str):
     from core.storage import list_keys, save_keys
     import datetime
@@ -32,11 +34,15 @@ def get_current_user(request: Request) -> dict | None:
 
 
 def require_login(request: Request) -> dict:
+    global _no_users_cache
     user = get_current_user(request)
     # Erstinrichtung: Gibt es noch keine User, zum Login (Setup) durchlassen
     if not user or not user.get("active", True):
-        target = f"{BASE_PATH}/register" if len(list_users()) == 0 else f"{BASE_PATH}/login"
+        if _no_users_cache is None:
+            _no_users_cache = len(list_users()) == 0
+        target = f"{BASE_PATH}/register" if _no_users_cache else f"{BASE_PATH}/login"
         raise HTTPException(status_code=307, headers={"Location": target})
+    _no_users_cache = False
     return user
 
 

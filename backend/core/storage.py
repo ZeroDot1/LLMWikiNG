@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from datetime import datetime
 from pathlib import Path
 
 from core.config import DATA_DIR
@@ -58,7 +59,7 @@ def create_user(username: str, password: str, role: str = "admin") -> dict:
         "password_hash": hash_password(password),
         "role": role,
         "active": True,
-        "created_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+        "created_at": datetime.now().isoformat(timespec="seconds"),
     }
     users.append(user)
     save_users(users)
@@ -103,7 +104,7 @@ def create_key(user_id: str, name: str, require_password: bool = False,
         "require_password": require_password,
         "scopes": scopes or ["read", "write"],
         "active": True,
-        "created_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+        "created_at": datetime.now().isoformat(timespec="seconds"),
         "last_used": None,
     }
     keys = list_keys()
@@ -172,7 +173,7 @@ def create_mcp_key(user_id: str, name: str, allowed_tools: list[str] | None = No
         "name": name,
         "allowed_tools": allowed_tools or [],  # Leer = alle Tools erlaubt
         "active": True,
-        "created_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+        "created_at": datetime.now().isoformat(timespec="seconds"),
         "last_used": None,
     }
     data = _load_mcp_data()

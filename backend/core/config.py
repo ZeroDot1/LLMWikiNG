@@ -70,7 +70,7 @@ def __getattr__(name: str) -> Any:
             return str(cfg["llmwiking_mcp_key"])
         return os.getenv("LLMWIKING_MCP_KEY", "")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-DEFAULT_LANG = "en"  # Kann via config.json oder --lang CLI überschrieben werden
+DEFAULT_LANG = "de"  # Kann via config.json oder --lang CLI überschrieben werden
 
 # Zur Laufzeit durch run.py gesetzt (CLI --lang / config.json)
 _current_lang = {"value": DEFAULT_LANG}
@@ -323,7 +323,7 @@ def get_available_languages() -> dict[str, str]:
                 except (json.JSONDecodeError, Exception):
                     langs[code] = code
     if not langs:
-        langs[DEFAULT_LANG] = "Deutsch"
+        langs[DEFAULT_LANG] = "Deutsch" if DEFAULT_LANG == "de" else DEFAULT_LANG
     return langs
 
 

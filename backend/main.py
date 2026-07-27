@@ -119,6 +119,7 @@ def create_app() -> FastAPI:
                         from core.storage import get_mcp_key_by_hash as _gmkbh
                         from core.storage import update_mcp_key as _umk
                         from api.routes.mcp import mcp_allowed_tools_ctx as _mac
+                        from api.routes.mcp import mcp_user_ctx as _muc
                         from datetime import datetime as _dt
                         self._hashlib = _hl
                         self._parse_qs = _pqs
@@ -128,8 +129,10 @@ def create_app() -> FastAPI:
                         self._get_mcp_key_by_hash = _gmkbh
                         self._update_mcp_key = _umk
                         self._mcp_allowed_tools_ctx = _mac
+                        self._mcp_user_ctx = _muc
                         self._datetime = _dt
 
+                    async def __call__(self, scope, receive, send):
                         path = scope.get("path", "")
                         if scope["type"] == "http" and ("/mcp/" in path or path.endswith("/mcp")):
                             headers_dict = dict(scope.get("headers", []))
@@ -187,6 +190,7 @@ def create_app() -> FastAPI:
                                 scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
 
                                 _allowed_token = self._mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
+                                _user_token = self._mcp_user_ctx.set(user)
 
                                 try:
                                     self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
@@ -196,6 +200,7 @@ def create_app() -> FastAPI:
                                 try:
                                     await self.app(scope, receive, send)
                                 finally:
+                                    self._mcp_user_ctx.reset(_user_token)
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
@@ -220,10 +225,12 @@ def create_app() -> FastAPI:
                                 scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
 
                                 _allowed_token = self._mcp_allowed_tools_ctx.set([])
+                                _user_token = self._mcp_user_ctx.set(user)
 
                                 try:
                                     await self.app(scope, receive, send)
                                 finally:
+                                    self._mcp_user_ctx.reset(_user_token)
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 

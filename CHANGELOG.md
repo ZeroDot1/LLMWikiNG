@@ -7,6 +7,14 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.7] - 2026-07-27
+
+### Fixed
+- **MCP Middleware Pfad-Matching (`backend/main.py`)**: `McpApiKeyMiddleware` prüft den Pfad nun flexibel (`/mcp/` oder `.endswith("/mcp")`), sodass Direct HTTP Anfragen (ohne trailing slash) korrekt authentifiziert und verarbeitet werden.
+- **Git Commit Hash in MCP Update Tool (`backend/api/routes/mcp.py`)**: `okf_check_update` ruft nun sowohl den lokalen als auch den Remote-Git-Commit-Hash (`git rev-parse`) ab und gibt diese im Statusbericht aus.
+- **Python 3.14 Deprecation Fix (`backend/api/routes/mcp.py`)**: Umstellung von `asyncio.iscoroutinefunction` auf `inspect.iscoroutinefunction`.
+- **Ressourcenbereinigung im Audit-Service (`backend/services/audit.py`)**: Verbindungs-Schließen bei Datenbankabfragen mit `try...finally` abgesichert.
+
 ## [2.13.6] - 2026-07-27
 
 ### Fixed

@@ -899,7 +899,6 @@ async def search(request: Request):
 @router.get("/lang/{code}")
 def switch_language(code: str, request: Request):
     from core.config import get_available_languages, load_app_config, CONFIG_FILE
-    import json as _json
 
     available = get_available_languages()
     if code not in available:
@@ -911,7 +910,7 @@ def switch_language(code: str, request: Request):
     try:
         data = load_app_config()
         data["language"] = code
-        CONFIG_FILE.write_text(_json.dumps(data, indent=2), encoding="utf-8")
+        CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception:
         pass
     return response
@@ -1214,6 +1213,7 @@ def settings_get(request: Request):
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
     from core.config import load_app_config
+    from services.backup import list_server_backups
     cfg = load_app_config()
     return render(
         request, "settings.html",
@@ -1243,7 +1243,7 @@ def settings_get(request: Request):
         new_generated_api_key=None,
         syntax_msg=request.query_params.get("syntax_msg"),
         registration_enabled=cfg.get("registration_enabled", True),
-        server_backups=__import__("services.backup", fromlist=["list_server_backups"]).list_server_backups(),
+        server_backups=list_server_backups(),
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
         lang=request.cookies.get("llmwiki_lang", "de"),

@@ -158,15 +158,20 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         scopes=scopes,
     )
     log_action(action="api_key_create", details=f"API-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt", user_id=admin["id"], username=admin["username"], request=request)
+    from core.config import MCP_TOOL_GROUPS
+    from core.storage import list_mcp_keys
     smtp_config = load_smtp_config()
-    health = {"orphans": [], "missing": [], "stale": [], "missing_raw": [], "issue_count": 0}
+    cfg = load_app_config()
+    health = run_lint() if cfg.get("health_run_check", False) else {"orphans": [], "missing": [], "stale": [], "missing_raw": [], "issue_count": 0}
     return render(
         request, "settings.html",
         active_page="settings",
         smtp_config=smtp_config,
         env_user=os.environ.get("GMAIL_USER", ""),
         env_pass_exists=bool(os.environ.get("GMAIL_APP_PASSWORD")),
-        audit_config=load_app_config(),
+        audit_config=cfg,
+        mcp_config=cfg,
+        syntax_highlighting=cfg.get("syntax_highlighting", True),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
         config_error_msg=None,
@@ -184,7 +189,11 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         new_key=raw,
         new_generated_mcp_key=None,
         new_generated_api_key=None,
-        registration_enabled=load_app_config().get("registration_enabled", True),
+        registration_enabled=cfg.get("registration_enabled", True),
+        server_backups=[],
+        mcp_keys=list_mcp_keys(),
+        mcp_tool_groups=MCP_TOOL_GROUPS,
+        lang=request.cookies.get("llmwiki_lang", "de"),
     )
 
 

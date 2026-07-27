@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.5] - 2026-07-27
+
+### Fixed
+- **MCP Server SSE Route Optimization (`backend/api/routes/mcp.py`)**: `get_mcp_http_app()` gibt nun stets die Starlette `sse_app()` zurück, damit SSE-basierte MCP-Clients (wie AGY, Cursor oder Claude Code) die `/LLMWikiNG/mcp/sse`-Schnittstelle zuverlässig und ohne 404-Fehler erreichen können.
+
 ## [2.13.4] - 2026-07-27
 
 ### Fixed

@@ -32,6 +32,12 @@
             </label>
             <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2.5 text-white hover:bg-primary-hover">{{ _('login.submit') }}</button>
         </form>
+
+        {% if registration_enabled %}
+        <div class="mt-6 text-center text-sm text-text-secondary">
+            {{ _('login.no_account') }} <a href="{{ base_path }}/register" class="text-primary hover:underline font-semibold">{{ _('login.register_here') }}</a>
+        </div>
+        {% endif %}
     </div>
 </section>
 <script type="module" src="{{ base_path }}/static/js/auth.js?v={{ app_version }}"></script>

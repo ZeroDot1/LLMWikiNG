@@ -651,7 +651,9 @@
     "show_password": "Passwort anzeigen",
     "submit": "Anmelden",
     "setup_hint": "Erster Benutzer wird als Administrator angelegt.",
-    "error": "Fehler:"
+    "error": "Fehler:",
+    "no_account": "Noch kein Konto?",
+    "register_here": "Hier registrieren"
   },
   "wiki_new": {
     "title": "Neues Wiki anlegen",
@@ -663,6 +665,7 @@
   },
   "users": {
     "title": "Benutzerverwaltung",
+    "registration_section_hint": "Kontrolliere, ob sich neue Benutzer selbst registrieren können.",
     "create_heading": "Neuen Benutzer anlegen",
     "username": "Benutzername",
     "password": "Passwort",

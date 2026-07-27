@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.20] - 2026-07-27
+
+### Fixed
+- **Registrierungs-Hinweis in Settings → Users wird nun korrekt angezeigt** (`templates/settings/users.html`, `lang/de.json`, `lang/en.json`): Der Übersetzungsschlüssel `users.registration_section_hint` fehlte in beiden Sprachdateien, sodass der rohe Key-Name als Text dargestellt wurde. Schlüssel ergänzt.
+- **Registrierungs-Link auf der Login-Seite** (`templates/login.html`, `backend/api/routes/auth.py`): Die Login-Seite zeigt jetzt – wenn die Registrierung in den Einstellungen erlaubt ist – einen „Noch kein Konto? Hier registrieren"-Link an. Bei deaktivierter Registrierung wird der Link ausgeblendet. Dafür wird `registration_enabled` nun korrekt vom Login-Handler an das Template übergeben.
+- **Fehlende Sprachschlüssel ergänzt** (`lang/de.json`, `lang/en.json`): `login.no_account`, `login.register_here` und `users.registration_section_hint` hinzugefügt.
+- **Irreführende `default=`-Parameter in Templates entfernt** (`templates/settings/users.html`, `templates/users.html`): Die `_('key', default='...')`-Aufrufe funktionieren nicht als Key-Fallback (der Translator gibt bei fehlendem Key den Key-String selbst zurück). Alle `default=`-Parameter aus Template-Aufrufen entfernt, da die entsprechenden Keys inzwischen in den Sprachdateien vorhanden sind.
+
 ## [2.12.19] - 2026-07-27
 
 ### Added

@@ -54,7 +54,7 @@
             <tbody>
                 {% for user in users %}
                 <tr class="border-b border-border">
-                    <td class="py-2 font-medium">{{ user.username }}{% if user.username == current_username %} <span class="text-xs text-primary">({{ _('users.you', default='du') }})</span>{% endif %}</td>
+                    <td class="py-2 font-medium">{{ user.username }}{% if user.username == current_username %} <span class="text-xs text-primary">({{ _('users.you') }})</span>{% endif %}</td>
                     <td class="py-2">
                         {% if user.role == 'admin' %}{{ _('users.role_admin') }}
                         {% elif user.role == 'editor' %}{{ _('users.role_editor') }}
@@ -75,7 +75,7 @@
         </table>
     </div>
     {% else %}
-    <p class="text-text-secondary">{{ _('users.no_users', default='Noch keine Benutzer vorhanden.') }}</p>
+    <p class="text-text-secondary">{{ _('users.no_users') }}</p>
     {% endif %}
 </div>
 {% endblock %}

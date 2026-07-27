@@ -35,12 +35,14 @@ router = APIRouter(prefix=BASE_PATH)
 def login_form(request: Request):
     if len(list_users()) == 0:
         return redirect(f"{BASE_PATH}/register")
+    cfg = load_app_config()
     return render(
         request, "login.html",
         active_page="login",
         setup=False,
         error=request.query_params.get("error"),
         hide_nav=True,
+        registration_enabled=cfg.get("registration_enabled", True),
     )
 
 

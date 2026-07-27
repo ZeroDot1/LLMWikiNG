@@ -6,8 +6,9 @@ Windsurf, Claude Code etc.) erlaubt, das Wiki im Open Knowledge Format
 
 Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
+Per-User MCP-Keys mit Tool-Berechtigungen werden unterstuetzt.
 
-Verfuegbare MCP-Tools (31):
+Verfuegbare MCP-Tools (34):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -38,7 +39,9 @@ Verfuegbare MCP-Tools (31):
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import datetime
+import functools
 import json
 import os
 import re
@@ -74,6 +77,47 @@ from services.lint import run_lint
 from services.graph import build_graph_data
 
 import frontmatter
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MCP Tool-Berechtigungskontext
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Wird von der McpApiKeyMiddleware in main.py gesetzt.
+# Enthaelt die erlaubten Tool-IDs fuer den aktuellen MCP-Key.
+# Leer = alle Tools erlaubt (Legacy-Key oder Admin).
+mcp_allowed_tools_ctx: contextvars.ContextVar[list[str]] = contextvars.ContextVar(
+    "mcp_allowed_tools", default=[]
+)
+
+
+def _check_tool_permission(tool_name: str) -> str | None:
+    """Prueft ob das angegebene Tool fuer den aktuellen MCP-Key erlaubt ist.
+
+    Gibt None zurueck wenn erlaubt, oder eine Fehlermeldung wenn nicht.
+    """
+    allowed = mcp_allowed_tools_ctx.get()
+    if not allowed:
+        return None  # Leer = alles erlaubt (Legacy/Full-Access)
+    if tool_name in allowed:
+        return None
+    return (
+        f"Tool '{tool_name}' ist fuer diesen MCP-Key nicht erlaubt. "
+        f"Erlaubte Tools: {', '.join(allowed)}"
+    )
+
+
+def _require_tool(tool_name: str):
+    """Dekorator fuer MCP-Tools: Prueft Tool-Berechtigung vor Ausfuehrung."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            err = _check_tool_permission(tool_name)
+            if err:
+                return err
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FastMCP-Server Initialisierung
@@ -137,6 +181,7 @@ def _format_size(size_bytes: int) -> str:
 if _MCP_AVAILABLE:
 
     # --- A1: List Wikis ---
+    @_require_tool("okf_list_wikis")
     @mcp_server.tool()
     def okf_list_wikis() -> str:
         """Listet alle verfuegbaren Wikis mit Metadaten auf.
@@ -158,6 +203,7 @@ if _MCP_AVAILABLE:
         return "\n".join(lines)
 
     # --- A2: Create Wiki ---
+    @_require_tool("okf_create_wiki")
     @mcp_server.tool()
     def okf_create_wiki(
         name: str,
@@ -228,6 +274,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Erstellen des Wikis: {e}"
 
     # --- A3: Update Wiki ---
+    @_require_tool("okf_update_wiki")
     @mcp_server.tool()
     def okf_update_wiki(
         wiki: str,
@@ -287,6 +334,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Aktualisieren: {e}"
 
     # --- A4: Delete Wiki ---
+    @_require_tool("okf_delete_wiki")
     @mcp_server.tool()
     def okf_delete_wiki(wiki: str) -> str:
         """Loescht ein Wiki und alle zugehoerigen Dateien.
@@ -321,6 +369,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Loeschen: {e}"
 
     # --- A5: List Pages ---
+    @_require_tool("okf_list_pages")
     @mcp_server.tool()
     def okf_list_pages(
         wiki: str = "main",
@@ -366,6 +415,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A6: Read Concept ---
+    @_require_tool("okf_read_concept")
     @mcp_server.tool()
     def okf_read_concept(slug: str, wiki: str = "main") -> str:
         """Liest eine Wiki-Seite im Open Knowledge Format (OKF v0.1).
@@ -428,6 +478,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A7: Write Concept ---
+    @_require_tool("okf_write_concept")
     @mcp_server.tool()
     def okf_write_concept(
         slug: str,
@@ -521,6 +572,7 @@ Willkommen im Wiki **{name}**.
         )
 
     # --- A8: Delete Page ---
+    @_require_tool("okf_delete_page")
     @mcp_server.tool()
     def okf_delete_page(slug: str, wiki: str = "main") -> str:
         """Loescht eine Wiki-Seite.
@@ -575,6 +627,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Loeschen: {e}"
 
     # --- A9: Export Page ---
+    @_require_tool("okf_export_page")
     @mcp_server.tool()
     def okf_export_page(slug: str, wiki: str = "main") -> str:
         """Exportiert eine Wiki-Seite in das output_docs/ Verzeichnis.
@@ -605,6 +658,7 @@ Willkommen im Wiki **{name}**.
         )
 
     # --- A10: List Pending ---
+    @_require_tool("okf_list_pending")
     @mcp_server.tool()
     def okf_list_pending(wiki: str = "main") -> str:
         """Listet Rohquellen-Dateien auf, die auf Ingest warten.
@@ -627,6 +681,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A11: Process Pending ---
+    @_require_tool("okf_process_pending")
     @mcp_server.tool()
     def okf_process_pending(wiki: str = "main") -> str:
         """Verarbeitet alle ausstehenden Rohquellen-Dateien (Ingest).
@@ -695,6 +750,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A12: Ingest Text ---
+    @_require_tool("okf_ingest_text")
     @mcp_server.tool()
     def okf_ingest_text(
         text: str,
@@ -764,6 +820,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Ingest: {e}"
 
     # --- A13: Search ---
+    @_require_tool("okf_search")
     @mcp_server.tool()
     def okf_search(query: str, wiki: str = "main") -> str:
         """Durchsucht das Wiki nach Begriffen (Volltextsuche).
@@ -791,6 +848,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A14: Wiki Stats ---
+    @_require_tool("okf_wiki_stats")
     @mcp_server.tool()
     def okf_wiki_stats(wiki: str = "main") -> str:
         """Zeigt Statistiken fuer ein Wiki (Seiten, Woerter, Dateien).
@@ -823,6 +881,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A15: Graph ---
+    @_require_tool("okf_graph")
     @mcp_server.tool()
     def okf_graph(wiki: str = "main") -> str:
         """Gibt die Wissensgraph-Daten eines Wikis zurueck.
@@ -858,6 +917,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A16: Lint ---
+    @_require_tool("okf_lint")
     @mcp_server.tool()
     def okf_lint(wiki: str = "main") -> str:
         """Fuehrt eine Gesundheitspruefung des Wikis durch (Lint).
@@ -952,6 +1012,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines).strip()
 
     # --- A17: Read Raw ---
+    @_require_tool("okf_read_raw")
     @mcp_server.tool()
     def okf_read_raw(filename: str) -> str:
         """Liest eine Rohquellen-Datei aus dem raw/-Verzeichnis.
@@ -979,6 +1040,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Lesen: {e}"
 
     # --- A18: List Raw ---
+    @_require_tool("okf_list_raw")
     @mcp_server.tool()
     def okf_list_raw() -> str:
         """Listet alle Rohquellen-Dateien im raw/-Verzeichnis auf.
@@ -999,6 +1061,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A19: System Status ---
+    @_require_tool("okf_system_status")
     @mcp_server.tool()
     def okf_system_status() -> str:
         """Zeigt den Systemstatus von LLMWikiNG an.
@@ -1022,6 +1085,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A20: System Sync ---
+    @_require_tool("okf_system_sync")
     @mcp_server.tool()
     def okf_system_sync(wiki: str = "") -> str:
         """Synchronisiert ein Wiki oder alle Wikis (Embedding-Updates).
@@ -1056,6 +1120,7 @@ Willkommen im Wiki **{name}**.
             return "\n".join(lines)
 
     # --- A21: Audit Logs ---
+    @_require_tool("okf_audit_logs")
     @mcp_server.tool()
     def okf_audit_logs(
         limit: int = 20,
@@ -1093,6 +1158,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A22: Cache Stats ---
+    @_require_tool("okf_cache_stats")
     @mcp_server.tool()
     def okf_cache_stats() -> str:
         """Zeigt aktuelle Cache-Statistiken an.
@@ -1108,6 +1174,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A23: Cache Clear ---
+    @_require_tool("okf_cache_clear")
     @mcp_server.tool()
     def okf_cache_clear() -> str:
         """Leert den gesamten In-Memory-Cache.
@@ -1120,6 +1187,7 @@ Willkommen im Wiki **{name}**.
         return "Cache erfolgreich geleert."
 
     # --- A24: List Users ---
+    @_require_tool("okf_list_users")
     @mcp_server.tool()
     def okf_list_users() -> str:
         """Listet alle Benutzer auf.
@@ -1140,6 +1208,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A25: Create User ---
+    @_require_tool("okf_create_user")
     @mcp_server.tool()
     def okf_create_user(
         username: str,
@@ -1167,6 +1236,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler: {e}"
 
     # --- A26: Delete User ---
+    @_require_tool("okf_delete_user")
     @mcp_server.tool()
     def okf_delete_user(username: str) -> str:
         """Loescht einen Benutzer.
@@ -1193,6 +1263,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Loeschen: {e}"
 
     # --- A27: List API Keys ---
+    @_require_tool("okf_list_api_keys")
     @mcp_server.tool()
     def okf_list_api_keys() -> str:
         """Listet alle API-Keys auf.
@@ -1215,6 +1286,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A28: Create API Key ---
+    @_require_tool("okf_create_api_key")
     @mcp_server.tool()
     def okf_create_api_key(
         name: str,
@@ -1247,6 +1319,7 @@ Willkommen im Wiki **{name}**.
         )
 
     # --- A29: Delete API Key ---
+    @_require_tool("okf_delete_api_key")
     @mcp_server.tool()
     def okf_delete_api_key(key_id: str) -> str:
         """Loescht einen API-Key.
@@ -1273,6 +1346,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Loeschen: {e}"
 
     # --- A30: Check Update ---
+    @_require_tool("okf_check_update")
     @mcp_server.tool()
     def okf_check_update() -> str:
         """Prueft, ob ein Update auf GitHub verfuegbar ist.
@@ -1314,6 +1388,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A32: List Backups ---
+    @_require_tool("okf_list_backups")
     @mcp_server.tool()
     def okf_list_backups() -> str:
         """Listet alle auf dem Server gespeicherten Backup-Dateien (tar.xz) auf.
@@ -1332,6 +1407,7 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     # --- A33: Create Backup ---
+    @_require_tool("okf_create_backup")
     @mcp_server.tool()
     def okf_create_backup() -> str:
         """Erstellt ein neues Backup aller Wiki-Daten, Konfigurationen und Datenbanken auf dem Server.
@@ -1346,6 +1422,7 @@ Willkommen im Wiki **{name}**.
         return f"Backup erfolgreich erstellt: {b_path.name} ({round(b_path.stat().st_size / (1024*1024), 2)} MB)"
 
     # --- A34: Restore Backup ---
+    @_require_tool("okf_restore_backup")
     @mcp_server.tool()
     def okf_restore_backup(filename: str) -> str:
         """Stellt ein auf dem Server vorhandenes Backup (tar.xz) wieder her.
@@ -1372,6 +1449,7 @@ Willkommen im Wiki **{name}**.
             return f"Fehler beim Wiederherstellen des Backups: {e}"
 
     # --- A31: Run Update ---
+    @_require_tool("okf_run_update")
     @mcp_server.tool()
     def okf_run_update() -> str:
         """Fuehrt das System-Update aus (via update.sh).

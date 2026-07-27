@@ -64,3 +64,6 @@ audit/*
 wiki/
 wiki/*
 
+# ─── Implementierungspläne (intern) ───────────────────────
+IMPLEMENTIERUNGSPLAN_MCP_KEYS.md
+

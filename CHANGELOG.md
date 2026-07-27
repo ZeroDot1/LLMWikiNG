@@ -7,6 +7,16 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **MCP-Keys-Verwaltung mit Tool-Berechtigungen** (`templates/settings/apikeys.html`, `backend/api/routes/auth.py`, `backend/api/routes/api.py`, `backend/api/routes/pages.py`): Neue Sektion „MCP Keys" im Keys-Tab erlaubt es Administratoren, mehrere benutzergebundene MCP-Schlüssel mit feingranularen Tool-Berechtigungen zu erstellen. Jeder MCP-Key ist einem Benutzer zugeordnet und kann auf eine Teilmenge von 34 Tools (9 Gruppen: wiki_read, wiki_write, raw_sources, system, users_admin, api_keys_admin, backup_admin, update_admin, audit) beschränkt werden. Die API-Key- und MCP-Key-Authentifizierung prüft nun, dass beide Schlüssel demselben Benutzer gehören.
+- **Per-User MCP-Key-Authentifizierung in MCP-Middleware** (`backend/main.py`): `McpApiKeyMiddleware` unterstützt nun zwei Modi — benutzergebundene MCP-Keys (aus `data/mcp_keys.json`) mit individuellen Tool-Berechtigungen sowie den Legacy-MCP-Key (global, rückwärtskompatibel). Erlaubte Tools werden via `ContextVar` an die MCP-Tools weitergegeben.
+- **Tool-Berechtigungsprüfung für MCP-Tools** (`backend/api/routes/mcp.py`): Alle 34 MCP-Tools verwenden den `@_require_tool()`-Dekorator, der vor der Tool-Ausführung prüft, ob der aufrufende MCP-Key die Berechtigung für dieses Tool besitzt. Bei fehlender Berechtigung wird ein informativer Fehler zurückgegeben.
+- **MCP-Key-CRUD-Funktionen** (`backend/core/security.py`, `backend/core/storage.py`): `gen_mcp_key()`, `verify_mcp_key()`, `encrypt_mcp_key()`, `decrypt_mcp_key()` zur sicheren Erstellung und Verwaltung von MCP-Keys. `data/mcp_keys.json` speichert Hash, verschlüsselten Key, Tool-Berechtigungen und Nutzungshistorie.
+- **MCP-Tool-Gruppen** (`backend/core/config.py`): 9 Tool-Gruppen mit Metadaten (Label DE/EN, Tool-Liste) für die UI-Darstellung und Berechtigungsverwaltung.
+- **REST API für MCP-Keys** (`backend/api/routes/api.py`): `GET /api/v1/mcp-keys`, `POST /api/v1/mcp-keys`, `DELETE /api/v1/mcp-keys/{id}` für automatisierte MCP-Key-Verwaltung.
+- **Neue Übersetzungsschlüssel für MCP-Keys** (`lang/de.json`, `lang/en.json`): 32 neue Keys pro Sprache für MCP-Key-Titel, Formulare, Tabellen, Tool-Gruppen-Labels und Aktionen.
+- **Dokumentation erweitert** (`templates/docs.html`, `templates/docs_de.html`): MCP-Keys-API-Endpunkte und curl-Beispiele hinzugefügt, Sicherheitsempfehlung aktualisiert.
+
 ### Changed
 - **Tab-Bezeichnung „API-Keys" in „Keys" umbenannt** (`templates/settings.html`, `lang/de.json`, `lang/en.json`): Der Settings-Tab heißt nun „Keys" statt „API-Keys". Alle zugehörigen Übersetzungsschlüssel (`settings.tab_apikeys`, `apikeys.title`, `apikeys.create_heading`, `apikeys.raw_key`, `apikeys.no_keys`) wurden angepasst.
 - **System-Geheimnis (LLMWIKI_SECRET) von Backup-Tab in Keys-Tab verschoben** (`templates/settings/backup.html`, `templates/settings/apikeys.html`): Die Verwaltung des kryptografischen System-Geheimnisses (Anzeigen, Neu generieren) befindet sich nun im Keys-Tab statt im Backup-Tab — dort wo sie thematisch hingehört, in unmittelbarer Nähe zur API-Key-Verwaltung.

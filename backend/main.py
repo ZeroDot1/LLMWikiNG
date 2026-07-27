@@ -111,10 +111,11 @@ def create_app() -> FastAPI:
                 from starlette.responses import JSONResponse as StarletteJSON
 
                 class McpApiKeyMiddleware:
-                    """Middleware fuer MCP-Endpunkte: Prueft API-Key.
+                    """Middleware fuer MCP-Endpunkte: Prueft API-Key + MCP-Key.
 
-                    Liest LLMWIKING_MCP_KEY zur Laufzeit aus core.config,
-                    damit Monkeypatches in Tests wirksam werden.
+                    Unterstuetzt zwei Modi:
+                    1. Legacy: X-MCP-Key == globale LLMWIKING_MCP_KEY + X-API-Key
+                    2. Neu: X-MCP-Key passt zu MCP-Key in mcp_keys.json + X-API-Key desselben Users
                     """
                     def __init__(self, app):
                         self.app = app
@@ -123,8 +124,8 @@ def create_app() -> FastAPI:
                         if scope["type"] == "http" and "/mcp/" in scope.get("path", ""):
                             from core.config import LLMWIKING_MCP_KEY as _KEY
                             headers_dict = dict(scope.get("headers", []))
-                            
-                            # 1. MCP Key check
+
+                            # MCP-Key aus Header oder Query lesen
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
                             mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
                             if not mcp_key:
@@ -133,22 +134,15 @@ def create_app() -> FastAPI:
                                 query_params = parse_qs(query_string)
                                 mcp_key = query_params.get("mcp_key", [None])[0]
 
-                            if not _KEY:
+                            if not mcp_key:
                                 response = StarletteJSON(
-                                    {"detail": "MCP nicht konfiguriert (LLMWIKING_MCP_KEY fehlt)"},
-                                    status_code=503,
-                                )
-                                await response(scope, receive, send)
-                                return
-                            if mcp_key != _KEY:
-                                response = StarletteJSON(
-                                    {"detail": "Ungueltiger oder fehlender MCP-Key (X-MCP-Key)"},
+                                    {"detail": "MCP-Key erforderlich (X-MCP-Key)"},
                                     status_code=401,
                                 )
                                 await response(scope, receive, send)
                                 return
-                            
-                            # 2. Database API-Key check (X-API-Key)
+
+                            # API-Key aus Header oder Query lesen
                             api_key_bytes = headers_dict.get(b"x-api-key")
                             api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
                             if not api_key:
@@ -164,31 +158,108 @@ def create_app() -> FastAPI:
                                 )
                                 await response(scope, receive, send)
                                 return
-                            
+
                             import hashlib
-                            from core.storage import get_key_by_hash, get_user
-                            h = hashlib.sha256(api_key.encode()).hexdigest()
-                            db_key = get_key_by_hash(h)
-                            if not db_key or not db_key.get("active", True):
-                                response = StarletteJSON(
-                                    {"detail": "Ungueltiger API-Key (X-API-Key)"},
-                                    status_code=401,
-                                )
-                                await response(scope, receive, send)
+                            from core.storage import get_key_by_hash, get_user, get_mcp_key_by_hash
+
+                            # Modus 1: Per-User MCP-Key aus mcp_keys.json
+                            mcp_key_obj = get_mcp_key_by_hash(hashlib.sha256(mcp_key.encode()).hexdigest())
+
+                            if mcp_key_obj:
+                                # API-Key muss demselben User gehören wie der MCP-Key
+                                api_h = hashlib.sha256(api_key.encode()).hexdigest()
+                                api_key_obj = get_key_by_hash(api_h)
+                                if not api_key_obj or not api_key_obj.get("active", True):
+                                    response = StarletteJSON(
+                                        {"detail": "Ungueltiger API-Key (X-API-Key)"},
+                                        status_code=401,
+                                    )
+                                    await response(scope, receive, send)
+                                    return
+
+                                if api_key_obj["user_id"] != mcp_key_obj["user_id"]:
+                                    response = StarletteJSON(
+                                        {"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"},
+                                        status_code=403,
+                                    )
+                                    await response(scope, receive, send)
+                                    return
+
+                                user = get_user(mcp_key_obj["user_id"])
+                                if not user or not user.get("active", True):
+                                    response = StarletteJSON(
+                                        {"detail": "Benutzer inaktiv"},
+                                        status_code=401,
+                                    )
+                                    await response(scope, receive, send)
+                                    return
+
+                                # allowed_tools in scopeState + ContextVar speichern
+                                if "state" not in scope:
+                                    scope["state"] = {}
+                                scope["state"]["mcp_user"] = user
+                                scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
+
+                                # ContextVar fuer Tool-Berechtigung in mcp.py setzen
+                                from api.routes.mcp import mcp_allowed_tools_ctx
+                                _allowed_token = mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
+
+                                # last_used aktualisieren (stumme Aktualisierung)
+                                try:
+                                    from core.storage import update_mcp_key
+                                    from datetime import datetime
+                                    update_mcp_key(mcp_key_obj["id"], last_used=datetime.now().isoformat(timespec="seconds"))
+                                except Exception:
+                                    pass
+
+                                try:
+                                    await self.app(scope, receive, send)
+                                finally:
+                                    mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
-                            user = get_user(db_key["user_id"])
-                            if not user or not user.get("active", True):
-                                response = StarletteJSON(
-                                    {"detail": "Benutzer inaktiv"},
-                                    status_code=401,
-                                )
-                                await response(scope, receive, send)
+
+                            # Modus 2: Legacy-Key (Rueckwaertskompatibilitaet)
+                            if _KEY and mcp_key == _KEY:
+                                api_h = hashlib.sha256(api_key.encode()).hexdigest()
+                                db_key = get_key_by_hash(api_h)
+                                if not db_key or not db_key.get("active", True):
+                                    response = StarletteJSON(
+                                        {"detail": "Ungueltiger API-Key (X-API-Key)"},
+                                        status_code=401,
+                                    )
+                                    await response(scope, receive, send)
+                                    return
+
+                                user = get_user(db_key["user_id"])
+                                if not user or not user.get("active", True):
+                                    response = StarletteJSON(
+                                        {"detail": "Benutzer inaktiv"},
+                                        status_code=401,
+                                    )
+                                    await response(scope, receive, send)
+                                    return
+
+                                if "state" not in scope:
+                                    scope["state"] = {}
+                                scope["state"]["mcp_user"] = user
+                                scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
+
+                                # ContextVar: Legacy = alle Tools erlaubt
+                                from api.routes.mcp import mcp_allowed_tools_ctx
+                                _allowed_token = mcp_allowed_tools_ctx.set([])
+
+                                try:
+                                    await self.app(scope, receive, send)
+                                finally:
+                                    mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
-                            
-                            if "state" not in scope:
-                                scope["state"] = {}
-                            scope["state"]["mcp_user"] = user
-                            await self.app(scope, receive, send)
+
+                            # Weder gueltiger MCP-Key noch Legacy-Key
+                            response = StarletteJSON(
+                                {"detail": "Ungueltiger MCP-Key (X-MCP-Key)"},
+                                status_code=401,
+                            )
+                            await response(scope, receive, send)
                             return
 
                         await self.app(scope, receive, send)

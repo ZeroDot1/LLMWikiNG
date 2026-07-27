@@ -22,6 +22,9 @@ from core.storage import (
     list_keys,
     create_key,
     delete_key,
+    list_mcp_keys,
+    create_mcp_key,
+    delete_mcp_key,
 )
 
 router = APIRouter(prefix=BASE_PATH)
@@ -299,6 +302,72 @@ async def system_secret_regenerate(request: Request, admin: dict = Depends(requi
     log_action(action="system_secret_regenerate", details="System-Secret neu generiert", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
 
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MCP-Key-Verwaltung (nur Admin)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.post("/mcp-keys")
+async def mcp_key_create(request: Request, admin: dict = Depends(require_admin)):
+    form = await request.form()
+    name = (form.get("name") or "").strip()
+    target_user_id = form.get("user_id") or admin["id"]
+    allowed_tools = form.getlist("allowed_tools") or []
+    if not name:
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Name+für+MCP-Schlüssel+erforderlich")
+    key_obj, raw = create_mcp_key(
+        user_id=target_user_id,
+        name=name,
+        allowed_tools=allowed_tools,
+    )
+    log_action(action="mcp_key_create", details=f"MCP-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt", user_id=admin["id"], username=admin["username"], request=request)
+    return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+erzeugt&mcp_new_key={raw}")
+
+
+@router.post("/mcp-keys/{key_id}/delete")
+async def mcp_key_delete(key_id: str, request: Request, admin: dict = Depends(require_admin)):
+    delete_mcp_key(key_id)
+    log_action(action="mcp_key_delete", details=f"MCP-Key-ID '{key_id}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
+    return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+gelöscht")
+
+
+@router.post("/mcp-keys/reveal")
+async def mcp_key_reveal(request: Request, admin: dict = Depends(require_admin)):
+    """Verifiziert das Admin-Passwort und gibt den entschlüsselten MCP-Schlüssel zurück."""
+    try:
+        data = await request.json()
+        key_id = data.get("key_id")
+        password = data.get("password")
+    except Exception:
+        return JSONResponse({"error": "Ungültiges JSON-Format"}, status_code=400)
+
+    if not key_id or not password:
+        return JSONResponse({"error": "Key ID und Passwort erforderlich"}, status_code=400)
+
+    if not verify_password(password, admin["password_hash"]):
+        return JSONResponse({"error": "Ungültiges Passwort"}, status_code=403)
+
+    keys = list_mcp_keys()
+    key_obj = next((k for k in keys if k["id"] == key_id), None)
+    if not key_obj:
+        return JSONResponse({"error": "Schlüssel nicht gefunden"}, status_code=404)
+
+    encrypted = key_obj.get("encrypted_key")
+    if not encrypted:
+        return JSONResponse({"error": "Dieser Schlüssel wurde vor dem Sicherheitsupdate generiert und kann nicht angezeigt werden."}, status_code=400)
+
+    from core.security import decrypt_mcp_key
+    try:
+        raw_key = decrypt_mcp_key(encrypted)
+    except Exception:
+        raw_key = None
+
+    if not raw_key:
+        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen."}, status_code=500)
+
+    log_action(action="mcp_key_reveal", details=f"MCP-Key '{key_obj.get('name')}' (ID: {key_id}) entschlüsselt und angezeigt", user_id=admin["id"], username=admin["username"], request=request)
+    return JSONResponse({"raw_key": raw_key})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

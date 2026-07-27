@@ -104,6 +104,9 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">List API keys (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">Create API key (Admin only)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/api-keys/&lt;id&gt;</code></td><td class="p-2">Revoke API key (Admin only)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">List MCP keys (Admin only)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">Create MCP key with tool permissions (Admin only)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">Revoke MCP key (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/ingest</code></td><td class="p-2">Direct multi-wiki ingest endpoint (API key authorized)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/sync</code></td><td class="p-2">Direct index synchronisation (API key authorized)</td></tr>
           <tr class="bg-indigo-500/5"><td class="p-2"><code>GET</code></td><td class="p-2"><code>/mcp/sse</code></td><td class="p-2">MCP SSE channel for AI agents (MCP API key)</td></tr>
@@ -174,7 +177,17 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   "$SERVER_URL/api/v1/api-keys"</code></pre>
         </div>
         <div>
-          <strong>10. Check &amp; run system update (Admin only):</strong>
+          <strong>10. Manage MCP Keys (Admin only):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># List MCP keys
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/mcp-keys"
+
+# Create new MCP key with tool permissions
+curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"name":"Cursor Agent","user_id":1,"allowed_tools":["okf_list_wikis","okf_read_concept","okf_search"]}' \
+  "$SERVER_URL/api/v1/mcp-keys"</code></pre>
+        </div>
+        <div>
+          <strong>11. Check &amp; run system update (Admin only):</strong>
           <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># Check if update is available:
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/check"
 
@@ -255,7 +268,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
 
       <div class="mt-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 text-xs text-text-secondary leading-relaxed">
         <strong>🛡️ Security Recommendation:</strong><br>
-        It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (via the web UI under <em>Settings ➜ Users / Keys</em>) instead of reusing your main administrator credentials or a global shared key. This ensures clean audit logs and limits the potential impact of any single agent.
+        It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (via the web UI under <em>Settings ➜ Users / Keys</em>) instead of reusing your main administrator credentials or a global shared key. Additionally, you can create per-user MCP keys with fine-grained tool permissions under <em>Settings ➜ Keys ➜ MCP Keys</em>. Each MCP key is bound to a specific user and can be restricted to a subset of tools (e.g., read-only access). This ensures clean audit logs and limits the potential impact of any single agent.
       </div>
 
       <div class="mt-3">

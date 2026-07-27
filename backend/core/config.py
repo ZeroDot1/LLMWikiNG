@@ -380,6 +380,69 @@ class Translator:
         return value
 
 
+# ═══════════════════════════════════════════════════════════════════
+# MCP-Tool-Berechtigungsgruppen
+# ═══════════════════════════════════════════════════════════════════
+
+MCP_TOOL_GROUPS: dict[str, dict] = {
+    "wiki_read": {
+        "label_de": "Wikis lesen",
+        "label_en": "Read Wikis",
+        "tools": [
+            "okf_list_wikis", "okf_list_pages", "okf_read_concept",
+            "okf_wiki_stats", "okf_graph", "okf_search", "okf_export_page",
+        ],
+    },
+    "wiki_write": {
+        "label_de": "Wikis schreiben",
+        "label_en": "Write Wikis",
+        "tools": [
+            "okf_create_wiki", "okf_update_wiki", "okf_delete_wiki",
+            "okf_write_concept", "okf_delete_page", "okf_ingest_text",
+            "okf_process_pending", "okf_list_pending",
+        ],
+    },
+    "raw_sources": {
+        "label_de": "Rohquellen",
+        "label_en": "Raw Sources",
+        "tools": ["okf_read_raw", "okf_list_raw"],
+    },
+    "system": {
+        "label_de": "System",
+        "label_en": "System",
+        "tools": [
+            "okf_system_status", "okf_system_sync",
+            "okf_cache_stats", "okf_cache_clear", "okf_lint",
+        ],
+    },
+    "users_admin": {
+        "label_de": "Benutzer verwalten",
+        "label_en": "Manage Users",
+        "tools": ["okf_list_users", "okf_create_user", "okf_delete_user"],
+    },
+    "api_keys_admin": {
+        "label_de": "API-Keys verwalten",
+        "label_en": "Manage API Keys",
+        "tools": ["okf_list_api_keys", "okf_create_api_key", "okf_delete_api_key"],
+    },
+    "backup_admin": {
+        "label_de": "Backups verwalten",
+        "label_en": "Manage Backups",
+        "tools": ["okf_list_backups", "okf_create_backup", "okf_restore_backup"],
+    },
+    "update_admin": {
+        "label_de": "Updates ausfuehren",
+        "label_en": "Run Updates",
+        "tools": ["okf_check_update", "okf_run_update"],
+    },
+    "audit": {
+        "label_de": "Audit-Logs",
+        "label_en": "Audit Logs",
+        "tools": ["okf_audit_logs"],
+    },
+}
+
+
 def resolve_lang(request_lang: str | None = None, cookie_lang: str | None = None) -> str:
     """Ermittelt die aktive Sprache (Query > Cookie > config.json > DEFAULT)."""
     cfg = load_app_config()

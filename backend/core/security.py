@@ -101,3 +101,36 @@ def decrypt_api_key(encrypted_key: str) -> str | None:
     except Exception:
         return None
 
+
+# ═══════════════════════════════════════════════════════════════════
+# MCP-Key-Generierung und -Verschlüsselung
+# ═══════════════════════════════════════════════════════════════════
+
+_key_cipher_mcp = URLSafeTimedSerializer(SECRET, salt="llmwikingmcpkey")
+
+
+def gen_mcp_key() -> tuple[str, str]:
+    """Liefert (rohen MCP-Key, Hash)."""
+    raw = "mcp_" + secrets.token_urlsafe(32)
+    return raw, hashlib.sha256(raw.encode()).hexdigest()
+
+
+def verify_mcp_key(raw: str, stored_hash: str) -> bool:
+    """Verifiziert einen MCP-Key gegen seinen Hash."""
+    if not raw or not stored_hash:
+        return False
+    return hashlib.sha256(raw.encode()).hexdigest() == stored_hash
+
+
+def encrypt_mcp_key(raw_key: str) -> str:
+    """Verschlüsselt den rohen MCP-Key umkehrbar mit dem System-Secret."""
+    return _key_cipher_mcp.dumps(raw_key)
+
+
+def decrypt_mcp_key(encrypted_key: str) -> str | None:
+    """Entschlüsselt den verschlüsselten MCP-Key."""
+    try:
+        return _key_cipher_mcp.loads(encrypted_key)
+    except Exception:
+        return None
+

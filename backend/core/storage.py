@@ -1,4 +1,4 @@
-"""LLMWikiNG – Persistenz für Benutzer und API-Keys.
+"""LLMWikiNG – Persistenz für Benutzer, API-Keys und MCP-Keys.
 
 Einfacher JSON-Store (passend zum bestehenden config.json-Ansatz). Bei vielen
 Benutzern später auf SQLite wechselbar, ohne die storage-API zu ändern.
@@ -15,6 +15,7 @@ from core.security import hash_password, gen_api_key
 
 USERS_FILE = DATA_DIR / "users.json"
 KEYS_FILE = DATA_DIR / "api_keys.json"
+MCP_KEYS_FILE = DATA_DIR / "mcp_keys.json"
 
 
 def _load(p: Path, default):
@@ -119,3 +120,84 @@ def delete_key(key_id: str) -> None:
 
 def get_key_by_hash(h: str) -> dict | None:
     return next((k for k in list_keys() if k["hash"] == h and k["active"]), None)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# MCP-Key-Verwaltung
+# ═══════════════════════════════════════════════════════════════════
+
+def _load_mcp_data() -> dict:
+    """Lädt die MCP-Key-Datenstruktur (Keys-Liste + Legacy-Key)."""
+    return _load(MCP_KEYS_FILE, {"mcp_keys": [], "legacy_mcp_key": ""})
+
+
+def _save_mcp_data(data: dict) -> None:
+    """Speichert die MCP-Key-Datenstruktur."""
+    _save(MCP_KEYS_FILE, data)
+
+
+def list_mcp_keys() -> list[dict]:
+    """Gibt die Liste aller MCP-Keys zurück."""
+    return _load_mcp_data().get("mcp_keys", [])
+
+
+def get_mcp_key(key_id: str) -> dict | None:
+    """Sucht einen MCP-Key anhand der ID."""
+    return next((k for k in list_mcp_keys() if k["id"] == key_id), None)
+
+
+def get_mcp_key_by_hash(h: str) -> dict | None:
+    """Sucht einen MCP-Key anhand des Hashes (aktive Keys nur)."""
+    return next((k for k in list_mcp_keys() if k["hash"] == h and k.get("active", True)), None)
+
+
+def create_mcp_key(user_id: str, name: str, allowed_tools: list[str] | None = None) -> tuple[dict, str]:
+    """Erstellt einen neuen MCP-Key. Gibt (key_obj, raw_key) zurück."""
+    from core.security import gen_mcp_key, encrypt_mcp_key
+
+    raw, h = gen_mcp_key()
+    key = {
+        "id": secrets.token_hex(8),
+        "hash": h,
+        "encrypted_key": encrypt_mcp_key(raw),
+        "user_id": user_id,
+        "name": name,
+        "allowed_tools": allowed_tools or [],  # Leer = alle Tools erlaubt
+        "active": True,
+        "created_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+        "last_used": None,
+    }
+    data = _load_mcp_data()
+    data.setdefault("mcp_keys", []).append(key)
+    _save_mcp_data(data)
+    return key, raw
+
+
+def delete_mcp_key(key_id: str) -> None:
+    """Löscht einen MCP-Key anhand der ID."""
+    data = _load_mcp_data()
+    data["mcp_keys"] = [k for k in data.get("mcp_keys", []) if k["id"] != key_id]
+    _save_mcp_data(data)
+
+
+def update_mcp_key(key_id: str, **changes) -> dict | None:
+    """Aktualisiert ein MCP-Key-Feld. Gibt das aktualisierte Objekt zurück."""
+    data = _load_mcp_data()
+    for k in data.get("mcp_keys", []):
+        if k["id"] == key_id:
+            k.update(changes)
+            _save_mcp_data(data)
+            return k
+    return None
+
+
+def get_legacy_mcp_key() -> str:
+    """Gibt den legacy globalen MCP-Key zurück (für Rückwärtskompatibilität)."""
+    return _load_mcp_data().get("legacy_mcp_key", "")
+
+
+def set_legacy_mcp_key(key: str) -> None:
+    """Speichert den legacy globalen MCP-Key."""
+    data = _load_mcp_data()
+    data["legacy_mcp_key"] = key
+    _save_mcp_data(data)

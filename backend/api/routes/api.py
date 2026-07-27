@@ -26,6 +26,9 @@ from core.storage import (
     list_keys,
     create_key,
     delete_key,
+    list_mcp_keys,
+    create_mcp_key,
+    delete_mcp_key,
 )
 from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german, run_ingest_async, run_sync_async
 from services.search import local_search, qmd_search, run_qmd_search_async
@@ -312,6 +315,54 @@ async def api_create_key(request: Request, admin: dict = Depends(require_api_adm
 @router.delete("/api-keys/{key_id}")
 def api_delete_key(key_id: str, admin: dict = Depends(require_api_admin)):
     delete_key(key_id)
+    return {"ok": True}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# A2. MCP-Key-Verwaltung (nur Admin)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/mcp-keys")
+def api_list_mcp_keys(admin: dict = Depends(require_api_admin)):
+    return {"mcp_keys": [
+        {
+            "id": k["id"],
+            "name": k["name"],
+            "user_id": k["user_id"],
+            "allowed_tools": k.get("allowed_tools", []),
+            "active": k.get("active", True),
+            "created_at": k.get("created_at"),
+            "last_used": k.get("last_used"),
+        }
+        for k in list_mcp_keys()
+    ]}
+
+
+@router.post("/mcp-keys")
+async def api_create_mcp_key(request: Request, admin: dict = Depends(require_api_admin)):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiger JSON-Body")
+    name = (body.get("name") or "").strip()
+    target_user_id = body.get("user_id") or admin["id"]
+    allowed_tools = body.get("allowed_tools") or []
+    if not name:
+        raise HTTPException(status_code=400, detail="name erforderlich")
+    key_obj, raw = create_mcp_key(
+        user_id=target_user_id,
+        name=name,
+        allowed_tools=allowed_tools,
+    )
+    return JSONResponse(status_code=201, content={
+        "ok": True, "id": key_obj["id"], "name": name, "mcp_key": raw,
+        "user_id": target_user_id, "allowed_tools": allowed_tools,
+    })
+
+
+@router.delete("/mcp-keys/{key_id}")
+def api_delete_mcp_key(key_id: str, admin: dict = Depends(require_api_admin)):
+    delete_mcp_key(key_id)
     return {"ok": True}
 
 

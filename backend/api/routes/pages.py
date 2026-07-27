@@ -34,11 +34,12 @@ from core.config import (
     list_wikis,
     save_wiki_meta,
     delete_wiki,
+    MCP_TOOL_GROUPS,
 )
 from web import templates, render, abort, redirect, urlencode
 from api.deps import require_login, require_admin, get_current_user
 from services.audit import log_action, get_recent_audit_logs, ALL_CATEGORIES
-from core.storage import list_users, list_keys
+from core.storage import list_users, list_keys, list_mcp_keys
 from services.wiki import (
     get_all_wiki_pages,
     get_wiki_stats,
@@ -1302,6 +1303,8 @@ def settings_get(request: Request):
         syntax_msg=request.query_params.get("syntax_msg"),
         registration_enabled=cfg.get("registration_enabled", True),
         server_backups=__import__("services.backup", fromlist=["list_server_backups"]).list_server_backups(),
+        mcp_keys=list_mcp_keys(),
+        mcp_tool_groups=MCP_TOOL_GROUPS,
     )
 
 
@@ -1545,6 +1548,8 @@ async def settings_post(request: Request):
         new_generated_mcp_key=new_generated_mcp_key,
         new_generated_api_key=new_generated_api_key,
         registration_enabled=cfg_post.get("registration_enabled", True),
+        mcp_keys=list_mcp_keys(),
+        mcp_tool_groups=MCP_TOOL_GROUPS,
     )
 
 

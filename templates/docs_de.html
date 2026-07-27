@@ -108,6 +108,9 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">API-Keys (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">Key erzeugen (Admin)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/api-keys/&lt;id&gt;</code></td><td class="p-2">Key widerrufen (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">MCP-Keys auflisten (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">MCP-Key mit Tool-Berechtigungen erzeugen (Admin)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">MCP-Key widerrufen (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/ingest</code></td><td class="p-2">Direkter Ingest für spezifisches Wiki (API-Key)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/sync</code></td><td class="p-2">Direktes Syncen für spezifisches Wiki (API-Key)</td></tr>
           <tr class="bg-indigo-500/5"><td class="p-2"><code>GET</code></td><td class="p-2"><code>/mcp/sse</code></td><td class="p-2">MCP SSE-Kanal für KI-Agenten (MCP API-Key)</td></tr>
@@ -178,7 +181,17 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   "$SERVER_URL/api/v1/api-keys"</code></pre>
         </div>
         <div>
-          <strong>10. Update prüfen &amp; ausführen (nur Admin):</strong>
+          <strong>10. MCP-Keys verwalten (nur Admin):</strong>
+          <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># MCP-Keys auflisten
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/mcp-keys"
+
+# Neuen MCP-Key mit Tool-Berechtigungen erzeugen
+curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"name":"Cursor Agent","user_id":1,"allowed_tools":["okf_list_wikis","okf_read_concept","okf_search"]}' \
+  "$SERVER_URL/api/v1/mcp-keys"</code></pre>
+        </div>
+        <div>
+          <strong>11. Update prüfen &amp; ausführen (nur Admin):</strong>
           <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code># Update-Verfügbarkeit prüfen:
 curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/update/check"
 
@@ -259,7 +272,7 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
 
       <div class="mt-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 text-xs text-text-secondary leading-relaxed">
         <strong>🛡️ Sicherheits-Empfehlung:</strong><br>
-        Es wird dringend empfohlen, für jeden KI-Agenten / Client ein eigenes, eingeschränktes Benutzerkonto und einen spezifischen API-Schlüssel anzulegen (in der Web-Oberfläche unter <em>Einstellungen ➜ Benutzer / API-Schlüssel</em>), anstatt dein Haupt-Administrator-Konto oder einen globalen Schlüssel zu teilen. Dies sorgt für saubere, isolierte Audit-Logs und schränkt die Rechte des Agenten sinnvoll ein.
+        Es wird dringend empfohlen, für jeden KI-Agenten / Client ein eigenes, eingeschränktes Benutzerkonto und einen spezifischen API-Schlüssel anzulegen (in der Web-Oberfläche unter <em>Einstellungen ➜ Benutzer / Keys</em>), anstatt dein Haupt-Administrator-Konto oder einen globalen Schlüssel zu teilen. Zusätzlich können Sie unter <em>Einstellungen ➜ Keys ➜ MCP Keys</em> benutzergebundene MCP-Schlüssel mit feingranularen Tool-Berechtigungen erstellen. Jeder MCP-Key ist einem bestimmten Benutzer zugeordnet und kann auf eine Teilmenge von Tools beschränkt werden (z. B. nur Lesezugriff). Dies sorgt für saubere, isolierte Audit-Logs und schränkt die Rechte des Agenten sinnvoll ein.
       </div>
 
       <div class="mt-3">

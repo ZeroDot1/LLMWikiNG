@@ -801,7 +801,10 @@
     "system_secret_password_label": "Confirm password",
     "system_secret_password_placeholder": "Logged-in administrator's password",
     "system_secret_reveal": "Reveal",
-    "system_secret_regenerate": "Regenerate"
+    "system_secret_regenerate": "Regenerate",
+    "delete_all": "Delete All API Keys",
+    "delete_all_confirm_title": "Delete All API Keys",
+    "delete_all_confirm_desc": "Are you sure you want to delete ALL REST API keys? All connected API clients will immediately lose access."
   },
   "mcpkeys": {
     "title": "MCP Keys",
@@ -843,7 +846,10 @@
     "group_api_keys_admin": "Manage API & MCP Keys",
     "group_backup_admin": "Manage Backups",
     "group_update_admin": "Run Updates",
-    "group_audit": "Audit Logs"
+    "group_audit": "Audit Logs",
+    "delete_all": "Delete All MCP Keys",
+    "delete_all_confirm_title": "Delete All MCP Keys",
+    "delete_all_confirm_desc": "Are you sure you want to delete ALL generated MCP keys? All connected MCP clients will immediately lose access."
   },
   "audit": {
     "title": "Audit Log",

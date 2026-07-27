@@ -224,7 +224,14 @@
                     </td>
                     <td class="py-3.5 px-2 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button type="button" onclick="openMcpKeyEditModal('{{ key.id }}', '{{ key.name | escape }}', '{{ key.user_id }}', {{ key.allowed_tools | tojson }}, {{ 'true' if key.active else 'false' }})" class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('mcpkeys.edit') }}</button>
+                            <button type="button" 
+                                    data-key-id="{{ key.id }}" 
+                                    data-key-name="{{ key.name }}" 
+                                    data-user-id="{{ key.user_id }}" 
+                                    data-allowed-tools="{{ key.allowed_tools | tojson | forceescape }}" 
+                                    data-active="{{ 'true' if key.active else 'false' }}"
+                                    onclick="openMcpKeyEditModalFromBtn(this)" 
+                                    class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('mcpkeys.edit') }}</button>
                             <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('mcpkeys.delete_confirm') }}');">
                                 <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('mcpkeys.delete') }}</button>
                             </form>
@@ -294,6 +301,20 @@
 </div>
 
 <script>
+function openMcpKeyEditModalFromBtn(btn) {
+    var keyId = btn.getAttribute("data-key-id");
+    var name = btn.getAttribute("data-key-name");
+    var userId = btn.getAttribute("data-user-id");
+    var active = btn.getAttribute("data-active") === "true";
+    var allowedTools = [];
+    try {
+        allowedTools = JSON.parse(btn.getAttribute("data-allowed-tools") || "[]");
+    } catch (e) {
+        allowedTools = [];
+    }
+    openMcpKeyEditModal(keyId, name, userId, allowedTools, active);
+}
+
 function openMcpKeyEditModal(keyId, name, userId, allowedTools, active) {
     var modal = document.getElementById("mcpKeyEditModal");
     var form = document.getElementById("mcpKeyEditForm");
@@ -310,14 +331,13 @@ function openMcpKeyEditModal(keyId, name, userId, allowedTools, active) {
     var isAll = !allowedTools || allowedTools.length === 0;
     allToolsCheck.checked = isAll;
 
-    var toolGroupsMap = {{ mcp_tool_groups | tojson }};
+    var toolGroupsMap = {{ mcp_tool_groups | tojson | safe }};
     document.querySelectorAll(".edit-mcp-group-check").forEach(function(chk) {
         var gId = chk.getAttribute("data-group");
         if (isAll) {
             chk.checked = true;
         } else if (toolGroupsMap[gId]) {
             var groupTools = toolGroupsMap[gId].tools || [];
-            // Check if all tools in group are present
             var hasAllInGroup = groupTools.every(function(t) { return allowedTools.includes(t); });
             chk.checked = hasAllInGroup;
         } else {

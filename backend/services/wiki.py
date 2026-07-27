@@ -147,6 +147,7 @@ async def run_ingest_async(
     if title:
         cmd += ["--title", title]
     run_env = env if env is not None else os.environ.copy()
+    run_env["PROJECT_ROOT"] = str(PROJECT_ROOT)
     return await asyncio.to_thread(
         subprocess.run,
         cmd,

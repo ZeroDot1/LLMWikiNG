@@ -7,6 +7,9 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **`PROJECT_ROOT: unbound variable` beim Ingest über REST-API behoben** (`backend/services/wiki.py`): `wiki.sh` erwartet die Umgebungsvariable `PROJECT_ROOT` (z. B. in der Python-Cleaning-Unterroutine), aber der Ingest-Pfad über `run_ingest_async()` setzte diese nicht. Der Fix ergänzt `run_env["PROJECT_ROOT"]` in `run_ingest_async()`, sodass alle Ingest-Pfade (URL, Text, Datei-Upload über REST-API und WebUI) funktionieren.
+
 ### Added
 - **MCP-Keys-Verwaltung mit Tool-Berechtigungen** (`templates/settings/apikeys.html`, `backend/api/routes/auth.py`, `backend/api/routes/api.py`, `backend/api/routes/pages.py`): Neue Sektion „MCP Keys" im Keys-Tab erlaubt es Administratoren, mehrere benutzergebundene MCP-Schlüssel mit feingranularen Tool-Berechtigungen zu erstellen. Jeder MCP-Key ist einem Benutzer zugeordnet und kann auf eine Teilmenge von 34 Tools (9 Gruppen: wiki_read, wiki_write, raw_sources, system, users_admin, api_keys_admin, backup_admin, update_admin, audit) beschränkt werden. Die API-Key- und MCP-Key-Authentifizierung prüft nun, dass beide Schlüssel demselben Benutzer gehören.
 - **Per-User MCP-Key-Authentifizierung in MCP-Middleware** (`backend/main.py`): `McpApiKeyMiddleware` unterstützt nun zwei Modi — benutzergebundene MCP-Keys (aus `data/mcp_keys.json`) mit individuellen Tool-Berechtigungen sowie den Legacy-MCP-Key (global, rückwärtskompatibel). Erlaubte Tools werden via `ContextVar` an die MCP-Tools weitergegeben.

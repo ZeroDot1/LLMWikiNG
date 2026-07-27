@@ -6,5 +6,61 @@
     "role": "admin",
     "active": true,
     "created_at": "2026-07-19T19:00:00"
+  },
+  {
+    "id": "35e66a1ea5f435a2",
+    "username": "mcp_user_f1933b6a",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$nj0zknF57st2G7vSaRHoVw$RuJGXZBvPLJXm8FhOzUYnfx9t9xddiHyF0G5MLNl/H4",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T12:55:13"
+  },
+  {
+    "id": "cf501490c6ffc04b",
+    "username": "mcp_user_6c14be77",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$Kh8jFf3rBPg1XiinlD1C2g$ZXZCQF9V1WFm9KHcpRInLBeVjGNi3ZMcJps89L88MPE",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T12:55:40"
+  },
+  {
+    "id": "06ef2059c3735778",
+    "username": "mcp_user_45796a94",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$lCKrY9RNGKEeKFCcAUraiA$Wbw7GjMxC1+XSvk+NwpFFSedAZcL6/FgzeGf2TRNm0Q",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T13:00:23"
+  },
+  {
+    "id": "00d8ea386a2bdece",
+    "username": "mcp_user_d5b4dd09",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$2etj2hnw2nhwcECJ88nMLQ$Dm2rQgsyRwzQAIATwKsBW0/iBA8MirS2sIEJAf310QM",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T13:03:46"
+  },
+  {
+    "id": "427f4101f6f6640f",
+    "username": "mcp_user_de5cbbd9",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$RMAP75kL8BKr3JocjAOPPw$0O5cjfxOiAcaOBkpNRJZvnFFiZ9PDqVEaUNKGHEuOAM",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T13:04:09"
+  },
+  {
+    "id": "411665e92c62ce8f",
+    "username": "mcp_user_544c6d26",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$ftICcoUFDlTUi0kTM9BRfQ$wqchsa1SK3uW60x3HxIzDvZOdIpAa/zs2MGiCYTdeT0",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T13:06:41"
+  },
+  {
+    "id": "706fa502514ace36",
+    "username": "mcp_user_b26e5548",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$EgZ8+E4+QV738SlECciQJw$3yyByd4/VVzkGmEXYm065rvt9P6Zd10b1AHq7qi3WvU",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T13:14:09"
   }
 ]

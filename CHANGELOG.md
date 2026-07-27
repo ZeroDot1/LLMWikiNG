@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.12.38] - 2026-07-27
+
+### Fixed
+- **`update.log` nicht persistent in Docker** (`backend/api/routes/pages.py`): Die Datei `update.log` wurde im Projekt-Stammverzeichnis (`PROJECT_ROOT`) gespeichert, das in Docker nicht als Volume gemountet ist. Beim Container-Neustart nach einem Update ging das Log verloren. Pfad auf `data/update.log` (`DATA_DIR`) geändert, das als Docker-Volume persistiert. `update.sh` sichert `data/` bereits automatisch beim Backup.
+
 ## [2.12.37] - 2026-07-27
 
 ### Fixed

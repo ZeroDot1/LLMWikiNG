@@ -28,6 +28,7 @@ from core.config import (
     QMD_BIN,
     BASE_PATH,
     CONFIG_FILE,
+    DATA_DIR,
     load_app_config,
     slugify_wiki,
     wiki_path,
@@ -1258,7 +1259,7 @@ def settings_get(request: Request):
     update_available_flag = (PROJECT_ROOT / "update.sh").exists()
     update_log_output = request.query_params.get("update_log")
     if not update_log_output:
-        update_log_file = PROJECT_ROOT / "update.log"
+        update_log_file = DATA_DIR / "update.log"
         if update_log_file.exists():
             update_log_output = update_log_file.read_text(encoding="utf-8").strip() or None
 
@@ -1383,7 +1384,8 @@ async def settings_post(request: Request):
         if github_token:
             env["GITHUB_TOKEN"] = github_token
 
-        log_file = PROJECT_ROOT / "update.log"
+        log_file = DATA_DIR / "update.log"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         if not update_script.exists():
             update_log_output = "FEHLER: update.sh nicht gefunden."
             log_file.write_text(update_log_output + "\n", encoding="utf-8")

@@ -560,7 +560,22 @@
     "mcp_key_label": "MCP API-Schlüssel",
     "mcp_key_placeholder": "z.B. dein_sicherer_mcp_key_2026",
     "mcp_key_hint": "Wichtig: Dieser Schlüssel schützt deine MCP-Endpunkte. Ohne Schlüssel ist kein Zugriff möglich.",
-    "mcp_save_btn": "Speichern"
+    "mcp_save_btn": "Speichern",
+    "mcp_gen_keys_btn": "🔑 Sicheren MCP- & API-Key generieren (Post-2026)",
+    "mcp_examples_heading": "⚙️ Client Konfigurationsbeispiele",
+    "mcp_examples_subtitle": "Wähle einen Benutzer sowie dessen MCP- & API-Schlüssel aus, um ein vorkonfiguriertes Snippet für deinen KI-Assistenten zu erzeugen.",
+    "mcp_step_user": "1. Benutzer",
+    "mcp_step_mcp_key": "2. MCP-Schlüssel",
+    "mcp_step_api_key": "3. API-Schlüssel",
+    "mcp_global_key": "Global / Standard MCP-Key",
+    "mcp_generated_keys_success": "Generierte Schlüssel (Erfolgreich gespeichert):",
+    "mcp_gen_mcp_label": "Generierter MCP-Schlüssel (X-MCP-Key):",
+    "mcp_gen_api_label": "Generierter API-Schlüssel (X-API-Key):",
+    "mcp_gen_api_hint": "(Dieser API-Schlüssel wurde dem Admin zugewiesen und kann nur jetzt kopiert werden!)",
+    "mcp_reveal_prompt": "Gib dein Admin-Passwort ein, um den ausgewählten Schlüssel vollständig entschlüsselt anzuzeigen:",
+    "mcp_reveal_btn": "🔑 Schlüssel per Passwort entschlüsseln",
+    "mcp_copy_code": "Kopieren",
+    "mcp_copied_code": "✓ Kopiert!"
   },
   "register": {
     "title": "Registrieren",

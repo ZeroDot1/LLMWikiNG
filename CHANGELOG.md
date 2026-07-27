@@ -23,6 +23,14 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.28] - 2026-07-27
+
+### Added
+- **Vollständige Entschlüsselung & Kopier-Buttons in *Settings -> MCP*** (`templates/settings/mcp.html`, `lang/de.json`, `lang/en.json`):
+  - Passwort-Entschlüsselungs-Box zur Freischaltung unvollständig/abgeschnittener MCP- & API-Schlüssel in den Client-Konfigurationsbeispielen hinzugefügt (`unlockFullConfigKeys()`).
+  - Eigene Kopieren-Buttons (`copySnippetCode()`) zu jedem einzelnen Konfigurations-Snippet (Antigravity CLI/IDE, OpenCode, Hermes Agent) hinzugefügt.
+  - Vollständige Internationalisierung (i18n) aller Labels und Hinweistexte der MCP Client-Beispiele.
+
 ## [2.12.27] - 2026-07-27
 
 ### Added

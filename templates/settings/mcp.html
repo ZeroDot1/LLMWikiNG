@@ -12,21 +12,23 @@
 {% if new_generated_mcp_key and new_generated_api_key %}
 <div class="rounded-xl border border-success/40 bg-success-subtle p-5 shadow-sm mb-6 max-w-2xl animate-fade-in">
     <p class="mb-2 font-semibold text-success flex items-center gap-1.5">
-        <span>✓</span> Generierte Schlüssel (Erfolgreich gespeichert):
+        <span>✓</span> {{ _('settings.mcp_generated_keys_success') }}
     </p>
     <div class="space-y-3">
         <div>
-            <label class="block text-xs font-semibold text-text-muted uppercase mb-1">Generierter MCP-Schlüssel (X-MCP-Key):</label>
+            <label class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.mcp_gen_mcp_label') }}</label>
             <div class="flex gap-2 items-center">
                 <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all" id="gen-mcp-key">{{ new_generated_mcp_key }}</code>
+                <button type="button" onclick="navigator.clipboard.writeText('{{ new_generated_mcp_key }}').then(()=>{this.textContent='{{ _('settings.mcp_copied_code') }}';setTimeout(()=>this.textContent='{{ _('settings.mcp_copy_code') }}',1500)})" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold hover:bg-bg-sunken transition-colors">{{ _('settings.mcp_copy_code') }}</button>
             </div>
         </div>
         <div>
-            <label class="block text-xs font-semibold text-text-muted uppercase mb-1">Generierter API-Schlüssel (X-API-Key):</label>
+            <label class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.mcp_gen_api_label') }}</label>
             <div class="flex gap-2 items-center">
                 <code class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all" id="gen-api-key">{{ new_generated_api_key }}</code>
-                <span class="text-xs text-text-muted italic">(Dieser API-Schlüssel wurde dem Admin zugewiesen und kann nur jetzt kopiert werden!)</span>
+                <button type="button" onclick="navigator.clipboard.writeText('{{ new_generated_api_key }}').then(()=>{this.textContent='{{ _('settings.mcp_copied_code') }}';setTimeout(()=>this.textContent='{{ _('settings.mcp_copy_code') }}',1500)})" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold hover:bg-bg-sunken transition-colors">{{ _('settings.mcp_copy_code') }}</button>
             </div>
+            <p class="text-xs text-text-muted italic mt-1">{{ _('settings.mcp_gen_api_hint') }}</p>
         </div>
     </div>
 </div>
@@ -52,19 +54,19 @@
         
         <div class="mt-4 pt-4 border-t border-border flex flex-wrap gap-3">
             <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">{{ _('settings.mcp_save_btn') }}</button>
-            <button type="submit" name="action" value="generate_mcp_keys" class="rounded-lg bg-success hover:bg-success-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">🔑 Sicheren MCP- & API-Key generieren (Post-2026)</button>
+            <button type="submit" name="action" value="generate_mcp_keys" class="rounded-lg bg-success hover:bg-success-hover text-white text-sm font-semibold py-2 px-5 shadow-sm transition-colors">{{ _('settings.mcp_gen_keys_btn') }}</button>
         </div>
     </form>
 </div>
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
-    <h2 class="text-lg font-semibold mb-3 text-primary">⚙️ Client Konfigurationsbeispiele</h2>
-    <p class="text-text-secondary text-sm mb-4">Wähle einen Benutzer sowie dessen MCP- &amp; API-Schlüssel aus, um ein vorkonfiguriertes Snippet für deinen KI-Assistenten zu erzeugen.</p>
+    <h2 class="text-lg font-semibold mb-3 text-primary">{{ _('settings.mcp_examples_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('settings.mcp_examples_subtitle') }}</p>
 
     <!-- Interactive Key & User Selector -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 p-4 rounded-xl border border-border bg-bg-sunken">
         <div>
-            <label for="cfg_user_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">1. Benutzer</label>
+            <label for="cfg_user_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.mcp_step_user') }}</label>
             <select id="cfg_user_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
                 {% for u in users %}
                 <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
@@ -72,16 +74,16 @@
             </select>
         </div>
         <div>
-            <label for="cfg_mcp_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">2. MCP-Schlüssel</label>
+            <label for="cfg_mcp_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.mcp_step_mcp_key') }}</label>
             <select id="cfg_mcp_key_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="">Global / Standard MCP-Key</option>
+                <option value="">{{ _('settings.mcp_global_key') }}</option>
                 {% for mk in mcp_keys %}
                 <option value="{{ mk.id }}" data-user="{{ mk.user_id }}">{{ mk.name }} (Per-User)</option>
                 {% endfor %}
             </select>
         </div>
         <div>
-            <label for="cfg_api_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">3. API-Schlüssel</label>
+            <label for="cfg_api_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.mcp_step_api_key') }}</label>
             <select id="cfg_api_key_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
                 {% for k in keys %}
                 <option value="{{ k.id }}" data-user="{{ k.user_id }}">{{ k.name }}</option>
@@ -90,11 +92,27 @@
         </div>
     </div>
 
-    <div class="space-y-4">
+    <!-- Password Unlock Box for Full Unmasked Keys -->
+    <div id="mcp_reveal_box" class="mb-5 p-4 rounded-xl border border-warning/40 bg-warning-subtle/30 text-xs text-text space-y-3">
+        <p class="font-semibold text-warning flex items-center gap-1.5">
+            🔒 {{ _('settings.mcp_reveal_prompt') }}
+        </p>
+        <div class="flex flex-wrap gap-2 items-center">
+            <input type="password" id="mcp_unlock_password" placeholder="{{ _('apikeys.system_secret_password_placeholder') }}" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary max-w-xs">
+            <button type="button" onclick="unlockFullConfigKeys()" class="rounded-lg bg-primary hover:bg-primary-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors cursor-pointer">{{ _('settings.mcp_reveal_btn') }}</button>
+        </div>
+        <p id="mcp_unlock_error" class="text-error text-xs hidden font-medium"></p>
+        <p id="mcp_unlock_success" class="text-success text-xs hidden font-medium">✓ Schlüssel wurden erfolgreich entschlüsselt!</p>
+    </div>
+
+    <div class="space-y-5">
         <div>
-            <strong class="text-sm block mb-1">1. Antigravity CLI (<code>agy</code>) &amp; Antigravity IDE</strong>
-            <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>mcpServers</code> in deiner <code>~/.gemini/config/mcp_config.json</code> ein:</p>
-            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
+            <div class="flex justify-between items-center mb-1">
+                <strong class="text-sm">1. Antigravity CLI (<code>agy</code>) &amp; Antigravity IDE</strong>
+                <button type="button" onclick="copySnippetCode(this, 'code-block-1')" class="rounded bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-xs text-text hover:text-primary font-semibold transition-colors flex items-center gap-1">📋 {{ _('settings.mcp_copy_code') }}</button>
+            </div>
+            <p class="text-text-secondary text-xs mb-2">Füge dies unter <code>mcpServers</code> in deiner <code>~/.gemini/config/mcp_config.json</code> ein:</p>
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto border border-border"><code id="code-block-1" class="mcp-config-code" data-template='{
   "mcpServers": {
     "llmwiking-okf": {
       "type": "sse",
@@ -109,9 +127,12 @@
         </div>
 
         <div>
-            <strong class="text-sm block mb-1">2. OpenCode</strong>
-            <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>mcp</code> in deiner <code>opencode.json</code> Konfiguration hinzu:</p>
-            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
+            <div class="flex justify-between items-center mb-1">
+                <strong class="text-sm">2. OpenCode</strong>
+                <button type="button" onclick="copySnippetCode(this, 'code-block-2')" class="rounded bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-xs text-text hover:text-primary font-semibold transition-colors flex items-center gap-1">📋 {{ _('settings.mcp_copy_code') }}</button>
+            </div>
+            <p class="text-text-secondary text-xs mb-2">Füge dies unter <code>mcp</code> in deiner <code>opencode.json</code> Konfiguration hinzu:</p>
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto border border-border"><code id="code-block-2" class="mcp-config-code" data-template='{
   "mcp": {
     "llmwiking-okf": {
       "type": "remote",
@@ -127,9 +148,12 @@
         </div>
 
         <div>
-            <strong class="text-sm block mb-1">3. Hermes Agent</strong>
-            <p class="text-text-secondary text-xs mb-1">Füge dies unter <code>servers</code> in deiner <code>~/.hermes/mcp/config.json</code> Konfiguration hinzu:</p>
-            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto"><code class="mcp-config-code" data-template='{
+            <div class="flex justify-between items-center mb-1">
+                <strong class="text-sm">3. Hermes Agent</strong>
+                <button type="button" onclick="copySnippetCode(this, 'code-block-3')" class="rounded bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-xs text-text hover:text-primary font-semibold transition-colors flex items-center gap-1">📋 {{ _('settings.mcp_copy_code') }}</button>
+            </div>
+            <p class="text-text-secondary text-xs mb-2">Füge dies unter <code>servers</code> in deiner <code>~/.hermes/mcp/config.json</code> Konfiguration hinzu:</p>
+            <pre class="bg-bg-sunken p-3 rounded-lg text-xs font-mono text-text overflow-x-auto border border-border"><code id="code-block-3" class="mcp-config-code" data-template='{
   "servers": {
     "llmwiking-okf": {
       "url": "{BASE_URL}LLMWikiNG/mcp/sse",
@@ -145,10 +169,91 @@
 </div>
 
 <script>
+var revealedFullMcpKeys = {};
+var revealedFullApiKeys = {};
+
+function copySnippetCode(btn, elementId) {
+    var el = document.getElementById(elementId);
+    if (!el) return;
+    var text = el.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+            btn.innerHTML = "✓ {{ _('settings.mcp_copied_code') }}";
+            setTimeout(function() { btn.innerHTML = "📋 {{ _('settings.mcp_copy_code') }}"; }, 1500);
+        });
+    } else {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        btn.innerHTML = "✓ {{ _('settings.mcp_copied_code') }}";
+        setTimeout(function() { btn.innerHTML = "📋 {{ _('settings.mcp_copy_code') }}"; }, 1500);
+    }
+}
+
+function unlockFullConfigKeys() {
+    var password = document.getElementById("mcp_unlock_password").value;
+    var errEl = document.getElementById("mcp_unlock_error");
+    var succEl = document.getElementById("mcp_unlock_success");
+    var mcpSelect = document.getElementById("cfg_mcp_key_select");
+    var apiSelect = document.getElementById("cfg_api_key_select");
+
+    errEl.classList.add("hidden");
+    succEl.classList.add("hidden");
+
+    if (!password) {
+        errEl.textContent = "Passwort erforderlich";
+        errEl.classList.remove("hidden");
+        return;
+    }
+
+    var promises = [];
+
+    // Fetch full MCP Key if selected and not global
+    var selectedMcpId = mcpSelect ? mcpSelect.value : "";
+    if (selectedMcpId && !revealedFullMcpKeys[selectedMcpId]) {
+        promises.push(
+            fetch("{{ base_path }}/mcp-keys/reveal", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key_id: selectedMcpId, password: password })
+            }).then(function(res) { return res.json(); }).then(function(data) {
+                if (data.raw_key) revealedFullMcpKeys[selectedMcpId] = data.raw_key;
+            })
+        );
+    }
+
+    // Fetch full API Key if selected
+    var selectedApiId = apiSelect ? apiSelect.value : "";
+    if (selectedApiId && !revealedFullApiKeys[selectedApiId]) {
+        promises.push(
+            fetch("{{ base_path }}/api-keys/reveal", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key_id: selectedApiId, password: password })
+            }).then(function(res) { return res.json(); }).then(function(data) {
+                if (data.raw_key) revealedFullApiKeys[selectedApiId] = data.raw_key;
+            })
+        );
+    }
+
+    Promise.all(promises).then(function() {
+        succEl.classList.remove("hidden");
+        if (window.renderConfigSnippets) window.renderConfigSnippets();
+    }).catch(function(e) {
+        errEl.textContent = "Entschlüsselung fehlgeschlagen: " + e;
+        errEl.classList.remove("hidden");
+    });
+}
+
 (function() {
     var base_url = "{{ request.base_url }}";
     
-    // Store newly generated keys
     var mcpKeyElem = document.getElementById("gen-mcp-key");
     var apiKeyElem = document.getElementById("gen-api-key");
     
@@ -170,7 +275,7 @@
         if (!userSelect) return;
         var selectedUser = userSelect.value;
 
-        // Filter MCP key dropdown options
+        // Filter MCP key options
         Array.from(mcpSelect.options).forEach(function(opt) {
             if (opt.value === "") {
                 opt.style.display = "";
@@ -182,7 +287,7 @@
             mcpSelect.value = "";
         }
 
-        // Filter API key dropdown options
+        // Filter API key options
         var firstValidApi = null;
         Array.from(apiSelect.options).forEach(function(opt) {
             var match = (opt.getAttribute("data-user") === selectedUser);
@@ -199,12 +304,22 @@
     function renderConfigSnippets() {
         var activeMcpKey = globalMcpKey;
         if (mcpSelect && mcpSelect.value) {
-            activeMcpKey = "mcp_key_" + mcpSelect.value.substring(0, 8) + "...";
+            var mId = mcpSelect.value;
+            if (revealedFullMcpKeys[mId]) {
+                activeMcpKey = revealedFullMcpKeys[mId];
+            } else {
+                activeMcpKey = "mcp_key_" + mId.substring(0, 8) + "...";
+            }
         }
 
         var activeApiKey = newlyGenApiKey || "DEIN_API_KEY";
         if (apiSelect && apiSelect.value) {
-            activeApiKey = "llmw_key_" + apiSelect.value.substring(0, 8) + "...";
+            var aId = apiSelect.value;
+            if (revealedFullApiKeys[aId]) {
+                activeApiKey = revealedFullApiKeys[aId];
+            } else {
+                activeApiKey = "llmw_key_" + aId.substring(0, 8) + "...";
+            }
         }
 
         document.querySelectorAll(".mcp-config-code").forEach(function(codeBlock) {
@@ -219,15 +334,11 @@
         });
     }
 
-    if (userSelect) {
-        userSelect.addEventListener("change", updateFilteredDropdowns);
-    }
-    if (mcpSelect) {
-        mcpSelect.addEventListener("change", renderConfigSnippets);
-    }
-    if (apiSelect) {
-        apiSelect.addEventListener("change", renderConfigSnippets);
-    }
+    window.renderConfigSnippets = renderConfigSnippets;
+
+    if (userSelect) userSelect.addEventListener("change", updateFilteredDropdowns);
+    if (mcpSelect) mcpSelect.addEventListener("change", renderConfigSnippets);
+    if (apiSelect) apiSelect.addEventListener("change", renderConfigSnippets);
 
     updateFilteredDropdowns();
 })();

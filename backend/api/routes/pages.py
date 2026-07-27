@@ -14,7 +14,8 @@ import subprocess
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request, UploadFile
+from fastapi import APIRouter, Depends, Request, UploadFile as FastAPIUploadFile
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from fastapi.responses import JSONResponse
 
 from core.config import (
@@ -774,7 +775,7 @@ async def ingest_post(request: Request):
 
         elif ingest_type == "file":
             upload = form.get("file")
-            if not upload or not getattr(upload, "filename", None):
+            if not isinstance(upload, (StarletteUploadFile, FastAPIUploadFile)) or not getattr(upload, "filename", None):
                 raise ValueError("Keine Datei ausgewählt.")
             orig_filename = upload.filename
             safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", orig_filename)

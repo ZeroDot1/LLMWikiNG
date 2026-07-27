@@ -75,6 +75,7 @@
             {{ _('update.docker_rebuild_warning') }}
         </p>
     </div>
+    {% if update_available %}
     <p class="text-sm text-text-secondary mb-3">{{ _('update.run_intro') }}</p>
     <div class="flex flex-wrap gap-3">
         <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">

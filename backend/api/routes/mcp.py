@@ -1345,6 +1345,87 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
 
+    # --- A35: List MCP Keys ---
+    @_require_tool("okf_list_mcp_keys")
+    @mcp_server.tool()
+    def okf_list_mcp_keys() -> str:
+        """Listet alle registrierten Per-User MCP-Keys auf.
+
+        Returns:
+            Formatierte Übersicht aller MCP-Keys.
+        """
+        from core.storage import list_mcp_keys
+        keys = list_mcp_keys()
+        if not keys:
+            return "Keine Per-User MCP-Keys registriert."
+
+        lines = [f"# Per-User MCP-Keys ({len(keys)})\n"]
+        for k in keys:
+            active = "Aktiv" if k.get("active", True) else "Inaktiv"
+            tools = ", ".join(k.get("allowed_tools", [])) or "Alle Tools"
+            lines.append(f"- **{k['name']}** (ID: {k['id'][:8]}...) | User: {k['user_id'][:8]}... | Status: {active} | Allowed Tools: {tools}")
+        return "\n".join(lines)
+
+    # --- A36: Create MCP Key ---
+    @_require_tool("okf_create_mcp_key")
+    @mcp_server.tool()
+    def okf_create_mcp_key(name: str, user_id: str | None = None, allowed_tools: str = "__all__") -> str:
+        """Erstellt einen neuen Per-User MCP-Key.
+
+        Args:
+            name: Name/Beschreibung des MCP-Keys.
+            user_id: Optional ID des Zielbenutzers. Falls nicht angegeben, wird der erste Admin gewählt.
+            allowed_tools: Kommagetrennte Liste von zulässigen Tools oder Tool-Gruppen (z.B. 'wiki_read,raw_sources' oder '__all__').
+
+        Returns:
+            Der neu erstellte rohe MCP-Key (kann nur einmal angezeigt werden!).
+        """
+        from core.storage import create_mcp_key, list_users
+        from core.config import MCP_TOOL_GROUPS
+        if not user_id:
+            users = list_users()
+            admins = [u for u in users if u.get("role") == "admin"]
+            user_id = admins[0]["id"] if admins else (users[0]["id"] if users else "system")
+
+        tool_inputs = [t.strip() for t in allowed_tools.split(",") if t.strip()]
+        final_tools = []
+        if "__all__" in tool_inputs or not tool_inputs:
+            final_tools = []
+        else:
+            for item in tool_inputs:
+                if item in MCP_TOOL_GROUPS:
+                    final_tools.extend(MCP_TOOL_GROUPS[item]["tools"])
+                else:
+                    final_tools.append(item)
+            final_tools = sorted(list(set(final_tools)))
+
+        key_obj, raw_key = create_mcp_key(user_id=user_id, name=name, allowed_tools=final_tools)
+
+        from services.audit import log_action
+        log_action(action="mcp_key_create", details=f"MCP: MCP-Key '{name}' erstellt", username="mcp-agent")
+
+        return f"MCP-Key '{name}' erfolgreich erstellt!\n\n**Roher MCP-Key (jetzt sichern):** `{raw_key}`"
+
+    # --- A37: Delete MCP Key ---
+    @_require_tool("okf_delete_mcp_key")
+    @mcp_server.tool()
+    def okf_delete_mcp_key(key_id: str) -> str:
+        """Loescht einen Per-User MCP-Key anhand seiner ID.
+
+        Args:
+            key_id: ID des zu löschenden MCP-Keys.
+
+        Returns:
+            Bestätigungsmeldung.
+        """
+        from core.storage import delete_mcp_key
+        success = delete_mcp_key(key_id)
+        if success:
+            from services.audit import log_action
+            log_action(action="mcp_key_delete", details=f"MCP: MCP-Key ID '{key_id}' geloescht", username="mcp-agent")
+            return f"MCP-Key '{key_id}' wurde erfolgreich geloescht."
+        return f"MCP-Key '{key_id}' konnte nicht gefunden werden."
+
     # --- A30: Check Update ---
     @_require_tool("okf_check_update")
     @mcp_server.tool()

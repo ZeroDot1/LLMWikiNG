@@ -45,10 +45,10 @@ def _read_app_version() -> str:
     try:
         version_file = PROJECT_ROOT / "VERSION"
         if version_file.exists():
-            return version_file.read_text(encoding="utf-8").strip() or "2.12.23"
+            return version_file.read_text(encoding="utf-8").strip() or "2.12.24"
     except Exception:
         pass
-    return "2.12.23"
+    return "2.12.24"
 
 
 APP_VERSION = _read_app_version()
@@ -421,9 +421,12 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
         "tools": ["okf_list_users", "okf_create_user", "okf_delete_user"],
     },
     "api_keys_admin": {
-        "label_de": "API-Keys verwalten",
-        "label_en": "Manage API Keys",
-        "tools": ["okf_list_api_keys", "okf_create_api_key", "okf_delete_api_key"],
+        "label_de": "API- & MCP-Keys verwalten",
+        "label_en": "Manage API & MCP Keys",
+        "tools": [
+            "okf_list_api_keys", "okf_create_api_key", "okf_delete_api_key",
+            "okf_list_mcp_keys", "okf_create_mcp_key", "okf_delete_mcp_key",
+        ],
     },
     "backup_admin": {
         "label_de": "Backups verwalten",
@@ -431,7 +434,7 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
         "tools": ["okf_list_backups", "okf_create_backup", "okf_restore_backup"],
     },
     "update_admin": {
-        "label_de": "Updates ausfuehren",
+        "label_de": "Updates ausführen",
         "label_en": "Run Updates",
         "tools": ["okf_check_update", "okf_run_update"],
     },

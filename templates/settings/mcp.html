@@ -59,7 +59,36 @@
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
     <h2 class="text-lg font-semibold mb-3 text-primary">⚙️ Client Konfigurationsbeispiele</h2>
-    <p class="text-text-secondary text-sm mb-4">Trage diese Server-Konfiguration in deinen KI-Assistenten ein. Die Beispiele zeigen den aktuellen Server-Host und die generierten Schlüssel.</p>
+    <p class="text-text-secondary text-sm mb-4">Wähle einen Benutzer sowie dessen MCP- &amp; API-Schlüssel aus, um ein vorkonfiguriertes Snippet für deinen KI-Assistenten zu erzeugen.</p>
+
+    <!-- Interactive Key & User Selector -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 p-4 rounded-xl border border-border bg-bg-sunken">
+        <div>
+            <label for="cfg_user_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">1. Benutzer</label>
+            <select id="cfg_user_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
+                {% for u in users %}
+                <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="cfg_mcp_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">2. MCP-Schlüssel</label>
+            <select id="cfg_mcp_key_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="">Global / Standard MCP-Key</option>
+                {% for mk in mcp_keys %}
+                <option value="{{ mk.id }}" data-user="{{ mk.user_id }}">{{ mk.name }} (Per-User)</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="cfg_api_key_select" class="block text-xs font-semibold text-text-muted uppercase mb-1">3. API-Schlüssel</label>
+            <select id="cfg_api_key_select" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary">
+                {% for k in keys %}
+                <option value="{{ k.id }}" data-user="{{ k.user_id }}">{{ k.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
 
     <div class="space-y-4">
         <div>
@@ -117,10 +146,9 @@
 
 <script>
 (function() {
-    // SessionStorage Caching for generated keys to preserve them across form submissions/saves
     var base_url = "{{ request.base_url }}";
     
-    // 1. Store newly generated keys if they are rendered in the DOM
+    // Store newly generated keys
     var mcpKeyElem = document.getElementById("gen-mcp-key");
     var apiKeyElem = document.getElementById("gen-api-key");
     
@@ -131,29 +159,76 @@
         sessionStorage.setItem("mcp_cached_api_key", apiKeyElem.textContent.trim());
     }
     
-    // 2. Resolve final keys to display in examples
-    var activeMcpKey = "{{ new_generated_mcp_key or mcp_config.get('llmwiking_mcp_key') or '' }}";
-    if (!activeMcpKey) {
-        activeMcpKey = sessionStorage.getItem("mcp_cached_mcp_key") || "DEIN_MCP_KEY";
-    } else {
-        sessionStorage.setItem("mcp_cached_mcp_key", activeMcpKey);
-    }
-    
-    var activeApiKey = "{{ new_generated_api_key or '' }}";
-    if (!activeApiKey) {
-        activeApiKey = sessionStorage.getItem("mcp_cached_api_key") || "DEIN_API_KEY";
-    }
-    
-    // 3. Render all config code templates
-    document.querySelectorAll(".mcp-config-code").forEach(function(codeBlock) {
-        var template = codeBlock.getAttribute("data-template");
-        if (template) {
-            var rendered = template
-                .replace(/{BASE_URL}/g, base_url)
-                .replace(/{MCP_KEY}/g, activeMcpKey)
-                .replace(/{API_KEY}/g, activeApiKey);
-            codeBlock.textContent = rendered;
+    var globalMcpKey = "{{ mcp_config.get('llmwiking_mcp_key') or '' }}" || sessionStorage.getItem("mcp_cached_mcp_key") || "DEIN_MCP_KEY";
+    var newlyGenApiKey = "{{ new_generated_api_key or '' }}" || sessionStorage.getItem("mcp_cached_api_key");
+
+    var userSelect = document.getElementById("cfg_user_select");
+    var mcpSelect = document.getElementById("cfg_mcp_key_select");
+    var apiSelect = document.getElementById("cfg_api_key_select");
+
+    function updateFilteredDropdowns() {
+        if (!userSelect) return;
+        var selectedUser = userSelect.value;
+
+        // Filter MCP key dropdown options
+        Array.from(mcpSelect.options).forEach(function(opt) {
+            if (opt.value === "") {
+                opt.style.display = "";
+            } else {
+                opt.style.display = (opt.getAttribute("data-user") === selectedUser) ? "" : "none";
+            }
+        });
+        if (mcpSelect.selectedOptions[0] && mcpSelect.selectedOptions[0].style.display === "none") {
+            mcpSelect.value = "";
         }
-    });
+
+        // Filter API key dropdown options
+        var firstValidApi = null;
+        Array.from(apiSelect.options).forEach(function(opt) {
+            var match = (opt.getAttribute("data-user") === selectedUser);
+            opt.style.display = match ? "" : "none";
+            if (match && !firstValidApi) firstValidApi = opt.value;
+        });
+        if (apiSelect.selectedOptions[0] && apiSelect.selectedOptions[0].style.display === "none") {
+            if (firstValidApi) apiSelect.value = firstValidApi;
+        }
+
+        renderConfigSnippets();
+    }
+
+    function renderConfigSnippets() {
+        var activeMcpKey = globalMcpKey;
+        if (mcpSelect && mcpSelect.value) {
+            activeMcpKey = "mcp_key_" + mcpSelect.value.substring(0, 8) + "...";
+        }
+
+        var activeApiKey = newlyGenApiKey || "DEIN_API_KEY";
+        if (apiSelect && apiSelect.value) {
+            activeApiKey = "llmw_key_" + apiSelect.value.substring(0, 8) + "...";
+        }
+
+        document.querySelectorAll(".mcp-config-code").forEach(function(codeBlock) {
+            var template = codeBlock.getAttribute("data-template");
+            if (template) {
+                var rendered = template
+                    .replace(/{BASE_URL}/g, base_url)
+                    .replace(/{MCP_KEY}/g, activeMcpKey)
+                    .replace(/{API_KEY}/g, activeApiKey);
+                codeBlock.textContent = rendered;
+            }
+        });
+    }
+
+    if (userSelect) {
+        userSelect.addEventListener("change", updateFilteredDropdowns);
+    }
+    if (mcpSelect) {
+        mcpSelect.addEventListener("change", renderConfigSnippets);
+    }
+    if (apiSelect) {
+        apiSelect.addEventListener("change", renderConfigSnippets);
+    }
+
+    updateFilteredDropdowns();
 })();
 </script>

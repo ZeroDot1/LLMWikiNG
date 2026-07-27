@@ -23,6 +23,12 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.24] - 2026-07-27
+
+### Added
+- **Interaktiver Client-Konfigurator (`templates/settings/mcp.html`)**: Dynamische Dropdowns (1. Benutzer, 2. MCP-Schlüssel, 3. API-Schlüssel) in *Settings -> MCP* zur Erzeugung maßgeschneiderter Konfigurationsbeispiele für Antigravity CLI/IDE, OpenCode und Hermes Agent.
+- **Vollständige Registrierung aller MCP-Tools (`backend/core/config.py`, `backend/api/routes/mcp.py`)**: Einbindung aller 37 MCP-Tools inklusive `okf_list_mcp_keys`, `okf_create_mcp_key` und `okf_delete_mcp_key` in `MCP_TOOL_GROUPS`.
+
 ## [2.12.23] - 2026-07-27
 
 ### Added

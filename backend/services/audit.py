@@ -18,9 +18,11 @@ ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search"
 
 ACTION_CATEGORIES = {
     # auth
+    "login": "auth",
     "login_success": "auth",
     "login_failed": "auth",
     "logout": "auth",
+    "setup_admin": "auth",
     
     # users
     "user_create": "users",
@@ -31,6 +33,12 @@ ACTION_CATEGORIES = {
     # api_keys
     "api_key_create": "api_keys",
     "api_key_delete": "api_keys",
+    "api_key_reveal": "api_keys",
+    "system_secret_reveal": "api_keys",
+    "system_secret_regenerate": "api_keys",
+    "mcp_key_create": "api_keys",
+    "mcp_key_delete": "api_keys",
+    "mcp_key_reveal": "api_keys",
     
     # pages
     "page_create": "pages",
@@ -43,6 +51,8 @@ ACTION_CATEGORIES = {
     "wiki_create": "wikis",
     "wiki_sync": "wikis",
     "wiki_delete": "wikis",
+    "activity_log_clear": "wikis",
+    "api_ingest_upload": "wikis",
     
     # search
     "search": "search",
@@ -53,6 +63,7 @@ ACTION_CATEGORIES = {
     
     # system
     "settings_change": "system",
+    "theme_change": "system",
     "system_startup": "system",
     "system_shutdown": "system",
     
@@ -68,7 +79,9 @@ ACTION_CATEGORIES = {
     "mcp_delete_wiki": "mcp",
     "mcp_sync": "mcp",
     "mcp_update": "mcp",
-    "mcp_clear_cache": "mcp"
+    "mcp_clear_cache": "mcp",
+    "mcp_create_backup": "mcp",
+    "mcp_restore_backup": "mcp",
 }
 
 def is_audit_enabled(action: str) -> bool:
@@ -286,3 +299,26 @@ def prune_logs(year: int, month: int | None = None) -> int:
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return 0
+
+
+def export_logs_csv(logs: list[dict]) -> str:
+    """Konvertiert eine Liste von Audit-Logs in ein CSV-Format."""
+    import csv
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Timestamp", "User ID", "Username", "Category", "Action", "Details", "IP Address", "User Agent"])
+    for log in logs:
+        writer.writerow([
+            log.get("id"),
+            log.get("timestamp"),
+            log.get("user_id") or "",
+            log.get("username") or "",
+            log.get("category") or "",
+            log.get("action"),
+            log.get("details") or "",
+            log.get("ip_address") or "",
+            log.get("user_agent") or "",
+        ])
+    return output.getvalue()
+

@@ -2036,6 +2036,49 @@ async def audit_prune(request: Request, admin: dict = Depends(require_admin)):
         return redirect(f"{BASE_PATH}/audit?error_msg={urlencode(f'Fehler beim Löschen: {e}')}")
 
 
+@router.get("/audit/export")
+def audit_export(
+    request: Request,
+    admin: dict = Depends(require_admin),
+    fmt: str = "json",
+    action: str | None = None,
+    category: str | None = None,
+    username: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    search: str | None = None,
+):
+    from services.audit import get_logs, export_logs_csv
+    from starlette.responses import Response, JSONResponse
+    
+    logs, _ = get_logs(
+        limit=10000,
+        offset=0,
+        action=action,
+        category=category,
+        username=username,
+        start_date=start_date,
+        end_date=end_date,
+        search=search,
+    )
+    
+    log_action(action="audit_export", details=f"Audit-Logs exportiert (Format: {fmt}, {len(logs)} Einträge)", user_id=admin["id"], username=admin["username"], request=request)
+    
+    if fmt == "csv":
+        csv_data = export_logs_csv(logs)
+        return Response(
+            content=csv_data,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=audit_logs.csv"},
+        )
+    else:
+        return JSONResponse(
+            content={"logs": logs, "count": len(logs)},
+            headers={"Content-Disposition": "attachment; filename=audit_logs.json"},
+        )
+
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Wiki-Seite (Catch-All – MUSS zuletzt stehen!)
 # ═══════════════════════════════════════════════════════════════════════════════

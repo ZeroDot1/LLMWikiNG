@@ -1047,6 +1047,32 @@ class TestRawIngest:
         assert isinstance(data["pending"], list)
 
 
+class TestAuditApi:
+    """Tests für Audit Logging und Audit-Export Endpunkte."""
+
+    def test_audit_logs_query(self, api_env):
+        tmp_path, admin_key, _, client = api_env
+        resp = client.get("/LLMWikiNG/api/v1/system/audit", headers={"X-API-Key": admin_key})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "logs" in data
+        assert "total" in data
+
+    def test_audit_export_json_and_csv(self, client, auth_cookie):
+        # Test JSON Export via web route
+        resp_json = client.get("/LLMWikiNG/audit/export?fmt=json", cookies=auth_cookie)
+        assert resp_json.status_code == 200
+        assert "attachment; filename=audit_logs.json" in resp_json.headers.get("content-disposition", "")
+        assert "logs" in resp_json.json()
+
+        # Test CSV Export via web route
+        resp_csv = client.get("/LLMWikiNG/audit/export?fmt=csv", cookies=auth_cookie)
+        assert resp_csv.status_code == 200
+        assert "attachment; filename=audit_logs.csv" in resp_csv.headers.get("content-disposition", "")
+        assert "Timestamp" in resp_csv.text
+
+
+
 class TestServerBackupApi:
     """Tests für die Server-Backup REST API Endpunkte."""
 

@@ -23,6 +23,15 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.23] - 2026-07-27
+
+### Added
+- **Audit-Log Export (`backend/api/routes/pages.py`, `backend/services/audit.py`)**: Neue Web- & API-Exportfunktion für Audit-Logs in JSON- und CSV-Formaten über den Endpunkt `/audit/export`.
+- **Zusätzliche Audit-Kategorien & Badges (`backend/services/audit.py`, `templates/audit.html`, `static/css/audit.css`)**: Registrierung neuer Aktions-Typen (`mcp_key_create`, `mcp_key_delete`, `mcp_key_reveal`, `mcp_create_backup`, `mcp_restore_backup`, `audit_export`) mit dedizierten Farb-Badges im Frontend.
+
+### Improved
+- **CSS & UI Modernisierung (`static/css/*.css`)**: Anpassung und Verfeinerung aller CSS-Stylesheets (`audit.css`, `graph.css`, `wikis.css`, `tailwind-build.css`) mit flüssigen Animationen, verbesserten Hover-Zuständen und OKLCH-Farbschemata.
+
 ## [2.12.22] - 2026-07-27
 
 ### Added

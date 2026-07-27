@@ -17,9 +17,19 @@
                 </h1>
                 <p class="text-text-secondary mt-1 text-sm">{{ _('audit.subtitle') }}</p>
             </div>
-            <div class="text-right text-xs text-text-muted font-mono">
-                <div class="font-semibold text-text">{{ _('audit.total_entries', total=total) }}</div>
-                <div>{{ _('audit.retention_hint') }}</div>
+            <div class="flex items-center gap-4">
+                <div class="flex gap-2">
+                    <a href="{{ base_path }}/audit/export?fmt=json{% if category_filter %}&category={{ category_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if search_filter %}&search={{ search_filter }}{% endif %}" class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text transition-colors no-underline">
+                        📥 JSON
+                    </a>
+                    <a href="{{ base_path }}/audit/export?fmt=csv{% if category_filter %}&category={{ category_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&username={{ user_filter }}{% endif %}{% if search_filter %}&search={{ search_filter }}{% endif %}" class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text transition-colors no-underline">
+                        📊 CSV
+                    </a>
+                </div>
+                <div class="text-right text-xs text-text-muted font-mono">
+                    <div class="font-semibold text-text">{{ _('audit.total_entries', total=total) }}</div>
+                    <div>{{ _('audit.retention_hint') }}</div>
+                </div>
             </div>
         </div>
     </header>
@@ -83,6 +93,9 @@
                         <option value="api_key_create" {% if action_filter == 'api_key_create' %}selected{% endif %}>api_key_create</option>
                         <option value="api_key_delete" {% if action_filter == 'api_key_delete' %}selected{% endif %}>api_key_delete</option>
                         <option value="api_key_reveal" {% if action_filter == 'api_key_reveal' %}selected{% endif %}>api_key_reveal</option>
+                        <option value="mcp_key_create" {% if action_filter == 'mcp_key_create' %}selected{% endif %}>mcp_key_create</option>
+                        <option value="mcp_key_delete" {% if action_filter == 'mcp_key_delete' %}selected{% endif %}>mcp_key_delete</option>
+                        <option value="mcp_key_reveal" {% if action_filter == 'mcp_key_reveal' %}selected{% endif %}>mcp_key_reveal</option>
                         <option value="system_secret_reveal" {% if action_filter == 'system_secret_reveal' %}selected{% endif %}>system_secret_reveal</option>
                         <option value="system_secret_regenerate" {% if action_filter == 'system_secret_regenerate' %}selected{% endif %}>system_secret_regenerate</option>
                     </optgroup>
@@ -95,9 +108,18 @@
                         <option value="activity_log_clear" {% if action_filter == 'activity_log_clear' %}selected{% endif %}>activity_log_clear</option>
                         <option value="api_ingest_upload" {% if action_filter == 'api_ingest_upload' %}selected{% endif %}>api_ingest_upload</option>
                     </optgroup>
+                    <optgroup label="MCP">
+                        <option value="mcp_tool_call" {% if action_filter == 'mcp_tool_call' %}selected{% endif %}>mcp_tool_call</option>
+                        <option value="mcp_write_concept" {% if action_filter == 'mcp_write_concept' %}selected{% endif %}>mcp_write_concept</option>
+                        <option value="mcp_delete_page" {% if action_filter == 'mcp_delete_page' %}selected{% endif %}>mcp_delete_page</option>
+                        <option value="mcp_create_wiki" {% if action_filter == 'mcp_create_wiki' %}selected{% endif %}>mcp_create_wiki</option>
+                        <option value="mcp_create_backup" {% if action_filter == 'mcp_create_backup' %}selected{% endif %}>mcp_create_backup</option>
+                        <option value="mcp_restore_backup" {% if action_filter == 'mcp_restore_backup' %}selected{% endif %}>mcp_restore_backup</option>
+                    </optgroup>
                     <optgroup label="{{ _('audit.action_group_system') }}">
                         <option value="theme_change" {% if action_filter == 'theme_change' %}selected{% endif %}>theme_change</option>
                         <option value="audit_prune" {% if action_filter == 'audit_prune' %}selected{% endif %}>audit_prune</option>
+                        <option value="audit_export" {% if action_filter == 'audit_export' %}selected{% endif %}>audit_export</option>
                     </optgroup>
                 </select>
             </div>

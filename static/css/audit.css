@@ -1,5 +1,5 @@
 /* audit.css – Audit-Logbuch Styles (Kompatibel mit LLMWikiNG Dark/Light-Theme)
- * Version: 2.12.22
+ * Version: 2.12.23
  */
 
 /* ── Pagination Button ── */
@@ -82,10 +82,26 @@
   color: #f87171;
   border-color: rgba(239, 68, 68, 0.25);
 }
-.badge-action[data-action="api_key_reveal"] {
+/* MCP Actions */
+.badge-action[data-action="mcp_key_create"] {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.25);
+}
+.badge-action[data-action="mcp_key_delete"] {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.badge-action[data-action="mcp_key_reveal"] {
   background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.25);
+}
+.badge-action[data-action^="mcp_"] {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.25);
 }
 
 /* Secrets */
@@ -127,7 +143,7 @@
   border-color: rgba(20, 184, 166, 0.25);
 }
 
-/* System */
+/* System & Audit */
 .badge-action[data-action="activity_log_clear"] {
   background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
@@ -138,7 +154,8 @@
   color: #9ca3af;
   border-color: rgba(107, 114, 128, 0.25);
 }
-.badge-action[data-action="audit_prune"] {
+.badge-action[data-action="audit_prune"],
+.badge-action[data-action="audit_export"] {
   background: rgba(239, 68, 68, 0.12);
   color: #f87171;
   border-color: rgba(239, 68, 68, 0.25);

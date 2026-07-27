@@ -1300,6 +1300,7 @@ def settings_get(request: Request):
         new_generated_mcp_key=None,
         new_generated_api_key=None,
         syntax_msg=request.query_params.get("syntax_msg"),
+        registration_enabled=cfg.get("registration_enabled", True),
     )
 
 
@@ -1469,6 +1470,19 @@ async def settings_post(request: Request):
             request=request,
         )
         config_success_msg = "MCP-Konfiguration erfolgreich gespeichert!"
+    elif action == "save_registration":
+        from core.config import save_app_config
+        registration_enabled = form.get("registration_enabled") == "1"
+        save_app_config({"registration_enabled": registration_enabled})
+        user = get_current_user(request) or {}
+        log_action(
+            action="settings_change",
+            details=f"Registrierung {'aktiviert' if registration_enabled else 'deaktiviert'}",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+        config_success_msg = "Registrierung wurde {}.".format("aktiviert" if registration_enabled else "deaktiviert")
     else:
         smtp_host = form.get("smtp_host", "smtp.gmail.com")
         try:
@@ -1479,11 +1493,9 @@ async def settings_post(request: Request):
         smtp_pass = (form.get("smtp_pass") or "").strip()
         use_tls = form.get("use_tls") == "1"
         recipients = (form.get("recipients") or "").strip()
-        registration_enabled = form.get("registration_enabled") == "1"
         new_config = {
             "smtp_host": smtp_host, "smtp_port": smtp_port, "smtp_user": smtp_user,
             "smtp_pass": smtp_pass, "use_tls": use_tls, "recipients": recipients,
-            "registration_enabled": registration_enabled,
         }
         if save_smtp_config(new_config):
             config_success_msg = "Konfiguration erfolgreich in config.json gespeichert!"
@@ -1505,14 +1517,15 @@ async def settings_post(request: Request):
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
     from core.config import load_app_config
+    cfg_post = load_app_config()
     return render(
         request, "settings.html",
         active_page="settings",
         smtp_config=smtp_config_data,
         env_user=env_user,
         env_pass_exists=env_pass_exists,
-        audit_config=load_app_config(),
-        mcp_config=load_app_config(),
+        audit_config=cfg_post,
+        mcp_config=cfg_post,
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=config_success_msg,
         config_error_msg=config_error_msg,
@@ -1530,6 +1543,7 @@ async def settings_post(request: Request):
         new_key=None,
         new_generated_mcp_key=new_generated_mcp_key,
         new_generated_api_key=new_generated_api_key,
+        registration_enabled=cfg_post.get("registration_enabled", True),
     )
 
 

@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.19] - 2026-07-27
+
+### Added
+- **Registrierungs-Toggle in Settings → Users**: Der neue Abschnitt „Sicherheit" erlaubt Administratoren, die öffentliche Benutzerregistrierung per Checkbox zu aktivieren oder zu deaktivieren. Nach dem Anlegen des ersten Admin-Kontos wird die Registrierung automatisch deaktiviert und in der `config.json` persistiert (`settings/smtp.html`, `settings/users.html`, `backend/api/routes/pages.py`, `backend/api/routes/auth.py`).
+
+### Fixed
+- **Doppelte Emojis in Settings behoben** (`templates/settings.html`, `templates/settings/theme.html`, `templates/settings/update.html`): Entfernung redundanter Emoji-Präfixe in Settings-Headings, Theme-Buttons und Update-Bereichen, wo sowohl das Template als auch der Übersetzungsschlüssel Emojis enthielten (z. B. ⚙️ ⚙️ Einstellungen, ☀️ ☀️ Hell, 🌙 🌑 Dunkel, ✓ 🛡️ Bleibt erhalten, ⚠ ✅ Wird ersetzt).
+
 ## [2.12.18] - 2026-07-27
 
 ### Fixed

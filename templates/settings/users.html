@@ -1,3 +1,32 @@
+{% if config_success_msg or request.query_params.get('success') %}
+<div class="rounded-lg border border-success/30 bg-success-subtle p-3 mb-4 text-sm flex items-center gap-2 max-w-2xl">
+    <span class="text-success font-bold">✓</span>
+    <span>{{ config_success_msg or request.query_params.get('success') }}</span>
+</div>
+{% endif %}
+{% if config_error_msg or request.query_params.get('error') %}
+<div class="rounded-lg border border-danger/30 bg-danger-subtle p-3 mb-4 text-sm flex items-center gap-2 max-w-2xl">
+    <span class="text-danger font-bold">✗</span>
+    <span>{{ config_error_msg or request.query_params.get('error') }}</span>
+</div>
+{% endif %}
+
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6 max-w-2xl">
+    <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.security_heading', default='Sicherheit') }}</h2>
+    <p class="text-text-secondary text-sm mb-4">{{ _('users.registration_section_hint', default='Kontrolliere, ob sich neue Benutzer selbst registrieren können.') }}</p>
+
+    <form action="{{ base_path }}/settings?tab=users" method="post" class="space-y-3">
+        <input type="hidden" name="action" value="save_registration">
+        <label class="flex items-center gap-3 cursor-pointer select-none text-sm text-text-secondary">
+            <input type="checkbox" name="registration_enabled" value="1" {% if registration_enabled %}checked{% endif %}
+                   onchange="this.form.submit()"
+                   class="rounded border-border text-primary focus:ring-primary-subtle w-4 h-4">
+            <span class="font-medium">{{ _('settings.allow_registration') }}</span>
+        </label>
+        <span class="block text-xs text-text-muted">{{ _('settings.registration_hint') }}</span>
+    </form>
+</div>
+
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6 max-w-2xl">
     <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('users.create_heading') }}</h2>
     <p class="text-text-secondary text-sm mb-4">{{ _('users.create_hint', default='Lege einen neuen Benutzer an (Admin-Rechte zum Verwalten erforderlich).') }}</p>

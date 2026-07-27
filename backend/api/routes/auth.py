@@ -57,6 +57,9 @@ async def login_post(request: Request):
             return redirect(f"{BASE_PATH}/login?error=Benutzername+und+Passwort+erforderlich")
         create_user(username, password, role="admin")
         user = get_user_by_name(username)
+        # Nach Erstanlage: Registrierung automatisch deaktivieren
+        from core.config import save_app_config
+        save_app_config({"registration_enabled": False})
         log_action(action="setup_admin", details=f"Erstes Administrator-Konto erstellt: {username}", user_id=user["id"], username=user["username"], request=request)
         return _set_session_and_redirect(user)
 
@@ -187,6 +190,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         new_key=raw,
         new_generated_mcp_key=None,
         new_generated_api_key=None,
+        registration_enabled=load_app_config().get("registration_enabled", True),
     )
 
 

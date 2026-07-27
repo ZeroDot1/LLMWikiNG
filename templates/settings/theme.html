@@ -10,10 +10,10 @@
     <form action="{{ base_path }}/theme/set" method="post" class="space-y-4">
         <div class="flex flex-wrap gap-2.5">
             <button type="submit" name="value" value="dark" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if theme == 'dark' %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
-                🌙 {{ _('settings.theme_dark') }}{% if theme == 'dark' %} ✓{% endif %}
+                {{ _('settings.theme_dark') }}{% if theme == 'dark' %} ✓{% endif %}
             </button>
             <button type="submit" name="value" value="light" class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 {% if theme == 'light' %}bg-primary text-white shadow-sm{% else %}border border-border bg-surface hover:bg-bg-sunken text-text-secondary{% endif %}">
-                ☀️ {{ _('settings.theme_light') }}{% if theme == 'light' %} ✓{% endif %}
+                {{ _('settings.theme_light') }}{% if theme == 'light' %} ✓{% endif %}
             </button>
         </div>
     </form>

@@ -66,15 +66,6 @@
             <span class="block mt-1 text-xs text-text-muted">{{ _('config.recipients_hint') }}</span>
         </div>
         
-        <div class="pt-4 mt-4 border-t border-border space-y-2">
-            <h3 class="text-xs font-bold text-primary uppercase tracking-wider">{{ _('settings.security_heading') }}</h3>
-            <label class="flex items-center gap-2 cursor-pointer select-none text-sm text-text-secondary">
-                <input type="checkbox" name="registration_enabled" id="registration_enabled" value="1" {% if smtp_config.registration_enabled %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary-subtle">
-                <span class="font-medium">{{ _('settings.allow_registration') }}</span>
-            </label>
-            <span class="block text-xs text-text-muted">{{ _('settings.registration_hint') }}</span>
-        </div>
-        
         <div class="pt-3">
             <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-sm font-semibold text-white transition-colors shadow-sm">{{ _('config.save_button') }}</button>
         </div>

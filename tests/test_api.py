@@ -1047,6 +1047,43 @@ class TestRawIngest:
         assert isinstance(data["pending"], list)
 
 
+class TestServerBackupApi:
+    """Tests für die Server-Backup REST API Endpunkte."""
+
+    def test_backup_api_lifecycle(self, api_env):
+        tmp_path, admin_key, _, client = api_env
+        headers = {"X-API-Key": admin_key}
+
+        # 1. Backups auflisten
+        resp = client.get("/LLMWikiNG/api/v1/system/backups", headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "backups" in data
+
+        # 2. Backup erstellen
+        resp_create = client.post("/LLMWikiNG/api/v1/system/backups", headers=headers)
+        assert resp_create.status_code == 200
+        data_create = resp_create.json()
+        assert data_create["ok"] is True
+        filename = data_create["filename"]
+
+        # 3. Vorhandene Backups prüfen
+        resp_list = client.get("/LLMWikiNG/api/v1/system/backups", headers=headers)
+        assert resp_list.status_code == 200
+        filenames = [b["filename"] for b in resp_list.json()["backups"]]
+        assert filename in filenames
+
+        # 4. Backup wiederherstellen
+        resp_restore = client.post(f"/LLMWikiNG/api/v1/system/backups/{filename}/restore", headers=headers)
+        assert resp_restore.status_code == 200
+        assert resp_restore.json()["ok"] is True
+
+        # 5. Backup löschen
+        resp_del = client.delete(f"/LLMWikiNG/api/v1/system/backups/{filename}", headers=headers)
+        assert resp_del.status_code == 200
+        assert resp_del.json()["ok"] is True
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # M. INTEGRATIONSTESTS (Ingest → Read → Search → Delete)
 # ═══════════════════════════════════════════════════════════════════════════════

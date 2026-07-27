@@ -5,6 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.22] - 2026-07-27
+
+### Added
+- **Server-Backup-Verwaltung in WebUI (`templates/settings/backup.html`, `backend/api/routes/pages.py`)**: Erstellung, Auflistung, Download, Wiederherstellung und Löschung von Server-Backups direkt im Web-Interface in einer übersichtlichen Tabelle.
+- **REST API für Server-Backups (`backend/api/routes/api.py`)**: Neue Endpunkte `GET /api/v1/system/backups`, `POST /api/v1/system/backups`, `POST /api/v1/system/backups/{filename}/restore` und `DELETE /api/v1/system/backups/{filename}` für automatisierte Backup-Workflows.
+- **Neue MCP-Tools für Backups (`backend/api/routes/mcp.py`)**: `okf_list_backups`, `okf_create_backup` und `okf_restore_backup` hinzugefügt.
+- **Lokale Sprachdateien ergänzt (`lang/de.json`, `lang/en.json`)**: Übersetzungsschlüssel für Backup-Erstellung, Backup-Tabelle, Bestätigungs-Dialoge und Aktionen hinzugefügt.
+
+### Fixed
+- **Sicheres Wiederherstellen von Backups (`backend/services/backup.py`)**: Der Entpackungsvorgang verwendet nun isolierte `tempfile.TemporaryDirectory()` Verzeichnisse außerhalb des `data/`-Ordners, um `FileNotFoundError` und versehentliche Überschreibungen während des Iterierens zu verhindern.
+
 ## [2.12.21] - 2026-07-27
 
 ### Fixed

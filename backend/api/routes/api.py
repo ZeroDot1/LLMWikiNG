@@ -452,6 +452,82 @@ def api_system_audit(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Backup & Restore API
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/system/backups")
+async def api_list_backups(admin: dict = Depends(require_api_admin)):
+    """Listet alle auf dem Server gespeicherten Backup-Dateien auf."""
+    from services.backup import list_server_backups
+    backups = list_server_backups()
+    return {"backups": backups, "count": len(backups)}
+
+
+@router.post("/system/backups")
+async def api_create_backup(admin: dict = Depends(require_api_admin)):
+    """Erstellt ein neues Backup auf dem Server."""
+    from services.backup import create_backup_xz
+    from services.audit import log_action
+    b_path = create_backup_xz()
+    log_action(action="api_backup_create", details=f"Backup via API erstellt: {b_path.name}", user_id=admin.get("id"), username=admin.get("username"))
+    return {"ok": True, "filename": b_path.name, "path": str(b_path)}
+
+
+@router.post("/system/backups/{filename}/restore")
+async def api_restore_backup(filename: str, request: Request, admin: dict = Depends(require_api_admin)):
+    """Stellt ein auf dem Server vorhandenes Backup wieder her."""
+    from services.backup import get_backup_filepath, restore_backup_xz
+    from services.audit import log_action
+    from core.storage import list_users, save_users
+    
+    b_path = get_backup_filepath(filename)
+    if not b_path:
+        raise HTTPException(status_code=404, detail="Backup-Datei nicht gefunden")
+
+    current_uid = admin.get("id")
+    current_username = admin.get("username")
+    current_hash = admin.get("password")
+    current_role = admin.get("role", "admin")
+
+    try:
+        restore_backup_xz(b_path)
+        if current_username and current_hash and current_uid:
+            users = list_users()
+            user_exists = False
+            for u in users:
+                if u.get("username") == current_username:
+                    user_exists = True
+                    u["id"] = current_uid
+                    break
+            if not user_exists:
+                users.append({"id": current_uid, "username": current_username, "password": current_hash, "role": current_role, "active": True})
+            save_users(users)
+
+        log_action(action="api_backup_restore", details=f"Backup via API wiederhergestellt: {b_path.name}", user_id=current_uid, username=current_username, request=request)
+        try:
+            from services.sync import request_sync_background
+            request_sync_background("main")
+        except Exception:
+            pass
+        return {"ok": True, "restored": b_path.name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Restore fehlgeschlagen: {e}")
+
+
+@router.delete("/system/backups/{filename}")
+async def api_delete_backup(filename: str, request: Request, admin: dict = Depends(require_api_admin)):
+    """Löscht eine Server-Backup-Datei."""
+    from services.backup import delete_server_backup
+    from services.audit import log_action
+    ok = delete_server_backup(filename)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Backup-Datei nicht gefunden oder konnte nicht gelöscht werden")
+    log_action(action="api_backup_delete", details=f"Backup via API gelöscht: {filename}", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return {"ok": True, "deleted": filename}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # System Update API
 # ═══════════════════════════════════════════════════════════════════════════════
 

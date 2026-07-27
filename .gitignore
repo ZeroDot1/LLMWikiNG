@@ -49,6 +49,8 @@ node_modules/
 frontend/static/css/tailwind-build.css
 data/
 data/*
+backups/
+backups/*
 *.db
 scratch.py
 scratch/

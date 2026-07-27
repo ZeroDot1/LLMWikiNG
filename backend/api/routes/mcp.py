@@ -1313,6 +1313,64 @@ Willkommen im Wiki **{name}**.
             lines.append("- **Status:** Unbekannt (Git-Fehler).")
         return "\n".join(lines)
 
+    # --- A32: List Backups ---
+    @mcp_server.tool()
+    def okf_list_backups() -> str:
+        """Listet alle auf dem Server gespeicherten Backup-Dateien (tar.xz) auf.
+
+        Returns:
+            Formatierte Übersicht aller Server-Backups inklusive Dateiname, Groesse und Erstelldatum.
+        """
+        from services.backup import list_server_backups
+        backups = list_server_backups()
+        if not backups:
+            return "Keine Backups auf dem Server gefunden."
+
+        lines = [f"# Server-Backups ({len(backups)})\n"]
+        for b in backups:
+            lines.append(f"- **{b['filename']}** | {b['size_mb']} MB | Erstellt: {b['created_at_fmt']}")
+        return "\n".join(lines)
+
+    # --- A33: Create Backup ---
+    @mcp_server.tool()
+    def okf_create_backup() -> str:
+        """Erstellt ein neues Backup aller Wiki-Daten, Konfigurationen und Datenbanken auf dem Server.
+
+        Returns:
+            Ergebnis-Nachricht mit dem Namen der erstellten Backup-Datei.
+        """
+        from services.backup import create_backup_xz
+        from services.audit import log_action
+        b_path = create_backup_xz()
+        log_action(action="mcp_create_backup", details=f"MCP: Backup erstellt {b_path.name}", username="mcp-agent")
+        return f"Backup erfolgreich erstellt: {b_path.name} ({round(b_path.stat().st_size / (1024*1024), 2)} MB)"
+
+    # --- A34: Restore Backup ---
+    @mcp_server.tool()
+    def okf_restore_backup(filename: str) -> str:
+        """Stellt ein auf dem Server vorhandenes Backup (tar.xz) wieder her.
+
+        Args:
+            filename: Name der Backup-Datei (z.B. 'llmwiki_backup_20260727_113000.tar.xz').
+
+        Returns:
+            Ergebnis-Nachricht des Wiederherstellungsvorgangs.
+        """
+        from services.backup import get_backup_filepath, restore_backup_xz
+        from services.audit import log_action
+        b_path = get_backup_filepath(filename)
+        if not b_path:
+            return f"Fehler: Backup-Datei '{filename}' nicht auf dem Server gefunden."
+
+        try:
+            restore_backup_xz(b_path)
+            log_action(action="mcp_restore_backup", details=f"MCP: Backup wiederhergestellt {b_path.name}", username="mcp-agent")
+            from services.sync import request_sync_background
+            request_sync_background("main")
+            return f"Backup '{b_path.name}' erfolgreich wiederhergestellt!"
+        except Exception as e:
+            return f"Fehler beim Wiederherstellen des Backups: {e}"
+
     # --- A31: Run Update ---
     @mcp_server.tool()
     def okf_run_update() -> str:

@@ -1,31 +1,105 @@
-<div class="space-y-6 max-w-2xl">
-    <!-- Backup Download Card -->
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.backup_download_title') }}</h2>
-        <p class="text-text-secondary text-sm mb-4">{{ _('settings.backup_download_desc') }}</p>
-        <a href="{{ base_path }}/settings/backup" class="inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors shadow-sm">
-            {{ _('settings.backup_download_btn') }}
-        </a>
+<div class="space-y-6 max-w-4xl">
+    <!-- Action Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Server Backup Creation Card -->
+        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm flex flex-col justify-between">
+            <div>
+                <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.backup_create_title') }}</h2>
+                <p class="text-text-secondary text-sm mb-4">{{ _('settings.backup_create_desc') }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+                <form action="{{ base_path }}/settings/backup/create" method="post" class="inline">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-sm cursor-pointer">
+                        {{ _('settings.backup_create_btn') }}
+                    </button>
+                </form>
+                <a href="{{ base_path }}/settings/backup" class="inline-flex items-center justify-center rounded-lg border border-border bg-bg-sunken hover:bg-surface px-4 py-2.5 text-sm font-semibold text-text no-underline transition-colors shadow-sm">
+                    {{ _('settings.backup_download_now_btn') }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Restore Upload Card -->
+        <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-1 text-warning">{{ _('settings.restore_title') }}</h2>
+            <p class="text-text-secondary text-sm mb-3">{{ _('settings.restore_desc') }}</p>
+            
+            <form action="{{ base_path }}/settings/restore" method="post" enctype="multipart/form-data" class="space-y-3" onsubmit="return confirm('{{ _('settings.restore_confirm') }}');">
+                <div>
+                    <input type="file" name="backup_file" id="backup_file" required accept=".tar.xz" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                </div>
+                <button type="submit" class="rounded-lg bg-warning hover:bg-warning/80 px-4 py-2 text-xs font-semibold text-black transition-colors shadow-sm cursor-pointer">
+                    {{ _('settings.restore_btn') }}
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Restore Upload Card -->
+    <!-- Server Backups List Table Card -->
     <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 class="text-lg font-semibold mb-1 text-warning">{{ _('settings.restore_title') }}</h2>
-        <p class="text-text-secondary text-sm mb-4">{{ _('settings.restore_desc') }}</p>
-        
-        <div class="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 mb-4 text-xs text-text-secondary">
-            {{ _('settings.restore_warning') }}
-        </div>
-        
-        <form action="{{ base_path }}/settings/restore" method="post" enctype="multipart/form-data" class="space-y-4" onsubmit="return confirm('{{ _('settings.restore_confirm') }}');">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
-                <label for="backup_file" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('settings.restore_file_label') }}</label>
-                <input type="file" name="backup_file" id="backup_file" required accept=".tar.xz" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+                <h2 class="text-lg font-semibold text-text">{{ _('settings.server_backups_list_title') }}</h2>
+                <p class="text-text-secondary text-xs">{{ _('settings.server_backups_list_desc') }}</p>
             </div>
-            <button type="submit" class="rounded-lg bg-warning hover:bg-warning/80 px-5 py-2.5 text-sm font-semibold text-black transition-colors shadow-sm">
-                {{ _('settings.restore_btn') }}
-            </button>
-        </form>
+            <span class="rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                {{ server_backups|length }} {{ _('settings.backups_count_label') }}
+            </span>
+        </div>
+
+        {% if server_backups %}
+        <div class="overflow-x-auto rounded-lg border border-border">
+            <table class="w-full text-left text-sm text-text border-collapse">
+                <thead class="bg-bg-sunken border-b border-border text-xs uppercase text-text-muted font-semibold">
+                    <tr>
+                        <th class="p-3">{{ _('settings.backup_table_filename') }}</th>
+                        <th class="p-3">{{ _('settings.backup_table_date') }}</th>
+                        <th class="p-3">{{ _('settings.backup_table_size') }}</th>
+                        <th class="p-3 text-right">{{ _('settings.backup_table_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border font-mono text-xs">
+                    {% for b in server_backups %}
+                    <tr class="hover:bg-bg-sunken/50 transition-colors">
+                        <td class="p-3 font-semibold text-primary truncate max-w-xs" title="{{ b.filename }}">
+                            📦 {{ b.filename }}
+                        </td>
+                        <td class="p-3 text-text-secondary whitespace-nowrap">
+                            {{ b.created_at_fmt }}
+                        </td>
+                        <td class="p-3 text-text-secondary whitespace-nowrap">
+                            {{ b.size_mb }} MB
+                        </td>
+                        <td class="p-3 text-right whitespace-nowrap space-x-1">
+                            <!-- Download -->
+                            <a href="{{ base_path }}/settings/backup/download/{{ b.filename }}" class="inline-flex items-center rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-sans text-text hover:bg-bg-sunken transition-colors no-underline">
+                                📥 {{ _('settings.backup_action_download') }}
+                            </a>
+                            
+                            <!-- Restore -->
+                            <form action="{{ base_path }}/settings/backup/restore/{{ b.filename }}" method="post" class="inline" onsubmit="return confirm('{{ _('settings.restore_server_confirm') }}');">
+                                <button type="submit" class="rounded-lg bg-warning/20 border border-warning/40 text-warning-text hover:bg-warning/30 px-2.5 py-1 text-xs font-sans font-medium transition-colors cursor-pointer">
+                                    🔄 {{ _('settings.backup_action_restore') }}
+                                </button>
+                            </form>
+
+                            <!-- Delete -->
+                            <form action="{{ base_path }}/settings/backup/delete/{{ b.filename }}" method="post" class="inline" onsubmit="return confirm('{{ _('settings.delete_backup_confirm') }}');">
+                                <button type="submit" class="rounded-lg bg-error/15 border border-error/30 text-error hover:bg-error/25 px-2.5 py-1 text-xs font-sans font-medium transition-colors cursor-pointer">
+                                    🗑️ {{ _('settings.backup_action_delete') }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="rounded-lg border border-dashed border-border p-8 text-center text-text-muted text-sm">
+            {{ _('settings.no_server_backups') }}
+        </div>
+        {% endif %}
     </div>
 
     <!-- System Secret Management Card -->
@@ -46,8 +120,8 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-                <button type="button" onclick="revealSystemSecret()" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">👁️ Anzeigen</button>
-                <button type="button" onclick="regenerateSystemSecret()" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors">🔄 Neu generieren</button>
+                <button type="button" onclick="revealSystemSecret()" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">👁️ Anzeigen</button>
+                <button type="button" onclick="regenerateSystemSecret()" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">🔄 Neu generieren</button>
             </div>
         </div>
     </div>

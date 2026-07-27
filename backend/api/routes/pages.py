@@ -1438,7 +1438,7 @@ async def settings_post(request: Request):
         log_action(action="settings_change", details=f"Audit-Konfiguration gespeichert: enabled={audit_enabled}, disabled={disabled}", username=user.get("username"), user_id=user.get("id"), request=request)
         config_success_msg = "Audit-Konfiguration gespeichert!"
     elif action == "generate_mcp_keys":
-        from core.config import save_app_config, MCP_TOOL_GROUPS
+        from core.config import save_app_config
         from core.storage import create_key, create_mcp_key
         
         user = get_current_user(request) or {}

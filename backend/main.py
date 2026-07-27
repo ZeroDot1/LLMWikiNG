@@ -282,6 +282,50 @@ def create_app() -> FastAPI:
         pass
 
     # ═════════════════════════════════════════════════════════════════════════
+    # ResponseGuardMiddleware – verhindert doppelte http.response.start
+    # ═════════════════════════════════════════════════════════════════════════
+    # Problem: Wenn waehrend eines SSE-Streams (MCP) ein Fehler auftritt,
+    # versucht Starlettes ServerErrorMiddleware eine neue Fehler-Antwort zu
+    # senden. Da der SSE-Stream aber bereits http.response.start gesendet
+    # hat, fuehrt ein zweiter Aufruf zu:
+    #   RuntimeError: Expected ASGI message 'http.response.body',
+    #                but got 'http.response.start'
+    # Loesung: Wir wrappen den send-Callable und unterdruecken das zweite
+    # http.response.start, wenn bereits eines gesendet wurde.
+
+    class _ResponseGuardMiddleware:
+        """ASGI-Middleware, die doppelte http.response.start verhindert."""
+
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            if scope["type"] != "http":
+                await self.app(scope, receive, send)
+                return
+
+            _response_started = False
+            _original_send = send
+
+            async def _guarded_send(message):
+                nonlocal _response_started
+                if message.get("type") == "http.response.start":
+                    if _response_started:
+                        # Zweites response.start unterdruecken
+                        print(
+                            "[ResponseGuard] Doppeltes http.response.start "
+                            f"fuer {scope.get('path', '?')} unterdrueckt.",
+                            flush=True,
+                        )
+                        return
+                    _response_started = True
+                await _original_send(message)
+
+            await self.app(scope, receive, _guarded_send)
+
+    app.add_middleware(_ResponseGuardMiddleware)
+
+    # ═════════════════════════════════════════════════════════════════════════
     # Fehlerseiten
     # ═════════════════════════════════════════════════════════════════════════
 
@@ -329,6 +373,15 @@ def create_app() -> FastAPI:
                 f.write(f"=== {datetime.datetime.now()} ===\n{tb}\n")
         except Exception as log_ex:
             print(f"Failed to write to error.log: {log_ex}", flush=True)
+
+        # MCP-SSE-Endpunkte: Bei laufendem SSE-Stream wurde bereits
+        # http.response.start gesendet. Eine zweite Antwort wuerde einen
+        # ASGI-Protokollfehler ausloesen. Wir antworten nur mit JSON.
+        if "/mcp/" in request.url.path:
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Interner Server-Fehler im MCP-Endpunkt"},
+            )
 
         if request.url.path.startswith(f"{BASE_PATH}/api/v1"):
             from fastapi.responses import JSONResponse

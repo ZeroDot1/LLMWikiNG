@@ -7,6 +7,16 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.12.41] - 2026-07-27
+
+### Fixed
+- **`UnboundLocalError: MCP_TOOL_GROUPS` in `settings_post`** (`backend/api/routes/pages.py`): Der `generate_mcp_keys`-Branch enthielt einen lokalen Import `from core.config import save_app_config, MCP_TOOL_GROUPS`, der Python veranlasste, `MCP_TOOL_GROUPS` als lokale Variable für die gesamte Funktion `settings_post` zu behandeln. Bei allen anderen Settings-Branches (z.B. SMTP-Save) war die Variable bei Erreichen der Zeile 1578 (`mcp_tool_groups=MCP_TOOL_GROUPS`) nie zugewiesen — resultierend in `UnboundLocalError`. Der lokale Import wurde entfernt; `MCP_TOOL_GROUPS` ist bereits auf Modulebene (Zeile 38) importiert.
+
+## [2.12.40] - 2026-07-27
+
+### Fixed
+- **ASGI Double-Response RuntimeError bei MCP SSE-Streaming** (`backend/main.py`): Wenn waehrend eines laufenden MCP-SSE-Streams ein Fehler auftrat, versuchte Starlettes `ServerErrorMiddleware` eine zweite HTTP-Antwort zu senden, obwohl der SSE-Stream bereits `http.response.start` gesendet hatte. Dies fuehrte zu `RuntimeError: Expected ASGI message 'http.response.body', but got 'http.response.start'` (4x im Errorlog bei MCP-Tool-Aufrufen). Neue `_ResponseGuardMiddleware` auf ASGI-Ebene, die das `send`-Callable wrapt und ein zweites `http.response.start` unterdrueckt. Zusätzlich liefert `server_error_handler` fuer MCP-Pfade eine JSON-Antwort statt HTML, um den ASGI-Workflow sauberer zu handhaben.
+
 ## [2.12.39] - 2026-07-27
 
 ### Fixed

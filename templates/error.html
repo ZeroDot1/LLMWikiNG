@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ _('error.500_title') }}{% endblock %}
+
+{% block content %}
+<div class="wiki-content max-w-xl mx-auto py-12 text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-danger-subtle text-danger mb-4">
+        <span class="text-3xl">⚠️</span>
+    </div>
+    {% if content %}
+        {{ content|safe }}
+    {% else %}
+        <h1 class="text-2xl font-bold text-text mb-2">{{ _('error.500_heading') }}</h1>
+        <p class="text-text-secondary text-sm mb-6">{{ _('error.500_detail') }}</p>
+    {% endif %}
+    <div class="mt-6">
+        <a href="{{ base_path }}/" class="rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold px-5 py-2.5 shadow-sm transition-colors inline-block no-underline">{{ _('error.404_home_link') }}</a>
+    </div>
+</div>
+{% endblock %}

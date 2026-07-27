@@ -63,8 +63,8 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 *   **📤 Export Management**: View all exported documents in the browser, read them rendered, or download them directly.
 *   **🔍 Search with Term Highlighting**: Lightning-fast BM25 search with a new **Cross-Wiki-Search** feature allowing you to search either a single specific wiki or all wikis at once (selecting "All Wikis" or `wiki=all` parameter). Shows colored highlights, displays matching wiki labels on the results, and supports arrow key navigation.
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
-*   **⚙️ Settings**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management**, **API-Key Management** (with secure **API-Key Recovery** after password verification), SMTP email configuration, health check, and update function.
-*   **🛡️ Audit Logging**: SQLite-based, per-category toggleable logging system recording all security actions (search, ingest, logins, API-keys, pages, wikis). Captures timestamps, usernames, IPs. Admins can search, filter by category/action, and configure logging globally or individually via the Settings tab. Replace logbuch entirely.
+*   **⚙️ Settings & Keys Management**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management**, **API-Key & Per-User MCP-Key Management** (with interactive permission editing for tool groups, allowed tools, active status, user assignments, and secure password-based recovery), **Server-Side Backups** (create `.tar.xz` server backups, restore, download, delete), **Interactive MCP Client Configurator** (build customized config snippets for Antigravity `agy`/IDE, OpenCode, and Hermes Agent), SMTP email configuration, health check, and update function.
+*   **🛡️ Audit Logging & Data Export**: SQLite-based, per-category toggleable logging system recording all security actions (search, ingest, logins, API-keys, MCP-keys, backups, pages, wikis). Captures timestamps, usernames, IPs. Admins can search, filter by category/action, and export logs to **JSON** or **CSV**. Replaces logbuch entirely.
 *   **🌗 Appearance**: The theme (Dark/Light) is changed exclusively in the settings (`/settings?tab=theme`) and persisted in `config.json`. Dark mode is the default and is loaded server-side — without a toggle in the sidebar.
 
 ### Starting the Web Interface:
@@ -181,6 +181,11 @@ curl -X POST \
 | `GET`  | `/api/v1/system/status` | API key (admin) |
 | `POST` | `/api/v1/system/sync` | API key (admin) |
 | `GET`  | `/api/v1/system/audit` | API key (admin) |
+| `GET`  | `/audit/export?fmt=json\|csv` | Session / API key (admin log export) |
+| `GET`  | `/api/v1/system/backups` | API key (admin) |
+| `POST` | `/api/v1/system/backups` | API key (admin backup create) |
+| `POST` | `/api/v1/system/backups/<filename>/restore` | API key (admin backup restore) |
+| `DELETE` | `/api/v1/system/backups/<filename>` | API key (admin backup delete) |
 | `GET`  | `/api/v1/system/update/check` | API key (admin) |
 | `POST` | `/api/v1/system/update/run` | API key (admin) |
 | `GET`  | `/api/v1/users` | API key (admin) |
@@ -189,10 +194,14 @@ curl -X POST \
 | `GET`  | `/api/v1/api-keys` | API key (admin) |
 | `POST` | `/api/v1/api-keys` | API key (admin) |
 | `DELETE` | `/api/v1/api-keys/<id>` | API key (admin) |
+| `GET`  | `/api/v1/mcp-keys` | API key (admin) |
+| `POST` | `/api/v1/mcp-keys` | API key (admin create per-user MCP key) |
+| `PUT`  | `/api/v1/mcp-keys/<id>` | API key (admin edit per-user MCP key) |
+| `DELETE` | `/api/v1/mcp-keys/<id>` | API key (admin revoke per-user MCP key) |
 | `POST` | `/wiki/<wiki>/api/ingest` | API key (direct ingest for a specific wiki) |
 | `POST` | `/wiki/<wiki>/api/sync` | API key (direct sync for a specific wiki) |
-| `GET`  | `/mcp/sse` | MCP API key (SSE-Kanal für KI-Agenten) |
-| `POST` | `/mcp/messages` | MCP API key (JSON-RPC Nachrichten-Kanal) |
+| `GET`  | `/mcp/sse` | MCP API key (SSE channel for AI agents) |
+| `POST` | `/mcp/messages` | MCP API key (JSON-RPC message channel) |
 
 Example:
 ```bash

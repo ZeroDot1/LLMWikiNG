@@ -96,6 +96,11 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System metrics &amp; traffic logs (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync all wiki indexes (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Retrieve audit logs – filterable by action, user, date range (Admin only)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/audit/export?fmt=json|csv</code></td><td class="p-2">Export audit logs in JSON or CSV format (Admin only)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/backups</code></td><td class="p-2">List server-side backup files (Admin only)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/backups</code></td><td class="p-2">Create server-side backup (Admin only)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/backups/&lt;file&gt;/restore</code></td><td class="p-2">Restore server-side backup (Admin only)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/system/backups/&lt;file&gt;</code></td><td class="p-2">Delete server-side backup (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/update/check</code></td><td class="p-2">Check if update is available (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/update/run</code></td><td class="p-2">Run system update (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">List users (Admin only)</td></tr>
@@ -104,9 +109,10 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">List API keys (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/api-keys</code></td><td class="p-2">Create API key (Admin only)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/api-keys/&lt;id&gt;</code></td><td class="p-2">Revoke API key (Admin only)</td></tr>
-          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">List MCP keys (Admin only)</td></tr>
-          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">Create MCP key with tool permissions (Admin only)</td></tr>
-          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">Revoke MCP key (Admin only)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">List Per-User MCP keys (Admin only)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">Create Per-User MCP key with tool permissions (Admin only)</td></tr>
+          <tr><td class="p-2"><code>PUT</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">Edit Per-User MCP key name, user, allowed tools or status (Admin only)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">Revoke Per-User MCP key (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/ingest</code></td><td class="p-2">Direct multi-wiki ingest endpoint (API key authorized)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/sync</code></td><td class="p-2">Direct index synchronisation (API key authorized)</td></tr>
           <tr class="bg-indigo-500/5"><td class="p-2"><code>GET</code></td><td class="p-2"><code>/mcp/sse</code></td><td class="p-2">MCP SSE channel for AI agents (MCP API key)</td></tr>

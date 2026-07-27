@@ -454,6 +454,20 @@ class TestDirectIngest:
         assert data["ok"] is True
         assert len(data["processed"]) > 0
 
+    def test_frontend_file_ingest(self, api_env, monkeypatch):
+        tmp_path, _, _, client = api_env
+        slug = _create_test_wiki(client, tmp_path, "ingest-frontend-file")
+        self._mock_subprocess(monkeypatch)
+        md_content = "Frontend Upload Content"
+        file_data = io.BytesIO(md_content.encode("utf-8"))
+        resp = client.post(
+            "/LLMWikiNG/ingest",
+            data={"type": "file", "wiki": slug},
+            files={"file": ("frontend-upload.md", file_data, "text/markdown")},
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+
     def test_ingest_nonexistent_wiki_returns_404(self, api_env, monkeypatch):
         _, admin_key, _, client = api_env
         self._mock_subprocess(monkeypatch)

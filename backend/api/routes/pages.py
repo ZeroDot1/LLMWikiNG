@@ -774,7 +774,7 @@ async def ingest_post(request: Request):
 
         elif ingest_type == "file":
             upload = form.get("file")
-            if not isinstance(upload, UploadFile) or not upload.filename:
+            if not upload or not getattr(upload, "filename", None):
                 raise ValueError("Keine Datei ausgewählt.")
             orig_filename = upload.filename
             safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", orig_filename)

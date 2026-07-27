@@ -65,7 +65,7 @@ The agent does this by calling **MCP tools** over an **SSE** (Server-Sent Events
 
 ## 3. Connect Antigravity `agy` (and Antigravity IDE)
 
-Both the `agy` CLI and the Antigravity IDE consume MCP servers from a configuration file. Use the **global** file `~/.gemini/antigravity-cli/settings.json` or a **workspace** file `.agents/mcp_config.json`.
+Both the `agy` CLI and the Antigravity IDE consume MCP servers from a configuration file. Use the **global** file `~/.gemini/config/mcp_config.json` (or workspace `.agents/mcp_config.json`).
 
 Add the following config block (replace `<host>:<port>` and the keys with your own):
 
@@ -75,6 +75,10 @@ Add the following config block (replace `<host>:<port>` and the keys with your o
     "llmwiking-okf": {
       "type": "sse",
       "url": "http://<host>:<port>/LLMWikiNG/mcp/sse",
+      "headers": {
+        "X-MCP-Key": "YOUR_MCP_KEY",
+        "X-API-Key": "YOUR_API_KEY"
+      },
       "env": {
         "X-MCP-Key": "YOUR_MCP_KEY",
         "X-API-Key": "YOUR_API_KEY"
@@ -84,12 +88,20 @@ Add the following config block (replace `<host>:<port>` and the keys with your o
 }
 ```
 
-After saving, the tools are available inside `agy`. Example session:
-```text
-$ agy
-> Ingest the URL https://example.com/whitepaper.html into the main wiki as a Reference page titled "Example Whitepaper".
-```
-`agy` will call `okf_ingest_text` (or `okf_process_pending` after dropping a raw file) and then `okf_system_sync`.
+### Wie du Remote-Slashcommands in `agy` nutzt:
+
+Sobald die Konfiguration gespeichert ist, werden alle **37 MCP Tools** und **37 Remote Slash-Commands** automatisch in `agy` geladen:
+
+1. **Intellisense / Autocomplete:** Tippe `/` in der `agy`-Interaktionszeile. `agy` zeigt dir das Autocomplete-Menü aller Remote-Commands an.
+2. **Direkte Ausführung:**
+   * `/wikis` ➜ Listet alle verfügbaren Wikis mit Statistiken auf.
+   * `/search <suchbegriff>` ➜ Startet eine Volltext- und Semantik-Suche.
+   * `/read <slug> [wiki]` ➜ Liest eine spezifische Wiki-Seite.
+   * `/write <slug> <titel> <inhalt>` ➜ Erstellt oder aktualisiert eine Wiki-Seite.
+   * `/ingest [wiki]` ➜ Verarbeitet alle ausstehenden Rohquellen im `raw/`-Ordner.
+   * `/status` ➜ Zeigt den Server- und DB-Status an.
+   * `/update` ➜ Prüft und führt System-Updates aus.
+3. **Natürliche Sprache:** Alternativ kannst du in `agy` einfach in natürlicher Sprache nach Wiki-Informationen fragen (z. B. *"Füge die Notiz X in das Wiki Hörspiele ein"*). `agy` ruft das passende MCP Tool im Hintergrund automatisch auf.
 
 ---
 

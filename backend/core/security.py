@@ -97,7 +97,7 @@ def encrypt_api_key(raw_key: str) -> str:
 def decrypt_api_key(encrypted_key: str) -> str | None:
     """Entschlüsselt den verschlüsselten API-Schlüssel."""
     try:
-        return _key_cipher.loads(encrypted_key)
+        return _key_cipher.loads(encrypted_key, max_age=None)
     except Exception:
         return None
 
@@ -130,7 +130,7 @@ def encrypt_mcp_key(raw_key: str) -> str:
 def decrypt_mcp_key(encrypted_key: str) -> str | None:
     """Entschlüsselt den verschlüsselten MCP-Key."""
     try:
-        return _key_cipher_mcp.loads(encrypted_key)
+        return _key_cipher_mcp.loads(encrypted_key, max_age=None)
     except Exception:
         return None
 

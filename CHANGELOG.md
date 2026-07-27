@@ -9,6 +9,16 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
 
+## [2.13.2] - 2026-07-27
+
+### Security & Persistenz
+- **Ausschließliche System-Secret Persistenz in `config.json`** (`backend/core/security.py`): Der kryptografische `secret_key` wird beim Erstellen des ersten Administrators in `config.json` gesichert und von dort exklusiv geladen. Bei Container-Neubauten bleiben alle API- & MCP-Keys uneingeschränkt entschlüsselbar.
+- **Deaktivierte Ablaufzeit beim Entschlüsseln** (`backend/core/security.py`): `decrypt_api_key` und `decrypt_mcp_key` nutzen `max_age=None`, sodass Schlüssel beim Anzeigen im WebUI-Adminbereich nicht zeitlich ablaufen.
+
+### Fixed & Improved
+- **Passwort-Entschlüsselung in Einstellungen → MCP** (`templates/settings/mcp.html`): Eingabetaste (Enter) für die Passwort-Entschlüsselung aktiviert, Backend-Fehlermeldungen werden gerendert und gefixtes Snippet-Rendering.
+- **HTML-Attribut-Escaping** (`templates/settings/wikis.html`): `escAttr`-Funktion korrigiert, um Syntaxfehler bei Single-Quotes in Inline-HTML-Events zu unterbinden.
+
 ## [2.13.1] - 2026-07-27
 
 ### Fixed

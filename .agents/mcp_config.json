@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "llmwiking-okf": {
-      "type": "http",
-      "url": "http://192.168.2.247:44419/LLMWikiNG/mcp",
+      "type": "sse",
+      "serverUrl": "http://192.168.2.247:44419/LLMWikiNG/mcp/sse",
       "headers": {
         "X-MCP-Key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
         "X-API-Key": "llmw_j8HuLNsrYx7gR2j7Q8kOdShBtjjhsLuG60nXhGsfMkA"

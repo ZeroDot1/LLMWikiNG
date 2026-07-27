@@ -176,6 +176,8 @@ try:
             "mit YAML-Frontmatter. Alle Dokumente sind menschenlesbar und "
             "maschineninterpretierbar."
         ),
+        stateless_http=True,
+        streamable_http_path="/",
         **kwargs
     )
     _MCP_AVAILABLE = True
@@ -2094,5 +2096,36 @@ def get_mcp_http_app():
     if _MCP_AVAILABLE and mcp_server is not None:
         return mcp_server.streamable_http_app()
     return None
+
+
+def get_mcp_combined_app():
+    """Kombinierte Starlette-App mit SSE + Streamable HTTP Transport.
+
+    Das SSE-App intern /sse und /messages/ als Routen hat, und das
+    HTTP-App /mcp als Route, fuehren getrennte Mounts zu doppelten
+    oder falschen Pfad-Praefixen (z.B. /mcp/mcp, /mcp/sse/sse).
+
+    Loesung: Beide Apps am selben Mount-Punkt (/mcp) kombinieren.
+    Dafuer wird streamable_http_path auf "/" gesetzt (per FastMCP-Konfig),
+    sodass die HTTP-Route am Root der kombinierten App liegt.
+    """
+    if not _MCP_AVAILABLE or mcp_server is None:
+        return None
+
+    from starlette.applications import Starlette
+    from starlette.routing import Route, Mount
+
+    http_app = mcp_server.streamable_http_app()
+    sse_app = mcp_server.sse_app()
+
+    # HTTP-App: Nur die Haupt-Route (Index 0) uebernehmen.
+    # Der SSE-Fallback (Index 1) wird ignoriert, weil wir ein dediziertes
+    # SSE-App verwenden.
+    http_routes = [http_app.routes[0]] if http_app.routes else []
+
+    # SSE-App: Alle Routen uebernehmen (/sse + /messages/)
+    sse_routes = list(sse_app.routes)
+
+    return Starlette(routes=http_routes + sse_routes)
 
 

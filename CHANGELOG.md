@@ -7,6 +7,12 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.9] - 2026-07-27
+
+### Fixed & Improved
+- **Kombinierter MCP App-Endpoint (`backend/api/routes/mcp.py` & `backend/main.py`)**: `get_mcp_combined_app()` führt Streamable HTTP (`/mcp`) und SSE (`/mcp/sse`) sauber unter dem selben Router zusammen. Behebt doppelte Pfad-Präfixe und Routing-Konflikte bei Gemini CLI und anderen MCP-Clients.
+- **Aktualisierung MCP Client-Konfiguration (`.agents/mcp_config.json`)**: Umstellung der MCP Server Konfiguration auf den SSE-Endpoint unter `/LLMWikiNG/mcp/sse`.
+
 ## [2.13.8] - 2026-07-27
 
 ### Added & Improved

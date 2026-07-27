@@ -94,7 +94,7 @@ def create_app() -> FastAPI:
     from core.config import ENABLE_MCP_SERVER, LLMWIKING_MCP_KEY
 
     if ENABLE_MCP_SERVER:
-        from api.routes.mcp import get_mcp_sse_app, get_mcp_http_app, _MCP_AVAILABLE
+        from api.routes.mcp import get_mcp_sse_app, get_mcp_http_app, get_mcp_combined_app, _MCP_AVAILABLE
 
         if _MCP_AVAILABLE:
             mcp_sse_app = get_mcp_sse_app()
@@ -241,12 +241,16 @@ def create_app() -> FastAPI:
                         await self.app(scope, receive, send)
 
                 app.add_middleware(McpApiKeyMiddleware)
-                # Streamable HTTP MCP Endpoint (fuer moderne HTTP-MCP-Clients wie Gemini CLI / plugins)
-                mcp_http_app = get_mcp_http_app()
-                if mcp_http_app is not None:
-                    app.mount(f"{BASE_PATH}/mcp", mcp_http_app, name="mcp")
-                    app.mount(f"{BASE_PATH}/mcp/sse", mcp_sse_app, name="mcp_sse")
+                # MCP-Endpoint: Kombinierte App mit SSE + Streamable HTTP
+                # Mount bei /LLMWikiNG/mcp:
+                #   /mcp          → Streamable HTTP (POST / GET mit Accept: application/json)
+                #   /mcp/sse      → SSE (GET mit Accept: text/event-stream)
+                #   /mcp/messages → SSE Message-Endpoint (POST)
+                mcp_combined = get_mcp_combined_app()
+                if mcp_combined is not None:
+                    app.mount(f"{BASE_PATH}/mcp", mcp_combined, name="mcp")
                 else:
+                    # Fallback: Nur SSE (kein HTTP-Support)
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
         else:
             # MCP-Paket nicht installiert – stille Deaktivierung

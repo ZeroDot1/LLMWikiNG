@@ -224,7 +224,7 @@
                     </td>
                     <td class="py-3.5 px-2 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button type="button" onclick="openMcpKeyEditModal('{{ key.id }}', '{{ key.name | escape }}', '{{ key.user_id }}', {{ key.allowed_tools | tojson }}, {{ 'true' if key.active else 'false' }})" class="text-primary hover:underline text-xs font-bold transition-colors">✏️ Bearbeiten</button>
+                            <button type="button" onclick="openMcpKeyEditModal('{{ key.id }}', '{{ key.name | escape }}', '{{ key.user_id }}', {{ key.allowed_tools | tojson }}, {{ 'true' if key.active else 'false' }})" class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('mcpkeys.edit') }}</button>
                             <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('mcpkeys.delete_confirm') }}');">
                                 <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('mcpkeys.delete') }}</button>
                             </form>
@@ -244,8 +244,8 @@
 <div id="mcpKeyEditModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-surface border border-border rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
         <button type="button" onclick="closeMcpKeyEditModal()" class="absolute top-4 right-4 text-text-muted hover:text-text font-bold text-lg">&times;</button>
-        <h3 class="text-lg font-bold text-primary mb-1">✏️ MCP-Schlüssel bearbeiten</h3>
-        <p class="text-xs text-text-secondary mb-4">Passe den Namen, den zugewiesenen Benutzer und die berechtigten Tool-Gruppen an.</p>
+        <h3 class="text-lg font-bold text-primary mb-1">✏️ {{ _('mcpkeys.edit_title') }}</h3>
+        <p class="text-xs text-text-secondary mb-4">{{ _('mcpkeys.edit_desc') }}</p>
         
         <form id="mcpKeyEditForm" action="" method="post" class="space-y-4">
             <div>
@@ -255,7 +255,7 @@
 
             {% if users %}
             <div>
-                <label for="edit_mcp_key_user_id" class="block text-xs font-semibold text-text-muted uppercase mb-1">Benutzer zuweisen</label>
+                <label for="edit_mcp_key_user_id" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('mcpkeys.table_user') }}</label>
                 <select id="edit_mcp_key_user_id" name="user_id" class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
                     {% for u in users %}
                     <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
@@ -266,7 +266,7 @@
 
             <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none">
                 <input type="checkbox" name="active" value="1" id="edit_mcp_key_active" class="rounded border-border text-primary focus:ring-primary">
-                <span class="font-medium text-text">Schlüssel Aktiv</span>
+                <span class="font-medium text-text">{{ _('mcpkeys.table_active') }}</span>
             </label>
 
             <div>
@@ -286,8 +286,8 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-3 border-t border-border">
-                <button type="button" onclick="closeMcpKeyEditModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold hover:bg-bg-sunken text-text transition-colors">Abbrechen</button>
-                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-xs font-semibold text-white transition-colors shadow-sm">Speichern</button>
+                <button type="button" onclick="closeMcpKeyEditModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold hover:bg-bg-sunken text-text transition-colors">{{ _('mcpkeys.cancel') }}</button>
+                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-xs font-semibold text-white transition-colors shadow-sm">{{ _('mcpkeys.save') }}</button>
             </div>
         </form>
     </div>

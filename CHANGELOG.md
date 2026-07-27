@@ -7,6 +7,27 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.12.39] - 2026-07-27
+
+### Fixed
+- **MCP-Tool-Berechtigungsprüfung (`_check_tool_permission`) ignorierte `__all__`** (`backend/api/routes/mcp.py`): Der Per-User-MCP-Key lieferte `allowed_tools: ["__all__"]`, aber die Prüfung verglich nur exakte Tool-Namen (`if tool_name in allowed`). `__all__` wird jetzt explizit als „alle Tools erlaubt" interpretiert. Zusätzlich werden Tool-Gruppen (z.B. `wiki`, `pages`, `mcp`) über `MCP_TOOL_GROUPS` aus `config.py` aufgelöst.
+- **Click-to-expand in Audit-Tabelle zeigte keine Details** (`static/js/audit.js`): Die Spaltennummern für das Ausklappen waren falsch (5 statt 6 nach Einfügen der Kategorie-Spalte). Korrigiert zu Spalte 6.
+- **Pruning-Jahr im Audit-Config war fest auf 2025** (`templates/audit.html`): Das Pruning-Input-Feld zeigte hardcoded `2025`. Wird jetzt dynamisch aus dem aktuellen Jahr generiert.
+- **CSS-Spezifitäts-Bug in Audit-Badges** (`static/css/audit.css`): Einige Badge-Styles hatten höhere Spezifität als nötig und überschrieben sich gegenseitig. Auf `!important`-freie, konsistente Selektoren umgestellt.
+- **MCP-Action-Labels in Audit-Tabelle waren nicht übersetzt** (`templates/audit.html`): MCP-bezogene Aktionen (z.B. `mcp_call_tool`) wurden roh statt übersetzt angezeigt. `action_group_mcp` Key in `lang/de.json` und `lang/en.json` ergänzt.
+
+### Changed
+- **Audit-Log-Service komplett überarbeitet** (`backend/services/audit.py`): `_db_initialized`-Cache verhindert wiederholte DB-Initialisierung. Neue Funktionen `get_all_logs()` (unbegrenzter Export) und `get_total_count()` für performante Gesamtanzahl.
+- **Audit-REST-API erweitert** (`backend/api/routes/api.py`): `GET /system/audit` liefert jetzt zusätzlich `category_stats` (Aufschlüsselung nach Kategorien) und `total_all`.
+- **Audit-Export ohne Limit** (`backend/api/routes/pages.py`): CSV-Export nutzt jetzt `get_all_logs()` statt `limit=10000`. Saubere CSV-Generierung mit Escape-Funktion.
+- **18 fehlende Aktionen im Audit-Filter** (`templates/audit.html`): MCP- und System-Aktionen wurden im Filter nicht angezeigt. Filterliste vollständig ergänzt.
+- **Audit-CSS mit 12+ neuen Badge-Styles** (`static/css/audit.css`): Neue Badge-Styles für MCP-Aktionen, System-Aktionen und Erweiterte-Optionen. `ring-hover` CSS für bessere Interaktivität.
+
+### Testing
+- **63 Audit-Tests (+35 neue)** (`tests/test_audit.py`): Tests für `get_all_logs()`, `get_total_count()`, CSV-Export, DB-Initialisierung-Cache, Kategorie-Statistik.
+- **`conftest.py` angepasst**: `_db_initialized` Reset via Monkeypatch für saubere Test-Isolation.
+- **Alle 480 Tests bestanden.**
+
 ## [2.12.38] - 2026-07-27
 
 ### Fixed

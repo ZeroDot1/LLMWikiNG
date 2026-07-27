@@ -308,7 +308,7 @@ After restarting OpenCode, type `/` in chat to see all 37 LLMWikiNG commands:
 | `/write` | Wiki-Seite erstellen |
 | `/search` | Volltextsuche |
 | `/status` | Systemstatus anzeigen |
-| `/update` | System-Update ausführen |
+| `/update` / `/update-lwk` | System-Update ausführen |
 | … | … und 31 weitere |
 
 > **Note:** OpenCode loads MCP Prompts (via `list_prompts`) as AI hints, but does **not** show them in the `/` chat autocomplete by default. Use the `.opencode/command/` files above for native `/`-support.
@@ -324,7 +324,7 @@ Add the configuration to your global MCP configuration file `~/.gemini/config/mc
     "llmwiking-okf": {
       "type": "sse",
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
-      "env": {
+      "headers": {
         "X-MCP-Key": "your_secure_mcp_key_2026",
         "X-API-Key": "your_database_api_key"
       }
@@ -475,7 +475,7 @@ MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, Op
 | Slash Command | Arguments | Maps to |
 |---------------|-----------|---------|
 | `/check-update` | — | `okf_check_update()` |
-| `/update` | — | `okf_check_update()` + `okf_run_update()` |
+| `/update`, `/update-lwk`, `/updatelwk` | — | `okf_check_update()` + `okf_run_update()` |
 
 
 ### 📄 OKF v0.1 Document Format

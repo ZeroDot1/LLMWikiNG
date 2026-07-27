@@ -78,10 +78,6 @@ Add the following config block (replace `<host>:<port>` and the keys with your o
       "headers": {
         "X-MCP-Key": "YOUR_MCP_KEY",
         "X-API-Key": "YOUR_API_KEY"
-      },
-      "env": {
-        "X-MCP-Key": "YOUR_MCP_KEY",
-        "X-API-Key": "YOUR_API_KEY"
       }
     }
   }
@@ -281,9 +277,9 @@ Each entry shows the tool, what it does, and a **copy-paste prompt** you can giv
     > "Restore the backup 'backup_2026.tar.xz'."
 
 ### Updates
-*   **`okf_check_update`** — Check GitHub for a newer version.
+*   **`okf_check_update`** — Check GitHub for a newer version (Slash-Command: `/check-update`).
     > "Is there an update available?"
-*   **`okf_run_update`** — Run the Git-based system update.
+*   **`okf_run_update`** — Run the Git-based system update (Slash-Command: `/update`, `/update-lwk` or `/updatelwk`).
     > "Run the system update."
 *   **`okf_run_update_stream`** — Run update with live progress stream output.
     > "Run the system update with live streaming logs."

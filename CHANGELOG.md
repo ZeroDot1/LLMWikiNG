@@ -43,7 +43,8 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.13.0] - 2026-07-27
 
 ### Added
-- **Vollständige MCP-Prompts (37 Slash-Commands)** (`backend/api/routes/mcp.py`): Jedes der 37 MCP-Tools verfügt nun über einen entsprechenden `@mcp_server.prompt` Slash-Command (`/update`, `/ingest`, `/backup`, `/search`, `/status`, `/lint`, `/read`, `/sync`, `/wikis`, `/pages`, `/write`, `/users`, `/api-keys`, `/backups`, etc.) für AGY, OpenCode, Cursor und Claude Code.
+- **Vollständige MCP-Prompts (37 Slash-Commands)** (`backend/api/routes/mcp.py`): Jedes der 37 MCP-Tools verfügt nun über einen entsprechenden `@mcp_server.prompt` Slash-Command (`/update`, `/update-lwk`, `/updatelwk`, `/ingest`, `/backup`, `/search`, `/status`, `/lint`, `/read`, `/sync`, `/wikis`, `/pages`, `/write`, `/users`, `/api-keys`, `/backups`, etc.) für AGY, OpenCode, Cursor und Claude Code.
+- **MCP SSE Configuration Fix**: Standard-Header (`headers` statt `env`) in MCP-Clients für SSE-Verbindungen (u.a. `llmwiking-okf`) korrigiert.
 - **MCP Tool Explorer** (`templates/settings/mcp.html`): Neue WebUI-Komponente unter Einstellungen → MCP zeigt alle 37 Slash-Commands in 9 Kategorien sowie ein kollabierbares Akkordeon aller 37 Tools.
 - **Streaming Update Tool** (`okf_run_update_stream` in `mcp.py`): Neue Generator-basierte Tool-Variante mit Live-Log-Ausgabe während lang laufender Systemupdates.
 - **Container-Rebuild-Warnung in WebUI** (`templates/settings/update.html`, `de.json`, `en.json`): Hinweis-Banner informiert den Benutzer, dass bei geänderten Abhängigkeiten ein Container-Rebuild erforderlich sein kann.

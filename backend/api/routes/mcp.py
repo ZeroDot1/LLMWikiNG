@@ -49,7 +49,7 @@ Verfuegbare MCP-Prompts (37 Slash-Commands):
   Benutzer          : /users /user-create /user-delete
   API-/MCP-Keys     : /api-keys /api-key-create /api-key-delete /mcp-keys /mcp-key-create /mcp-key-delete
   Backups           : /backups /backup /restore
-  Update            : /check-update /update
+  Update            : /check-update /update /update-lwk /updatelwk
 """
 
 from __future__ import annotations
@@ -1971,8 +1971,10 @@ if _MCP_AVAILABLE and mcp_server is not None:
             )))]
 
         @mcp_server.prompt(name="update", description="Fuehrt ein System-Update aus (update.sh).")
+        @mcp_server.prompt(name="update-lwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
+        @mcp_server.prompt(name="updatelwk", description="Fuehrt ein LLMWikiNG System-Update aus (update.sh).")
         async def prompt_update() -> list[PromptMessage]:
-            """Slash-Command: /update"""
+            """Slash-Command: /update /update-lwk /updatelwk"""
             return [PromptMessage(role="user", content=TextContent(type="text", text=(
                 "Bitte fuehre ein LLMWikiNG-System-Update durch:\n"
                 "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"

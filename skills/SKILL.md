@@ -398,7 +398,8 @@ Füge die MCP-Konfiguration in `~/.gemini/antigravity-cli/settings.json` (global
 {
   "mcpServers": {
     "llmwiki-okf": {
-      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "type": "http",
+      "url": "http://localhost:8080/LLMWikiNG/mcp",
       "headers": {
         "X-MCP-Key": "dein_per_user_mcp_key",
         "X-API-Key": "dein_api_key"

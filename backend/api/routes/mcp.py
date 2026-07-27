@@ -1995,9 +1995,9 @@ def get_mcp_sse_app():
 
 
 def get_mcp_http_app():
-    """Gibt die Starlette SSE-App (oder Streamable HTTP App als Fallback) des MCP-Servers zurück."""
+    """Gibt die Streamable HTTP App (für Streamable HTTP MCP Clients) des MCP-Servers zurück."""
     if _MCP_AVAILABLE and mcp_server is not None:
-        return mcp_server.sse_app()
+        return mcp_server.streamable_http_app()
     return None
 
 

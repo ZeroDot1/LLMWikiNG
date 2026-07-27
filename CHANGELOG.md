@@ -10,7 +10,8 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.13.5] - 2026-07-27
 
 ### Fixed
-- **MCP Server SSE Route Optimization (`backend/api/routes/mcp.py`)**: `get_mcp_http_app()` gibt nun stets die Starlette `sse_app()` zurück, damit SSE-basierte MCP-Clients (wie AGY, Cursor oder Claude Code) die `/LLMWikiNG/mcp/sse`-Schnittstelle zuverlässig und ohne 404-Fehler erreichen können.
+- **MCP Server Streamable HTTP & SSE Route Optimization (`backend/api/routes/mcp.py`)**: `get_mcp_http_app()` gibt nun `mcp_server.streamable_http_app()` unter `/LLMWikiNG/mcp` zurück, um Streamable-HTTP-basierte MCP-Clients (wie Antigravity AGY CLI) ohne `Method Not Allowed` (405) beim Initialisieren zu bedienen.
+- **MCP-Konfiguration & Dokumentation**: Dokumentation (`README.md`, WebUI-Templates `docs.html`, `docs_de.html`, `settings/mcp.html`, Skill-Dokumente) und Konfigurationsvorlagen (`.agents/mcp_config.json`, `~/.gemini/config/mcp_config.json`) für AGY auf den Streamable HTTP Endpunkt (`type: "http"`, `url: ".../LLMWikiNG/mcp"`) aktualisiert.
 
 ## [2.13.4] - 2026-07-27
 

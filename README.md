@@ -201,7 +201,8 @@ curl -X POST \
 | `POST` | `/wiki/<wiki>/api/ingest` | API key (direct ingest for a specific wiki) |
 | `POST` | `/wiki/<wiki>/api/sync` | API key (direct sync for a specific wiki) |
 | `GET`  | `/mcp/sse` | MCP API key (SSE channel for AI agents) |
-| `POST` | `/mcp/messages` | MCP API key (JSON-RPC message channel) |
+| `POST` | `/mcp/messages` | MCP API key (JSON-RPC SSE message channel) |
+| `POST` | `/mcp` | MCP API key (Streamable HTTP JSON-RPC channel) |
 
 Example:
 ```bash
@@ -250,6 +251,7 @@ LLMWIKING_MCP_KEY=your_secure_mcp_key_2026
 
 Restart the application. The server now exposes two endpoints:
 - **SSE Channel:** `http://localhost:8080/LLMWikiNG/mcp/sse`
+- **Streamable HTTP Endpoint:** `http://localhost:8080/LLMWikiNG/mcp`
 - **Message Channel:** `http://localhost:8080/LLMWikiNG/mcp/messages`
 
 ### 💻 Client Integration (Cursor, OpenCode & Antigravity `agy`)
@@ -322,8 +324,8 @@ Add the configuration to your global MCP configuration file `~/.gemini/config/mc
 {
   "mcpServers": {
     "llmwiking-okf": {
-      "type": "sse",
-      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "type": "http",
+      "url": "http://localhost:8080/LLMWikiNG/mcp",
       "headers": {
         "X-MCP-Key": "your_secure_mcp_key_2026",
         "X-API-Key": "your_database_api_key"
@@ -340,7 +342,7 @@ The configured tools will then be automatically available to the agent inside `a
 #### 💬 Copy-Paste AI Configuration Prompt
 You can copy and paste the following instruction directly into your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to tell it to configure itself:
 ```text
-Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.
+Please configure yourself to connect to the LLMWikiNG MCP server. The server uses Streamable HTTP at URL: http://localhost:8080/LLMWikiNG/mcp (or SSE at http://localhost:8080/LLMWikiNG/mcp/sse). You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file with type 'http' and URL 'http://localhost:8080/LLMWikiNG/mcp'.
 ```
 
 ### 📋 Available MCP Tools (37 Tools)

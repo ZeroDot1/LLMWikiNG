@@ -53,7 +53,7 @@
         {% include "settings/users.html" %}
     </div>
 
-    <!-- API Keys Section -->
+    <!-- Keys Section -->
     <div id="tab-apikeys" class="settings-tab-content hidden">
         {% include "settings/apikeys.html" %}
     </div>
@@ -79,11 +79,11 @@
     </div>
 </div>
 
-<!-- Modal für Passwortabfrage zum Anzeigen von API-Keys -->
+<!-- Modal für Passwortabfrage zum Anzeigen von Schlüsseln -->
 <div id="revealModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black/60 backdrop-blur-sm">
     <div class="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl animate-fade-in">
         <h3 class="text-lg font-bold mb-2 text-text">Sicherheitsüberprüfung</h3>
-        <p class="text-xs text-text-secondary mb-4">Bitte gib dein Passwort ein, um den API-Schlüssel <strong id="revealModalKeyName" class="text-text"></strong> anzuzeigen:</p>
+        <p class="text-xs text-text-secondary mb-4">Bitte gib dein Passwort ein, um den Schlüssel <strong id="revealModalKeyName" class="text-text"></strong> anzuzeigen:</p>
         
         <form id="revealForm" onsubmit="submitRevealKey(event)" class="space-y-4">
             <input type="hidden" id="revealModalKeyId">
@@ -371,7 +371,7 @@ function regenerateSystemSecret() {
     return;
   }
 
-  if (!confirm("WARNUNG: Wenn du das System-Geheimnis neu generierst, werden alle zuvor erstellten API-Keys ungültig und laufende Sessions beendet. Möchtest du wirklich fortfahren?")) {
+  if (!confirm("WARNUNG: Wenn du das System-Geheimnis neu generierst, werden alle zuvor erstellten Schlüssel ungültig und laufende Sessions beendet. Möchtest du wirklich fortfahren?")) {
     return;
   }
 

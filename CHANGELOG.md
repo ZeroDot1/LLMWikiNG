@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Tab-Bezeichnung „API-Keys" in „Keys" umbenannt** (`templates/settings.html`, `lang/de.json`, `lang/en.json`): Der Settings-Tab heißt nun „Keys" statt „API-Keys". Alle zugehörigen Übersetzungsschlüssel (`settings.tab_apikeys`, `apikeys.title`, `apikeys.create_heading`, `apikeys.raw_key`, `apikeys.no_keys`) wurden angepasst.
+- **System-Geheimnis (LLMWIKI_SECRET) von Backup-Tab in Keys-Tab verschoben** (`templates/settings/backup.html`, `templates/settings/apikeys.html`): Die Verwaltung des kryptografischen System-Geheimnisses (Anzeigen, Neu generieren) befindet sich nun im Keys-Tab statt im Backup-Tab — dort wo sie thematisch hingehört, in unmittelbarer Nähe zur API-Key-Verwaltung.
+- **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
+- **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
+
 ## [2.12.22] - 2026-07-27
 
 ### Added

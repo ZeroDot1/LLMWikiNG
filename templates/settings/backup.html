@@ -101,28 +101,4 @@
         </div>
         {% endif %}
     </div>
-
-    <!-- System Secret Management Card -->
-    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 class="text-lg font-semibold mb-1 text-error">🔐 System-Geheimnis (LLMWIKI_SECRET)</h2>
-        <p class="text-text-secondary text-sm mb-4">Verwalte das zentrale kryptografische Geheimnis zur Ver- und Entschlüsselung von API-Schlüsseln und Sessions.</p>
-        
-        <div class="space-y-4">
-            <div>
-                <label for="secretPassword" class="block text-xs font-semibold text-text-muted uppercase mb-1">Passwort bestätigen</label>
-                <input type="password" id="secretPassword" class="w-full max-w-md rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="Passwort des angemeldeten Administrators">
-                <p id="secretError" class="text-error text-xs mt-1 hidden"></p>
-                <p id="secretSuccess" class="text-success text-xs mt-1 hidden"></p>
-            </div>
-
-            <div id="secretRevealContainer" class="rounded-lg bg-bg-sunken p-3 border border-border font-mono text-xs text-text break-all hidden select-all">
-                <!-- Entschlüsseltes System-Secret wird hier angezeigt -->
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-                <button type="button" onclick="revealSystemSecret()" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">👁️ Anzeigen</button>
-                <button type="button" onclick="regenerateSystemSecret()" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">🔄 Neu generieren</button>
-            </div>
-        </div>
-    </div>
 </div>

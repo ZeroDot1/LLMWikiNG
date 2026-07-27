@@ -22,9 +22,6 @@
 #
 set -uo pipefail   # kein 'set -e': eine fehlerhafte Aktion soll nicht das Skript toeten
 
-# ----------------------------------------------------------------------------
-# Konfiguration / Farben
-# ----------------------------------------------------------------------------
 COMPOSE_DIR="${COMPOSE_DIR:-$PWD}"
 EXPORT_DIR="${EXPORT_DIR:-$COMPOSE_DIR/docker-exports}"
 
@@ -39,11 +36,6 @@ check_deps() {
     docker info >/dev/null 2>&1 || die "Docker-Daemon laeuft nicht (sudo? dockerd?)."
 }
 
-# ----------------------------------------------------------------------------
-# Generisches Nummernmenue
-#   menu "Titel" "Option1" "Option2" ...
-#   gibt die gewaehlte Optionszeile zurueck, bei Abbruch (0/ungueltig) LEER.
-# ----------------------------------------------------------------------------
 # WICHTIG: Das Menue wird nach STDERR ausgegeben (Anzeige), nur die gewaehlte
 # Option geht nach STDOUT (Rueckgabewert). Sonst faengt $(menu ...) Titel+Optionen
 # mit ein und der case-Vergleich im Aufrufer schlaegt fehl -> Endlosschleife.
@@ -66,7 +58,6 @@ menu() {
     fi
 }
 
-# Befehl ausfuehren und Ergebnis zeigen
 run_cmd() {
     local desc="$1"; shift
     clear
@@ -76,9 +67,6 @@ run_cmd() {
     echo; pause
 }
 
-# ----------------------------------------------------------------------------
-# compose-Datei erkennen / auswaehlen
-# ----------------------------------------------------------------------------
 COMPOSE_FILE=""
 
 select_compose_file() {
@@ -119,7 +107,6 @@ select_compose_file() {
     return 1
 }
 
-# Compose-Befehl im Projektverzeichnis ausfuehren (Subshell -> CWD unveraendert)
 compose_run() {
     local file="$1"; shift
     local dir; dir="$(dirname "$file")"
@@ -127,7 +114,6 @@ compose_run() {
     ( cd "$dir" && docker compose -f "$base" "$@" )
 }
 
-# Images eines Compose-Projekts ermitteln (repo:tag)
 compose_images() {
     compose_run "$1" config --format yaml 2>/dev/null \
         | grep -E '^[[:space:]]*image:' \
@@ -136,9 +122,6 @@ compose_images() {
         | sort -u
 }
 
-# ----------------------------------------------------------------------------
-# compose-Aktionen
-# ----------------------------------------------------------------------------
 compose_actions() {
     [ -z "$COMPOSE_FILE" ] && { select_compose_file || return; }
     [ -z "$COMPOSE_FILE" ] && return
@@ -171,14 +154,10 @@ compose_actions() {
     done
 }
 
-# ----------------------------------------------------------------------------
-# Image exportieren
-# ----------------------------------------------------------------------------
 do_export() {
     local img_list=("$@")
     [ "${#img_list[@]}" -eq 0 ] && { echo "Keine Images zum Export."; sleep 1; return; }
 
-    # Vorab pruefen, welche Images lokal existieren
     local valid=() missing=() img
     for img in "${img_list[@]}"; do
         if docker image inspect "$img" >/dev/null 2>&1; then valid+=("$img"); else missing+=("$img"); fi
@@ -193,7 +172,6 @@ do_export() {
     fi
     img_list=("${valid[@]}")
 
-    # Kompression waehlen
     local comp
     comp="$(menu "Kompressionsverfahren waehlen" \
         "gzip  (.tar.gz)  - schnell, gute Kompatibilitaet" \
@@ -213,7 +191,6 @@ do_export() {
         *)     return ;;
     esac
 
-    # Dateiname
     local default_name
     if [ "${#img_list[@]}" -eq 1 ]; then
         default_name="$(echo "${img_list[0]}" | tr '/:' '__')"
@@ -304,9 +281,6 @@ export_menu() {
     done
 }
 
-# ----------------------------------------------------------------------------
-# Image importieren
-# ----------------------------------------------------------------------------
 import_image() {
     mkdir -p "$EXPORT_DIR"
     local files=()
@@ -337,9 +311,6 @@ import_image() {
     fi
 }
 
-# ----------------------------------------------------------------------------
-# System-Pflege: prune
-# ----------------------------------------------------------------------------
 prune_menu() {
     while true; do
         local p
@@ -385,9 +356,6 @@ prune_menu() {
     done
 }
 
-# ----------------------------------------------------------------------------
-# Container auflisten + Container samt Volumes loeschen
-# ----------------------------------------------------------------------------
 container_menu() {
     while true; do
         local m
@@ -417,7 +385,6 @@ container_menu() {
                 ;;
 
             remove)
-                # Container auflisten (ID, Name, Status)
                 local ids=() names=() statuses=()
                 while IFS=$'\t' read -r cid cname cstatus; do
                     [ -z "$cid" ] && continue
@@ -452,19 +419,16 @@ container_menu() {
                     echo "Ungueltige Auswahl."; sleep 1; continue
                 fi
 
-                # Zusammenfassung + Volumes der gewaehlten Container sammeln
                 local sel_ids=() sel_names=() vol_names=()
                 echo; echo -e "${BOLD}Folgende Container werden GELoescht:${NC}"
                 for i in "${sel_idx[@]}"; do
                     echo -e "  - ${names[$i]} (${ids[$i]})"
                     sel_ids+=("${ids[$i]}"); sel_names+=("${names[$i]}")
-                    # Volumes dieses Containers (Mounts vom Typ volume)
                     while IFS= read -r v; do
                         [ -n "$v" ] && vol_names+=("$v")
                     done < <(docker inspect -f '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' "${ids[$i]}" 2>/dev/null)
                 done
 
-                # Duplikate aus Volumes entfernen
                 if [ "${#vol_names[@]}" -gt 0 ]; then
                     mapfile -t vol_names < <(printf '%s\n' "${vol_names[@]}" | sort -u)
                     echo; echo -e "${YEL}Zugehoerige Volumes (werden ebenfalls geloescht):${NC}"
@@ -477,7 +441,6 @@ container_menu() {
                     echo "Abgebrochen."; sleep 1; continue
                 fi
 
-                # Container stoppen (falls laufend) + entfernen inkl. anonymen Volumes
                 clear
                 hr; echo -e "  ${BOLD}Container + Volumes loeschen${NC}"; hr; echo
                 if docker rm -f -v "${sel_ids[@]}"; then
@@ -485,7 +448,6 @@ container_menu() {
                 else
                     echo -e "${RED}>>> Fehler beim Entfernen der Container.${NC}"
                 fi
-                # Benannte Volumes explizit loeschen (docker rm -v loescht nur anonyme)
                 if [ "${#vol_names[@]}" -gt 0 ]; then
                     echo; echo "Loesche benannte Volumes:"
                     for v in "${vol_names[@]}"; do
@@ -504,9 +466,6 @@ container_menu() {
     done
 }
 
-# ----------------------------------------------------------------------------
-# Hauptmenue
-# ----------------------------------------------------------------------------
 main() {
     check_deps
     mkdir -p "$EXPORT_DIR"

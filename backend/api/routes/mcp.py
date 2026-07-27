@@ -78,12 +78,7 @@ from services.graph import build_graph_data
 
 import frontmatter
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MCP Tool-Berechtigungskontext
-# ═══════════════════════════════════════════════════════════════════════════════
-
 # Wird von der McpApiKeyMiddleware in main.py gesetzt.
-# Enthaelt die erlaubten Tool-IDs fuer den aktuellen MCP-Key.
 # Leer = alle Tools erlaubt (Legacy-Key oder Admin).
 mcp_allowed_tools_ctx: contextvars.ContextVar[list[str]] = contextvars.ContextVar(
     "mcp_allowed_tools", default=[]
@@ -98,9 +93,9 @@ def _check_tool_permission(tool_name: str) -> str | None:
     """
     allowed = mcp_allowed_tools_ctx.get()
     if not allowed:
-        return None  # Leer = alles erlaubt (Legacy/Full-Access)
+        return None
     if "__all__" in allowed:
-        return None  # Expliziter "alles erlaubt"-Marker
+        return None
     # Tool-Gruppen auflösen: z.B. "wiki_read" → okf_list_wikis, okf_read_concept, ...
     from core.config import MCP_TOOL_GROUPS
     resolved = set()
@@ -130,10 +125,6 @@ def _require_tool(tool_name: str):
     return decorator
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FastMCP-Server Initialisierung
-# ═══════════════════════════════════════════════════════════════════════════════
-
 try:
     from mcp.server.fastmcp import FastMCP
     
@@ -162,10 +153,6 @@ except ImportError:
     _MCP_AVAILABLE = False
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Hilfsfunktionen
-# ═══════════════════════════════════════════════════════════════════════════════
-
 def _ensure_wiki_exists(wiki: str) -> str | None:
     """Prueft ob ein Wiki existiert. Gibt Fehlermeldung zurueck oder None."""
     slug = slugify_wiki(wiki)
@@ -185,13 +172,8 @@ def _format_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# A. Wiki-Verwaltung (4 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 if _MCP_AVAILABLE:
 
-    # --- A1: List Wikis ---
     @mcp_server.tool()
     @_require_tool("okf_list_wikis")
     def okf_list_wikis() -> str:
@@ -213,7 +195,6 @@ if _MCP_AVAILABLE:
             )
         return "\n".join(lines)
 
-    # --- A2: Create Wiki ---
     @mcp_server.tool()
     @_require_tool("okf_create_wiki")
     def okf_create_wiki(
@@ -237,7 +218,6 @@ if _MCP_AVAILABLE:
             slug = slugify_wiki(slug)
 
         if not slug or slug == "main":
-            # main-Verzeichnis pruefen
             root = wiki_path("main")
         else:
             root = wiki_path(slug)
@@ -257,7 +237,6 @@ if _MCP_AVAILABLE:
         try:
             root.mkdir(parents=True, exist_ok=True)
             save_wiki_meta(slug, name, description)
-            # Index.md erstellen
             index_content = f"""---
 type: System
 title: "Index"
@@ -284,7 +263,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Erstellen des Wikis: {e}"
 
-    # --- A3: Update Wiki ---
     @mcp_server.tool()
     @_require_tool("okf_update_wiki")
     def okf_update_wiki(
@@ -309,7 +287,6 @@ Willkommen im Wiki **{name}**.
         if not root.exists():
             return f"Wiki '{wiki}' nicht gefunden."
 
-        # Metadaten aus wiki.json lesen
         meta_file = root / "wiki.json"
         current_meta = {}
         if meta_file.exists():
@@ -344,7 +321,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Aktualisieren: {e}"
 
-    # --- A4: Delete Wiki ---
     @mcp_server.tool()
     @_require_tool("okf_delete_wiki")
     def okf_delete_wiki(wiki: str) -> str:
@@ -379,7 +355,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
 
-    # --- A5: List Pages ---
     @mcp_server.tool()
     @_require_tool("okf_list_pages")
     def okf_list_pages(
@@ -425,7 +400,6 @@ Willkommen im Wiki **{name}**.
             )
         return "\n".join(lines)
 
-    # --- A6: Read Concept ---
     @mcp_server.tool()
     @_require_tool("okf_read_concept")
     def okf_read_concept(slug: str, wiki: str = "main") -> str:
@@ -465,9 +439,7 @@ Willkommen im Wiki **{name}**.
                     lines.append(f"- ... und {len(all_pages) - 10} weitere Seiten.")
             return "\n".join(lines)
         content = data.get("content", "")
-        # Frontmatter parsen fuer saubere Ausgabe
         post = frontmatter.loads(content)
-        # Strukturierte Ausgabe
         lines = [f"# OKF-Concept: {raw_slug}\n"]
         lines.append("## Metadaten (YAML-Frontmatter)\n")
         for key in [
@@ -480,7 +452,6 @@ Willkommen im Wiki **{name}**.
         lines.append("")
         lines.append("## Inhalt (Markdown)\n")
         lines.append(post.content.strip())
-        # Verlinkungen
         links = extract_links_from_content(content)
         if links:
             lines.append("\n## Verknuepfte Seiten\n")
@@ -488,7 +459,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- [{link}](./{link}.md)")
         return "\n".join(lines)
 
-    # --- A7: Write Concept ---
     @mcp_server.tool()
     @_require_tool("okf_write_concept")
     def okf_write_concept(
@@ -527,10 +497,8 @@ Willkommen im Wiki **{name}**.
         raw_slug = re.sub(r"\.md$", "", slug)
         filepath = root / f"{raw_slug}.md"
 
-        # Pruefe ob Seite bereits existiert
         existed = filepath.exists()
 
-        # OKF v0.1 Frontmatter erstellen
         now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         post = frontmatter.Post(
             content=f"\n# {title}\n\n{content}",
@@ -544,10 +512,8 @@ Willkommen im Wiki **{name}**.
         )
         okf_content = frontmatter.dumps(post)
 
-        # Schreibe die Datei
         filepath.write_text(okf_content, encoding="utf-8")
 
-        # OKF-Log aktualisieren
         action = "update" if existed else "create"
         try:
             append_okf_log(
@@ -582,7 +548,6 @@ Willkommen im Wiki **{name}**.
             f"OKF v0.1 konform: Ja"
         )
 
-    # --- A8: Delete Page ---
     @mcp_server.tool()
     @_require_tool("okf_delete_page")
     def okf_delete_page(slug: str, wiki: str = "main") -> str:
@@ -637,7 +602,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
 
-    # --- A9: Export Page ---
     @mcp_server.tool()
     @_require_tool("okf_export_page")
     def okf_export_page(slug: str, wiki: str = "main") -> str:
@@ -668,7 +632,6 @@ Willkommen im Wiki **{name}**.
             f"Ziel: output_docs/{wiki_slug}__{raw_slug}.md"
         )
 
-    # --- A10: List Pending ---
     @mcp_server.tool()
     @_require_tool("okf_list_pending")
     def okf_list_pending(wiki: str = "main") -> str:
@@ -691,7 +654,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- `{name}` ({_format_size(size)})")
         return "\n".join(lines)
 
-    # --- A11: Process Pending ---
     @mcp_server.tool()
     @_require_tool("okf_process_pending")
     def okf_process_pending(wiki: str = "main") -> str:
@@ -760,7 +722,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- {e}")
         return "\n".join(lines)
 
-    # --- A12: Ingest Text ---
     @mcp_server.tool()
     @_require_tool("okf_ingest_text")
     def okf_ingest_text(
@@ -830,7 +791,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Ingest: {e}"
 
-    # --- A13: Search ---
     @mcp_server.tool()
     @_require_tool("okf_search")
     def okf_search(query: str, wiki: str = "main") -> str:
@@ -858,7 +818,6 @@ Willkommen im Wiki **{name}**.
             )
         return "\n".join(lines)
 
-    # --- A14: Wiki Stats ---
     @mcp_server.tool()
     @_require_tool("okf_wiki_stats")
     def okf_wiki_stats(wiki: str = "main") -> str:
@@ -891,7 +850,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- `{t}`: {count}")
         return "\n".join(lines)
 
-    # --- A15: Graph ---
     @mcp_server.tool()
     @_require_tool("okf_graph")
     def okf_graph(wiki: str = "main") -> str:
@@ -927,7 +885,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- {e.get('source', '?')} → {e.get('target', '?')}")
         return "\n".join(lines)
 
-    # --- A16: Lint ---
     @mcp_server.tool()
     @_require_tool("okf_lint")
     def okf_lint(wiki: str = "main") -> str:
@@ -1022,7 +979,6 @@ Willkommen im Wiki **{name}**.
 
         return "\n".join(lines).strip()
 
-    # --- A17: Read Raw ---
     @mcp_server.tool()
     @_require_tool("okf_read_raw")
     def okf_read_raw(filename: str) -> str:
@@ -1050,7 +1006,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Lesen: {e}"
 
-    # --- A18: List Raw ---
     @mcp_server.tool()
     @_require_tool("okf_list_raw")
     def okf_list_raw() -> str:
@@ -1071,7 +1026,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- `{f.name}` ({_format_size(size)})")
         return "\n".join(lines)
 
-    # --- A19: System Status ---
     @mcp_server.tool()
     @_require_tool("okf_system_status")
     def okf_system_status() -> str:
@@ -1095,7 +1049,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- {w.get('name', w['slug'])} (`{w['slug']}`)")
         return "\n".join(lines)
 
-    # --- A20: System Sync ---
     @mcp_server.tool()
     @_require_tool("okf_system_sync")
     def okf_system_sync(wiki: str = "") -> str:
@@ -1130,7 +1083,6 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"- `{slug_name}`: {status}")
             return "\n".join(lines)
 
-    # --- A21: Audit Logs ---
     @mcp_server.tool()
     @_require_tool("okf_audit_logs")
     def okf_audit_logs(
@@ -1168,7 +1120,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- **{ts}** | `{act}` | {user} | {details}")
         return "\n".join(lines)
 
-    # --- A22: Cache Stats ---
     @mcp_server.tool()
     @_require_tool("okf_cache_stats")
     def okf_cache_stats() -> str:
@@ -1184,7 +1135,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- **{key}:** {value}")
         return "\n".join(lines)
 
-    # --- A23: Cache Clear ---
     @mcp_server.tool()
     @_require_tool("okf_cache_clear")
     def okf_cache_clear() -> str:
@@ -1197,7 +1147,6 @@ Willkommen im Wiki **{name}**.
         get_cache().clear()
         return "Cache erfolgreich geleert."
 
-    # --- A24: List Users ---
     @mcp_server.tool()
     @_require_tool("okf_list_users")
     def okf_list_users() -> str:
@@ -1218,7 +1167,6 @@ Willkommen im Wiki **{name}**.
             )
         return "\n".join(lines)
 
-    # --- A25: Create User ---
     @mcp_server.tool()
     @_require_tool("okf_create_user")
     def okf_create_user(
@@ -1246,7 +1194,6 @@ Willkommen im Wiki **{name}**.
         except ValueError as e:
             return f"Fehler: {e}"
 
-    # --- A26: Delete User ---
     @mcp_server.tool()
     @_require_tool("okf_delete_user")
     def okf_delete_user(username: str) -> str:
@@ -1273,7 +1220,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
 
-    # --- A27: List API Keys ---
     @mcp_server.tool()
     @_require_tool("okf_list_api_keys")
     def okf_list_api_keys() -> str:
@@ -1296,7 +1242,6 @@ Willkommen im Wiki **{name}**.
             )
         return "\n".join(lines)
 
-    # --- A28: Create API Key ---
     @mcp_server.tool()
     @_require_tool("okf_create_api_key")
     def okf_create_api_key(
@@ -1329,7 +1274,6 @@ Willkommen im Wiki **{name}**.
             f"Scopes: {', '.join(scopes or ['read', 'write'])}"
         )
 
-    # --- A29: Delete API Key ---
     @mcp_server.tool()
     @_require_tool("okf_delete_api_key")
     def okf_delete_api_key(key_id: str) -> str:
@@ -1356,7 +1300,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
 
-    # --- A35: List MCP Keys ---
     @mcp_server.tool()
     @_require_tool("okf_list_mcp_keys")
     def okf_list_mcp_keys() -> str:
@@ -1377,7 +1320,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- **{k['name']}** (ID: {k['id'][:8]}...) | User: {k['user_id'][:8]}... | Status: {active} | Allowed Tools: {tools}")
         return "\n".join(lines)
 
-    # --- A36: Create MCP Key ---
     @mcp_server.tool()
     @_require_tool("okf_create_mcp_key")
     def okf_create_mcp_key(name: str, user_id: str | None = None, allowed_tools: str = "__all__") -> str:
@@ -1417,7 +1359,6 @@ Willkommen im Wiki **{name}**.
 
         return f"MCP-Key '{name}' erfolgreich erstellt!\n\n**Roher MCP-Key (jetzt sichern):** `{raw_key}`"
 
-    # --- A37: Delete MCP Key ---
     @mcp_server.tool()
     @_require_tool("okf_delete_mcp_key")
     def okf_delete_mcp_key(key_id: str) -> str:
@@ -1437,7 +1378,6 @@ Willkommen im Wiki **{name}**.
             return f"MCP-Key '{key_id}' wurde erfolgreich geloescht."
         return f"MCP-Key '{key_id}' konnte nicht gefunden werden."
 
-    # --- A30: Check Update ---
     @mcp_server.tool()
     @_require_tool("okf_check_update")
     def okf_check_update() -> str:
@@ -1479,7 +1419,6 @@ Willkommen im Wiki **{name}**.
             lines.append("- **Status:** Unbekannt (Git-Fehler).")
         return "\n".join(lines)
 
-    # --- A32: List Backups ---
     @mcp_server.tool()
     @_require_tool("okf_list_backups")
     def okf_list_backups() -> str:
@@ -1498,7 +1437,6 @@ Willkommen im Wiki **{name}**.
             lines.append(f"- **{b['filename']}** | {b['size_mb']} MB | Erstellt: {b['created_at_fmt']}")
         return "\n".join(lines)
 
-    # --- A33: Create Backup ---
     @mcp_server.tool()
     @_require_tool("okf_create_backup")
     def okf_create_backup() -> str:
@@ -1513,7 +1451,6 @@ Willkommen im Wiki **{name}**.
         log_action(action="mcp_create_backup", details=f"MCP: Backup erstellt {b_path.name}", username="mcp-agent")
         return f"Backup erfolgreich erstellt: {b_path.name} ({round(b_path.stat().st_size / (1024*1024), 2)} MB)"
 
-    # --- A34: Restore Backup ---
     @mcp_server.tool()
     @_require_tool("okf_restore_backup")
     def okf_restore_backup(filename: str) -> str:
@@ -1540,7 +1477,6 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             return f"Fehler beim Wiederherstellen des Backups: {e}"
 
-    # --- A31: Run Update ---
     @mcp_server.tool()
     @_require_tool("okf_run_update")
     def okf_run_update() -> str:
@@ -1574,7 +1510,6 @@ Willkommen im Wiki **{name}**.
             raw_output = proc.stdout + proc.stderr
             clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
 
-            # Update-Log auf Festplatte speichern (Data-Volume)
             log_file.write_text(clean_output, encoding="utf-8")
 
             new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"

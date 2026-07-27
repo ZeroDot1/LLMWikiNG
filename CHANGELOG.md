@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.12.43] - 2026-07-27
+
+### Changed
+- **Kommentare aufgeräumt**: Redundante Kommentare, Abschnittstrennzeichen und unkommentierter Code in allen Projektdateien entfernt (Python, Shell-Skripte, Dockerfile, Templates). Funktions-Dokumentation und nicht-offensichtliche Erklärungen wurden beibehalten.
+
 ## [2.12.42] - 2026-07-27
 
 ### Fixed

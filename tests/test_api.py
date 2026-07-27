@@ -83,9 +83,7 @@ def api_env(tmp_project, sample_users):
     return tmp_project, admin_key, editor_key, client
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # A. AUTHENTIFIZIERUNG
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestApiAuth:
@@ -128,9 +126,7 @@ class TestApiAuth:
         assert resp.status_code == 403
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # B. WIKI-MANAGEMENT (V1 API)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestWikiManagement:
@@ -238,9 +234,7 @@ class TestWikiManagement:
         assert resp.status_code == 404
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # C. PAGE MANAGEMENT (V1 API)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestPageManagement:
@@ -361,9 +355,7 @@ class TestPageManagement:
         assert resp.status_code in (200, 404)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # D. DIRECT INGEST API (Wiki-spezifisch)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestDirectIngest:
@@ -509,9 +501,7 @@ class TestDirectIngest:
             assert slug in data["view_urls"][0]
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # E. SYNC API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestSync:
@@ -530,9 +520,7 @@ class TestSync:
         assert data["wiki"] == slug
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # F. SEARCH API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestSearchApi:
@@ -582,9 +570,7 @@ class TestSearchApi:
         assert isinstance(data["results"], list)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # G. GRAPH API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestGraphApi:
@@ -625,9 +611,7 @@ class TestGraphApi:
         assert resp.status_code == 200
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # H. STATS & LINT API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestStatsLintApi:
@@ -657,9 +641,7 @@ class TestStatsLintApi:
         assert isinstance(data, dict)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # I. USER MANAGEMENT (Admin-only)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestUserManagement:
@@ -739,9 +721,7 @@ class TestUserManagement:
         assert resp.status_code == 403
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # J. API KEY MANAGEMENT (Admin-only)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestApiKeyManagement:
@@ -797,9 +777,7 @@ class TestApiKeyManagement:
         assert resp.status_code == 403
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # K. SYSTEM STATUS & AUDIT
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestSystemApi:
@@ -874,9 +852,7 @@ class TestSystemApi:
         assert "results" in data
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # K. SYSTEM UPDATE API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestSystemUpdateApi:
@@ -1012,9 +988,7 @@ class TestSystemUpdateApi:
         assert resp.status_code == 502
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # L. RAW INGEST & PENDING (V1 API)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestRawIngest:
@@ -1110,9 +1084,7 @@ class TestServerBackupApi:
         assert resp_del.json()["ok"] is True
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # M. INTEGRATIONSTESTS (Ingest → Read → Search → Delete)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestFullIntegration:

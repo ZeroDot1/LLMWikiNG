@@ -15,7 +15,6 @@ from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
-# Persistenter Sync-Status
 SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
 
 def _load_sync_times() -> dict[str, str]:
@@ -81,7 +80,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
             print(f"[sync] WARN: rglob fehlgeschlagen für Wiki '{wiki}': {e}", flush=True)
             files = []
         for f in files:
-            if f.stem in ("index", "log", "ingestlater"):
+        if f.stem in ("index", "log", "ingestlater"):
                 continue
             try:
                 h.update(f.relative_to(root).as_posix().encode("utf-8"))
@@ -150,11 +149,6 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     ref_time = base + dt.timedelta(seconds=3600)
     times[wiki] = ref_time.isoformat()
 
-    # Hash der Wiki-Inhalte speichern, damit is_sync_needed hash-basiert
-    # (zeitverschiebungs-unabhängig) erkennen kann, ob sich etwas geändert hat.
-    # WICHTIG: content_hash VOR try initialisieren, damit bei Exception in
-    # _wiki_content_hash kein UnboundLocalError auftritt (der sonst von
-    # except geschluckt würde und der Hash ungespeichert bliebe).
     content_hash: str | None = None
     try:
         content_hash = _wiki_content_hash(wiki)
@@ -163,8 +157,6 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
 
     if content_hash is not None:
         times[f"{wiki}::hash"] = content_hash
-        # Robuster Fallback: Hash zusätzlich im Wiki-Verzeichnis speichern
-        # (garantiert gemountet/beschreibbar, auch wenn DATA_DIR read-only ist).
         _save_wiki_sync_hash(wiki, content_hash)
 
     _save_sync_times(times)
@@ -204,7 +196,6 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         env = os.environ.copy()
         env["WIKI_DIR"] = str(wiki_path(wiki))
         env["COLLECTION_NAME"] = f"wiki_{wiki}"
-        
         # Start command asynchronously
         process = await asyncio.create_subprocess_exec(
             QMD_BIN, "embed",
@@ -215,7 +206,6 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         )
         
         try:
-            # 60s timeout
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 process.communicate(),
                 timeout=60.0
@@ -298,15 +288,12 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
     results = {"qmd": False, "index": False, "messages": []}
 
-    # Prüfen ob ein Sync nötig ist (außer force=True)
     if not is_sync_needed(wiki) and not force:
         results["qmd"] = True
         results["index"] = True
         results["messages"].append("Sync nicht benötigt (keine Änderungen)")
         return results
 
-    # Cache für dieses Wiki sofort invalidieren, damit nach dem Sync
-    # alle Leseanfragen frische Daten bekommen.
     _cache = get_cache()
     _cache.invalidate_prefix(f"pages:{wiki}")
     _cache.invalidate(f"graph:{wiki}")
@@ -443,10 +430,6 @@ def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main
     log_path.write_text(new_content, encoding="utf-8")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ASYNCHRONES MUTEX LOCK- & HINTERGRUND-SYNC-SYSTEM (COALESCING QUEUE)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 _wiki_locks: dict[str, asyncio.Lock] = {}
 _wiki_locks_lock = asyncio.Lock()
 
@@ -457,7 +440,6 @@ async def get_wiki_lock(wiki: str) -> asyncio.Lock:
             _wiki_locks[wiki] = asyncio.Lock()
         return _wiki_locks[wiki]
 
-# Zustandsvariablen für das Coalescing (Zusammenfassen) von Hintergrund-Sync-Tasks
 _active_syncs: set[str] = set()
 _pending_syncs: set[str] = set()
 _pending_force: set[str] = set()
@@ -475,11 +457,9 @@ async def _run_bg_sync_loop(wiki: str) -> None:
         except Exception:
             pass
         
-        # Prüfen, ob während des Laufs ein weiterer Sync angefordert wurde
         async with _sync_state_lock:
             if wiki in _pending_syncs:
                 _pending_syncs.discard(wiki)
-                # Die Schleife läuft weiter für den nächsten Durchlauf
             else:
                 _active_syncs.discard(wiki)
                 break
@@ -508,8 +488,6 @@ def request_sync_background(wiki: str = "main", force: bool = False) -> None:
     if loop and loop.is_running():
         loop.create_task(_trigger_bg_sync(wiki, force=force))
     else:
-        # Kein laufender Loop (z.B. CLI/Skript-Kontext oder synchroner Thread) -> im Thread ausführen
-        # Wir rufen do_sync synchron auf, um die Dateischnittstelle zu bedienen
         try:
             do_sync(wiki, force=force)
         except Exception:
@@ -519,7 +497,6 @@ async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
     """Hilfsfunktion, um die Hintergrundschleife atomar zu starten."""
     async with _sync_state_lock:
         if wiki in _active_syncs:
-            # Force-Flag für den nachfolgenden Pending-Lauf merken
             if force:
                 _pending_force.add(wiki)
             _pending_syncs.add(wiki)
@@ -528,5 +505,4 @@ async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
         if force:
             _pending_force.add(wiki)
     
-    # Hintergrund-Loop starten
     await _run_bg_sync_loop(wiki)

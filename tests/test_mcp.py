@@ -15,9 +15,7 @@ import pytest
 from pathlib import Path
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # Hilfsfixtures
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 @pytest.fixture()
@@ -135,9 +133,7 @@ def mcp_wiki_with_raw(mcp_wiki: Path) -> Path:
     return mcp_wiki
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # A. Wiki-Verwaltung (5 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfListWikis:
@@ -245,9 +241,7 @@ class TestMcpToolsOkfDeleteWiki:
         assert "geloescht" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # B. Seiten-Verwaltung (8 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfListPages:
@@ -521,9 +515,7 @@ class TestMcpToolsOkfIngestText:
             sync_mod.do_sync = original_do_sync
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # C. Suche & Analyse (4 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfSearch:
@@ -599,9 +591,7 @@ class TestMcpToolsOkfLint:
         assert "Lint-Bericht" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # D. Rohquellen (2 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfReadRaw:
@@ -650,9 +640,7 @@ class TestMcpToolsOkfListRaw:
         assert "Keine Rohquellen" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # E. System (5 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfSystemStatus:
@@ -726,9 +714,7 @@ class TestMcpToolsOkfCacheClear:
         assert "erfolgreich geleert" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # F. Benutzer-Verwaltung (3 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfListUsers:
@@ -786,9 +772,7 @@ class TestMcpToolsOkfDeleteUser:
         assert "nicht gefunden" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # G. API-Key-Verwaltung (3 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfListApiKeys:
@@ -838,9 +822,7 @@ class TestMcpToolsOkfDeleteApiKey:
         assert "nicht gefunden" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # H. Update (2 Tools)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpToolsOkfCheckUpdate:
@@ -864,9 +846,7 @@ class TestMcpToolsOkfRunUpdate:
         assert "nicht gefunden" in result
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # I. MCP-Verfuegbarkeit und Konfiguration
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpAvailability:
@@ -937,9 +917,7 @@ class TestMcpAvailability:
         assert app is not None
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # J. MCP API-Key Middleware
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestMcpApiKeyMiddleware:
@@ -1028,9 +1006,7 @@ class TestMcpApiKeyMiddleware:
             assert result.get("status") != 401
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # K. OKF v0.1-konforme Ausgabe
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestOkfCompliance:

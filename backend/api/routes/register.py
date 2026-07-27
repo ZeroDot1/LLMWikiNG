@@ -18,7 +18,6 @@ def register_form(request: Request):
     is_first = len(users) == 0
     cfg = load_app_config()
     
-    # Wenn nicht die erste Registrierung und Registrierung in Config deaktiviert ist -> Fehler
     if not is_first and not cfg.get("registration_enabled", True):
         return render(
             request, "error.html",
@@ -49,7 +48,6 @@ async def register_submit(request: Request):
     is_first = len(users) == 0
     cfg = load_app_config()
     
-    # Sicherheitsprüfung
     if not is_first and not cfg.get("registration_enabled", True):
         raise HTTPException(status_code=403, detail="Registrierung deaktiviert")
         
@@ -58,7 +56,6 @@ async def register_submit(request: Request):
         role = "admin" if is_first else "editor"
         user = create_user(username, password, role=role)
         
-        # Automatisch einen Standard-API-Key erstellen
         _, raw_key = create_key(user["id"], "Standard API-Key")
         
         # Wenn dies der erste Admin war, Registrierung direkt automatisch deaktivieren

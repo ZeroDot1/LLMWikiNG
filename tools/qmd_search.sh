@@ -14,8 +14,4 @@ if [ -z "$QUERY" ]; then
     exit 1
 fi
 
-# qmd query: Hybrid-Suche mit BM25 + Vektor-Ähnlichkeit
-# -n $LIMIT: Begrenzung auf Top-N Ergebnisse (Tokensparen!)
-# --json: Strukturierte Ausgabe für den LLM-Agenten
-# --collection wiki: Verwendet die "my_wiki" Collection
 qmd query "$QUERY" -n "$LIMIT" --json --collection "my_wiki"

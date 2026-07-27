@@ -97,10 +97,6 @@ def _default_wiki() -> str:
     return wikis[0]["slug"] if wikis else "main"
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Dashboard (Wiki-Übersicht)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/")
 def dashboard(request: Request):
     query = request.query_params.get("q", "").strip()
@@ -110,7 +106,6 @@ def dashboard(request: Request):
     wikis = list_wikis()
     default = _default_wiki()
 
-    # Per-Wiki-Statistiken + Gesamtwerte für die Übersicht
     wiki_stats = []
     total_pages = total_words = total_raw = total_export = 0
     for w in wikis:
@@ -140,10 +135,6 @@ def dashboard(request: Request):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Session-geschützte JSON-Endpoints für Wiki-Verwaltung (Settings-Tab)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/settings/wikis/json")
 def settings_wikis_list(request: Request):
     """JSON-Endpoint für Wiki-Liste (session-geschützt, kein API-Key nötig)."""
@@ -166,7 +157,6 @@ async def settings_wikis_create(request: Request):
     if not name or not slug:
         return JSONResponse(status_code=400, content={"ok": False, "detail": "Name und Slug sind erforderlich"})
 
-    # Slug validieren
     slug = slugify_wiki(slug)
     root = wiki_path(slug)
     if root.exists():
@@ -261,7 +251,6 @@ async def settings_wikis_delete(slug: str, request: Request):
         return JSONResponse(status_code=404, content={"ok": False, "detail": f"Wiki '{slug}' nicht gefunden"})
 
     name = slug
-    # Name aus wikis.json holen
     from core.config import DATA_DIR
     wikis_file = DATA_DIR / "wikis.json"
     if wikis_file.exists():
@@ -276,10 +265,6 @@ async def settings_wikis_delete(slug: str, request: Request):
                username=user.get("username"), user_id=user.get("id"), request=request)
     return JSONResponse(content={"ok": True})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Wiki anlegen
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/wikis/new")
 def wiki_new_form(request: Request):
@@ -310,10 +295,6 @@ async def wiki_new_create(request: Request):
     log_action(action="wiki_create", details=f"Neues Wiki '{name}' (Slug: {safe}) angelegt", user_id=user["id"], username=user["username"], request=request)
     return redirect(f"{BASE_PATH}/wiki/{safe}/")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Wiki-Home + Wiki-Seiten
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/wiki/{wiki_name}/")
 async def wiki_home(wiki_name: str, request: Request):
@@ -454,10 +435,6 @@ async def wiki_delete(wiki_name: str, page_name: str, request: Request):
         return redirect(f"{BASE_PATH}/wiki/{wiki_name}/{urlencode(page_name)}?error_msg={urlencode(f'Löschen fehlgeschlagen: {e}')}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Rohquellen
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/raw")
 def raw_list(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
@@ -513,10 +490,6 @@ def raw_page(filename: str, request: Request):
     except Exception as e:
         abort(500, f"Fehler beim Lesen der Datei: {e}")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Pending
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/pending")
 def pending_list(request: Request):
@@ -622,10 +595,6 @@ async def pending_ingest_all(request: Request):
     return redirect(f"{BASE_PATH}/pending?error_msg={urlencode(err_msg)}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Export
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/export")
 def export_list(request: Request):
     files = []
@@ -669,10 +638,6 @@ def export_view(filename: str, request: Request):
     except Exception as e:
         abort(500, f"Fehler beim Lesen des Dokuments: {e}")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Graph
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/graph")
 def graph_page(request: Request):
@@ -719,10 +684,6 @@ async def graph_data_paginated(request: Request):
         )
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Ingest
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/ingest")
 def ingest_get(request: Request):
@@ -852,10 +813,6 @@ async def ingest_post(request: Request):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Suche
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/search")
 async def search(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
@@ -939,10 +896,6 @@ async def search(request: Request):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Sprache
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/lang/{code}")
 def switch_language(code: str, request: Request):
     from core.config import get_available_languages, load_app_config, CONFIG_FILE
@@ -963,10 +916,6 @@ def switch_language(code: str, request: Request):
         pass
     return response
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Über
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/docs")
 def docs_page(request: Request):
@@ -1027,10 +976,6 @@ async def about(request: Request):
         uvicorn_version=_pv("uvicorn"),
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Admin / Sync / Status
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/admin/status")
 def admin_status(request: Request):
@@ -1163,10 +1108,6 @@ def status_dashboard(request: Request):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Lint
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/lint")
 def lint_dashboard(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
@@ -1193,10 +1134,6 @@ def lint_dashboard(request: Request):
         link_suggestions=res.get("link_suggestions", []),
         issue_count=res.get("issue_count", 0),
     )
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# E-Mail-Konfiguration (/config)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/config")
 def config_get(request: Request):
@@ -1248,10 +1185,6 @@ async def config_post(request: Request):
         error_msg=error_msg,
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Einstellungen
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/settings")
 def settings_get(request: Request):
@@ -1394,7 +1327,6 @@ async def settings_post(request: Request):
             log_file.write_text(update_log_output + "\n", encoding="utf-8")
         else:
             try:
-                # Vor jedem Update das alte Logfile leeren
                 log_file.write_text("", encoding="utf-8")
 
                 # ACHTUNG: async-Route -> blockierenden Subprozess via to_thread
@@ -1413,7 +1345,6 @@ async def settings_post(request: Request):
                 raw_output = proc.stdout + proc.stderr
                 update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
 
-                # Logfile auf Festplatte speichern
                 log_file.write_text(update_log_output, encoding="utf-8")
 
                 # Automatischen Server-Neustart nach erfolgreichem Update auslösen,
@@ -1462,7 +1393,6 @@ async def settings_post(request: Request):
             allowed_tools=[],  # Leer = alle Tools erlaubt
         )
         
-        # Passenden API-Key für den MCP-Agent erstellen
         key_obj, raw_api_key = create_key(
             user_id=user_id,
             name="MCP-Agent-API-Key",
@@ -1581,10 +1511,6 @@ async def settings_post(request: Request):
         mcp_tool_groups=MCP_TOOL_GROUPS,
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Briefings
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/briefings")
 def briefings_get(request: Request):
@@ -1730,10 +1656,6 @@ def _briefings(request: Request, form):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Editor
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/edit")
 def edit_get(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
@@ -1836,10 +1758,6 @@ async def edit_save(request: Request):
         return redirect(f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={urlencode(f'Fehler beim Speichern: {e}')}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Admin: Logbuch leeren
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/admin/clear-log")
 def clear_log(request: Request, admin: dict = Depends(require_admin)):
     wiki = request.query_params.get("wiki") or "main"
@@ -1862,9 +1780,6 @@ def clear_log(request: Request, admin: dict = Depends(require_admin)):
         return redirect(f"{BASE_PATH}/audit?error_msg={urlencode(f'Fehler beim Leeren des Logbuchs: {e}')}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Backup & Restore
-# ═══════════════════════════════════════════════════════════════════════════════
 from fastapi.responses import FileResponse
 from fastapi import UploadFile, File
 
@@ -1998,10 +1913,6 @@ async def settings_backup_delete(filename: str, request: Request):
     return redirect(f"{BASE_PATH}/settings?tab=backup&config_error_msg={urlencode('Fehler beim Löschen des Backups.')}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Audit-Logs
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/audit")
 def audit_dashboard(
     request: Request,
@@ -2107,10 +2018,6 @@ def audit_export(
         )
 
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Wiki-Seite (Catch-All – MUSS zuletzt stehen!)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/wiki/{wiki_name}/{page_name}")
 async def wiki_page(wiki_name: str, page_name: str, request: Request):

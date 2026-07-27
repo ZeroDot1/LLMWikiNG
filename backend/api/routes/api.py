@@ -104,19 +104,15 @@ async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(req
     if not name:
         raise HTTPException(status_code=400, detail="Name ist erforderlich")
 
-    # Wenn Slug geändert werden soll
     if new_slug and new_slug != wiki:
         new_slug = slugify_wiki(new_slug)
         if new_slug == wiki:
-            # Slug identisch – nur Metadaten aktualisieren
             pass
         else:
             new_d = WIKIS_ROOT / new_slug
             if new_d.exists():
                 raise HTTPException(status_code=409, detail="Ein Wiki mit diesem Slug existiert bereits")
-            # Verzeichnis umbenennen
             d.rename(new_d)
-            # Alten wikis.json-Eintrag entfernen, neuen hinzufügen
             wikis_file = DATA_DIR / "wikis.json"
             if wikis_file.exists():
                 try:
@@ -131,7 +127,6 @@ async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(req
                     wikis_file.write_text(json.dumps(wikis_data, indent=2, ensure_ascii=False), encoding="utf-8")
                 except Exception:
                     pass
-            # wiki.json im neuen Verzeichnis aktualisieren
             meta = new_d / "wiki.json"
             try:
                 meta.write_text(
@@ -142,7 +137,6 @@ async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(req
                 pass
             return {"ok": True, "slug": new_slug}
 
-    # Nur Metadaten aktualisieren
     save_wiki_meta(wiki, name, description)
     return {"ok": True, "slug": wiki}
 
@@ -258,10 +252,6 @@ def api_status(user: dict = Depends(get_api_user)):
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# A. Security & User Management (nur Admin)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/users")
 def api_list_users(admin: dict = Depends(require_api_admin)):
     return {"users": [{"id": u["id"], "username": u["username"], "role": u["role"], "active": u.get("active", True)} for u in list_users()]}
@@ -318,10 +308,6 @@ def api_delete_key(key_id: str, admin: dict = Depends(require_api_admin)):
     delete_key(key_id)
     return {"ok": True}
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# A2. MCP-Key-Verwaltung (nur Admin)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/mcp-keys")
 def api_list_mcp_keys(admin: dict = Depends(require_api_admin)):
@@ -424,10 +410,6 @@ async def api_update_mcp_key(key_id: str, request: Request, admin: dict = Depend
 
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# B. Ingest & Dateiverwaltung
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.post("/wikis/{wiki}/ingest")
 async def api_ingest_upload(wiki: str, request: Request, user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
@@ -438,7 +420,6 @@ async def api_ingest_upload(wiki: str, request: Request, user: dict = Depends(ge
         raise HTTPException(status_code=400, detail="Multipart-Formulardaten erforderlich")
     files = form.getlist("files") if hasattr(form, "getlist") else []
     if not files:
-        # Einzelne Datei unter 'file'
         f = form.get("file")
         if f:
             files = [f]
@@ -491,10 +472,6 @@ async def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
         pass
     return {"ok": True, "wiki": wiki, "processed": processed, "errors": errors}
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# C. Export & System-Management
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/wikis/{wiki}/pages/{slug}/export")
 def api_export_page(wiki: str, slug: str, user: dict = Depends(get_api_user)):
@@ -566,10 +543,6 @@ def api_system_audit(
         "offset": offset,
     }
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Backup & Restore API
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 @router.get("/system/backups")
@@ -643,10 +616,6 @@ async def api_delete_backup(filename: str, request: Request, admin: dict = Depen
     return {"ok": True, "deleted": filename}
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# System Update API
-# ═══════════════════════════════════════════════════════════════════════════════
-
 
 @router.get("/system/update/check")
 async def api_update_check(admin: dict = Depends(require_api_admin)):
@@ -699,7 +668,6 @@ async def api_update_run(admin: dict = Depends(require_api_admin)):
     if not update_script.exists():
         raise HTTPException(status_code=404, detail="update.sh nicht gefunden.")
 
-    # Aktuelle Version vor dem Update auslesen
     version_file = PROJECT_ROOT / "VERSION"
     old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
@@ -711,10 +679,8 @@ async def api_update_run(admin: dict = Depends(require_api_admin)):
             cwd=str(PROJECT_ROOT),
         )
         raw_output = proc.stdout + proc.stderr
-        # ANSI-Farbcodes entfernen
         clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
 
-        # Neue Version nach dem Update auslesen
         new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
         log_action(
@@ -766,10 +732,6 @@ async def api_system_restart(admin: dict = Depends(require_api_admin)):
     return {"ok": True, "message": "Server-Neustart eingeleitet. Bitte in 5 Sekunden neu laden."}
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# D. Direct Wiki API Endpoints (e.g. /LLMWikiNG/wiki/{wiki_name}/api/...)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 from core.config import slugify_wiki
 
 wiki_api_router = APIRouter(prefix=f"{BASE_PATH}/wiki/{{wiki_name}}/api")
@@ -802,7 +764,6 @@ async def api_direct_ingest(
         if f:
             files = [f]
 
-    # Temporäres Ingest-Verzeichnis
     temp_dir = SCRATCH_DIR
     temp_dir.mkdir(parents=True, exist_ok=True)
     
@@ -825,18 +786,15 @@ async def api_direct_ingest(
     if url:
         try:
             import urllib.request
-            # Einfacher Download
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=15) as response:
                 html = response.read().decode('utf-8', errors='replace')
-            # Zu Markdown konvertieren (sehr einfach oder roher Text)
             try:
                 import html2text
                 h = html2text.HTML2Text()
                 h.ignore_links = False
                 md_content = h.handle(html)
             except (ImportError, Exception):
-                # Fallback: roher HTML-Text
                 import re as _re
                 _text = _re.sub(r'<[^>]+>', ' ', html)
                 _text = _re.sub(r'\s+', ' ', _text).strip()
@@ -851,7 +809,6 @@ async def api_direct_ingest(
             result = await run_ingest_async(temp_filepath, title=title or None, timeout=120, env=env)
             if result.returncode == 0:
                 processed.append(url)
-                # Slug ermitteln
                 ns = slugify_german(title or "downloaded-url")
                 new_slugs.append(ns)
             else:
@@ -913,7 +870,6 @@ async def api_direct_ingest(
         except Exception:
             pass
             
-    # URLs zum direkten Anschauen im Wiki zurückgeben
     view_urls = [f"{BASE_PATH}/wiki/{slug}/{s}" for s in new_slugs]
     return {"ok": True, "wiki": slug, "processed": processed, "view_urls": view_urls, "errors": errors}
 

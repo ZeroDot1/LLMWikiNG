@@ -31,7 +31,6 @@ from core.config import (
 )
 from web import templates, render
 
-# Statisches Verzeichnis
 STATIC_DIR = PROJECT_ROOT / "static"
 
 
@@ -74,16 +73,13 @@ def create_app() -> FastAPI:
     # Templates immer neu laden (auch im Produktionsmodus)
     templates.env.auto_reload = True
 
-    # Statische Dateien (unter BASE_PATH, damit portabel verschiebbar)
     if STATIC_DIR.exists():
         app.mount(f"{BASE_PATH}/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-    
-    # Skills-Ordner zum direkten Download bereitstellen
+
     SKILLS_DIR = PROJECT_ROOT / "skills"
     if SKILLS_DIR.exists():
         app.mount(f"{BASE_PATH}/skills", StaticFiles(directory=str(SKILLS_DIR)), name="skills")
 
-    # Routen registrieren
     from api.routes.pages import router as pages_router
     from api.routes.auth import router as auth_router
     from api.routes.api import router as api_router, wiki_api_router
@@ -95,9 +91,6 @@ def create_app() -> FastAPI:
     app.include_router(wiki_api_router)
     app.include_router(pages_router)
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # MCP-Server (Model Context Protocol) – SSE-Transport
-    # ═════════════════════════════════════════════════════════════════════════
     from core.config import ENABLE_MCP_SERVER, LLMWIKING_MCP_KEY
 
     if ENABLE_MCP_SERVER:
@@ -106,8 +99,6 @@ def create_app() -> FastAPI:
         if _MCP_AVAILABLE:
             mcp_sse_app = get_mcp_sse_app()
             if mcp_sse_app is not None:
-                # MCP API-Key Middleware: Prueft X-API-Key Header auf allen
-                # /mcp/ Routen, bevor die SSE-App den Request verarbeitet.
                 from starlette.responses import JSONResponse as StarletteJSON
 
                 class McpApiKeyMiddleware:
@@ -143,7 +134,6 @@ def create_app() -> FastAPI:
                         if scope["type"] == "http" and "/mcp/" in scope.get("path", ""):
                             headers_dict = dict(scope.get("headers", []))
 
-                            # MCP-Key aus Header oder Query lesen
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
                             mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
                             if not mcp_key:
@@ -156,7 +146,6 @@ def create_app() -> FastAPI:
                                 await res(scope, receive, send)
                                 return
 
-                            # API-Key aus Header oder Query lesen
                             api_key_bytes = headers_dict.get(b"x-api-key")
                             api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
                             if not api_key:
@@ -192,16 +181,13 @@ def create_app() -> FastAPI:
                                     await res(scope, receive, send)
                                     return
 
-                                # allowed_tools in scopeState + ContextVar speichern
                                 if "state" not in scope:
                                     scope["state"] = {}
                                 scope["state"]["mcp_user"] = user
                                 scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
 
-                                # ContextVar fuer Tool-Berechtigung in mcp.py setzen
                                 _allowed_token = self._mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
 
-                                # last_used aktualisieren (stumme Aktualisierung)
                                 try:
                                     self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
                                 except Exception:
@@ -233,7 +219,6 @@ def create_app() -> FastAPI:
                                 scope["state"]["mcp_user"] = user
                                 scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
 
-                                # ContextVar: Legacy = alle Tools erlaubt
                                 _allowed_token = self._mcp_allowed_tools_ctx.set([])
 
                                 try:
@@ -242,7 +227,6 @@ def create_app() -> FastAPI:
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
-                            # Weder gueltiger MCP-Key noch Legacy-Key
                             res = JSONResponse({"detail": "Ungueltiger MCP-Key (X-MCP-Key)"}, status_code=401)
                             await res(scope, receive, send)
                             return
@@ -281,9 +265,7 @@ def create_app() -> FastAPI:
     except Exception:
         pass
 
-    # ═════════════════════════════════════════════════════════════════════════
     # ResponseGuardMiddleware – verhindert doppelte http.response.start
-    # ═════════════════════════════════════════════════════════════════════════
     # Problem: Wenn waehrend eines SSE-Streams (MCP) ein Fehler auftritt,
     # versucht Starlettes ServerErrorMiddleware eine neue Fehler-Antwort zu
     # senden. Da der SSE-Stream aber bereits http.response.start gesendet
@@ -311,7 +293,6 @@ def create_app() -> FastAPI:
                 nonlocal _response_started
                 if message.get("type") == "http.response.start":
                     if _response_started:
-                        # Zweites response.start unterdruecken
                         print(
                             "[ResponseGuard] Doppeltes http.response.start "
                             f"fuer {scope.get('path', '?')} unterdrueckt.",
@@ -325,10 +306,6 @@ def create_app() -> FastAPI:
 
     app.add_middleware(_ResponseGuardMiddleware)
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # Fehlerseiten
-    # ═════════════════════════════════════════════════════════════════════════
-
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         # Redirect-Statuscodes (301/302/303/307/308) mit Location-Header ausführen
@@ -337,7 +314,6 @@ def create_app() -> FastAPI:
             if location:
                 return RedirectResponse(url=location, status_code=exc.status_code)
 
-        # JSON response for api routes
         if request.url.path.startswith(f"{BASE_PATH}/api/v1"):
             from fastapi.responses import JSONResponse
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})

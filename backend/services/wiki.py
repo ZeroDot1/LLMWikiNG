@@ -49,8 +49,6 @@ def clean_ingest_content(text: str, title: str = "") -> str:
     for line in lines:
         stripped = line.strip()
 
-        # --- Scrape-Artefakte / Navigation entfernen -----------------------
-        # Blog-/Web-Menü-Reste und Boilerplate ignorieren
         if stripped in (
             "Direkt zum Hauptbereich",
             "Suchen",
@@ -61,17 +59,12 @@ def clean_ingest_content(text: str, title: str = "") -> str:
             "Impressum, Haftungsauschluss und Datenschutz",
         ):
             continue
-        # Menü-ähnliche Zeilen mit "Suchen" / "Mehr" am Anfang
         if stripped.startswith("Suchen") or stripped.startswith("Mehr"):
             continue
-        # Blog-Menü: " * [Startseite](...)" etc. (Bullet + Link auf sich selbst)
         if re.match(r"^[\*\-]\s*\[(?:Startseite|Neuer Blog|Hörspiele|Hörbücher|Podcasts|Impressum)[^\]]*\]\(https?://", stripped):
             continue
-        # Überschriften-artige Menü-Reste ("### Dieses Blog durchsuchen")
         if re.match(r"^#{1,4}\s*Dieses Blog durchsuchen\s*$", stripped):
             continue
-        # Blog-Titel als H1-Link (z.B. "# [ Der Hörold - ... ](https://...)")
-        # ist kein Seiteninhalt, sondern Boilerplate-Navigation
         if re.match(r"^#\s*\[\s*[^]]*\]\s*\(https?://", stripped):
             continue
 
@@ -93,10 +86,8 @@ def clean_ingest_content(text: str, title: str = "") -> str:
         text,
     )
 
-    # --- Doppelte H1 entfernen (erste Überschrift == Titel) ---------------
     if title:
         title_norm = title.strip().lower()
-        # Finde die erste H1-Zeile und prüfe, ob sie dem Titel entspricht
         def _h1_match(l: str) -> bool:
             m = re.match(r"^#\s+(.+)$", l.strip())
             return bool(m) and m.group(1).strip().lower() == title_norm
@@ -112,7 +103,6 @@ def clean_ingest_content(text: str, title: str = "") -> str:
             del text_lines[first_h1_idx]
             text = "\n".join(text_lines)
 
-    # --- Mehrfache Leerzeilen reduzieren -----------------------------------
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     if not text.endswith("\n"):
         text += "\n"
@@ -195,7 +185,6 @@ def extract_links_from_content(content: str) -> list[str]:
     for link in raw_links:
         if link.startswith(("http://", "https://", "mailto:", "#")):
             continue
-        # Führende Punkte und Slashes entfernen (z.B. ./ oder ../)
         clean = re.sub(r"^\.+/", "", link)
         clean = clean.lstrip("/")
         clean = re.sub(r"\.md$", "", clean)

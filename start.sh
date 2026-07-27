@@ -24,10 +24,6 @@ LANG_ARG=""
 RESET_MODE=""
 RESET_FORCE=""
 
-# ═══════════════════════════════════════════════════════════
-# Argumente parsen
-# ═══════════════════════════════════════════════════════════
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --help|-h)
@@ -109,10 +105,6 @@ if [ "${2:-}" = "-d" ] || [ "${1:-}" = "-d" ]; then
     fi
 fi
 
-# ═══════════════════════════════════════════════════════════════
-# RESET-Funktion: Setzt den Server auf Werkseinstellungen zurück
-# ═══════════════════════════════════════════════════════════════
-
 reset_server() {
     local force="${1:-}"
 
@@ -186,10 +178,6 @@ if [[ -n "$RESET_MODE" ]]; then
     reset_server "$RESET_FORCE"
 fi
 
-# ═══════════════════════════════════════════════════════════════
-# Prüfen: Python + Flask + Markdown
-# ═══════════════════════════════════════════════════════════════
-
 if ! command -v python3 &>/dev/null; then
     echo "❌ Python 3 nicht gefunden. Bitte installieren: sudo pacman -S python"
     exit 1
@@ -210,10 +198,6 @@ if ! python3 -c "import markdown" 2>/dev/null; then
     exit 1
 fi
 
-# ═══════════════════════════════════════════════════════════════
-# Wiki-Verzeichnis prüfen / anlegen
-# ═══════════════════════════════════════════════════════════════
-
 if [ ! -d "$SCRIPT_DIR/wiki" ]; then
     echo "⚠ Wiki-Verzeichnis nicht gefunden. Starte init..."
     if [ -f "$SCRIPT_DIR/wiki.sh" ]; then
@@ -223,10 +207,6 @@ if [ ! -d "$SCRIPT_DIR/wiki" ]; then
         echo "📁 Leeres Wiki angelegt."
     fi
 fi
-
-# ═══════════════════════════════════════════════════════════════
-# Automatisch freien Port finden
-# ═══════════════════════════════════════════════════════════════
 
 find_free_port() {
     local port="$1"
@@ -268,10 +248,6 @@ fi
 if [ "$PORT" -ne "$WANTED_PORT" ]; then
     echo "⚠ Port $WANTED_PORT belegt – nutze stattdessen Port $PORT."
 fi
-
-# ═══════════════════════════════════════════════════════════════
-# Server starten
-# ═══════════════════════════════════════════════════════════════
 
 echo ""
 echo "╔════════════════════════════════════════════════╗"

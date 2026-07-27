@@ -60,7 +60,6 @@ def get_api_user(request: Request, background_tasks: BackgroundTasks) -> dict:
     raw = request.headers.get("X-API-Key") or request.query_params.get("api_key")
 
     if raw:
-        # ── API-Key Pfad ──
         h = hashlib.sha256(raw.encode()).hexdigest()
         key = get_key_by_hash(h)
         if not key:
@@ -73,11 +72,9 @@ def get_api_user(request: Request, background_tasks: BackgroundTasks) -> dict:
             pw = request.headers.get("X-API-Password") or request.query_params.get("api_password")
             if not (pw and verify_password(pw, user["password_hash"])):
                 raise HTTPException(status_code=401, detail="API-Passwort erforderlich")
-        # Asynchrones Update im Hintergrund
         background_tasks.add_task(update_key_last_used, key["id"])
         return user
 
-    # ── Session-Cookie Fallback (Browser-Frontend) ──
     session_user = get_current_user(request)
     if session_user and session_user.get("active", True):
         return session_user

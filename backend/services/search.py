@@ -31,7 +31,6 @@ def local_search(query: str, wiki: str = "main") -> dict:
             snip = snip + "..."
         return snip
 
-    # Zu durchsuchende Wikis bestimmen
     wikis_to_search = []
     if wiki == "all":
         from core.config import list_wikis
@@ -70,7 +69,6 @@ def local_search(query: str, wiki: str = "main") -> dict:
                 except Exception:
                     pass
 
-    # Rohdateien (raw/) durchsuchen
     if RAW_DIR.exists():
         for f in sorted(RAW_DIR.iterdir()):
             if f.is_file() and f.name != ".gitkeep" and is_text_file(f.name):
@@ -94,7 +92,6 @@ def local_search(query: str, wiki: str = "main") -> dict:
                 except Exception:
                     pass
 
-    # Exportierte Dateien (output_docs/) durchsuchen
     if EXPORT_DIR.exists():
         for f in sorted(EXPORT_DIR.iterdir()):
             if f.is_file() and f.name != ".gitkeep" and is_text_file(f.name):
@@ -169,10 +166,8 @@ def qmd_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
                 filename = path_obj.name
                 slug = path_obj.stem
 
-                # Bestimmen, zu welchem Wiki dieses Dokument gehört
                 item_wiki = "main"
                 if "wikis/" in path or "wikis" in path_obj.parts:
-                    # Pfad enthält wikis/<wiki>/...
                     match = re.search(r"wikis/([^/]+)/", path)
                     if match:
                         item_wiki = match.group(1)
@@ -186,11 +181,7 @@ def qmd_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
                 elif "raw/" in path or path_obj.parent.name == "raw":
                     item_wiki = "global"
 
-                # Filterung nach ausgewählter Wiki-Einstellung
                 if wiki != "all":
-                    # Wenn nicht 'all', dann muss das Ergebnis zum ausgewählten Wiki gehören
-                    # (Globale Rohdateien zeigen wir immer, da sie als Basis dienen,
-                    #  aber Exporte nur, wenn sie zu diesem Wiki gehören)
                     if item_wiki not in (wiki, "global"):
                         continue
 

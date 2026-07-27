@@ -31,10 +31,6 @@ from core.storage import (
 router = APIRouter(prefix=BASE_PATH)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Login / Logout
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/login")
 def login_form(request: Request):
     if len(list_users()) == 0:
@@ -99,10 +95,6 @@ def logout(request: Request, user: dict = Depends(require_login)):
     return resp
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# User-Verwaltung (nur Admin)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.get("/users")
 def users_list(request: Request, admin: dict = Depends(require_admin)):
     return render(request, "users.html", active_page="users", users=list_users())
@@ -134,10 +126,6 @@ async def user_delete(user_id: str, request: Request, admin: dict = Depends(requ
     log_action(action="user_delete", details=f"Benutzer '{target_username}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+gelöscht")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# API-Key-Verwaltung (nur Admin)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api-keys")
 def api_keys_list(request: Request, admin: dict = Depends(require_admin)):
@@ -221,11 +209,9 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
     if not key_id or not password:
         return JSONResponse({"error": "Key ID und Passwort erforderlich"}, status_code=400)
 
-    # Passwort des angemeldeten Administrators prüfen
     if not verify_password(password, admin["password_hash"]):
         return JSONResponse({"error": "Ungültiges Passwort"}, status_code=403)
 
-    # API-Schlüssel suchen und entschlüsseln
     keys = list_keys()
     key_obj = next((k for k in keys if k["id"] == key_id), None)
     if not key_obj:
@@ -305,10 +291,6 @@ async def system_secret_regenerate(request: Request, admin: dict = Depends(requi
     return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys und MCP-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
 
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MCP-Key-Verwaltung (nur Admin)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/mcp-keys")
 async def mcp_key_create(request: Request, admin: dict = Depends(require_admin)):
@@ -425,10 +407,6 @@ async def mcp_key_reveal(request: Request, admin: dict = Depends(require_admin))
     log_action(action="mcp_key_reveal", details=f"MCP-Key '{key_obj.get('name')}' (ID: {key_id}) entschlüsselt und angezeigt", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"raw_key": raw_key})
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Theme (in config.json persistieren, Default = dunkel)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/theme/set")
 @router.post("/theme/set")

@@ -29,13 +29,11 @@ def create_backup_xz(output_path: Path | None = None) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tarfile.open(output_path, "w:xz") as tar:
-        # Ordner sichern
         for d in dirs_to_backup:
             dir_path = PROJECT_ROOT / d
             if dir_path.exists():
                 tar.add(dir_path, arcname=d)
 
-        # Einzelne Dateien sichern
         for f in files_to_backup:
             file_path = PROJECT_ROOT / f
             if file_path.exists():

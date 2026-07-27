@@ -14,14 +14,12 @@ if [ -z "$FILE_PATH" ]; then
     exit 1
 fi
 
-# Auflösung: Wenn nur ein Name ohne Pfad übergeben wird, in wiki/ suchen
 if [[ "$FILE_PATH" != *"/"* ]]; then
     RESOLVED="$WIKI_BASE/$FILE_PATH"
 else
     RESOLVED="$FILE_PATH"
 fi
 
-# Sicherheitscheck: Existiert die Datei?
 if [ ! -f "$RESOLVED" ]; then
     echo "Fehler: Datei '$RESOLVED' nicht gefunden."
     echo "Vorhandene Wiki-Dateien:"
@@ -29,21 +27,17 @@ if [ ! -f "$RESOLVED" ]; then
     exit 1
 fi
 
-# Dateinamen extrahieren
 FILENAME=$(basename "$RESOLVED")
 DEST="$EXPORT_DIR/$FILENAME"
 
-# Ausgabe für den LLM-Agenten (maschinenlesbar)
 echo "--- SYSTEM INFO ---"
 echo "QUELLE: $RESOLVED"
 echo "EXPORT: $DEST"
 
-# 1. Datei in den Export-Ordner kopieren
 cp "$RESOLVED" "$DEST"
 echo "STATUS: ✅ Erfolgreich nach $DEST kopiert"
 echo "--- INHALT START ---"
 
-# 2. Inhalt ausgeben (für den Agenten)
 cat "$RESOLVED"
 
 echo "--- INHALT ENDE ---"

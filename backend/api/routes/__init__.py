@@ -1,4 +1,3 @@
-# backend/api/routes/__init__.py
 """Routen-Paket für LLMWikiNG (FastAPI)."""
 
 from api.routes.pages import router

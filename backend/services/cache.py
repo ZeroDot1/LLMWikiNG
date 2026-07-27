@@ -32,8 +32,6 @@ class WikiCache:
         self._lock = threading.RLock()
         self._max_age = max_age_seconds
 
-    # ─── Fingerprint-Berechnung ────────────────────────────────────────────
-
     def _dir_fingerprint(self, directory: Path) -> str:
         """Berechnet einen Fingerabdruck eines Verzeichnisses basierend auf
         den mtime-Werten aller .md-Dateien. O(n) aber sehr schnell (nur stat()).
@@ -51,8 +49,6 @@ class WikiCache:
             return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()[:16]
         except Exception:
             return str(time.time())
-
-    # ─── Öffentliche API ───────────────────────────────────────────────────
 
     def get(self, key: str, directory: Path) -> Optional[Any]:
         """Gibt den Cache-Wert zurück oder None falls abgelaufen/ungültig."""
@@ -106,7 +102,6 @@ class WikiCache:
             }
 
 
-# Globale Cache-Instanz (Singleton im Prozess)
 _cache = WikiCache(max_age_seconds=300)
 
 

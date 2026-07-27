@@ -84,9 +84,6 @@ ACTION_CATEGORIES = {
     "mcp_restore_backup": "mcp",
 }
 
-# ═══════════════════════════════════════════════════════════════════
-# DB-Initialisierung (gecacht — nur einmal pro Prozess)
-# ═══════════════════════════════════════════════════════════════════
 _db_initialized: bool = False
 
 
@@ -94,7 +91,6 @@ def is_audit_enabled(action: str) -> bool:
     """Prüft, ob Logging generell und für die spezifische Kategorie aktiviert ist."""
     config = load_app_config()
     
-    # Global toggle
     if not config.get("audit_enabled", True):
         return False
         
@@ -159,7 +155,6 @@ def log_action(
     try:
         init_db()  # Sicherstellen, dass DB existiert
         
-        # IP-Adresse ermitteln
         ip_address = "unknown"
         user_agent = None
         if request:
@@ -249,11 +244,9 @@ def get_logs(
             count_query += search_clause
             params.extend([search_term, search_term, search_term, search_term])
 
-        # Gesamtanzahl holen
         cursor.execute(count_query, params)
         total = cursor.fetchone()[0]
 
-        # Paginierte Ergebnisse
         query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
         cursor.execute(query, params + [limit, offset])
         rows = cursor.fetchall()

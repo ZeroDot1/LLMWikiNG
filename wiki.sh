@@ -18,14 +18,8 @@
 
 set -euo pipefail
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# VERSION
-# ═══════════════════════════════════════════════════════════════════════════════
-VERSION="2.3.0"
+VERSION="2.12.43"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# KONFIGURATION
-# ═══════════════════════════════════════════════════════════════════════════════
 WIKI_DIR="${WIKI_DIR:-./wiki}"
 RAW_DIR="${RAW_DIR:-./raw}"
 EXPORT_DIR="${EXPORT_DIR:-./output_docs}"
@@ -36,9 +30,6 @@ COLLECTION_NAME="${COLLECTION_NAME:-my_wiki}"
 LLM_BACKEND="${LLM_BACKEND:-ollama}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.2:3b}"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FARBEN
-# ═══════════════════════════════════════════════════════════════════════════════
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -46,15 +37,10 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# HILFSFUNKTIONEN
-# ═══════════════════════════════════════════════════════════════════════════════
-
 # Datum im ISO-Format
 today()    { date +%Y-%m-%d; }
 now_iso()  { date +%Y-%m-%dT%H:%M:%S; }
 
-# Prüft ob ein Befehl existiert
 check_cmd() {
     if ! command -v "$1" &>/dev/null; then
         echo -e "${RED}❌ '$1' nicht gefunden. Bitte installieren: $2${NC}"
@@ -62,7 +48,6 @@ check_cmd() {
     fi
 }
 
-# Slug aus Titel generieren (für Dateinamen)
 slugify() {
     echo "$1" \
         | sed 's/[/@#!$%^&*()]//g' \
@@ -72,13 +57,11 @@ slugify() {
         | sed 's/--*/-/g; s/^-//; s/-$//'
 }
 
-# Dateiname aus Quellpfad extrahieren (ohne Erweiterung)
 basename_noext() {
     local f=$(basename "$1")
     echo "${f%.*}"
 }
 
-# ─── LLM-Unterstützung (ollama/agy) ──────────────────────────────────────────
 llm_available() {
     case "$LLM_BACKEND" in
         ollama)  command -v ollama &>/dev/null && ollama list &>/dev/null ;;
@@ -117,14 +100,12 @@ $text" 2>/dev/null || echo "_Zusammenfassung nicht verfügbar (ollama nicht erre
     esac
 }
 
-# ─── Index updaten ────────────────────────────────────────────────────────────
 update_index() {
     local wiki_name=$(basename "$WIKI_DIR")
     python3 -c "import sys; sys.path.insert(0, './backend'); from services.sync import regenerate_index; regenerate_index('$wiki_name')"
     echo -e "${GREEN}✓ index.md aktualisiert (via Python/OKF)${NC}"
 }
 
-# ─── Log updaten ──────────────────────────────────────────────────────────────
 append_log() {
     local action="$1"    # z. B. "ingest", "lint", "query"
     local title="$2"
@@ -133,10 +114,6 @@ append_log() {
     python3 -c "import sys; sys.path.insert(0, './backend'); from services.sync import append_okf_log; append_okf_log('$action', '$title', '$details', '$wiki_name')"
     echo -e "${GREEN}✓ log.md aktualisiert (via Python/OKF)${NC}"
 }
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# BEFEHLE
-# ═══════════════════════════════════════════════════════════════════════════════
 
 show_help() {
     echo -e "${BLUE}╔══════════════════════════════════════════════════════╗${NC}"
@@ -176,18 +153,15 @@ show_help() {
     echo "  OLLAMA_MODEL=llama3.2:3b          (Standard: llama3.2:3b)"
 }
 
-# ─── 1. INIT ──────────────────────────────────────────────────────────────────
 init_wiki() {
     echo -e "${YELLOW}🚀 Initialisiere LLM-Wiki-Struktur...${NC}"
 
-    # Alle benötigten Ordner anlegen
     mkdir -p "$WIKI_DIR" "$RAW_DIR" "$EXPORT_DIR"
     echo -e "${GREEN}✓ Ordner:${NC}"
     echo "   • $WIKI_DIR      – Wiki-Seiten"
     echo "   • $RAW_DIR       – Rohquellen (immutable)"
     echo "   • $EXPORT_DIR    – Exportierte Dokumente"
 
-    # index.md anlegen falls nicht vorhanden (OKF-konform)
     if [ ! -f "$WIKI_DIR/index.md" ]; then
         cat > "$WIKI_DIR/index.md" <<-EOF
 ---
@@ -206,7 +180,6 @@ EOF
         echo -e "${GREEN}✓ index.md angelegt (OKF-konform)${NC}"
     fi
 
-    # log.md anlegen falls nicht vorhanden (OKF-konform)
     if [ ! -f "$WIKI_DIR/log.md" ]; then
         cat > "$WIKI_DIR/log.md" <<-EOF
 ---
@@ -220,7 +193,6 @@ EOF
         echo -e "${GREEN}✓ log.md angelegt (OKF-konform)${NC}"
     fi
 
-    # qmd-Collection
     if qmd collection list 2>/dev/null | grep -q "$COLLECTION_NAME"; then
         echo -e "${GREEN}✓ qmd-Collection '$COLLECTION_NAME' existiert bereits${NC}"
     else
@@ -229,7 +201,6 @@ EOF
         echo -e "${GREEN}✓ qmd-Collection angelegt${NC}"
     fi
 
-    # LLM-Backend prüfen
     echo -e "${YELLOW}🔍 Prüfe LLM-Backend...${NC}"
     case "$LLM_BACKEND" in
         ollama)
@@ -256,12 +227,10 @@ EOF
             ;;
     esac
 
-    # Embeddings generieren
     sync_wiki
     echo -e "${GREEN}✅ Initialisierung abgeschlossen!${NC}"
 }
 
-# ─── 2. SYNC ──────────────────────────────────────────────────────────────────
 sync_wiki() {
     echo -e "${YELLOW}🔄 Aktualisiere qmd-Embeddings...${NC}"
     if command -v qmd &>/dev/null; then
@@ -273,7 +242,6 @@ sync_wiki() {
     fi
 }
 
-# ─── 3. SEARCH ────────────────────────────────────────────────────────────────
 search_wiki() {
     local QUERY=$1
     if [ -z "$QUERY" ]; then
@@ -282,8 +250,6 @@ search_wiki() {
         exit 1
     fi
 
-    # -n 3: limitiert Ergebnisse (Token sparen!)
-    # --json: strukturierte Ausgabe für LLM-Agenten
     if command -v qmd &>/dev/null; then
         qmd query "$QUERY" -n 3 --json 2>&1 | grep -v "WARNING: radv" || true
     else
@@ -292,7 +258,6 @@ search_wiki() {
     fi
 }
 
-# ─── 4. EXPORT ────────────────────────────────────────────────────────────────
 export_wiki() {
     local FILE=$1
     if [ -z "$FILE" ]; then
@@ -301,7 +266,6 @@ export_wiki() {
         exit 1
     fi
 
-    # Pfad auflösen
     local TARGET_PATH="$FILE"
     if [ ! -f "$TARGET_PATH" ]; then
         local BASENAME=$(basename "$FILE")
@@ -324,14 +288,12 @@ export_wiki() {
 
     cp "$TARGET_PATH" "$DEST"
 
-    # Ausgabe für LLM-Agenten (maschinenlesbar)
-    echo "--- SYSTEM INFO: ✅ Datei erfolgreich nach $DEST kopiert ---"
+    echo "--- SYSTEM INFO: � Datei erfolgreich nach $DEST kopiert ---"
     echo "--- INHALT START ---"
     cat "$TARGET_PATH"
     echo "--- INHALT ENDE ---"
 }
 
-# ─── 5. LIST ──────────────────────────────────────────────────────────────────
 list_wiki() {
     local files=$(find "$WIKI_DIR" -type f -name "*.md" \
         ! -name "index.md" ! -name "log.md" \
@@ -350,7 +312,6 @@ list_wiki() {
     echo -e "${CYAN}Verwaltung:${NC} index.md, log.md"
 }
 
-# ─── 6. INGEST ────────────────────────────────────────────────────────────────
 ingest_wiki() {
     local SOURCE_FILE="$1"
 
@@ -366,7 +327,6 @@ ingest_wiki() {
         exit 1
     fi
 
-    # Optionalen Titel parsen
     local CUSTOM_TITLE=""
     if [ "${2:-}" = "--title" ] && [ -n "${3:-}" ]; then
         CUSTOM_TITLE="$3"
@@ -374,28 +334,23 @@ ingest_wiki() {
 
     echo -e "${YELLOW}📥 Ingest: $SOURCE_FILE${NC}"
 
-    # ─── 6a. Quelldateinamen bestimmen ──────────────────────────────────────
     local SOURCE_BASENAME=$(basename "$SOURCE_FILE")
     local RAW_NAME="$(today)-${SOURCE_BASENAME}"
     local RAW_PATH="$RAW_DIR/$RAW_NAME"
 
-    # ─── 6b. Quelle nach raw/ kopieren (immutable!) ─────────────────────────
     mkdir -p "$RAW_DIR"
     cp "$SOURCE_FILE" "$RAW_PATH"
     echo -e "${GREEN}✓ Quelle archiviert: $RAW_PATH${NC}"
 
-    # ─── 6c. Wiki-Seite generieren ─────────────────────────────────────────
     local SOURCE_TEXT
     SOURCE_TEXT=$(cat "$SOURCE_FILE")
 
-    # Titel bestimmen
     local PAGE_TITLE="$CUSTOM_TITLE"
     if [ -z "$PAGE_TITLE" ]; then
         # Erste Überschrift aus der Datei verwenden
         PAGE_TITLE=$(head -1 "$SOURCE_FILE" | sed 's/^#\+\s*//; s/^# //' || echo "$SOURCE_BASENAME")
     fi
 
-    # ─── 6c-i. Quelltext bereinigen (Scrape-Artefakte, kaputte URLs) ──────
     # Entfernt Navigation/Menü-Reste und repariert durch Zeilenumbrüche
     # zerrissene Markdown-URLs, damit die Seite menschenlesbar wird.
     local CLEANED_TEXT
@@ -416,7 +371,6 @@ print(clean_ingest_content(text, '''$PAGE_TITLE'''))
     local PAGE_SLUG=$(slugify "$PAGE_TITLE")
     local PAGE_FILE="$WIKI_DIR/${PAGE_SLUG}.md"
 
-    # Prüfen ob die Seite bereits existiert
     if [ -f "$PAGE_FILE" ]; then
         echo -e "${YELLOW}⚠ Seite '${PAGE_SLUG}.md' existiert bereits. Aktualisiere...${NC}"
         local MODE="update"
@@ -424,7 +378,6 @@ print(clean_ingest_content(text, '''$PAGE_TITLE'''))
         local MODE="create"
     fi
 
-    # Zusammenfassung via LLM (optional)
     local SUMMARY=""
     if llm_available; then
         echo -e "${YELLOW}🧠 Generiere Zusammenfassung via $LLM_BACKEND...${NC}"
@@ -434,7 +387,6 @@ print(clean_ingest_content(text, '''$PAGE_TITLE'''))
         echo -e "${YELLOW}⚠ Kein LLM-Backend verfügbar – verwende Rohtext als Basis${NC}"
     fi
 
-    # Wiki-Seite schreiben
     # Hinweis: "Original-Inhalt" nutzt den bereinigten Text (SOURCE_TEXT),
     # nicht die ungefilterte Quelldatei, damit Navigation/Scrape-Artefakte
     # und zerrissene URLs entfernt sind.
@@ -473,16 +425,12 @@ PAGEEOF
 
     echo -e "${GREEN}✓ ${MODE} Seite: $PAGE_FILE${NC}"
 
-    # Temporäre Bereinigungs-Datei aufräumen
     [ -f "$SOURCE_FILE.clean" ] && rm -f "$SOURCE_FILE.clean"
 
-    # ─── 6d. index.md aktualisieren ──────────────────────────────────────
     update_index
 
-    # ─── 6e. log.md aktualisieren ────────────────────────────────────────
     append_log "ingest" "$PAGE_TITLE" "Quelle: $SOURCE_BASENAME → ${PAGE_SLUG}.md"
 
-    # ─── 6f. qmd-Sync ────────────────────────────────────────────────────
     sync_wiki
 
     echo ""
@@ -492,7 +440,6 @@ PAGEEOF
     echo "   • Export möglich via: $0 export ${PAGE_SLUG}.md"
 }
 
-# ─── 7. LINT ──────────────────────────────────────────────────────────────────
 lint_wiki() {
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║   🔍 Wiki-Gesundheitscheck (Lint)    ║${NC}"
@@ -501,16 +448,13 @@ lint_wiki() {
 
     local issues=0
 
-    # ─── 7a. Orphan-Seiten (keine eingehenden Links) ──────────────────────
     echo -e "${YELLOW}📄 Orphan-Seiten (keine eingehenden Links):${NC}"
     while IFS= read -r page; do
         local pagename=$(basename "$page")
         local rel_page=$(realpath --relative-to="$WIKI_DIR" "$page")
         local page_slug="${rel_page%.*}"
-        # Ignoriere index.md und log.md
         [[ "$pagename" == "index.md" || "$pagename" == "log.md" || "$pagename" == "ingestlater.md" ]] && continue
 
-        # Suche nach Markdown-Link in allen anderen Seiten
         local backlinks=$(rg -l "\]\((/|\./|\.\./)?${page_slug}(\.md)?\)" "$WIKI_DIR" 2>/dev/null \
             | grep -v "$rel_page" || true)
         if [ -z "$backlinks" ]; then
@@ -523,7 +467,6 @@ lint_wiki() {
         echo -e "   ${GREEN}✓ Keine verwaisten Seiten gefunden${NC}"
     fi
 
-    # ─── 7b. Erwähnte Seiten ohne eigene Datei ────────────────────────────
     echo ""
     echo -e "${YELLOW}🔗 Erwähnte aber fehlende Seiten:${NC}"
     local missing=0
@@ -567,7 +510,6 @@ for m in sorted(missing): print(m)
         echo -e "   ${GREEN}✓ Alle verlinkten Seiten existieren${NC}"
     fi
 
-    # ─── 7c. Allgemeine Statistik ─────────────────────────────────────────
     echo ""
     echo -e "${YELLOW}📊 Statistik:${NC}"
     local total_files=$(find "$WIKI_DIR" -type f -name "*.md" \
@@ -581,7 +523,6 @@ for m in sorted(missing): print(m)
     echo "   • Gesamtwörter: ${total_words:-0}"
     echo "   • Gefundene Probleme: $issues"
 
-    # ─── 7d. qmd-Suche prüfen ───────────────────────────────────────────
     echo ""
     echo -e "${YELLOW}🔎 qmd-Integration:${NC}"
     if command -v qmd &>/dev/null; then
@@ -602,18 +543,15 @@ for m in sorted(missing): print(m)
         echo -e "${YELLOW}⚠ $issues potenzielle(r) Verbesserungspunkt(e) gefunden.${NC}"
     fi
 
-    # In Log eintragen
     append_log "lint" "Gesundheitscheck" "$issues Probleme gefunden"
 }
 
-# ─── 8. STATUS ────────────────────────────────────────────────────────────────
 status_wiki() {
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║   📊 Wiki-Status                     ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo ""
 
-    # Seiten zählen
     local wiki_pages=$(find "$WIKI_DIR" -maxdepth 1 -name "*.md" \
         ! -name "index.md" ! -name "log.md" | wc -l)
     local raw_sources=$(find "$RAW_DIR" -type f 2>/dev/null | wc -l)
@@ -662,7 +600,6 @@ status_wiki() {
     append_log "status" "Wiki-Status abgefragt" "wiki=$wiki_pages, raw=$raw_sources, export=$exported"
 }
 
-# ─── 9. RESET ─────────────────────────────────────────────────────────────────
 reset_wiki() {
     echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${RED}║   ⚠️   WARNUNG: WIKI ZURÜCKSETZEN                     ║${NC}"
@@ -685,12 +622,10 @@ reset_wiki() {
 
     echo -e "${YELLOW}🔄 Setze Datenverzeichnisse zurück...${NC}"
     
-    # Verzeichnisse leeren
     rm -rf "$WIKI_DIR"/*
     rm -rf "$RAW_DIR"/*
     rm -rf "$EXPORT_DIR"/*
     
-    # index.md und log.md OKF-konform neu aufbauen
     cat > "$WIKI_DIR/index.md" <<-EOF
 ---
 okf_version: "0.1"
@@ -710,20 +645,17 @@ okf_version: "0.1"
 - **Reset**: Wiki vollständig zurückgesetzt
 EOF
 
-    # qmd Collection zurücksetzen falls qmd installiert ist
     if command -v qmd &>/dev/null; then
         echo -e "${YELLOW}🔄 Bereinige qmd-Suchindex...${NC}"
         qmd collection remove "$COLLECTION_NAME" --yes 2>/dev/null || true
         qmd collection add "$WIKI_DIR" --name "$COLLECTION_NAME" 2>/dev/null || true
     fi
 
-    # Index neu aufbauen
     update_index
 
     echo -e "${GREEN}✅ Wiki wurde erfolgreich in den Werkszustand zurückgesetzt!${NC}"
 }
 
-# ─── 10. CONFIG ───────────────────────────────────────────────────────────────
 show_config() {
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║   ⚙️  Konfiguration                   ║${NC}"
@@ -746,9 +678,6 @@ show_config() {
     echo "   OLLAMA_MODEL=mistral ./wiki.sh ..."
 }
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# HAUPTMENÜ
-# ═══════════════════════════════════════════════════════════════════════════════
 case "${1:-help}" in
     init)
         init_wiki

@@ -63,7 +63,6 @@ def build_graph_data_paginated(
     all_nodes: list[dict] = full["nodes"]
     all_edges: list[dict] = full["edges"]
 
-    # Optionaler Tag-Filter
     if tag_filter:
         prefix = f"tag-{tag_filter.lower()}"
         all_nodes = [n for n in all_nodes if n.get("group", "").startswith(prefix)]
@@ -209,7 +208,6 @@ def build_graph_data_all() -> dict:
         except Exception:
             continue
 
-        # Prefix nodes with wiki slug
         for n in full.get("nodes", []):
             orig_id = n["id"]
             prefixed = f"{wiki_slug}::{orig_id}"
@@ -222,7 +220,6 @@ def build_graph_data_all() -> dict:
             all_nodes.append(n)
             known_ids.add(prefixed)
 
-        # Prefix edges
         for e in full.get("edges", []):
             e["from"] = f"{wiki_slug}::{e['from']}" if e.get("from") else e.get("from")
             e["to"] = f"{wiki_slug}::{e['to']}" if e.get("to") else e.get("to")

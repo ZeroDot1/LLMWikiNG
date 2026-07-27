@@ -2108,6 +2108,12 @@ def get_mcp_combined_app():
     Loesung: Beide Apps am selben Mount-Punkt (/mcp) kombinieren.
     Dafuer wird streamable_http_path auf "/" gesetzt (per FastMCP-Konfig),
     sodass die HTTP-Route am Root der kombinierten App liegt.
+
+    AGY-Bug-Kompensation: AGY ignoriert den SSE endpoint-Event und
+    POSTet JSON-RPC direkt auf /sse statt auf /messages/.
+    Der /sse-Route wird daher als Dispatch installiert:
+      GET  /sse → SseServerTransport.handle_sse (SSE-Stream)
+      POST /sse → SseServerTransport.handle_post_message (Weiterleitung)
     """
     if not _MCP_AVAILABLE or mcp_server is None:
         return None
@@ -2123,9 +2129,27 @@ def get_mcp_combined_app():
     # SSE-App verwenden.
     http_routes = [http_app.routes[0]] if http_app.routes else []
 
-    # SSE-App: Alle Routen uebernehmen (/sse + /messages/)
-    sse_routes = list(sse_app.routes)
+    # SSE-Transport-Instanz extrahieren ( fuer POST-Weiterleitung )
+    sse_handler = sse_app.routes[0].endpoint
+    sse_transport = sse_handler.__self__
 
-    return Starlette(routes=http_routes + sse_routes)
+    async def _sse_dispatch(scope, receive, send):
+        """GET → SSE-Stream, POST → Messages-Handler (AGY-Kompat)."""
+        if scope["method"] == "GET":
+            return await sse_handler(scope, receive, send)
+        elif scope["method"] == "POST":
+            return await sse_transport.handle_post_message(scope, receive, send)
+        else:
+            from starlette.responses import Response
+            res = Response("Method Not Allowed", status_code=405, headers={"Allow": "GET, POST"})
+            await res(scope, receive, send)
+
+    # Custom SSE-Route: Akzeptiert GET (SSE) + POST (AGY-Fallback)
+    custom_sse_route = Route("/sse", endpoint=_sse_dispatch, methods=["GET", "POST"])
+
+    # Messages-Mount bleibt fuer Standard-SSE-Clients (遵循 endpoint-Event)
+    messages_mount = sse_app.routes[1]
+
+    return Starlette(routes=http_routes + [custom_sse_route, messages_mount])
 
 

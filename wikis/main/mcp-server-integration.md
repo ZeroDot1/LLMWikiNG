@@ -10,7 +10,7 @@ status: AI-Generated
 
 # LLMWikiNG MCP Server — Integration & Tool Reference
 
-This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 31 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
+This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 37 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
 
 LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a plain, human-readable Markdown file with a small YAML frontmatter block. That means the AI never works with a proprietary blob — it reads and writes normal Markdown, and you can open every page in any editor.
 

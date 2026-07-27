@@ -33,7 +33,7 @@ if [ -d "wikis" ]; then
     find wikis/ -maxdepth 1 -mindepth 1 -type d ! -name "main" -exec rm -rf {} +
     
     if [ -d "wikis/main" ]; then
-        find wikis/main/ -type f ! -name "index.md" ! -name "log.md" -delete
+        find wikis/main/ -type f ! -name "index.md" ! -name "log.md" ! -name "mcp-server-integration.md" -delete
         
         cat > wikis/main/index.md <<EOF
 ---

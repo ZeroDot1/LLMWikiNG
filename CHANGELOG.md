@@ -9,6 +9,15 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
 
+## [2.13.1] - 2026-07-27
+
+### Fixed
+- **Jinja2 TemplateSyntaxError in Update-Tab** (`templates/settings/update.html`): Fehlenden `{% if update_available %}` Tag korrigiert.
+- **JavaScript-Syntaxfehler in MCP-Tab** (`templates/settings/mcp.html`): Tippfehler im opening script tag (`<script>t>`) behoben.
+- **MCP Client-Konfigurationsbeispiele** (`templates/settings/mcp.html`): Rendering-Initialisierung gefixt, damit Client-Snippets (AGY, OpenCode, Hermes) auch ohne angelegte Nutzer unbedingt geladen werden.
+- **Fehlendes Error-Template** (`templates/error.html`): Template `error.html` für `render(request, "error.html", ...)` hinzugefügt.
+- **Bereinigungsskript** (`clean_release.sh`): Ausnahme für `wikis/main/mcp-server-integration.md` hinzugefügt, um die MCP-Dokumentationsseite beim Release-Cleaner nicht zu löschen.
+
 ## [2.13.0] - 2026-07-27
 
 ### Added

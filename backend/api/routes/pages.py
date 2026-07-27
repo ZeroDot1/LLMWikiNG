@@ -1255,8 +1255,11 @@ async def config_post(request: Request):
 @router.get("/settings")
 def settings_get(request: Request):
     app_version_text = _read_version()
-    update_available_flag = (PROJECT_ROOT / "update.sh").exists()
     update_log_output = request.query_params.get("update_log")
+    if not update_log_output:
+        update_log_file = PROJECT_ROOT / "update.log"
+        if update_log_file.exists():
+            update_log_output = update_log_file.read_text(encoding="utf-8").strip() or None
 
     health_run_check = request.query_params.get("run") == "1"
     if health_run_check:
@@ -1379,10 +1382,15 @@ async def settings_post(request: Request):
         if github_token:
             env["GITHUB_TOKEN"] = github_token
 
+        log_file = PROJECT_ROOT / "update.log"
         if not update_script.exists():
             update_log_output = "FEHLER: update.sh nicht gefunden."
+            log_file.write_text(update_log_output + "\n", encoding="utf-8")
         else:
             try:
+                # Vor jedem Update das alte Logfile leeren
+                log_file.write_text("", encoding="utf-8")
+
                 # ACHTUNG: async-Route -> blockierenden Subprozess via to_thread
                 # auslagern, sonst friert die Event-Loop (Hänger) ein.
                 proc = await asyncio.to_thread(
@@ -1399,13 +1407,18 @@ async def settings_post(request: Request):
                 raw_output = proc.stdout + proc.stderr
                 update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
 
+                # Logfile auf Festplatte speichern
+                log_file.write_text(update_log_output, encoding="utf-8")
+
                 # Automatischen Server-Neustart nach erfolgreichem Update auslösen,
                 # damit direkt der neue Code im Speicher aktiv wird.
                 _trigger_server_restart()
             except subprocess.TimeoutExpired:
                 update_log_output = "FEHLER: Update-Skript hat 300 Sekunden ueberschritten."
+                log_file.write_text(update_log_output + "\n", encoding="utf-8")
             except Exception as e:
                 update_log_output = f"FEHLER: {e}"
+                log_file.write_text(update_log_output + "\n", encoding="utf-8")
     elif action == "restart_server":
         # Startet den Server neu, indem der Hauptprozess beendet wird.
         # Im Docker-Container (restart: always) oder via Systemd wird der Prozess sofort neu gestartet.

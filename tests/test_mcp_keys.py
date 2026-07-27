@@ -11,7 +11,9 @@ class TestPerUserMcpKeys:
 
     def test_mcp_key_creation_and_storage(self, tmp_path_factory):
         """Testet die Erstellung und das Auflisten von MCP-Keys."""
-        user = create_user("mcp_unique_user1", "pass123", role="admin")
+        import uuid
+        uname = f"mcp_user_{uuid.uuid4().hex[:8]}"
+        user = create_user(uname, "pass123", role="admin")
         key_obj, raw_key = create_mcp_key(user["id"], "Test Agent Key", allowed_tools=["okf_list_wikis", "okf_search"])
 
         assert key_obj["name"] == "Test Agent Key"

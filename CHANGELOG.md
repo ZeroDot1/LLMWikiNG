@@ -7,7 +7,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [2.13.5] - 2026-07-27
+## [2.13.6] - 2026-07-27
 
 ### Fixed
 - **Dual MCP Mount (Streamable HTTP & SSE) in `backend/main.py`**: MCP-Server stellt nun gleichzeitig Streamable HTTP unter `/LLMWikiNG/mcp` und SSE unter `/LLMWikiNG/mcp/sse` zur Verfügung. Behebt den Fehler `session not found` bei MCP-Clients (z.B. Gemini Plugin in `~/.gemini/config/plugins`), die den Streamable HTTP Transport nutzen.

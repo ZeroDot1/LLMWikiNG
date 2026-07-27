@@ -1,5 +1,5 @@
 /* graph.css – Dediziertes Stylesheet für die Knowledge-Graph-Seite.
- * Version: 2.12.18
+ * Version: 2.12.21
  * Importiert Basis-CSS-Variablen aus tailwind-build.css (via :root Cascade).
  * Alle Graph-spezifischen Stile hier – kein Tailwind-Utility-Chaos im Template.
  */

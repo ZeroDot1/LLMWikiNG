@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.21] - 2026-07-27
+
+### Fixed
+- **Doppelte ASGI-Response in `McpApiKeyMiddleware` behoben (`backend/main.py`)**: Wenn ein unvollständiger oder ungültiger MCP- bzw. API-Key an `/mcp/`-Endpunkte gesendet wurde, wurde zwar ein 401/503 `StarletteJSON`-Response über den ASGI `send`-Channel gesendet, danach führte die Middleware jedoch fälschlicherweise `await self.app(scope, receive, send)` weiter aus. Dies führte bei Uvicorn zum Absturz mit `RuntimeError: Expected ASGI message 'http.response.body', but got 'http.response.start'`. Ein explizites `return` nach dem Aufruf von `self.app(...)` behebt das Problem vollständig.
+
 ## [2.12.20] - 2026-07-27
 
 ### Fixed

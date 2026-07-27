@@ -188,6 +188,8 @@ def create_app() -> FastAPI:
                             if "state" not in scope:
                                 scope["state"] = {}
                             scope["state"]["mcp_user"] = user
+                            await self.app(scope, receive, send)
+                            return
 
                         await self.app(scope, receive, send)
 

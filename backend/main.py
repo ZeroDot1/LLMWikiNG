@@ -135,11 +135,8 @@ def create_app() -> FastAPI:
                                 mcp_key = query_params.get("mcp_key", [None])[0]
 
                             if not mcp_key:
-                                response = StarletteJSON(
-                                    {"detail": "MCP-Key erforderlich (X-MCP-Key)"},
-                                    status_code=401,
-                                )
-                                await response(scope, receive, send)
+                                res = JSONResponse({"detail": "MCP-Key erforderlich (X-MCP-Key)"}, status_code=401)
+                                await res(scope, receive, send)
                                 return
 
                             # API-Key aus Header oder Query lesen
@@ -152,11 +149,8 @@ def create_app() -> FastAPI:
                                 api_key = query_params.get("api_key", [None])[0]
 
                             if not api_key:
-                                response = StarletteJSON(
-                                    {"detail": "API-Key erforderlich (X-API-Key)"},
-                                    status_code=401,
-                                )
-                                await response(scope, receive, send)
+                                res = JSONResponse({"detail": "API-Key erforderlich (X-API-Key)"}, status_code=401)
+                                await res(scope, receive, send)
                                 return
 
                             import hashlib
@@ -170,28 +164,19 @@ def create_app() -> FastAPI:
                                 api_h = hashlib.sha256(api_key.encode()).hexdigest()
                                 api_key_obj = get_key_by_hash(api_h)
                                 if not api_key_obj or not api_key_obj.get("active", True):
-                                    response = StarletteJSON(
-                                        {"detail": "Ungueltiger API-Key (X-API-Key)"},
-                                        status_code=401,
-                                    )
-                                    await response(scope, receive, send)
+                                    res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
+                                    await res(scope, receive, send)
                                     return
 
                                 if api_key_obj["user_id"] != mcp_key_obj["user_id"]:
-                                    response = StarletteJSON(
-                                        {"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"},
-                                        status_code=403,
-                                    )
-                                    await response(scope, receive, send)
+                                    res = JSONResponse({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
+                                    await res(scope, receive, send)
                                     return
 
                                 user = get_user(mcp_key_obj["user_id"])
                                 if not user or not user.get("active", True):
-                                    response = StarletteJSON(
-                                        {"detail": "Benutzer inaktiv"},
-                                        status_code=401,
-                                    )
-                                    await response(scope, receive, send)
+                                    res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
+                                    await res(scope, receive, send)
                                     return
 
                                 # allowed_tools in scopeState + ContextVar speichern
@@ -223,20 +208,14 @@ def create_app() -> FastAPI:
                                 api_h = hashlib.sha256(api_key.encode()).hexdigest()
                                 db_key = get_key_by_hash(api_h)
                                 if not db_key or not db_key.get("active", True):
-                                    response = StarletteJSON(
-                                        {"detail": "Ungueltiger API-Key (X-API-Key)"},
-                                        status_code=401,
-                                    )
-                                    await response(scope, receive, send)
+                                    res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
+                                    await res(scope, receive, send)
                                     return
 
                                 user = get_user(db_key["user_id"])
                                 if not user or not user.get("active", True):
-                                    response = StarletteJSON(
-                                        {"detail": "Benutzer inaktiv"},
-                                        status_code=401,
-                                    )
-                                    await response(scope, receive, send)
+                                    res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
+                                    await res(scope, receive, send)
                                     return
 
                                 if "state" not in scope:
@@ -255,11 +234,8 @@ def create_app() -> FastAPI:
                                 return
 
                             # Weder gueltiger MCP-Key noch Legacy-Key
-                            response = StarletteJSON(
-                                {"detail": "Ungueltiger MCP-Key (X-MCP-Key)"},
-                                status_code=401,
-                            )
-                            await response(scope, receive, send)
+                            res = JSONResponse({"detail": "Ungueltiger MCP-Key (X-MCP-Key)"}, status_code=401)
+                            await res(scope, receive, send)
                             return
 
                         await self.app(scope, receive, send)

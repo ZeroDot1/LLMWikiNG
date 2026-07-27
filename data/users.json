@@ -62,5 +62,29 @@
     "role": "admin",
     "active": true,
     "created_at": "2026-07-27T13:14:09"
+  },
+  {
+    "id": "1f3aafbba6efad73",
+    "username": "mcp_user_58ce034a",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$7gfBlX0QvVeLIE4tMhXx6g$npEXZXIavNwB4xU2/rq/sqOozCwxRWq2wSQxSVNDaXI",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T19:22:27"
+  },
+  {
+    "id": "c2f3a7818383a35a",
+    "username": "mcp_user_80e883c7",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$0lo/Lw/PAtSt0V6sGGuVHQ$/xFxHQzaaVeBJCN4rbTqnIv3/5JprvprAW2o9W8S/pQ",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T21:09:13"
+  },
+  {
+    "id": "3bf3dd3433e139c7",
+    "username": "mcp_user_83d47fb3",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$uxH4UHK8CFI/3MH7FnO9KQ$yDBC/TZS1lYTKrE19f6IntEO36inPOPkXEEu+e40k6s",
+    "role": "admin",
+    "active": true,
+    "created_at": "2026-07-27T21:29:45"
   }
 ]

@@ -99,12 +99,12 @@
     <h2 class="text-lg font-semibold mb-3 text-primary">{{ _('update.log_heading') }}</h2>
     <pre class="whitespace-pre-wrap text-xs bg-surface border border-border p-3 rounded font-mono text-text max-h-60 overflow-y-auto">{{ update_log }}</pre>
     <div class="mt-3 p-3 bg-success-subtle rounded-lg text-xs border border-success/20 flex flex-col gap-1">
-        <strong class="text-success font-bold">✓ Der Server-Neustart wurde automatisch initiiert!</strong>
-        <span class="text-text-secondary">Die WebUI verbindet sich automatisch neu, sobald der Server hochgefahren ist... (<span id="restartCountdown">5</span>s)</span>
+        <strong class="text-success font-bold">{{ _('update.restart_auto_heading') }}</strong>
+        <span class="text-text-secondary">{{ _('update.restart_auto_text') }} (<span id="restartCountdown">5</span>s)</span>
     </div>
-    <form action="{{ base_path }}/settings?tab=update" method="post" class="mt-3" onsubmit="return confirm('Möchtest du den Webserver jetzt neu starten? Im Container-Modus wird er automatisch wieder hochgefahren.');">
+    <form action="{{ base_path }}/settings?tab=update" method="post" class="mt-3" onsubmit="return confirm('{{ _('update.restart_confirm') }}');">
         <input type="hidden" name="action" value="restart_server">
-        <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors">🔄 Server manuell neu starten</button>
+        <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors">{{ _('update.restart_button') }}</button>
     </form>
 </div>
 <script>

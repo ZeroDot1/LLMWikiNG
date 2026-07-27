@@ -332,7 +332,11 @@
     "local_label": "Local:",
     "github_label": "GitHub:",
     "error_prefix": "Error:",
-    "docker_rebuild_warning": "⚠️ NOTE ON CONTAINER UPDATES: If dependencies (Dockerfile, requirements.txt, Python packages) have changed, performing an update on a running instance may cause errors. In this case, the Docker container must be rebuilt (e.g. docker compose build --no-cache && docker compose up -d)."
+    "docker_rebuild_warning": "⚠️ NOTE ON CONTAINER UPDATES: If dependencies (Dockerfile, requirements.txt, Python packages) have changed, performing an update on a running instance may cause errors. In this case, the Docker container must be rebuilt (e.g. docker compose build --no-cache && docker compose up -d).",
+    "restart_auto_heading": "Server restart was automatically initiated!",
+    "restart_auto_text": "The WebUI will reconnect automatically once the server is back up",
+    "restart_confirm": "Do you want to restart the web server now? In container mode it will restart automatically.",
+    "restart_button": "Restart server manually"
   },
   "graph": {
     "page_title": "Knowledge Graph",

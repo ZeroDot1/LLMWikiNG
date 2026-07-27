@@ -15,6 +15,11 @@
         <tr><td class="py-1.5 text-text-secondary">{{ _('update.local_version_label') }}</td><td><strong id="localVersion">{{ app_version }}</strong></td></tr>
     </table>
 
+    <div class="my-4">
+        <label for="github_token_input" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('update.github_token_label') }}</label>
+        <input type="password" id="github_token_input" class="w-full max-w-md rounded-lg border border-border bg-surface px-3 py-2 text-text text-sm focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('update.github_token_placeholder') }}">
+    </div>
+
     <div id="checkResult" class="hidden mt-3"
         data-checking-text="{{ _('update.checking_text') }}"
         data-error-prefix="{{ _('update.error_prefix') }}"
@@ -31,26 +36,27 @@
     <h3 class="mt-5 mb-2 font-semibold">{{ _('update.sections_heading') }}</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="rounded-lg border border-success/30 bg-success-subtle p-3">
-            <strong class="text-success">{{ _('update.section_replaced_heading') }}</strong>
+            <strong class="text-success">{{ _('update.section_preserved_heading') }}</strong>
             <ul class="mt-1 ml-4 text-xs list-disc">
-                <li><strong>llmWiki.py</strong> (Webserver)</li>
-                <li><strong>email_sender.py</strong> (E-Mail)</li>
-                <li>wiki.sh, start.sh, update.sh</li>
+                <li>wikis/ (Deine Wiki-Seiten)</li>
+                <li>raw/ (Deine Rohquellen)</li>
+                <li>output_docs/ (Deine Exporte)</li>
+                <li>config.json (SMTP-Einstellungen)</li>
+                <li>data/ (Benutzer &amp; API-Keys)</li>
+                <li>.agy.yaml (LLM-Konfiguration)</li>
+            </ul>
+        </div>
+        <div class="rounded-lg border border-warning/30 bg-warning-subtle p-3">
+            <strong class="text-warning">{{ _('update.section_replaced_heading') }}</strong>
+            <ul class="mt-1 ml-4 text-xs list-disc">
+                <li><strong>backend/</strong> (FastAPI-Webserver, Services)</li>
+                <li>start.sh, update.sh, wiki.sh</li>
                 <li>prompts/ (System-Prompts)</li>
                 <li>templates/ (HTML-Vorlagen)</li>
                 <li>static/ (CSS, JS)</li>
                 <li>tools/ (Hilfsskripte)</li>
+                <li>requirements.txt (Python-Abhängigkeiten)</li>
                 <li>VERSION, CHANGELOG, README</li>
-            </ul>
-        </div>
-        <div class="rounded-lg border border-error/30 bg-error-subtle p-3">
-            <strong class="text-error">{{ _('update.section_preserved_heading') }}</strong>
-            <ul class="mt-1 ml-4 text-xs list-disc">
-                <li>wiki/ (Deine Wiki-Seiten)</li>
-                <li>raw/ (Deine Rohquellen)</li>
-                <li>output_docs/ (Deine Exporte)</li>
-                <li>config.json (SMTP-Einstellungen)</li>
-                <li>.agy.yaml (LLM-Konfiguration)</li>
             </ul>
         </div>
     </div>
@@ -61,8 +67,9 @@
     {% if update_available %}
     <p>{{ _('update.run_intro') }}</p>
     <div class="flex gap-3 flex-wrap mt-3">
-        <form action="{{ base_path }}/settings?tab=update" method="post" class="inline">
+        <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">
             <input type="hidden" name="action" value="run_update">
+            <input type="hidden" name="github_token" value="">
             <button type="submit" class="rounded-lg bg-success px-4 py-2 text-white text-lg hover:opacity-90" onclick="return confirm('{{ _('update.run_confirm') }}');">{{ _('update.run_button') }}</button>
         </form>
         <a href="https://github.com/ZeroDot1/LLMWikiNG" target="_blank" class="rounded-lg border border-border bg-surface px-4 py-2 hover:bg-bg-sunken">{{ _('update.github_button') }}</a>
@@ -79,8 +86,29 @@
 <div class="rounded-xl border border-border bg-bg-sunken p-6 shadow-sm mb-6">
     <h2 class="text-lg font-semibold mb-3">{{ _('update.log_heading') }}</h2>
     <pre class="whitespace-pre-wrap text-xs">{{ update_log }}</pre>
-    <p class="mt-3 p-3 bg-error-subtle rounded-lg text-sm"><strong class="text-warning">{{ _('update.restart_warning') }}</strong><br><code class="bg-bg-sunken px-1.5 py-0.5 rounded">./start.sh</code></p>
+    <div class="mt-3 p-3 bg-success-subtle rounded-lg text-xs border border-success/20 flex flex-col gap-1">
+        <strong class="text-success font-bold">Der Server-Neustart wurde automatisch initiiert!</strong>
+        <span class="text-text-secondary">Die WebUI verbindet sich automatisch neu, sobald der Server hochgefahren ist... (<span id="restartCountdown">5</span>s)</span>
+    </div>
+    <form action="{{ base_path }}/settings?tab=update" method="post" class="mt-3" onsubmit="return confirm('Möchtest du den Webserver jetzt neu starten?');">
+        <input type="hidden" name="action" value="restart_server">
+        <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors">Server manuell neu starten</button>
+    </form>
 </div>
+<script>
+(function() {
+    var count = 5;
+    var timerEl = document.getElementById("restartCountdown");
+    var interval = setInterval(function() {
+        count--;
+        if (timerEl) timerEl.textContent = count;
+        if (count <= 0) {
+            clearInterval(interval);
+            window.location.href = window.location.pathname + "?tab=update&reloaded=1";
+        }
+    }, 1000);
+})();
+</script>
 {% endif %}
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">

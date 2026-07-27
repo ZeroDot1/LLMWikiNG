@@ -94,7 +94,7 @@ echo -e "  Erstelle Backup in ${YELLOW}${BACKUP_DIR}${NC}..."
 mkdir -p "$BACKUP_DIR"
 
 # Nur Benutzerdaten sichern – NICHT die Programmdateien (die werden via git reset ersetzt)
-for item in data config.json .agy.yaml wikis raw output_docs scratch; do
+for item in data config.json .agy.yaml wikis wiki raw output_docs scratch wiki.sh; do
     if [ -e "$item" ]; then
         cp -r "$item" "$BACKUP_DIR/" 2>/dev/null || true
     fi
@@ -134,12 +134,12 @@ echo -e "  Pruefe Python-Abhaengigkeiten..."
 PIP_OK=0
 if command -v pip3 &>/dev/null; then
     if [ -f "requirements.txt" ]; then
-        echo -e "  Installiere/fuer update-requirements..."
+        echo -e "  Installiere Python-Abhaengigkeiten aus requirements.txt..."
         pip3 install --user -r requirements.txt 2>&1 | tail -3 && PIP_OK=1 || PIP_OK=0
     fi
 elif command -v pip &>/dev/null; then
     if [ -f "requirements.txt" ]; then
-        echo -e "  Installiere/fuer update-requirements..."
+        echo -e "  Installiere Python-Abhaengigkeiten aus requirements.txt..."
         pip install --user -r requirements.txt 2>&1 | tail -3 && PIP_OK=1 || PIP_OK=0
     fi
 fi
@@ -147,7 +147,7 @@ fi
 if [ "$PIP_OK" -eq 1 ]; then
     echo -e "${GREEN}Abhaengigkeiten aktualisiert${NC}"
 else
-    echo -e "${YELLOW}pip nicht gefunden oderrequirements.txt fehlt – bitte manuell installieren: pip install -r requirements.txt${NC}"
+    echo -e "${YELLOW}pip nicht gefunden oder requirements.txt fehlt – bitte manuell installieren: pip install -r requirements.txt${NC}"
 fi
 
 if [ -d "$BACKUP_DIR/data" ]; then

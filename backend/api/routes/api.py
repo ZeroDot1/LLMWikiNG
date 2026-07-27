@@ -618,15 +618,45 @@ async def api_delete_backup(filename: str, request: Request, admin: dict = Depen
 
 @router.get("/system/update/check")
 async def api_update_check(admin: dict = Depends(require_api_admin)):
-    """Prüft, ob ein Update auf GitHub verfügbar ist.
+    """Prueft, ob ein Update auf GitHub verfuegbar ist.
 
-    Führt ``git fetch origin`` aus und vergleicht die lokale VERSION-Datei
-    mit ``origin/main:VERSION``.
+    Nutzt ``git ls-remote`` (read-only) und vergleicht den lokalen Commit-Hash
+    mit ``origin/main``. Nur bei Hash-Differenz wird ``git fetch`` ausgefuehrt,
+    um die VERSION-Datei auszulesen.
     """
     version_file = PROJECT_ROOT / "VERSION"
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
     try:
+        # 1. Read-only Hash-Vergleich
+        ls_proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "ls-remote", "origin", "main"],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_ROOT),
+        )
+        if ls_proc.returncode != 0 or not ls_proc.stdout.strip():
+            raise HTTPException(status_code=502, detail="Konnte Version von GitHub nicht abrufen.")
+
+        remote_hash = ls_proc.stdout.strip().split()[0]
+        local_hash_proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(PROJECT_ROOT),
+        )
+        local_hash = local_hash_proc.stdout.strip() if local_hash_proc.returncode == 0 else ""
+
+        if remote_hash == local_hash:
+            return {
+                "ok": True,
+                "local_version": local_version,
+                "remote_version": local_version,
+                "update_available": False,
+                "up_to_date": True,
+            }
+
+        # 2. Hash-Differenz -> fetch noetig um VERSION zu lesen
         await asyncio.to_thread(
             subprocess.run,
             ["git", "fetch", "origin"],
@@ -640,6 +670,8 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
             cwd=str(PROJECT_ROOT),
         )
         remote_version = proc.stdout.strip() if proc.returncode == 0 else None
+    except HTTPException:
+        raise
     except Exception:
         remote_version = None
 

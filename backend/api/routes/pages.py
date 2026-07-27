@@ -1021,46 +1021,82 @@ def admin_update_run(request: Request):
 @router.get("/admin/update/check")
 async def admin_update_check(request: Request):
     from fastapi.responses import JSONResponse
-    import re
     github_token = request.query_params.get("github_token", "").strip()
-
-    env = os.environ.copy()
-    if github_token:
-        env["GITHUB_TOKEN"] = github_token
 
     version_file = PROJECT_ROOT / "VERSION"
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+    original_url = None
     try:
-        # Falls ein Token übergeben wurde, die Git Remote-URL anpassen
         if github_token:
-            original_url = (await asyncio.to_thread(
+            # Origin-URL merken, um spaeter wieder herzustellen
+            orig = (await asyncio.to_thread(
                 subprocess.run,
                 ["git", "remote", "get-url", "origin"],
                 capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
             )).stdout.strip()
-            clean_url = re.sub(r"https://[^@]+@", "https://", original_url)
+            import re as _re
+            clean_url = _re.sub(r"https://[^@]+@", "https://", orig)
             auth_url = clean_url.replace("https://", f"https://{github_token}@")
             await asyncio.to_thread(
                 subprocess.run,
                 ["git", "remote", "set-url", "origin", auth_url],
                 timeout=5, cwd=str(PROJECT_ROOT),
             )
+            original_url = orig
 
+        # git ls-remote ist read-only – prueft ob Remote-Ref auf neuerem Commit liegt
+        ls_proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "ls-remote", "origin", "main"],
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+        )
+        if ls_proc.returncode != 0 or not ls_proc.stdout.strip():
+            return JSONResponse({"success": False, "error": "Konnte Version von GitHub nicht abrufen."})
+
+        remote_hash = ls_proc.stdout.strip().split()[0]
+        local_hash_proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
+        )
+        local_hash = local_hash_proc.stdout.strip() if local_hash_proc.returncode == 0 else ""
+
+        if remote_hash == local_hash:
+            # Gleicher Commit = Version identisch, kein fetch noetig
+            return JSONResponse({
+                "success": True,
+                "local_version": local_version,
+                "github_version": local_version,
+                "update_available": False,
+                "up_to_date": True,
+            })
+
+        # Unterschiedlicher Commit – Version aus Remote lesen (fetch noetig)
         await asyncio.to_thread(
             subprocess.run,
             ["git", "fetch", "origin"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), env=env,
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
         )
-        proc = await asyncio.to_thread(
+        show_proc = await asyncio.to_thread(
             subprocess.run,
             ["git", "show", "origin/main:VERSION"],
-            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), env=env,
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
         )
-        github_version = proc.stdout.strip()
-        if not github_version or proc.returncode != 0:
-            github_version = None
+        github_version = show_proc.stdout.strip() if show_proc.returncode == 0 else None
     except Exception:
         github_version = None
+    finally:
+        # GitHub-Token aus remote URL entfernen (Sicherheit!)
+        if original_url:
+            try:
+                await asyncio.to_thread(
+                    subprocess.run,
+                    ["git", "remote", "set-url", "origin", original_url],
+                    timeout=5, cwd=str(PROJECT_ROOT),
+                )
+            except Exception:
+                pass
 
     if github_version is None:
         return JSONResponse({"success": False, "error": "Konnte Version von GitHub nicht abrufen."})

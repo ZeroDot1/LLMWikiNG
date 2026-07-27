@@ -46,7 +46,7 @@
       })
       .finally(function () {
         btn.disabled = false;
-        btn.textContent = btn.dataset.label || (cfg.checkButton || "");
+        btn.textContent = btn.dataset.label || cfg.checkButton || "Check for Update";
       });
   }
 

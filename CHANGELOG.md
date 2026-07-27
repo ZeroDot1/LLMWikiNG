@@ -7,6 +7,14 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.8] - 2026-07-27
+
+### Added & Improved
+- **Optimierte Update-Prüfung (`git ls-remote`)**: In `backend/api/routes/api.py` und `backend/api/routes/pages.py` wird vorab per `git ls-remote` (read-only) geprüft, ob remote neue Commits vorliegen, bevor `git fetch` ausgeführt wird.
+- **GitHub Token Support in WebUI**: Eingabefeld für GitHub Personal Access Token in `templates/update.html` und `templates/settings/update.html` hinzugefügt (für private Repositories oder Git API Ratenlimits).
+- **Automatischer Server-Neustart-Countdown**: WebUI zeigt nach dem System-Update einen 5-Sekunden-Countdown für den automatischen Reconnect.
+- **Erweiterte Datensicherung in `update.sh`**: `wiki/` und `wiki.sh` werden beim automatischen Backup vor Updates mit gesichert.
+
 ## [2.13.7] - 2026-07-27
 
 ### Fixed

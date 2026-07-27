@@ -87,6 +87,8 @@
                     </optgroup>
                     <optgroup label="{{ _('audit.action_group_users') }}">
                         <option value="user_create" {% if action_filter == 'user_create' %}selected{% endif %}>user_create</option>
+                        <option value="user_edit" {% if action_filter == 'user_edit' %}selected{% endif %}>user_edit</option>
+                        <option value="user_change_password" {% if action_filter == 'user_change_password' %}selected{% endif %}>user_change_password</option>
                         <option value="user_delete" {% if action_filter == 'user_delete' %}selected{% endif %}>user_delete</option>
                     </optgroup>
                     <optgroup label="{{ _('audit.action_group_keys') }}">
@@ -102,22 +104,33 @@
                     <optgroup label="{{ _('audit.action_group_wiki') }}">
                         <option value="wiki_create" {% if action_filter == 'wiki_create' %}selected{% endif %}>wiki_create</option>
                         <option value="wiki_sync" {% if action_filter == 'wiki_sync' %}selected{% endif %}>wiki_sync</option>
+                        <option value="wiki_delete" {% if action_filter == 'wiki_delete' %}selected{% endif %}>wiki_delete</option>
+                        <option value="page_create" {% if action_filter == 'page_create' %}selected{% endif %}>page_create</option>
                         <option value="page_save" {% if action_filter == 'page_save' %}selected{% endif %}>page_save</option>
                         <option value="page_delete" {% if action_filter == 'page_delete' %}selected{% endif %}>page_delete</option>
                         <option value="page_export" {% if action_filter == 'page_export' %}selected{% endif %}>page_export</option>
+                        <option value="page_upload" {% if action_filter == 'page_upload' %}selected{% endif %}>page_upload</option>
                         <option value="activity_log_clear" {% if action_filter == 'activity_log_clear' %}selected{% endif %}>activity_log_clear</option>
                         <option value="api_ingest_upload" {% if action_filter == 'api_ingest_upload' %}selected{% endif %}>api_ingest_upload</option>
                     </optgroup>
-                    <optgroup label="MCP">
+                    <optgroup label="{{ _('audit.action_group_mcp') }}">
                         <option value="mcp_tool_call" {% if action_filter == 'mcp_tool_call' %}selected{% endif %}>mcp_tool_call</option>
                         <option value="mcp_write_concept" {% if action_filter == 'mcp_write_concept' %}selected{% endif %}>mcp_write_concept</option>
                         <option value="mcp_delete_page" {% if action_filter == 'mcp_delete_page' %}selected{% endif %}>mcp_delete_page</option>
                         <option value="mcp_create_wiki" {% if action_filter == 'mcp_create_wiki' %}selected{% endif %}>mcp_create_wiki</option>
+                        <option value="mcp_delete_wiki" {% if action_filter == 'mcp_delete_wiki' %}selected{% endif %}>mcp_delete_wiki</option>
+                        <option value="mcp_sync" {% if action_filter == 'mcp_sync' %}selected{% endif %}>mcp_sync</option>
+                        <option value="mcp_update" {% if action_filter == 'mcp_update' %}selected{% endif %}>mcp_update</option>
+                        <option value="mcp_clear_cache" {% if action_filter == 'mcp_clear_cache' %}selected{% endif %}>mcp_clear_cache</option>
                         <option value="mcp_create_backup" {% if action_filter == 'mcp_create_backup' %}selected{% endif %}>mcp_create_backup</option>
                         <option value="mcp_restore_backup" {% if action_filter == 'mcp_restore_backup' %}selected{% endif %}>mcp_restore_backup</option>
                     </optgroup>
                     <optgroup label="{{ _('audit.action_group_system') }}">
+                        <option value="settings_change" {% if action_filter == 'settings_change' %}selected{% endif %}>settings_change</option>
                         <option value="theme_change" {% if action_filter == 'theme_change' %}selected{% endif %}>theme_change</option>
+                        <option value="ingest" {% if action_filter == 'ingest' %}selected{% endif %}>ingest</option>
+                        <option value="ingest_save_later" {% if action_filter == 'ingest_save_later' %}selected{% endif %}>ingest_save_later</option>
+                        <option value="search" {% if action_filter == 'search' %}selected{% endif %}>search</option>
                         <option value="audit_prune" {% if action_filter == 'audit_prune' %}selected{% endif %}>audit_prune</option>
                         <option value="audit_export" {% if action_filter == 'audit_export' %}selected{% endif %}>audit_export</option>
                     </optgroup>
@@ -252,7 +265,7 @@
                 <div>
                     <label for="prune-year" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('audit.prune_year_label') }}</label>
                     <select id="prune-year" name="year" class="rounded-lg border border-border bg-bg-sunken px-3 py-1.5 text-sm text-text focus:border-border-focus focus:ring-1 focus:ring-warning-subtle">
-                        {% for y in range(2025, 2037) %}
+                        {% for y in range(2025, now_year|default(2026) + 2) %}
                         <option value="{{ y }}">{{ y }}</option>
                         {% endfor %}
                     </select>

@@ -835,6 +835,7 @@
     "action_group_users": "Benutzerverwaltung",
     "action_group_keys": "API-Keys & Secrets",
     "action_group_wiki": "Wiki-Aktivitäten",
+    "action_group_mcp": "MCP",
     "action_group_system": "System"
   },
   "settings.syntax_heading": "Syntax-Hervorhebung",

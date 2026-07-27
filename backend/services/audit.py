@@ -84,6 +84,12 @@ ACTION_CATEGORIES = {
     "mcp_restore_backup": "mcp",
 }
 
+# ═══════════════════════════════════════════════════════════════════
+# DB-Initialisierung (gecacht — nur einmal pro Prozess)
+# ═══════════════════════════════════════════════════════════════════
+_db_initialized: bool = False
+
+
 def is_audit_enabled(action: str) -> bool:
     """Prüft, ob Logging generell und für die spezifische Kategorie aktiviert ist."""
     config = load_app_config()
@@ -102,6 +108,9 @@ def is_audit_enabled(action: str) -> bool:
 
 def init_db():
     """Initialisiert die SQLite-Datenbank für Audit-Logs und führt ggf. Migrationen durch."""
+    global _db_initialized
+    if _db_initialized:
+        return
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(AUDIT_DB)
     conn.execute("PRAGMA journal_mode=WAL;")
@@ -131,6 +140,7 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_category ON audit_logs(category)")
     conn.commit()
     conn.close()
+    _db_initialized = True
 
 
 def log_action(
@@ -256,6 +266,56 @@ def get_logs(
         return [], 0
 
 
+def get_all_logs(
+    action: str | None = None,
+    category: str | None = None,
+    username: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    search: str | None = None,
+) -> list[dict]:
+    """Ruft ALLE passenden Audit-Logs ohne Limit ab (fuer Export)."""
+    try:
+        init_db()
+        conn = sqlite3.connect(AUDIT_DB)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        query = "SELECT * FROM audit_logs WHERE 1=1"
+        params = []
+
+        if action:
+            query += " AND action LIKE ?"
+            params.append(f"%{action}%")
+        if category:
+            query += " AND category = ?"
+            params.append(category)
+        if username:
+            query += " AND username = ?"
+            params.append(username)
+        if start_date:
+            query += " AND timestamp >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND timestamp <= ?"
+            params.append(end_date)
+        if search:
+            search_term = f"%{search}%"
+            query += " AND (details LIKE ? OR username LIKE ? OR action LIKE ? OR ip_address LIKE ?)"
+            params.extend([search_term, search_term, search_term, search_term])
+
+        query += " ORDER BY timestamp DESC"
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        logs = [dict(r) for r in rows]
+        conn.close()
+        return logs
+    except Exception as e:
+        print(f"[AUDIT ERROR] {e}")
+        return []
+
+
 def get_recent_audit_logs(limit: int = 5) -> list[dict]:
     """Gibt die neuesten Log-Einträge für das Dashboard zurück."""
     logs, _ = get_logs(limit=limit)
@@ -275,6 +335,21 @@ def get_category_stats() -> dict[str, int]:
     except Exception as e:
         print(f"[AUDIT ERROR] {e}")
         return {}
+
+
+def get_total_count() -> int:
+    """Gibt die Gesamtanzahl aller Audit-Logs zurück."""
+    try:
+        init_db()
+        conn = sqlite3.connect(AUDIT_DB)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM audit_logs")
+        total = cursor.fetchone()[0]
+        conn.close()
+        return total
+    except Exception as e:
+        print(f"[AUDIT ERROR] {e}")
+        return 0
 
 
 def prune_logs(year: int, month: int | None = None) -> int:
@@ -321,4 +396,3 @@ def export_logs_csv(logs: list[dict]) -> str:
             log.get("user_agent") or "",
         ])
     return output.getvalue()
-

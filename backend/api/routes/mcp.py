@@ -94,15 +94,26 @@ def _check_tool_permission(tool_name: str) -> str | None:
     """Prueft ob das angegebene Tool fuer den aktuellen MCP-Key erlaubt ist.
 
     Gibt None zurueck wenn erlaubt, oder eine Fehlermeldung wenn nicht.
+    __all__ und Leerliste bedeuten: alle Tools erlaubt.
     """
     allowed = mcp_allowed_tools_ctx.get()
     if not allowed:
         return None  # Leer = alles erlaubt (Legacy/Full-Access)
-    if tool_name in allowed:
+    if "__all__" in allowed:
+        return None  # Expliziter "alles erlaubt"-Marker
+    # Tool-Gruppen auflösen: z.B. "wiki_read" → okf_list_wikis, okf_read_concept, ...
+    from core.config import MCP_TOOL_GROUPS
+    resolved = set()
+    for entry in allowed:
+        if entry in MCP_TOOL_GROUPS:
+            resolved.update(MCP_TOOL_GROUPS[entry]["tools"])
+        else:
+            resolved.add(entry)
+    if tool_name in resolved:
         return None
     return (
         f"Tool '{tool_name}' ist fuer diesen MCP-Key nicht erlaubt. "
-        f"Erlaubte Tools: {', '.join(allowed)}"
+        f"Erlaubte Tools: {', '.join(sorted(resolved))}"
     )
 
 

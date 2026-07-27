@@ -2013,6 +2013,7 @@ def audit_dashboard(
     search: str | None = None,
 ):
     from services.audit import get_logs, ALL_CATEGORIES
+    from datetime import datetime
     
     logs, total = get_logs(
         limit=limit,
@@ -2041,6 +2042,7 @@ def audit_dashboard(
         start_date=start_date,
         end_date=end_date,
         all_categories=ALL_CATEGORIES,
+        now_year=datetime.now().year,
         success_msg=request.query_params.get("success_msg"),
         error_msg=request.query_params.get("error_msg")
     )
@@ -2074,12 +2076,10 @@ def audit_export(
     end_date: str | None = None,
     search: str | None = None,
 ):
-    from services.audit import get_logs, export_logs_csv
+    from services.audit import get_all_logs, export_logs_csv
     from starlette.responses import Response, JSONResponse
     
-    logs, _ = get_logs(
-        limit=10000,
-        offset=0,
+    logs = get_all_logs(
         action=action,
         category=category,
         username=username,

@@ -184,6 +184,10 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # core.config: LLMWIKING_MCP_KEY (wird von Middleware zur Laufzeit gelesen)
     monkeypatch.setattr(cfg, "LLMWIKING_MCP_KEY", "test_mcp_key_2026")
 
+    # audit: _db_initialized zuruecksetzen damit init_db() pro Test die DB neu erstellt
+    import services.audit as audit_mod
+    monkeypatch.setattr(audit_mod, "_db_initialized", False)
+
     # ---------------------------------------------------------------
     # web.py und main.py: Module-level Bindungen auf echten
     # PROJECT_ROOT. templates = Jinja2Templates(directory=...) und

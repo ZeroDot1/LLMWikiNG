@@ -1,4 +1,4 @@
-// audit.js – Interaktivität für das Audit-Logbuch
+// audit.js – Interaktivitaet fuer das Audit-Logbuch
 (function () {
   "use strict";
 
@@ -14,8 +14,8 @@
         const hasMonth = !!monthSelect.value;
 
         const msg = hasMonth
-          ? `⚠ Alle Audit-Logs VOR ${monthName} ${year} unwiderruflich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`
-          : `⚠ Alle Audit-Logs vor dem Jahr ${year} unwiderruflich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
+          ? `⚠ Alle Audit-Logs VOR ${monthName} ${year} unwiderruflich loeschen?\n\nDiese Aktion kann nicht rueckgaengig gemacht werden.`
+          : `⚠ Alle Audit-Logs vor dem Jahr ${year} unwiderruflich loeschen?\n\nDiese Aktion kann nicht rueckgaengig gemacht werden.`;
 
         if (!confirm(msg)) {
           e.preventDefault();
@@ -23,7 +23,8 @@
       });
     }
 
-    // ── 2. Timestamp Relative Formatting ───────────────────────────────────
+    // ── 2. Timestamp Relative Formatting (locale-aware) ────────────────────
+    const locale = document.documentElement.lang || navigator.language || "de-DE";
     document.querySelectorAll(".audit-date[data-ts]").forEach(function (el) {
       const raw = el.getAttribute("data-ts");
       if (!raw) return;
@@ -36,11 +37,15 @@
         const diffD = Math.floor(diffMs / 86400000);
 
         let relative = "";
-        if (diffMin < 1) relative = "gerade eben";
-        else if (diffMin < 60) relative = `vor ${diffMin} Min.`;
-        else if (diffH < 24) relative = `vor ${diffH} Std.`;
-        else if (diffD < 7) relative = `vor ${diffD} Tag${diffD !== 1 ? "en" : ""}`;
-        else relative = d.toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
+        if (diffMin < 1) relative = locale.startsWith("de") ? "gerade eben" : "just now";
+        else if (diffMin < 60) relative = locale.startsWith("de") ? `vor ${diffMin} Min.` : `${diffMin}m ago`;
+        else if (diffH < 24) relative = locale.startsWith("de") ? `vor ${diffH} Std.` : `${diffH}h ago`;
+        else if (diffD < 7) {
+          if (locale.startsWith("de")) relative = `vor ${diffD} Tag${diffD !== 1 ? "en" : ""}`;
+          else relative = `${diffD}d ago`;
+        } else {
+          relative = d.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
+        }
 
         el.title = raw;
         el.textContent = raw.replace("T", " ").replace(/\.\d+Z?$/, "");
@@ -52,7 +57,7 @@
       } catch (_) {}
     });
 
-    // ── 3. Keyboard Shortcut: Ctrl/Cmd+F focuses action filter ─────────────
+    // ── 3. Keyboard Shortcut: Ctrl/Cmd+Shift+F focuses action filter ───────
     document.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "f" && e.shiftKey) {
         e.preventDefault();
@@ -85,28 +90,29 @@
       }
     }
 
-    // ── 5. Click-to-expand Details ─────────────────────────────────────────
+    // ── 5. Click-to-expand Details (Spalte 6 = Details, 1-basiert) ────────
     document.querySelectorAll("#audit-tbody tr.audit-row").forEach(function (row) {
-      const detailCell = row.querySelector("td:nth-child(5) span");
+      // Spalte 6 (Details) — nicht Spalte 5 (Action)!
+      const detailCell = row.querySelector("td:nth-child(6) span");
       if (!detailCell) return;
       const fullText = detailCell.getAttribute("title");
       if (!fullText || fullText.length <= 55) return;
 
       detailCell.style.cursor = "pointer";
       detailCell.classList.add("ring-hover");
-      detailCell.title = "Klicken zum Anzeigen";
+      detailCell.title = locale.startsWith("de") ? "Klicken zum Anzeigen" : "Click to expand";
 
       detailCell.addEventListener("click", function () {
         if (detailCell.classList.contains("truncate")) {
           detailCell.classList.remove("truncate");
           detailCell.style.whiteSpace = "normal";
           detailCell.textContent = fullText;
-          detailCell.title = "Klicken zum Einklappen";
+          detailCell.title = locale.startsWith("de") ? "Klicken zum Einklappen" : "Click to collapse";
         } else {
           detailCell.classList.add("truncate");
           detailCell.style.whiteSpace = "";
           detailCell.textContent = fullText;
-          detailCell.title = "Klicken zum Anzeigen";
+          detailCell.title = locale.startsWith("de") ? "Klicken zum Anzeigen" : "Click to expand";
         }
       });
     });

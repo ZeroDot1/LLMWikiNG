@@ -546,7 +546,7 @@ def api_system_audit(
     search: str | None = None,
     admin: dict = Depends(require_api_admin),
 ):
-    from services.audit import get_logs
+    from services.audit import get_logs, get_category_stats, get_total_count
     logs, total = get_logs(
         limit=limit,
         offset=offset,
@@ -557,7 +557,14 @@ def api_system_audit(
         end_date=end_date,
         search=search
     )
-    return {"logs": logs, "total": total, "limit": limit, "offset": offset}
+    return {
+        "logs": logs,
+        "total": total,
+        "total_all": get_total_count(),
+        "category_stats": get_category_stats(),
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

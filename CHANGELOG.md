@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.18] - 2026-07-27
+
+### Fixed
+- **UploadFile-Validierung beim Ingest gefixt (#1)** (`backend/api/routes/pages.py`): Beim Datei-Upload über die HTML-Route `/ingest` liefert Starlette's `request.form()` Instanzen von `starlette.datastructures.UploadFile` anstelle von `fastapi.UploadFile`. Die Typvalidierung wurde aktualisiert, sodass beide `UploadFile`-Klassen akzeptiert werden.
+
 ## [2.12.17] - 2026-07-21
 
 ### Changed

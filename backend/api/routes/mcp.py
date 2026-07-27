@@ -2109,8 +2109,8 @@ def get_mcp_combined_app():
     AGY-Bug-Kompensation: AGY ignoriert den SSE endpoint-Event und
     POSTet JSON-RPC direkt auf /sse statt auf /messages/.
     Der /sse-Route wird daher als Dispatch installiert:
-      GET  /sse → SseServerTransport.handle_sse (SSE-Stream)
-      POST /sse → SseServerTransport.handle_post_message (Weiterleitung)
+      GET  /sse -> SseServerTransport.handle_sse (SSE-Stream)
+      POST /sse -> SseServerTransport.handle_post_message (Weiterleitung)
 
     Hinweis: Streamable HTTP wurde entfernt, weil StreamableHTTPManager
     ein initialisiertes Task-Group-Lifecycle benoetigt (run()),
@@ -2124,14 +2124,19 @@ def get_mcp_combined_app():
 
     sse_app = mcp_server.sse_app()
 
-    # SSE-Transport-Instanz extrahieren ( fuer POST-Weiterleitung )
-    sse_handler = sse_app.routes[0].endpoint
-    sse_transport = sse_handler.__self__
+    # SseServerTransport Instance aus dem Mount (routes[1]) holen
+    sse_transport = sse_app.routes[1].app.__self__
+
+    # handle_sse aus dem Closure von sse_endpoint (routes[0]) extrahieren
+    sse_endpoint_fn = sse_app.routes[0].endpoint
+    handle_sse = sse_endpoint_fn.__closure__[
+        sse_endpoint_fn.__code__.co_freevars.index("handle_sse")
+    ].cell_contents
 
     async def _sse_dispatch(scope, receive, send):
         """GET -> SSE-Stream, POST -> Messages-Handler (AGY-Kompat)."""
         if scope["method"] == "GET":
-            return await sse_handler(scope, receive, send)
+            return await handle_sse(scope, receive, send)
         elif scope["method"] == "POST":
             return await sse_transport.handle_post_message(scope, receive, send)
         else:

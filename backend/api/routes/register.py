@@ -58,9 +58,13 @@ async def register_submit(request: Request):
         
         _, raw_key = create_key(user["id"], "Standard API-Key")
         
-        # Wenn dies der erste Admin war, Registrierung direkt automatisch deaktivieren
+        # Wenn dies der erste Admin war, Registrierung deaktivieren & secret_key sicherstellen
         if is_first:
-            save_app_config({"registration_enabled": False})
+            import secrets as sec
+            new_cfg = {"registration_enabled": False}
+            if not cfg.get("secret_key"):
+                new_cfg["secret_key"] = sec.token_hex(32)
+            save_app_config(new_cfg)
             
         # Erfolgsseite mit API-Key anzeigen (wird nur einmal angezeigt)
         return render(

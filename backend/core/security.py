@@ -14,21 +14,24 @@ import argon2
 from itsdangerous import URLSafeTimedSerializer
 
 def _get_persistent_secret() -> str:
-    # 1. Aus Umgebungsvariable (Docker/System)
+    """Holt das kryptografische System-Secret aus config.json (oder LLMWIKI_SECRET Env).
+
+    Falls noch kein Secret in config.json existiert (z. B. vor der Ersterstellung),
+    wird ein neues erzeugt und sofort in config.json gesichert.
+    """
     env_secret = os.getenv("LLMWIKI_SECRET")
     if env_secret:
         return env_secret
 
-    # 2. Aus config.json
-    from core.config import CONFIG_FILE, load_app_config, save_app_config
+    from core.config import load_app_config, save_app_config
     try:
         cfg = load_app_config()
-        if "secret_key" in cfg and cfg["secret_key"]:
+        if cfg.get("secret_key"):
             return str(cfg["secret_key"])
     except Exception:
         pass
 
-    # 3. Dynamisch generieren und in config.json persistieren
+    # Wenn noch kein Secret existiert, neu generieren und in config.json persistieren
     new_secret = secrets.token_hex(32)
     try:
         save_app_config({"secret_key": new_secret})

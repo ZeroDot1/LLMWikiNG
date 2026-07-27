@@ -228,7 +228,7 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
         raw_key = None
 
     if not raw_key:
-        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret (LLMWIKI_SECRET) wurde seit der Erstellung des Schlüssels geändert oder zurückgesetzt."}, status_code=500)
+        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret (secret_key in config.json) unterscheidet sich vom Secret zum Zeitpunkt der Erstellung dieses Schlüssels."}, status_code=400)
 
     log_action(action="api_key_reveal", details=f"API-Key '{key_obj.get('name')}' (ID: {key_id}) entschlüsselt und angezeigt", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"raw_key": raw_key})
@@ -402,7 +402,7 @@ async def mcp_key_reveal(request: Request, admin: dict = Depends(require_admin))
         raw_key = None
 
     if not raw_key:
-        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen."}, status_code=500)
+        return JSONResponse({"error": "Entschlüsselung fehlgeschlagen. Das System-Secret (secret_key in config.json) unterscheidet sich vom Erstellungszeitpunkt."}, status_code=400)
 
     log_action(action="mcp_key_reveal", details=f"MCP-Key '{key_obj.get('name')}' (ID: {key_id}) entschlüsselt und angezeigt", user_id=admin["id"], username=admin["username"], request=request)
     return JSONResponse({"raw_key": raw_key})

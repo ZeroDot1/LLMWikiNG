@@ -607,10 +607,10 @@ LLM_BACKEND=ollama OLLAMA_MODEL=llama3:8b ./wiki.sh ingest file.md
 *   `LLM_BACKEND`: `ollama`, `agy`, or `opencode` (default: `ollama`)
 *   `OLLAMA_MODEL`: The model to use (default: `llama3.2:3b`)
 
-### 🔑 The Cryptographic Secret (`LLMWIKI_SECRET`)
+### 🔑 The Cryptographic Secret (`secret_key` in `config.json`)
 The system uses a central password (the *secret*) to secure your login sessions (session cookies) and to store your API keys encrypted in the database.
 
-By default, the secret is automatically generated upon the first start of the application and saved persistently in the `config.json` file (under the key `secret_key`). 
+The secret is automatically generated upon the first administrator creation and saved persistently in the `config.json` file (under the key `secret_key`). It is loaded exclusively from `config.json`, ensuring consistency across container rebuilds and server restarts.
 
 To view or rotate this secret, log in as an administrator, navigate to **Settings** -> **Backup & Restore**, enter your password, and select either:
 - **Reveal**: To display the active secret in plain text.

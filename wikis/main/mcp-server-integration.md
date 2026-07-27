@@ -51,6 +51,7 @@ The agent does this by calling **MCP tools** over an **SSE** (Server-Sent Events
 ## 2. Prerequisites
 
 1.  LLMWikiNG is running and reachable at its base path (default `/LLMWikiNG`). The MCP endpoints are:
+    *   Streamable HTTP channel: `http://<host>:<port>/LLMWikiNG/mcp`
     *   SSE channel: `http://<host>:<port>/LLMWikiNG/mcp/sse`
     *   Message channel: `http://<host>:<port>/LLMWikiNG/mcp/messages`
 2.  You have two keys:

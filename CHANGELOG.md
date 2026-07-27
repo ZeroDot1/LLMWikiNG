@@ -10,8 +10,8 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [2.13.5] - 2026-07-27
 
 ### Fixed
-- **MCP Server Streamable HTTP & SSE Route Optimization (`backend/api/routes/mcp.py`)**: `get_mcp_http_app()` gibt nun `mcp_server.streamable_http_app()` unter `/LLMWikiNG/mcp` zurück, um Streamable-HTTP-basierte MCP-Clients (wie Antigravity AGY CLI) ohne `Method Not Allowed` (405) beim Initialisieren zu bedienen.
-- **MCP-Konfiguration & Dokumentation**: Dokumentation (`README.md`, WebUI-Templates `docs.html`, `docs_de.html`, `settings/mcp.html`, Skill-Dokumente) und Konfigurationsvorlagen (`.agents/mcp_config.json`, `~/.gemini/config/mcp_config.json`) für AGY auf den Streamable HTTP Endpunkt (`type: "http"`, `url: ".../LLMWikiNG/mcp"`) aktualisiert.
+- **Dual MCP Mount (Streamable HTTP & SSE) in `backend/main.py`**: MCP-Server stellt nun gleichzeitig Streamable HTTP unter `/LLMWikiNG/mcp` und SSE unter `/LLMWikiNG/mcp/sse` zur Verfügung. Behebt den Fehler `session not found` bei MCP-Clients (z.B. Gemini Plugin in `~/.gemini/config/plugins`), die den Streamable HTTP Transport nutzen.
+- **MCP-Dokumentation & Vorlagen**: Dokumentation (`README.md`, `templates/docs.html`, `templates/docs_de.html`, `wikis/main/mcp-server-integration.md`) aktualisiert, um beide MCP-Transportwege (Streamable HTTP & SSE) zu dokumentieren.
 
 ## [2.13.4] - 2026-07-27
 

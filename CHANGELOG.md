@@ -7,7 +7,13 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **37 OpenCode Slash Commands** (`.opencode/command/*.md`): Alle 37 MCP-Prompts des LLMWikiNG-Servers als native OpenCode `/`-Autocomplete-Commands. Erstellt aus den MCP-Prompt-Definitionen des Remote-Servers, ermöglicht direkten Aufruf aller Wiki-Operationen via Slash-Befehl in OpenCode.
+- **Antigravity CLI (agy) MCP-Konfiguration** (`~/.gemini/config/mcp_config.json`, `.agents/mcp_config.json`): Globale und Workspace-MCP-Konfiguration für die `agy` CLI und Antigravity IDE. Verbindet über SSE mit dem LLMWikiNG MCP-Server inkl. MCP-Key und API-Key.
+- **Remote-Update-Skript** (`update_remote_mcp.py`): Python-Skript zum Aktualisieren des Remote-Servers über MCP-Client-Protokoll (SSE + `ClientSession`), aufrufbar mit API-Key als CLI-Argument.
 
+### Documentation
+- **README.md um Slash Commands Sektion erweitert**: Neuer Abschnitt "🎯 OpenCode Slash Commands" mit Kopieranleitung für alle 37 Befehle. MCP-Prompts-Tabelle mit korrekten Client-Informationen aktualisiert.
 
 ## [2.13.3] - 2026-07-27
 

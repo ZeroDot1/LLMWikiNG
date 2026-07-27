@@ -290,6 +290,29 @@ Alternatively, add the server interactively via the terminal:
 opencode mcp add
 ```
 
+##### 🎯 OpenCode Slash Commands (`.opencode/command/`)
+
+For **`/` autocomplete** in OpenCode's chat, copy the `.opencode/command/` directory from this project into your project:
+
+```bash
+# In deinem Projekt mit OpenCode:
+cp -r pfad/zu/LLMWikiNG/.opencode/command/ .opencode/command/
+```
+
+After restarting OpenCode, type `/` in chat to see all 37 LLMWikiNG commands:
+
+| Command | Description |
+|---------|-------------|
+| `/wikis` | Alle Wikis auflisten |
+| `/read` | Wiki-Seite lesen |
+| `/write` | Wiki-Seite erstellen |
+| `/search` | Volltextsuche |
+| `/status` | Systemstatus anzeigen |
+| `/update` | System-Update ausführen |
+| … | … und 31 weitere |
+
+> **Note:** OpenCode loads MCP Prompts (via `list_prompts`) as AI hints, but does **not** show them in the `/` chat autocomplete by default. Use the `.opencode/command/` files above for native `/`-support.
+
 #### 3. Antigravity CLI (`agy`) & Antigravity IDE
 Both the `agy` CLI tool and the Antigravity IDE can consume global or local MCP servers.
 
@@ -366,7 +389,11 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 
 MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 37 in total.
 
-> **Client support:** AGY, OpenCode, and Claude Code support `list_prompts` natively and show slash commands in autocomplete. In other clients, call the underlying MCP tools directly (e.g. `okf_run_update()` instead of `/update`).
+> **Client support:**
+> - **AGY / Claude Code:** Support `list_prompts` natively — slash commands appear in autocomplete.
+> - **OpenCode:** Uses `.opencode/command/` files for `/` autocomplete. Copy the `command/` folder from this project (see section above) or the MCP tools are still available for the AI to call directly.
+> - **Cursor:** Does not support slash commands via MCP prompts. Use MCP tools directly.
+> - **Other clients:** Call the underlying MCP tools directly (e.g. `okf_run_update()` instead of `/update`).
 
 **📚 Wiki Management**
 

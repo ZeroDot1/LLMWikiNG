@@ -277,6 +277,45 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
         It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (via the web UI under <em>Settings ➜ Users / Keys</em>) instead of reusing your main administrator credentials or a global shared key. Additionally, you can create per-user MCP keys with fine-grained tool permissions under <em>Settings ➜ Keys ➜ MCP Keys</em>. Each MCP key is bound to a specific user and can be restricted to a subset of tools (e.g., read-only access). This ensures clean audit logs and limits the potential impact of any single agent.
       </div>
 
+
+      <h3 class="text-xl font-semibold mt-6">⚡ MCP Prompts & Remote Slash Commands (37 Commands)</h3>
+      <p class="text-text-secondary text-sm">Once connected to LLMWikiNG via MCP, typing <code>/</code> in supporting clients (AGY, OpenCode, Cursor, Claude Code) opens the slash command menu:</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-xs">
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/update</code>
+          <span class="text-text-secondary block mt-0.5">Check for and run system update</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/ingest [wiki]</code>
+          <span class="text-text-secondary block mt-0.5">Process pending raw sources</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/backup</code>
+          <span class="text-text-secondary block mt-0.5">Create full server backup</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/search &lt;query&gt; [wiki]</code>
+          <span class="text-text-secondary block mt-0.5">Search wiki pages</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/status</code>
+          <span class="text-text-secondary block mt-0.5">Show system status overview</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/lint [wiki]</code>
+          <span class="text-text-secondary block mt-0.5">Execute wiki health check</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/read &lt;slug&gt; [wiki]</code>
+          <span class="text-text-secondary block mt-0.5">Read complete wiki page</span>
+        </div>
+        <div class="bg-bg-sunken p-2.5 rounded border border-border">
+          <code class="text-primary font-bold">/sync [wiki]</code>
+          <span class="text-text-secondary block mt-0.5">Synchronize qmd embeddings</span>
+        </div>
+      </div>
+      <p class="text-xs text-text-muted mt-2">See <em>Settings ➜ MCP ➜ Tool Explorer</em> in the WebUI for the full list of all 37 slash commands and tool groups.</p>
+
       <div class="mt-3">
         <strong>💬 Copy-Paste AI Configuration Prompt:</strong><br>
         <p class="text-xs text-text-secondary mt-1">Copy and paste this prompt directly to your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to instruct it to configure itself:</p>

@@ -168,7 +168,232 @@
     </div>
 </div>
 
-<script>
+<!-- MCP Tool Explorer: Alle 37 Slash-Commands & Tool-Gruppen -->
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm max-w-2xl mb-6">
+    <h2 class="text-lg font-semibold mb-1 text-primary">⚡ {{ _('settings.mcp_explorer_heading') }}</h2>
+    <p class="text-text-secondary text-sm mb-5">{{ _('settings.mcp_explorer_subtitle') }}</p>
+
+    <!-- Slash-Commands nach Gruppe -->
+    <div class="mb-5">
+        <h3 class="text-sm font-semibold text-text mb-1">{{ _('settings.mcp_prompts_heading') }}</h3>
+        <p class="text-text-secondary text-xs mb-3">{{ _('settings.mcp_prompts_hint') }}</p>
+
+        <!-- Wiki-Verwaltung -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">📚 {{ _('settings.mcp_group_wiki') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/wikis</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_wikis_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/wiki-create &lt;name&gt; [slug]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_wiki_create_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/wiki-update &lt;wiki&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_wiki_update_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/wiki-delete &lt;wiki&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_wiki_delete_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Seiten -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">📄 {{ _('settings.mcp_group_pages') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/pages [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_pages_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/read &lt;slug&gt; [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_read_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/write &lt;slug&gt; &lt;title&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_write_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/page-delete &lt;slug&gt; [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_page_delete_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/export &lt;slug&gt; [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_export_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/pending [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_pending_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/ingest [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_ingest_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/ingest-text &lt;text&gt; [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_ingest_text_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Suche & Analyse -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">🔍 {{ _('settings.mcp_group_search') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/search &lt;query&gt; [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_search_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/stats [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_stats_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/graph [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_graph_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/lint [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_lint_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Rohquellen -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">📦 {{ _('settings.mcp_group_raw') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/raw-list</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_raw_list_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/raw-read &lt;filename&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_raw_read_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- System -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">⚙️ {{ _('settings.mcp_group_system') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/status</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_status_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/sync [wiki]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_sync_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/audit [limit]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_audit_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/cache</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_cache_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/cache-clear</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_cache_clear_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Benutzer -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">👥 {{ _('settings.mcp_group_users') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/users</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_users_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/user-create &lt;name&gt; [role]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_user_create_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/user-delete &lt;username&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_user_delete_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Keys -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">🔑 {{ _('settings.mcp_group_keys') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/api-keys</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_api_keys_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/api-key-create &lt;name&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_api_key_create_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/api-key-delete &lt;id&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_api_key_delete_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/mcp-keys</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_mcp_keys_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/mcp-key-create &lt;name&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_mcp_key_create_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/mcp-key-delete &lt;id&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_mcp_key_delete_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Backups -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">📦 {{ _('settings.mcp_group_backups') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/backups</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_backups_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/backup</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_backup_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/restore &lt;filename&gt;</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_restore_desc') }}</span>
+            </div>
+        </div>
+
+        <!-- Update -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">⬇️ {{ _('settings.mcp_group_update') }}</p>
+        <div class="grid gap-1.5">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/check-update</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_check_update_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/update</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_update_desc') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool-Gruppen Accordion -->
+    <div>
+        <h3 class="text-sm font-semibold text-text mb-3">{{ _('settings.mcp_tool_groups_heading') }} <span class="text-text-muted font-normal text-xs">(37 Tools)</span></h3>
+        <div class="space-y-1.5">
+            {% for group_key, group in mcp_tool_groups.items() %}
+            <details class="rounded-lg border border-border overflow-hidden">
+                <summary class="flex justify-between items-center px-3 py-2 cursor-pointer select-none bg-bg-sunken hover:bg-border/40 transition-colors list-none text-sm font-medium text-text">
+                    <span>{{ group['label_de'] if lang == 'de' else group['label_en'] }}</span>
+                    <span class="text-xs font-normal text-text-muted bg-surface rounded-full px-2 py-0.5 border border-border">{{ group['tools']|length }}</span>
+                </summary>
+                <div class="px-3 py-2 flex flex-wrap gap-1.5 bg-surface">
+                    {% for tool in group['tools'] %}
+                    <code class="text-xs bg-bg-sunken border border-border rounded px-2 py-0.5 text-text-secondary font-mono">{{ tool }}()</code>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>t>
 var revealedFullMcpKeys = {};
 var revealedFullApiKeys = {};
 

@@ -362,6 +362,95 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_check_update` | Checks for update via Git |
 | `okf_run_update` | Runs the system update |
 
+### ⚡ MCP Prompts — Slash Commands (37 Total)
+
+MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 37 in total.
+
+> **Client support:** AGY, OpenCode, and Claude Code support `list_prompts` natively and show slash commands in autocomplete. In other clients, call the underlying MCP tools directly (e.g. `okf_run_update()` instead of `/update`).
+
+**📚 Wiki Management**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/wikis` | — | `okf_list_wikis()` |
+| `/wiki-create` | `<name> [slug] [desc]` | `okf_create_wiki()` |
+| `/wiki-update` | `<wiki> [name] [desc] [new_slug]` | `okf_update_wiki()` |
+| `/wiki-delete` | `<wiki>` | `okf_delete_wiki()` |
+
+**📄 Page Management**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/pages` | `[wiki] [type_filter]` | `okf_list_pages()` |
+| `/read` | `<slug> [wiki]` | `okf_read_concept()` |
+| `/write` | `<slug> <title> <content> [wiki]` | `okf_write_concept()` |
+| `/page-delete` | `<slug> [wiki]` | `okf_delete_page()` |
+| `/export` | `<slug> [wiki]` | `okf_export_page()` |
+| `/pending` | `[wiki]` | `okf_list_pending()` |
+| `/ingest` | `[wiki]` | `okf_process_pending()` |
+| `/ingest-text` | `<text> [wiki] [title]` | `okf_ingest_text()` |
+
+**🔍 Search & Analysis**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/search` | `<query> [wiki]` | `okf_search()` |
+| `/stats` | `[wiki]` | `okf_wiki_stats()` |
+| `/graph` | `[wiki]` | `okf_graph()` |
+| `/lint` | `[wiki]` | `okf_lint()` |
+
+**📦 Raw Sources**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/raw-list` | — | `okf_list_raw()` |
+| `/raw-read` | `<filename>` | `okf_read_raw()` |
+
+**⚙️ System**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/status` | — | `okf_system_status()` + `okf_cache_stats()` + `okf_check_update()` |
+| `/sync` | `[wiki]` | `okf_system_sync()` |
+| `/audit` | `[limit] [action] [username]` | `okf_audit_logs()` |
+| `/cache` | — | `okf_cache_stats()` |
+| `/cache-clear` | — | `okf_cache_clear()` |
+
+**👥 Users**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/users` | — | `okf_list_users()` |
+| `/user-create` | `<username> <password> [role]` | `okf_create_user()` |
+| `/user-delete` | `<username>` | `okf_delete_user()` |
+
+**🔑 API & MCP Keys**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/api-keys` | — | `okf_list_api_keys()` |
+| `/api-key-create` | `<name>` | `okf_create_api_key()` |
+| `/api-key-delete` | `<key_id>` | `okf_delete_api_key()` |
+| `/mcp-keys` | — | `okf_list_mcp_keys()` |
+| `/mcp-key-create` | `<name> [allowed_tools]` | `okf_create_mcp_key()` |
+| `/mcp-key-delete` | `<key_id>` | `okf_delete_mcp_key()` |
+
+**📦 Backups**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/backups` | — | `okf_list_backups()` |
+| `/backup` | — | `okf_create_backup()` |
+| `/restore` | `<filename>` | `okf_restore_backup()` |
+
+**⬇️ Update**
+
+| Slash Command | Arguments | Maps to |
+|---------------|-----------|---------|
+| `/check-update` | — | `okf_check_update()` |
+| `/update` | — | `okf_check_update()` + `okf_run_update()` |
+
+
 ### 📄 OKF v0.1 Document Format
 
 Every wiki page follows the Open Knowledge Format:

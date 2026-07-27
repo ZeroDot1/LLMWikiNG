@@ -80,7 +80,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
             print(f"[sync] WARN: rglob fehlgeschlagen für Wiki '{wiki}': {e}", flush=True)
             files = []
         for f in files:
-        if f.stem in ("index", "log", "ingestlater"):
+            if f.stem in ("index", "log", "ingestlater"):
                 continue
             try:
                 h.update(f.relative_to(root).as_posix().encode("utf-8"))

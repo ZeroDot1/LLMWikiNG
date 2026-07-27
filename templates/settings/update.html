@@ -70,7 +70,11 @@
 
 <div class="rounded-xl border border-border bg-surface p-5 shadow-sm mb-4">
     <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('update.run_heading') }}</h2>
-    {% if update_available %}
+    <div class="mb-4 p-3.5 rounded-lg border border-warning/40 bg-warning-subtle/40 text-xs text-text space-y-1">
+        <p class="font-semibold text-warning flex items-center gap-1.5">
+            {{ _('update.docker_rebuild_warning') }}
+        </p>
+    </div>
     <p class="text-sm text-text-secondary mb-3">{{ _('update.run_intro') }}</p>
     <div class="flex flex-wrap gap-3">
         <form action="{{ base_path }}/settings?tab=update" method="post" class="inline" onsubmit="this.github_token.value = document.getElementById('github_token_input').value;">

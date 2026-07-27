@@ -436,7 +436,7 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
     "update_admin": {
         "label_de": "Updates ausführen",
         "label_en": "Run Updates",
-        "tools": ["okf_check_update", "okf_run_update"],
+        "tools": ["okf_check_update", "okf_run_update", "okf_run_update_stream"],
     },
     "audit": {
         "label_de": "Audit-Logs",

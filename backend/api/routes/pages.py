@@ -1246,6 +1246,7 @@ def settings_get(request: Request):
         server_backups=__import__("services.backup", fromlist=["list_server_backups"]).list_server_backups(),
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
+        lang=request.cookies.get("llmwiki_lang", "de"),
     )
 
 
@@ -1509,6 +1510,7 @@ async def settings_post(request: Request):
         registration_enabled=cfg_post.get("registration_enabled", True),
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
+        lang=request.cookies.get("llmwiki_lang", "de"),
     )
 
 

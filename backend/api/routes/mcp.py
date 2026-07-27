@@ -1,14 +1,15 @@
 """LLMWikiNG – MCP-Server (Model Context Protocol) mit OKF v0.1.
 
-Stellt einen SSE-basierten MCP-Server bereit, der KI-Agenten (Cursor,
-Windsurf, Claude Code etc.) erlaubt, das Wiki im Open Knowledge Format
-(OKF v0.1) zu lesen, zu schreiben und zu durchsuchen.
+Stellt einen SSE-basierten MCP-Server bereit, der KI-Agenten (AGY,
+Cursor, Windsurf, Claude Code, OpenCode etc.) erlaubt, das Wiki im
+Open Knowledge Format (OKF v0.1) zu lesen, zu schreiben und zu
+durchsuchen – sowie Server-Wartungsaufgaben remote durchzufuehren.
 
 Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
 Per-User MCP-Keys mit Tool-Berechtigungen werden unterstuetzt.
 
-Verfuegbare MCP-Tools (34):
+Verfuegbare MCP-Tools (37):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -31,9 +32,24 @@ Verfuegbare MCP-Tools (34):
 
   API-Key-Verwaltung:
     okf_list_api_keys, okf_create_api_key, okf_delete_api_key
+    okf_list_mcp_keys, okf_create_mcp_key, okf_delete_mcp_key
+
+  Backup-Verwaltung:
+    okf_list_backups, okf_create_backup, okf_restore_backup
 
   Update:
     okf_check_update, okf_run_update
+
+Verfuegbare MCP-Prompts (37 Slash-Commands):
+  Wiki-Verwaltung   : /wikis /wiki-create /wiki-update /wiki-delete
+  Seiten-Verwaltung : /pages /read /write /page-delete /export /pending /ingest /ingest-text
+  Suche & Analyse   : /search /stats /graph /lint
+  Rohquellen        : /raw-list /raw-read
+  System            : /status /sync /audit /cache /cache-clear
+  Benutzer          : /users /user-create /user-delete
+  API-/MCP-Keys     : /api-keys /api-key-create /api-key-delete /mcp-keys /mcp-key-create /mcp-key-delete
+  Backups           : /backups /backup /restore
+  Update            : /check-update /update
 """
 
 from __future__ import annotations
@@ -1534,6 +1550,439 @@ Willkommen im Wiki **{name}**.
         except Exception as e:
             log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
             return f"Update fehlgeschlagen: {e}"
+
+
+        @mcp_server.tool(
+            name="okf_run_update_stream",
+            description="Fuehrt ein System-Update (update.sh) mit Echtzeit-Fortschrittsanzeige durch."
+        )
+        @_require_tool("okf_run_update")
+        async def okf_run_update_stream():
+            """Streaming-Variante fuer okf_run_update mit Live-Fortschrittsmeldungen."""
+            update_script = PROJECT_ROOT / "update.sh"
+            if not update_script.exists():
+                return "FEHLER: update.sh nicht im Projekt-Stammverzeichnis gefunden."
+
+            old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+            log_file = DATA_DIR / "update.log"
+            log_file.write_text("Starte Update via MCP Stream...\n", encoding="utf-8")
+
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    str(update_script),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                    cwd=str(PROJECT_ROOT)
+                )
+
+                output_chunks = []
+                while True:
+                    line = await process.stdout.readline()
+                    if not line:
+                        break
+                    decoded_line = line.decode("utf-8", errors="replace")
+                    clean_line = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", decoded_line)
+                    output_chunks.append(clean_line)
+
+                await process.wait()
+                clean_output = "".join(output_chunks)
+                log_file.write_text(clean_output, encoding="utf-8")
+
+                new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
+
+                from services.audit import log_action
+                log_action(
+                    action="mcp_update_stream",
+                    details=f"MCP Stream: Update von {old_version} nach {new_version}",
+                    username="mcp-agent"
+                )
+
+                lines = ["# Update-Ergebnis (Streamed)\n"]
+                lines.append(f"- **Alte Version:** {old_version}")
+                lines.append(f"- **Neue Version:** {new_version}")
+                lines.append(f"- **Update ausgefuehrt:** {'Ja' if old_version != new_version else 'Keine Aenderung'}")
+                if clean_output.strip():
+                    lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")
+                return "\n".join(lines)
+            except Exception as e:
+                log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
+                return f"Streaming Update fehlgeschlagen: {e}"
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MCP-Prompts (Slash-Command-Templates fuer AGY, OpenCode, Cursor, Claude)
+# Jedes MCP-Tool hat einen eigenen /slash-command Prompt (37 gesamt).
+# Werden via `list_prompts` und `get_prompt` vom Client abgerufen.
+# ─────────────────────────────────────────────────────────────────────────────
+
+if _MCP_AVAILABLE and mcp_server is not None:
+    try:
+        from mcp.types import PromptMessage, TextContent
+
+        # ── Wiki-Verwaltung ───────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="wikis", description="Listet alle Wikis mit Metadaten auf.")
+        async def prompt_wikis() -> list[PromptMessage]:
+            """Slash-Command: /wikis"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle verfuegbaren Wikis auf:\n"
+                "`okf_list_wikis()`\n"
+                "Zeige Name, Slug, Seitenanzahl und Groesse."
+            )))]
+
+        @mcp_server.prompt(name="wiki-create", description="Erstellt ein neues Wiki.")
+        async def prompt_wiki_create(name: str, slug: str = "", description: str = "") -> list[PromptMessage]:
+            """Slash-Command: /wiki-create <name> [slug] [description]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte erstelle ein neues Wiki:\n"
+                f"`okf_create_wiki(name='{name}', slug='{slug}', description='{description}')`\n"
+                f"Bestatige den erstellten Slug."
+            )))]
+
+        @mcp_server.prompt(name="wiki-update", description="Bearbeitet Name, Beschreibung oder Slug eines Wikis.")
+        async def prompt_wiki_update(wiki: str, name: str = "", description: str = "", new_slug: str = "") -> list[PromptMessage]:
+            """Slash-Command: /wiki-update <wiki> [name] [description] [new_slug]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte aktualisiere das Wiki '{wiki}':\n"
+                f"`okf_update_wiki(wiki='{wiki}', name='{name}', description='{description}', new_slug='{new_slug}')`\n"
+                f"Bestatige die Aenderungen."
+            )))]
+
+        @mcp_server.prompt(name="wiki-delete", description="Loescht ein Wiki (ausser 'main').")
+        async def prompt_wiki_delete(wiki: str) -> list[PromptMessage]:
+            """Slash-Command: /wiki-delete <wiki>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte loesche das Wiki '{wiki}':\n"
+                f"`okf_delete_wiki(wiki='{wiki}')`\n"
+                f"Weise auf die Unwiderruflichkeit hin."
+            )))]
+
+        # ── Seiten-Verwaltung ─────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="pages", description="Listet alle Wiki-Seiten auf (optional gefiltert).")
+        async def prompt_pages(wiki: str = "main", type_filter: str = "") -> list[PromptMessage]:
+            """Slash-Command: /pages [wiki] [type_filter]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte liste alle Seiten im Wiki '{wiki}' auf:\n"
+                f"`okf_list_pages(wiki='{wiki}', type_filter='{type_filter}')`\n"
+                f"Zeige Titel, Slug und Typ."
+            )))]
+
+        @mcp_server.prompt(name="read", description="Liest eine Wiki-Seite vollstaendig aus.")
+        async def prompt_read(slug: str, wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /read <slug> [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte lies die Wiki-Seite '{slug}' im Wiki '{wiki}':\n"
+                f"`okf_read_concept(slug='{slug}', wiki='{wiki}')`\n"
+                f"Zeige den vollstaendigen Inhalt inkl. Frontmatter."
+            )))]
+
+        @mcp_server.prompt(name="write", description="Erstellt oder aktualisiert eine Wiki-Seite.")
+        async def prompt_write(slug: str, title: str, content: str, wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /write <slug> <title> <content> [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte erstelle oder aktualisiere die Wiki-Seite '{slug}':\n"
+                f"`okf_write_concept(slug='{slug}', title='{title}', content=..., wiki='{wiki}')`\n"
+                f"Inhalt:\n{content}\n"
+                f"Bestatige den gespeicherten Dateipfad."
+            )))]
+
+        @mcp_server.prompt(name="page-delete", description="Loescht eine Wiki-Seite.")
+        async def prompt_page_delete(slug: str, wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /page-delete <slug> [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte loesche die Wiki-Seite '{slug}' im Wiki '{wiki}':\n"
+                f"`okf_delete_page(slug='{slug}', wiki='{wiki}')`\n"
+                f"Bestatige die Loeschung."
+            )))]
+
+        @mcp_server.prompt(name="export", description="Exportiert eine Wiki-Seite nach output_docs/.")
+        async def prompt_export(slug: str, wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /export <slug> [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte exportiere die Wiki-Seite '{slug}' aus Wiki '{wiki}':\n"
+                f"`okf_export_page(slug='{slug}', wiki='{wiki}')`\n"
+                f"Zeige den Exportpfad."
+            )))]
+
+        @mcp_server.prompt(name="pending", description="Listet ausstehende Rohquellen im raw/-Ordner auf.")
+        async def prompt_pending(wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /pending [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte liste ausstehende Rohquellen im Wiki '{wiki}' auf:\n"
+                f"`okf_list_pending(wiki='{wiki}')`\n"
+                f"Zeige Dateiname und Groesse."
+            )))]
+
+        @mcp_server.prompt(name="ingest", description="Verarbeitet alle ausstehenden Rohquellen im raw/-Ordner.")
+        async def prompt_ingest(wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /ingest [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte verarbeite alle ausstehenden Rohquellen im Wiki '{wiki}':\n"
+                f"1. `okf_list_pending(wiki='{wiki}')` – ausstehende Dateien zeigen.\n"
+                f"2. `okf_process_pending(wiki='{wiki}')` – alle verarbeiten.\n"
+                f"3. Berichte Anzahl verarbeiteter Dateien und Fehler."
+            )))]
+
+        @mcp_server.prompt(name="ingest-text", description="Speichert Freitext als Rohquelle und ingestiert ihn.")
+        async def prompt_ingest_text(text: str, wiki: str = "main", title: str = "") -> list[PromptMessage]:
+            """Slash-Command: /ingest-text <text> [wiki] [title]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte ingestiere folgenden Text in Wiki '{wiki}':\n"
+                f"Titel: {title or '(auto)'}\n"
+                f"`okf_ingest_text(text=..., wiki='{wiki}', title='{title}')`\n"
+                f"Text:\n{text[:500]}{'...' if len(text) > 500 else ''}\n"
+                f"Bestatige den erstellten Slug."
+            )))]
+
+        # ── Suche & Analyse ───────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="search", description="Volltextsuche im Wiki.")
+        async def prompt_search(query: str, wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /search <query> [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte suche im Wiki '{wiki}' nach: **{query}**\n"
+                f"`okf_search(query='{query}', wiki='{wiki}')`\n"
+                f"Fasse die Ergebnisse mit Titeln und Snippets zusammen."
+            )))]
+
+        @mcp_server.prompt(name="stats", description="Zeigt Wiki-Statistiken (Seiten, Woerter, Typen etc.).")
+        async def prompt_stats(wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /stats [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte zeige Statistiken fuer Wiki '{wiki}':\n"
+                f"`okf_wiki_stats(wiki='{wiki}')`\n"
+                f"Stelle die Daten uebersichtlich dar."
+            )))]
+
+        @mcp_server.prompt(name="graph", description="Liefert Wissensgraph-Daten (Knoten und Kanten).")
+        async def prompt_graph(wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /graph [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte zeige den Wissensgraph fuer Wiki '{wiki}':\n"
+                f"`okf_graph(wiki='{wiki}')`\n"
+                f"Erklaere die wichtigsten Knoten und Verbindungen."
+            )))]
+
+        @mcp_server.prompt(name="lint", description="Gesundheitspruefung des Wikis (verwaiste Seiten, defekte Links etc.).")
+        async def prompt_lint(wiki: str = "main") -> list[PromptMessage]:
+            """Slash-Command: /lint [wiki]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte fuehre eine Gesundheitspruefung fuer Wiki '{wiki}' durch:\n"
+                f"`okf_lint(wiki='{wiki}')`\n"
+                f"Erklaere die Probleme und priorisiere Empfehlungen."
+            )))]
+
+        # ── Rohquellen ────────────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="raw-list", description="Listet alle Rohquellen-Dateien im raw/-Verzeichnis auf.")
+        async def prompt_raw_list() -> list[PromptMessage]:
+            """Slash-Command: /raw-list"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle Rohquellen-Dateien auf:\n"
+                "`okf_list_raw()`\n"
+                "Zeige Dateiname und Groesse."
+            )))]
+
+        @mcp_server.prompt(name="raw-read", description="Liest den Inhalt einer Rohquellen-Datei.")
+        async def prompt_raw_read(filename: str) -> list[PromptMessage]:
+            """Slash-Command: /raw-read <filename>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte lies die Rohquellen-Datei '{filename}':\n"
+                f"`okf_read_raw(filename='{filename}')`\n"
+                f"Zeige den Inhalt vollstaendig."
+            )))]
+
+        # ── System ────────────────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="status", description="Zeigt Systemstatus (Version, Wikis, Nutzer, API-Keys).")
+        async def prompt_status() -> list[PromptMessage]:
+            """Slash-Command: /status"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte zeige den vollstaendigen Systemstatus:\n"
+                "1. `okf_system_status()` – Version, Wikis, Nutzer, API-Keys.\n"
+                "2. `okf_cache_stats()` – Cache-Auslastung.\n"
+                "3. `okf_check_update()` – Updates verfuegbar?\n"
+                "Fasse in einer Tabelle zusammen."
+            )))]
+
+        @mcp_server.prompt(name="sync", description="Synchronisiert Embeddings eines oder aller Wikis.")
+        async def prompt_sync(wiki: str = "") -> list[PromptMessage]:
+            """Slash-Command: /sync [wiki]"""
+            target = f"Wiki '{wiki}'" if wiki else "alle Wikis"
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte synchronisiere {target}:\n"
+                f"`okf_system_sync(wiki='{wiki}')`\n"
+                f"Berichte den Synchronisationsstatus."
+            )))]
+
+        @mcp_server.prompt(name="audit", description="Zeigt Audit-Logs (mit Filter und Pagination).")
+        async def prompt_audit(limit: int = 20, action: str = "", username: str = "") -> list[PromptMessage]:
+            """Slash-Command: /audit [limit] [action] [username]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte zeige die letzten Audit-Logs:\n"
+                f"`okf_audit_logs(limit={limit}, action='{action}', username='{username}')`\n"
+                f"Erklaere auffaellige Eintraege."
+            )))]
+
+        @mcp_server.prompt(name="cache", description="Zeigt Cache-Statistiken.")
+        async def prompt_cache() -> list[PromptMessage]:
+            """Slash-Command: /cache"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte zeige die Cache-Statistiken:\n"
+                "`okf_cache_stats()`\n"
+                "Erklaere die Auslastung und ob ein Cache-Clear sinnvoll waere."
+            )))]
+
+        @mcp_server.prompt(name="cache-clear", description="Leert den gesamten In-Memory-Cache.")
+        async def prompt_cache_clear() -> list[PromptMessage]:
+            """Slash-Command: /cache-clear"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte leere den System-Cache:\n"
+                "`okf_cache_clear()`\n"
+                "Bestatige die Ausfuehrung."
+            )))]
+
+        # ── Benutzer-Verwaltung ───────────────────────────────────────────────
+
+        @mcp_server.prompt(name="users", description="Listet alle registrierten Benutzer auf.")
+        async def prompt_users() -> list[PromptMessage]:
+            """Slash-Command: /users"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle Benutzer auf:\n"
+                "`okf_list_users()`\n"
+                "Zeige Benutzername, Rolle und Status."
+            )))]
+
+        @mcp_server.prompt(name="user-create", description="Erstellt einen neuen Systembenutzer.")
+        async def prompt_user_create(username: str, password: str, role: str = "editor") -> list[PromptMessage]:
+            """Slash-Command: /user-create <username> <password> [role]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte erstelle einen neuen Benutzer:\n"
+                f"`okf_create_user(username='{username}', password='...', role='{role}')`\n"
+                f"Bestatige die Erstellung."
+            )))]
+
+        @mcp_server.prompt(name="user-delete", description="Loescht einen Systembenutzer.")
+        async def prompt_user_delete(username: str) -> list[PromptMessage]:
+            """Slash-Command: /user-delete <username>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte loesche den Benutzer '{username}':\n"
+                f"`okf_delete_user(username='{username}')`\n"
+                f"Bestatige die Loeschung."
+            )))]
+
+        # ── API-Key-Verwaltung ────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="api-keys", description="Listet alle API-Keys auf.")
+        async def prompt_api_keys() -> list[PromptMessage]:
+            """Slash-Command: /api-keys"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle API-Keys auf:\n"
+                "`okf_list_api_keys()`\n"
+                "Zeige Name, Scopes und Status."
+            )))]
+
+        @mcp_server.prompt(name="api-key-create", description="Erstellt einen neuen API-Key.")
+        async def prompt_api_key_create(name: str) -> list[PromptMessage]:
+            """Slash-Command: /api-key-create <name>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte erstelle einen neuen API-Key mit dem Namen '{name}':\n"
+                f"`okf_create_api_key(name='{name}')`\n"
+                f"Zeige den generierten Key (nur einmalig sichtbar!)."
+            )))]
+
+        @mcp_server.prompt(name="api-key-delete", description="Loescht einen API-Key anhand seiner ID.")
+        async def prompt_api_key_delete(key_id: str) -> list[PromptMessage]:
+            """Slash-Command: /api-key-delete <key_id>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte loesche den API-Key mit ID '{key_id}':\n"
+                f"`okf_delete_api_key(key_id='{key_id}')`\n"
+                f"Bestatige die Loeschung."
+            )))]
+
+        @mcp_server.prompt(name="mcp-keys", description="Listet alle Per-User MCP-Keys auf.")
+        async def prompt_mcp_keys() -> list[PromptMessage]:
+            """Slash-Command: /mcp-keys"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle MCP-Keys auf:\n"
+                "`okf_list_mcp_keys()`\n"
+                "Zeige Name, Benutzer, erlaubte Tools und Status."
+            )))]
+
+        @mcp_server.prompt(name="mcp-key-create", description="Erstellt einen neuen Per-User MCP-Key.")
+        async def prompt_mcp_key_create(name: str, allowed_tools: str = "__all__") -> list[PromptMessage]:
+            """Slash-Command: /mcp-key-create <name> [allowed_tools]"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte erstelle einen neuen MCP-Key '{name}':\n"
+                f"`okf_create_mcp_key(name='{name}', allowed_tools='{allowed_tools}')`\n"
+                f"Zeige den generierten Key (nur einmalig sichtbar!)."
+            )))]
+
+        @mcp_server.prompt(name="mcp-key-delete", description="Loescht einen Per-User MCP-Key.")
+        async def prompt_mcp_key_delete(key_id: str) -> list[PromptMessage]:
+            """Slash-Command: /mcp-key-delete <key_id>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte loesche den MCP-Key mit ID '{key_id}':\n"
+                f"`okf_delete_mcp_key(key_id='{key_id}')`\n"
+                f"Bestatige die Loeschung."
+            )))]
+
+        # ── Backup-Verwaltung ─────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="backups", description="Listet alle verfuegbaren Server-Backups auf.")
+        async def prompt_backups() -> list[PromptMessage]:
+            """Slash-Command: /backups"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte liste alle verfuegbaren Server-Backups auf:\n"
+                "`okf_list_backups()`\n"
+                "Zeige Dateiname, Datum und Groesse."
+            )))]
+
+        @mcp_server.prompt(name="backup", description="Erstellt ein neues Server-Backup.")
+        async def prompt_backup() -> list[PromptMessage]:
+            """Slash-Command: /backup"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte erstelle ein vollstaendiges Server-Backup:\n"
+                "1. `okf_list_backups()` – vorhandene Backups zeigen.\n"
+                "2. `okf_create_backup()` – neues Backup erstellen.\n"
+                "Bestatige Dateiname und Groesse."
+            )))]
+
+        @mcp_server.prompt(name="restore", description="Stellt ein Backup vom Server wieder her.")
+        async def prompt_restore(filename: str) -> list[PromptMessage]:
+            """Slash-Command: /restore <filename>"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte stelle das Backup '{filename}' wieder her:\n"
+                f"`okf_restore_backup(filename='{filename}')`\n"
+                f"WARNUNG: Dies ueberschreibt alle aktuellen Daten! Bitte bestaetigen."
+            )))]
+
+        # ── Update ────────────────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="check-update", description="Prueft ob auf GitHub ein Update verfuegbar ist.")
+        async def prompt_check_update() -> list[PromptMessage]:
+            """Slash-Command: /check-update"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte pruefe ob ein System-Update verfuegbar ist:\n"
+                "`okf_check_update()`\n"
+                "Zeige aktuelle Version und verfuegbare neue Version."
+            )))]
+
+        @mcp_server.prompt(name="update", description="Fuehrt ein System-Update aus (update.sh).")
+        async def prompt_update() -> list[PromptMessage]:
+            """Slash-Command: /update"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte fuehre ein LLMWikiNG-System-Update durch:\n"
+                "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"
+                "2. `okf_run_update()` – Update ausfuehren (falls verfuegbar).\n"
+                "3. Berichte das Ergebnis und den Update-Log.\n"
+                "4. Weise auf eventuelle Fehler hin."
+            )))]
+
+    except ImportError:
+        pass  # mcp.types nicht verfuegbar – Prompts werden uebersprungen
 
 
 def get_mcp_sse_app():

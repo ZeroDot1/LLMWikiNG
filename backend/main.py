@@ -130,8 +130,8 @@ def create_app() -> FastAPI:
                         self._mcp_allowed_tools_ctx = _mac
                         self._datetime = _dt
 
-                    async def __call__(self, scope, receive, send):
-                        if scope["type"] == "http" and "/mcp/" in scope.get("path", ""):
+                        path = scope.get("path", "")
+                        if scope["type"] == "http" and ("/mcp/" in path or path.endswith("/mcp")):
                             headers_dict = dict(scope.get("headers", []))
 
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")

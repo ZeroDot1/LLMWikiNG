@@ -1407,6 +1407,19 @@ Willkommen im Wiki **{name}**.
         version_file = PROJECT_ROOT / "VERSION"
         local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
+        local_commit = None
+        remote_commit = None
+        try:
+            p_local = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(PROJECT_ROOT),
+            )
+            if p_local.returncode == 0:
+                local_commit = p_local.stdout.strip()
+        except Exception:
+            pass
+
         try:
             subprocess.run(
                 ["git", "fetch", "origin"],
@@ -1419,14 +1432,26 @@ Willkommen im Wiki **{name}**.
                 cwd=str(PROJECT_ROOT),
             )
             remote_version = proc.stdout.strip() if proc.returncode == 0 else None
+
+            p_remote_c = subprocess.run(
+                ["git", "rev-parse", "origin/main"],
+                capture_output=True, text=True, timeout=15,
+                cwd=str(PROJECT_ROOT),
+            )
+            if p_remote_c.returncode == 0:
+                remote_commit = p_remote_c.stdout.strip()
         except Exception:
             remote_version = None
 
         lines = ["# Update-Status\n"]
         lines.append(f"- **Lokale Version:** {local_version}")
+        if local_commit:
+            lines.append(f"- **Lokaler Commit:** {local_commit}")
         if remote_version:
             lines.append(f"- **Remote-Version:** {remote_version}")
-            if local_version == remote_version:
+            if remote_commit:
+                lines.append(f"- **Remote Commit:** {remote_commit}")
+            if local_version == remote_version and (not remote_commit or local_commit == remote_commit):
                 lines.append("- **Status:** Auf dem neuesten Stand.")
             else:
                 lines.append("- **Status:** Update verfuegbar!")

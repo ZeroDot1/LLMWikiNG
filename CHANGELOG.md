@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.4] - 2026-07-27
+
+### Fixed
+- **MCP Initialization `Method Not Allowed` Fix (`backend/api/routes/mcp.py`, `backend/main.py`)**: `get_mcp_http_app()` hinzugefügt und Mounting unter `/LLMWikiNG/mcp` auf FastMCP `streamable_http_app` / `sse_app` erweitert. Behebt den Fehler `calling "initialize": sending "initialize": Method Not Allowed` beim Initialisieren der MCP-Verbindung in Antigravity (`agy`) CLI.
+
 ### Added
 - **37 OpenCode Slash Commands** (`.opencode/command/*.md`): Alle 37 MCP-Prompts des LLMWikiNG-Servers als native OpenCode `/`-Autocomplete-Commands. Erstellt aus den MCP-Prompt-Definitionen des Remote-Servers, ermöglicht direkten Aufruf aller Wiki-Operationen via Slash-Befehl in OpenCode.
 - **Antigravity CLI (agy) MCP-Konfiguration** (`~/.gemini/config/mcp_config.json`, `.agents/mcp_config.json`): Globale und Workspace-MCP-Konfiguration für die `agy` CLI und Antigravity IDE. Verbindet über SSE mit dem LLMWikiNG MCP-Server inkl. MCP-Key und API-Key.
@@ -14,6 +19,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 - **README.md um Slash Commands Sektion erweitert**: Neuer Abschnitt "🎯 OpenCode Slash Commands" mit Kopieranleitung für alle 37 Befehle. MCP-Prompts-Tabelle mit korrekten Client-Informationen aktualisiert.
+
 
 ## [2.13.3] - 2026-07-27
 

@@ -233,8 +233,10 @@ def create_app() -> FastAPI:
 
                         await self.app(scope, receive, send)
 
+                from api.routes.mcp import get_mcp_http_app
+                mcp_http_app = get_mcp_http_app()
                 app.add_middleware(McpApiKeyMiddleware)
-                app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
+                app.mount(f"{BASE_PATH}/mcp", mcp_http_app if mcp_http_app is not None else mcp_sse_app, name="mcp")
         else:
             # MCP-Paket nicht installiert – stille Deaktivierung
             pass

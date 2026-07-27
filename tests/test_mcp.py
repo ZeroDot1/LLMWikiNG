@@ -912,9 +912,12 @@ class TestMcpAvailability:
 
     def test_get_mcp_sse_app(self):
         """SSE-App sollte korrekt generiert werden."""
-        from api.routes.mcp import get_mcp_sse_app
+        from api.routes.mcp import get_mcp_sse_app, get_mcp_http_app
         app = get_mcp_sse_app()
         assert app is not None
+        http_app = get_mcp_http_app()
+        assert http_app is not None
+
 
 
 # J. MCP API-Key Middleware

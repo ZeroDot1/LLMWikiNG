@@ -1992,3 +1992,13 @@ def get_mcp_sse_app():
     if _MCP_AVAILABLE and mcp_server is not None:
         return mcp_server.sse_app()
     return None
+
+
+def get_mcp_http_app():
+    """Gibt die Streamable HTTP App (oder SSE App als Fallback) des MCP-Servers zurueck."""
+    if _MCP_AVAILABLE and mcp_server is not None:
+        if hasattr(mcp_server, "streamable_http_app"):
+            return mcp_server.streamable_http_app()
+        return mcp_server.sse_app()
+    return None
+

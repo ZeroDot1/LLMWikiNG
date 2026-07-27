@@ -1399,10 +1399,9 @@ async def settings_post(request: Request):
                 raw_output = proc.stdout + proc.stderr
                 update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
 
-                # update.sh startet den Server selbst neu (Container/uvicorn).
-                # Falls es im aktuellen Kontext nicht klappte, hier nachhelfen.
-                if "Neustart" not in update_log_output and "restart" not in update_log_output.lower():
-                    _trigger_server_restart()
+                # Automatischen Server-Neustart nach erfolgreichem Update auslösen,
+                # damit direkt der neue Code im Speicher aktiv wird.
+                _trigger_server_restart()
             except subprocess.TimeoutExpired:
                 update_log_output = "FEHLER: Update-Skript hat 300 Sekunden ueberschritten."
             except Exception as e:

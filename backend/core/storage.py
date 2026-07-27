@@ -118,6 +118,14 @@ def delete_key(key_id: str) -> None:
     save_keys(keys)
 
 
+def delete_all_keys() -> int:
+    """Löscht alle REST-API-Keys. Gibt die Anzahl gelöschter Keys zurück."""
+    keys = list_keys()
+    count = len(keys)
+    save_keys([])
+    return count
+
+
 def get_key_by_hash(h: str) -> dict | None:
     return next((k for k in list_keys() if k["hash"] == h and k["active"]), None)
 
@@ -182,6 +190,15 @@ def delete_mcp_key(key_id: str) -> bool:
     if deleted:
         _save_mcp_data(data)
     return deleted
+
+
+def delete_all_mcp_keys() -> int:
+    """Löscht alle MCP-Keys. Gibt Anzahl gelöschter Keys zurück."""
+    data = _load_mcp_data()
+    count = len(data.get("mcp_keys", []))
+    data["mcp_keys"] = []
+    _save_mcp_data(data)
+    return count
 
 
 def update_mcp_key(key_id: str, **changes) -> dict | None:

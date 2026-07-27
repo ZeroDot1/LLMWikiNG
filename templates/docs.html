@@ -277,6 +277,17 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
         It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (via the web UI under <em>Settings ➜ Users / Keys</em>) instead of reusing your main administrator credentials or a global shared key. Additionally, you can create per-user MCP keys with fine-grained tool permissions under <em>Settings ➜ Keys ➜ MCP Keys</em>. Each MCP key is bound to a specific user and can be restricted to a subset of tools (e.g., read-only access). This ensures clean audit logs and limits the potential impact of any single agent.
       </div>
 
+      <div class="mt-4 rounded-lg bg-error/10 border border-error/30 p-4 text-xs text-text-secondary leading-relaxed">
+        <strong class="text-error">⚠️ Fehlerbehebung: "Entschlüsselung fehlgeschlagen" bei API- & MCP-Keys:</strong><br>
+        <p class="mt-1">Falls beim Anzeigen/Entschlüsseln eines Schlüssels die Meldung <em>"Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret unterscheidet sich..."</em> erscheint, wurde dieser Schlüssel vor einer Änderung des System-Secret (<code>secret_key</code> in <code>config.json</code>) erstellt.</p>
+        <strong class="block mt-2 font-bold text-text">Lösung:</strong>
+        <ol class="list-decimal list-inside space-y-1 mt-1">
+          <li>Gehe zu <strong>Einstellungen ➜ API-Keys & MCP-Keys</strong>.</li>
+          <li>Klicke in der jeweiligen Sektion auf den roten Button <strong>"🗑️ Alle API-Keys löschen"</strong> bzw. <strong>"🗑️ Alle MCP-Schlüssel löschen"</strong> und bestätige mit deinem Admin-Passwort.</li>
+          <li>Erstelle neue Schlüssel. Diese werden mit dem aktuellen System-Secret in <code>config.json</code> verschlüsselt und sind fortan dauerhaft entschlüsselbar.</li>
+        </ol>
+      </div>
+
 
       <h3 class="text-xl font-semibold mt-6">⚡ MCP Prompts & Remote Slash Commands (37 Commands)</h3>
       <p class="text-text-secondary text-sm">Once connected to LLMWikiNG via MCP, typing <code>/</code> in supporting clients (AGY, OpenCode, Cursor, Claude Code) opens the slash command menu:</p>

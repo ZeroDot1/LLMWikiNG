@@ -195,6 +195,24 @@ async def api_key_delete(key_id: str, request: Request, admin: dict = Depends(re
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=API-Key+gelöscht")
 
 
+@router.post("/api-keys/delete-all")
+async def api_keys_delete_all(request: Request, admin: dict = Depends(require_admin)):
+    """Löscht alle API-Keys nach Verifizierung des Admin-Passworts."""
+    form = await request.form()
+    password = (form.get("password") or "").strip()
+
+    if not password:
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Passwort+erforderlich")
+
+    if not verify_password(password, admin["password_hash"]):
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Ungültiges+Passwort")
+
+    from core.storage import delete_all_keys
+    count = delete_all_keys()
+    log_action(action="api_key_delete_all", details=f"Alle API-Keys gelöscht ({count} Keys)", user_id=admin["id"], username=admin["username"], request=request)
+    return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=Alle+{count}+API-Keys+erfolgreich+gelöscht")
+
+
 @router.post("/api-keys/reveal")
 
 async def api_key_reveal(request: Request, admin: dict = Depends(require_admin)):
@@ -328,6 +346,24 @@ async def mcp_key_delete(key_id: str, request: Request, admin: dict = Depends(re
     delete_mcp_key(key_id)
     log_action(action="mcp_key_delete", details=f"MCP-Key-ID '{key_id}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+gelöscht")
+
+
+@router.post("/mcp-keys/delete-all")
+async def mcp_keys_delete_all(request: Request, admin: dict = Depends(require_admin)):
+    """Löscht alle MCP-Keys nach Verifizierung des Admin-Passworts."""
+    form = await request.form()
+    password = (form.get("password") or "").strip()
+
+    if not password:
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Passwort+erforderlich")
+
+    if not verify_password(password, admin["password_hash"]):
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Ungültiges+Passwort")
+
+    from core.storage import delete_all_mcp_keys
+    count = delete_all_mcp_keys()
+    log_action(action="mcp_key_delete_all", details=f"Alle MCP-Keys gelöscht ({count} Keys)", user_id=admin["id"], username=admin["username"], request=request)
+    return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=Alle+{count}+MCP-Schlüssel+erfolgreich+gelöscht")
 
 
 @router.post("/mcp-keys/{key_id}/edit")

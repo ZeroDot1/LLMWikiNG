@@ -48,7 +48,14 @@
 </div>
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('apikeys.title') }}</h2>
+    <div class="flex flex-wrap items-center justify-between border-b border-border pb-2 mb-3 gap-2">
+        <h2 class="text-lg font-semibold text-primary">{{ _('apikeys.title') }}</h2>
+        {% if keys %}
+        <button type="button" onclick="openDeleteAllKeysModal('api')" class="rounded-lg bg-error/15 hover:bg-error/25 border border-error/30 text-error px-3 py-1 text-xs font-bold transition-colors">
+            🗑️ Alle API-Keys löschen
+        </button>
+        {% endif %}
+    </div>
     {% if keys %}
     <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
@@ -177,7 +184,14 @@
 </div>
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
-    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2 text-primary">{{ _('mcpkeys.title') }}</h2>
+    <div class="flex flex-wrap items-center justify-between border-b border-border pb-2 mb-3 gap-2">
+        <h2 class="text-lg font-semibold text-primary">{{ _('mcpkeys.title') }}</h2>
+        {% if mcp_keys %}
+        <button type="button" onclick="openDeleteAllKeysModal('mcp')" class="rounded-lg bg-error/15 hover:bg-error/25 border border-error/30 text-error px-3 py-1 text-xs font-bold transition-colors">
+            🗑️ Alle MCP-Schlüssel löschen
+        </button>
+        {% endif %}
+    </div>
     {% if mcp_keys %}
     <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
@@ -383,5 +397,50 @@ function toggleSecretButtons() {
     var btnRegen = document.getElementById("btnRegenerateSecret");
     if (btnReveal) btnReveal.disabled = !pass;
     if (btnRegen) btnRegen.disabled = !pass;
+}
+</script>
+
+<!-- Modal: Alle Keys löschen (Passwortbestätigung) -->
+<div id="deleteAllKeysModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden animate-fade-in p-4">
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-xl max-w-md w-full">
+        <h3 id="deleteAllKeysTitle" class="text-lg font-bold text-error mb-2">Alle Schlüssel löschen</h3>
+        <p id="deleteAllKeysDesc" class="text-sm text-text-secondary mb-4">Möchtest du wirklich alle Schlüssel löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        <form id="deleteAllKeysForm" method="post" action="">
+            <div class="mb-4">
+                <label for="deleteAllPassword" class="block text-xs font-semibold text-text-muted uppercase mb-1">Admin-Passwort bestätigen</label>
+                <input type="password" name="password" id="deleteAllPassword" required class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-error" placeholder="Dein Passwort">
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeDeleteAllKeysModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold text-text hover:bg-bg-sunken transition-colors">Abbrechen</button>
+                <button type="submit" class="rounded-lg bg-error hover:bg-error/85 px-4 py-2 text-xs font-bold text-white transition-colors shadow-sm">⚠️ Unwiderruflich löschen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openDeleteAllKeysModal(type) {
+    var modal = document.getElementById("deleteAllKeysModal");
+    var form = document.getElementById("deleteAllKeysForm");
+    var title = document.getElementById("deleteAllKeysTitle");
+    var desc = document.getElementById("deleteAllKeysDesc");
+    var pass = document.getElementById("deleteAllPassword");
+
+    pass.value = "";
+    if (type === 'mcp') {
+        title.textContent = "Alle MCP-Schlüssel löschen";
+        desc.textContent = "Bist du sicher, dass du ALLE erzeugten MCP-Schlüssel löschen möchtest? Alle verbundenen MCP-Clients verlieren sofort den Zugriff.";
+        form.action = "{{ base_path }}/mcp-keys/delete-all";
+    } else {
+        title.textContent = "Alle REST-API-Keys löschen";
+        desc.textContent = "Bist du sicher, dass du ALLE REST-API-Keys löschen möchtest? Alle verbundenen API-Clients verlieren sofort den Zugriff.";
+        form.action = "{{ base_path }}/api-keys/delete-all";
+    }
+    modal.classList.remove("hidden");
+    pass.focus();
+}
+
+function closeDeleteAllKeysModal() {
+    document.getElementById("deleteAllKeysModal").classList.add("hidden");
 }
 </script>

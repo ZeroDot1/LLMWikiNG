@@ -565,6 +565,10 @@ function unlockFullConfigKeys() {
     if (mcpSelect) mcpSelect.addEventListener("change", renderConfigSnippets);
     if (apiSelect) apiSelect.addEventListener("change", renderConfigSnippets);
 
-    updateFilteredDropdowns();
+    if (userSelect) {
+        updateFilteredDropdowns();
+    } else {
+        renderConfigSnippets();
+    }
 })();
 </script>

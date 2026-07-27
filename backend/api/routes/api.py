@@ -338,6 +338,13 @@ def api_list_mcp_keys(admin: dict = Depends(require_api_admin)):
     ]}
 
 
+@router.get("/mcp-keys/tool-groups")
+def api_list_mcp_tool_groups():
+    """Listet alle verfügbaren MCP-Tool-Gruppen auf."""
+    from core.config import MCP_TOOL_GROUPS
+    return {"tool_groups": MCP_TOOL_GROUPS}
+
+
 @router.post("/mcp-keys")
 async def api_create_mcp_key(request: Request, admin: dict = Depends(require_api_admin)):
     try:
@@ -346,7 +353,20 @@ async def api_create_mcp_key(request: Request, admin: dict = Depends(require_api
         raise HTTPException(status_code=400, detail="Ungültiger JSON-Body")
     name = (body.get("name") or "").strip()
     target_user_id = body.get("user_id") or admin["id"]
-    allowed_tools = body.get("allowed_tools") or []
+    allowed_tools = body.get("allowed_tools")
+    
+    if allowed_tools is None:
+        tool_groups = body.get("tool_groups") or []
+        if tool_groups:
+            from core.config import MCP_TOOL_GROUPS
+            allowed_tools = []
+            for g in tool_groups:
+                if g in MCP_TOOL_GROUPS:
+                    allowed_tools.extend(MCP_TOOL_GROUPS[g]["tools"])
+            allowed_tools = sorted(set(allowed_tools))
+        else:
+            allowed_tools = []
+
     if not name:
         raise HTTPException(status_code=400, detail="name erforderlich")
     key_obj, raw = create_mcp_key(

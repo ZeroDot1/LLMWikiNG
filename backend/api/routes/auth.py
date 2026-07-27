@@ -313,7 +313,21 @@ async def mcp_key_create(request: Request, admin: dict = Depends(require_admin))
     form = await request.form()
     name = (form.get("name") or "").strip()
     target_user_id = form.get("user_id") or admin["id"]
-    allowed_tools = form.getlist("allowed_tools") or []
+    all_tools = form.get("all_tools") == "1"
+    
+    if all_tools:
+        allowed_tools = []
+    else:
+        allowed_tools = form.getlist("allowed_tools")
+        if not allowed_tools:
+            selected_groups = form.getlist("tool_groups")
+            if selected_groups:
+                from core.config import MCP_TOOL_GROUPS
+                for g in selected_groups:
+                    if g in MCP_TOOL_GROUPS:
+                        allowed_tools.extend(MCP_TOOL_GROUPS[g]["tools"])
+                allowed_tools = sorted(set(allowed_tools))
+
     if not name:
         return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Name+für+MCP-Schlüssel+erforderlich")
     key_obj, raw = create_mcp_key(
@@ -321,7 +335,7 @@ async def mcp_key_create(request: Request, admin: dict = Depends(require_admin))
         name=name,
         allowed_tools=allowed_tools,
     )
-    log_action(action="mcp_key_create", details=f"MCP-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt", user_id=admin["id"], username=admin["username"], request=request)
+    log_action(action="mcp_key_create", details=f"MCP-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt ({len(allowed_tools)} Tools)", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+erzeugt&mcp_new_key={raw}")
 
 

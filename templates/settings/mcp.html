@@ -437,6 +437,7 @@ function unlockFullConfigKeys() {
         return;
     }
 
+    var promises = [];
     var fetchErrors = [];
 
     // Fetch full MCP Key if selected and not global

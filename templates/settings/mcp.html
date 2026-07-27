@@ -98,7 +98,7 @@
             🔒 {{ _('settings.mcp_reveal_prompt') }}
         </p>
         <div class="flex flex-wrap gap-2 items-center">
-            <input type="password" id="mcp_unlock_password" placeholder="{{ _('apikeys.system_secret_password_placeholder') }}" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary max-w-xs">
+            <input type="password" id="mcp_unlock_password" placeholder="{{ _('apikeys.system_secret_password_placeholder') }}" onkeydown="if(event.key==='Enter'){event.preventDefault();unlockFullConfigKeys();}" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-primary max-w-xs">
             <button type="button" onclick="unlockFullConfigKeys()" class="rounded-lg bg-primary hover:bg-primary-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors cursor-pointer">{{ _('settings.mcp_reveal_btn') }}</button>
         </div>
         <p id="mcp_unlock_error" class="text-error text-xs hidden font-medium"></p>
@@ -437,7 +437,7 @@ function unlockFullConfigKeys() {
         return;
     }
 
-    var promises = [];
+    var fetchErrors = [];
 
     // Fetch full MCP Key if selected and not global
     var selectedMcpId = mcpSelect ? mcpSelect.value : "";
@@ -448,7 +448,11 @@ function unlockFullConfigKeys() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ key_id: selectedMcpId, password: password })
             }).then(function(res) { return res.json(); }).then(function(data) {
-                if (data.raw_key) revealedFullMcpKeys[selectedMcpId] = data.raw_key;
+                if (data.raw_key) {
+                    revealedFullMcpKeys[selectedMcpId] = data.raw_key;
+                } else if (data.error) {
+                    fetchErrors.push(data.error);
+                }
             })
         );
     }
@@ -462,13 +466,22 @@ function unlockFullConfigKeys() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ key_id: selectedApiId, password: password })
             }).then(function(res) { return res.json(); }).then(function(data) {
-                if (data.raw_key) revealedFullApiKeys[selectedApiId] = data.raw_key;
+                if (data.raw_key) {
+                    revealedFullApiKeys[selectedApiId] = data.raw_key;
+                } else if (data.error) {
+                    fetchErrors.push(data.error);
+                }
             })
         );
     }
 
     Promise.all(promises).then(function() {
-        succEl.classList.remove("hidden");
+        if (fetchErrors.length > 0) {
+            errEl.textContent = fetchErrors.join(" | ");
+            errEl.classList.remove("hidden");
+        } else {
+            succEl.classList.remove("hidden");
+        }
         if (window.renderConfigSnippets) window.renderConfigSnippets();
     }).catch(function(e) {
         errEl.textContent = "Entschlüsselung fehlgeschlagen: " + e;

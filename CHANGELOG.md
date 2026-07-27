@@ -23,6 +23,13 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.32] - 2026-07-27
+
+### Added
+- **Verbesserungen der System Secret-Karte (`templates/settings/apikeys.html`)**:
+  - Eingabe per **Enter-Taste** im Passwortfeld (`secretPassword`) löst nun direkt das Entschlüsseln (`revealSystemSecret()`) aus.
+  - Dynamisches Sperren/Entsperren der Buttons *Anzeigen* und *Neu generieren* (`toggleSecretButtons()`) in Abhängigkeit davon, ob ein Passwort eingegeben wurde.
+
 ## [2.12.31] - 2026-07-27
 
 ### Fixed

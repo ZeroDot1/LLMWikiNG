@@ -53,12 +53,27 @@
       <li><strong>Appearance</strong> – Choose Theme (Dark/Light), stored persistently in <code>config.json</code>.</li>
       <li><strong>SMTP</strong> – Email configuration for weekly reports & briefings (stored in <code>config.json</code>).</li>
       <li><strong>User Management</strong> – Manage users and roles (Admin/Editor/Viewer).</li>
-      <li><strong>API Keys</strong> – Generate or revoke API Keys, toggle password-requirement.</li>
+      <li><strong>API Keys &amp; MCP Keys</strong> – Generate or revoke API Keys and Per-User MCP Keys with fine-grained tool permissions and password-based key recovery.</li>
       <li><strong>Registration</strong> – Turn public registration on or off.</li>
+      <li><strong>Backups</strong> – Create, download, restore, and delete server-side <code>.tar.xz</code> backups.</li>
+      <li><strong>MCP</strong> – Interactive client configurator (AGY, OpenCode, Hermes) and categorized tool explorer for all 37 MCP tools.</li>
       <li><strong>Health Check</strong> – Run the wiki linter (orphans, missing targets, staleness, raw-file refs).</li>
       <li><strong>Wiki Management</strong> – Create, edit (inline), and delete wikis with page/file count and size.</li>
       <li><strong>Update</strong> – Pull updates directly from GitHub.</li>
     </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">💾 Server Backups</h2>
+    <p class="text-text-secondary">LLMWikiNG includes a full backup management system under <em>Settings ➜ Backups</em> (Admin only). Backups are created as compressed <code>.tar.xz</code> archives and stored in the <code>data/</code> directory.</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><strong>Create:</strong> Click "Create Backup" to generate a full backup of all wikis, raw sources, export documents, databases, and configuration.</li>
+      <li><strong>List:</strong> All available backups are shown in a table with filename, date, and size.</li>
+      <li><strong>Download:</strong> Download any backup archive for off-site storage.</li>
+      <li><strong>Restore:</strong> Select a backup to restore the entire system to the state at the time of the backup.</li>
+      <li><strong>Delete:</strong> Remove old backups you no longer need.</li>
+    </ul>
+    <p class="mt-2 text-sm text-text-secondary">Backups can also be managed programmatically via the API (see API section below).</p>
   </section>
 
   <section>
@@ -159,7 +174,7 @@ curl -X POST -H "X-API-Key: $API_KEY" -F "file=@/path/to/file.txt" "$SERVER_URL/
 curl -X POST -H "X-API-Key: $API_KEY" -d "text=# Raw Text\nContent..." -d "title=Text-Paste" "$SERVER_URL/wiki/$WIKI/api/ingest"</code></pre>
         </div>
         <div>
-          <strong>6. Volltextsuche:</strong>
+          <strong>6. Full-text search:</strong>
           <pre class="bg-bg-sunken p-2 rounded-lg text-xs mt-1"><code>curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/search?q=SearchQuery&amp;wiki=$WIKI"</code></pre>
         </div>
         <div>
@@ -245,7 +260,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
       "type": "remote",
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "enabled": true,
-      "environment": {
+      "headers": {
         "X-MCP-Key": "your_secure_mcp_key_2026",
         "X-API-Key": "your_database_api_key"
       }
@@ -278,13 +293,13 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
       </div>
 
       <div class="mt-4 rounded-lg bg-error/10 border border-error/30 p-4 text-xs text-text-secondary leading-relaxed">
-        <strong class="text-error">⚠️ Fehlerbehebung: "Entschlüsselung fehlgeschlagen" bei API- & MCP-Keys:</strong><br>
-        <p class="mt-1">Falls beim Anzeigen/Entschlüsseln eines Schlüssels die Meldung <em>"Entschlüsselung fehlgeschlagen. Das kryptografische System-Secret unterscheidet sich..."</em> erscheint, wurde dieser Schlüssel vor einer Änderung des System-Secret (<code>secret_key</code> in <code>config.json</code>) erstellt.</p>
-        <strong class="block mt-2 font-bold text-text">Lösung:</strong>
+        <strong class="text-error">⚠️ Troubleshooting: "Decryption failed" for API &amp; MCP Keys:</strong><br>
+        <p class="mt-1">If you see the message <em>"Decryption failed. The cryptographic system secret differs..."</em> when displaying/decrypting a key, this key was created before a change of the system secret (<code>secret_key</code> in <code>config.json</code>).</p>
+        <strong class="block mt-2 font-bold text-text">Solution:</strong>
         <ol class="list-decimal list-inside space-y-1 mt-1">
-          <li>Gehe zu <strong>Einstellungen ➜ API-Keys & MCP-Keys</strong>.</li>
-          <li>Klicke in der jeweiligen Sektion auf den roten Button <strong>"🗑️ Alle API-Keys löschen"</strong> bzw. <strong>"🗑️ Alle MCP-Schlüssel löschen"</strong> und bestätige mit deinem Admin-Passwort.</li>
-          <li>Erstelle neue Schlüssel. Diese werden mit dem aktuellen System-Secret in <code>config.json</code> verschlüsselt und sind fortan dauerhaft entschlüsselbar.</li>
+          <li>Go to <strong>Settings ➜ API Keys &amp; MCP Keys</strong>.</li>
+          <li>Click the red button <strong>"🗑️ Delete All API Keys"</strong> or <strong>"🗑️ Delete All MCP Keys"</strong> in the respective section and confirm with your admin password.</li>
+          <li>Create new keys. These will be encrypted with the current system secret in <code>config.json</code> and remain permanently decryptable.</li>
         </ol>
       </div>
 
@@ -325,7 +340,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
           <span class="text-text-secondary block mt-0.5">Synchronize qmd embeddings</span>
         </div>
       </div>
-      <p class="text-xs text-text-muted mt-2">See <em>Settings ➜ MCP ➜ Tool Explorer</em> in the WebUI for the full list of all 37 slash commands and tool groups.</p>
+      <p class="text-xs text-text-muted mt-2">The <strong>MCP Tool Explorer</strong> under <em>Settings ➜ MCP</em> in the WebUI provides a categorized accordion view of all 37 tools with their descriptions, parameters, and ready-to-use prompts. The <strong>Interactive Client Configurator</strong> in the same panel lets you select a user and their keys to generate a ready-made config snippet for AGY, OpenCode, or Hermes with one click.</p>
 
       <div class="mt-3">
         <strong>💬 Copy-Paste AI Configuration Prompt:</strong><br>

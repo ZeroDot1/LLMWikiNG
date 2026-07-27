@@ -9,6 +9,12 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
 
+## [2.13.3] - 2026-07-27
+
+### Added & Improved
+- **Sammellöschung aller API-Keys & MCP-Keys** (`templates/settings/apikeys.html`, `backend/api/routes/auth.py`, `backend/core/storage.py`): In den Einstellungen unter *API-Keys & MCP-Keys* stehen zwei neue Buttons **"🗑️ Alle API-Keys löschen"** und **"🗑️ Alle MCP-Schlüssel löschen"** zur Verfügung, die nach Bestätigung mit dem Admin-Passwort alle bisherigen Schlüssel mit einem Klick entfernen.
+- **Fehlerbehebungs-Dokumentation** (`templates/docs.html`, `README.md`): Ausführlicher Abschnitt zur Selbstdokumentation und Behebung von Entschlüsselungsfehlern (*"Entschlüsselung fehlgeschlagen"*) hinzugefügt.
+
 ## [2.13.2] - 2026-07-27
 
 ### Security & Persistenz

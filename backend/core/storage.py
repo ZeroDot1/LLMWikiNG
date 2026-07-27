@@ -173,11 +173,15 @@ def create_mcp_key(user_id: str, name: str, allowed_tools: list[str] | None = No
     return key, raw
 
 
-def delete_mcp_key(key_id: str) -> None:
-    """Löscht einen MCP-Key anhand der ID."""
+def delete_mcp_key(key_id: str) -> bool:
+    """Löscht einen MCP-Key anhand der ID. Gibt True zurück wenn gefunden und gelöscht."""
     data = _load_mcp_data()
+    old_len = len(data.get("mcp_keys", []))
     data["mcp_keys"] = [k for k in data.get("mcp_keys", []) if k["id"] != key_id]
-    _save_mcp_data(data)
+    deleted = len(data["mcp_keys"]) < old_len
+    if deleted:
+        _save_mcp_data(data)
+    return deleted
 
 
 def update_mcp_key(key_id: str, **changes) -> dict | None:

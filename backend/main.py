@@ -119,19 +119,36 @@ def create_app() -> FastAPI:
                     """
                     def __init__(self, app):
                         self.app = app
+                        # Imports auf Modulebene (nur einmalig beim Start)
+                        import hashlib as _hl
+                        from urllib.parse import parse_qs as _pqs
+                        from core.config import LLMWIKING_MCP_KEY as _mcp_global_key
+                        from core.storage import get_key_by_hash as _gkbh
+                        from core.storage import get_user as _gu
+                        from core.storage import get_mcp_key_by_hash as _gmkbh
+                        from core.storage import update_mcp_key as _umk
+                        from api.routes.mcp import mcp_allowed_tools_ctx as _mac
+                        from datetime import datetime as _dt
+                        self._hashlib = _hl
+                        self._parse_qs = _pqs
+                        self._mcp_global_key = _mcp_global_key
+                        self._get_key_by_hash = _gkbh
+                        self._get_user = _gu
+                        self._get_mcp_key_by_hash = _gmkbh
+                        self._update_mcp_key = _umk
+                        self._mcp_allowed_tools_ctx = _mac
+                        self._datetime = _dt
 
                     async def __call__(self, scope, receive, send):
                         if scope["type"] == "http" and "/mcp/" in scope.get("path", ""):
-                            from core.config import LLMWIKING_MCP_KEY as _KEY
                             headers_dict = dict(scope.get("headers", []))
 
                             # MCP-Key aus Header oder Query lesen
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
                             mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
                             if not mcp_key:
-                                from urllib.parse import parse_qs
                                 query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
-                                query_params = parse_qs(query_string)
+                                query_params = self._parse_qs(query_string)
                                 mcp_key = query_params.get("mcp_key", [None])[0]
 
                             if not mcp_key:
@@ -143,9 +160,8 @@ def create_app() -> FastAPI:
                             api_key_bytes = headers_dict.get(b"x-api-key")
                             api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
                             if not api_key:
-                                from urllib.parse import parse_qs
                                 query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
-                                query_params = parse_qs(query_string)
+                                query_params = self._parse_qs(query_string)
                                 api_key = query_params.get("api_key", [None])[0]
 
                             if not api_key:
@@ -153,16 +169,13 @@ def create_app() -> FastAPI:
                                 await res(scope, receive, send)
                                 return
 
-                            import hashlib
-                            from core.storage import get_key_by_hash, get_user, get_mcp_key_by_hash
-
                             # Modus 1: Per-User MCP-Key aus mcp_keys.json
-                            mcp_key_obj = get_mcp_key_by_hash(hashlib.sha256(mcp_key.encode()).hexdigest())
+                            mcp_key_obj = self._get_mcp_key_by_hash(self._hashlib.sha256(mcp_key.encode()).hexdigest())
 
                             if mcp_key_obj:
                                 # API-Key muss demselben User gehören wie der MCP-Key
-                                api_h = hashlib.sha256(api_key.encode()).hexdigest()
-                                api_key_obj = get_key_by_hash(api_h)
+                                api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
+                                api_key_obj = self._get_key_by_hash(api_h)
                                 if not api_key_obj or not api_key_obj.get("active", True):
                                     res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
                                     await res(scope, receive, send)
@@ -173,7 +186,7 @@ def create_app() -> FastAPI:
                                     await res(scope, receive, send)
                                     return
 
-                                user = get_user(mcp_key_obj["user_id"])
+                                user = self._get_user(mcp_key_obj["user_id"])
                                 if not user or not user.get("active", True):
                                     res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
                                     await res(scope, receive, send)
@@ -186,33 +199,30 @@ def create_app() -> FastAPI:
                                 scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
 
                                 # ContextVar fuer Tool-Berechtigung in mcp.py setzen
-                                from api.routes.mcp import mcp_allowed_tools_ctx
-                                _allowed_token = mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
+                                _allowed_token = self._mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
 
                                 # last_used aktualisieren (stumme Aktualisierung)
                                 try:
-                                    from core.storage import update_mcp_key
-                                    from datetime import datetime
-                                    update_mcp_key(mcp_key_obj["id"], last_used=datetime.now().isoformat(timespec="seconds"))
+                                    self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
                                 except Exception:
                                     pass
 
                                 try:
                                     await self.app(scope, receive, send)
                                 finally:
-                                    mcp_allowed_tools_ctx.reset(_allowed_token)
+                                    self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
                             # Modus 2: Legacy-Key (Rueckwaertskompatibilitaet)
-                            if _KEY and mcp_key == _KEY:
-                                api_h = hashlib.sha256(api_key.encode()).hexdigest()
-                                db_key = get_key_by_hash(api_h)
+                            if self._mcp_global_key and mcp_key == self._mcp_global_key:
+                                api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
+                                db_key = self._get_key_by_hash(api_h)
                                 if not db_key or not db_key.get("active", True):
                                     res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
 
-                                user = get_user(db_key["user_id"])
+                                user = self._get_user(db_key["user_id"])
                                 if not user or not user.get("active", True):
                                     res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
                                     await res(scope, receive, send)
@@ -224,13 +234,12 @@ def create_app() -> FastAPI:
                                 scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
 
                                 # ContextVar: Legacy = alle Tools erlaubt
-                                from api.routes.mcp import mcp_allowed_tools_ctx
-                                _allowed_token = mcp_allowed_tools_ctx.set([])
+                                _allowed_token = self._mcp_allowed_tools_ctx.set([])
 
                                 try:
                                     await self.app(scope, receive, send)
                                 finally:
-                                    mcp_allowed_tools_ctx.reset(_allowed_token)
+                                    self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
                             # Weder gueltiger MCP-Key noch Legacy-Key

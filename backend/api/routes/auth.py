@@ -25,6 +25,7 @@ from core.storage import (
     list_mcp_keys,
     create_mcp_key,
     delete_mcp_key,
+    update_mcp_key,
 )
 
 router = APIRouter(prefix=BASE_PATH)
@@ -298,9 +299,10 @@ async def system_secret_regenerate(request: Request, admin: dict = Depends(requi
     from itsdangerous import URLSafeTimedSerializer
     core.security._signer = URLSafeTimedSerializer(new_secret, salt="llmwikisession")
     core.security._key_cipher = URLSafeTimedSerializer(new_secret, salt="llmwikingapikey")
+    core.security._key_cipher_mcp = URLSafeTimedSerializer(new_secret, salt="llmwikingmcpkey")
 
     log_action(action="system_secret_regenerate", details="System-Secret neu generiert", user_id=admin["id"], username=admin["username"], request=request)
-    return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
+    return JSONResponse({"secret": new_secret, "message": "Geheimnis erfolgreich neu generiert. Hinweis: Zuvor erstellte API-Keys und MCP-Keys sind nicht mehr entschlüsselbar und müssen neu angelegt werden."})
 
 
 

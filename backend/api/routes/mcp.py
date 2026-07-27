@@ -1559,7 +1559,13 @@ Willkommen im Wiki **{name}**.
         version_file = PROJECT_ROOT / "VERSION"
         old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
+        from core.config import DATA_DIR
+        log_file = DATA_DIR / "update.log"
+
         try:
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            log_file.write_text("", encoding="utf-8")
+
             proc = subprocess.run(
                 [str(update_script)],
                 capture_output=True, text=True, timeout=300,
@@ -1567,6 +1573,10 @@ Willkommen im Wiki **{name}**.
             )
             raw_output = proc.stdout + proc.stderr
             clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
+
+            # Update-Log auf Festplatte speichern (Data-Volume)
+            log_file.write_text(clean_output, encoding="utf-8")
+
             new_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
             from services.audit import log_action
@@ -1584,8 +1594,10 @@ Willkommen im Wiki **{name}**.
                 lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")
             return "\n".join(lines)
         except subprocess.TimeoutExpired:
+            log_file.write_text("FEHLER: Update-Skript hat 300 Sekunden ueberschritten.\n", encoding="utf-8")
             return "Update-Skript hat 300 Sekunden ueberschritten."
         except Exception as e:
+            log_file.write_text(f"FEHLER: {e}\n", encoding="utf-8")
             return f"Update fehlgeschlagen: {e}"
 
 

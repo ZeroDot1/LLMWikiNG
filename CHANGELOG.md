@@ -7,24 +7,18 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-- **`PROJECT_ROOT: unbound variable` beim Ingest über REST-API behoben** (`backend/services/wiki.py`): `wiki.sh` erwartet die Umgebungsvariable `PROJECT_ROOT` (z. B. in der Python-Cleaning-Unterroutine), aber der Ingest-Pfad über `run_ingest_async()` setzte diese nicht. Der Fix ergänzt `run_env["PROJECT_ROOT"]` in `run_ingest_async()`, sodass alle Ingest-Pfade (URL, Text, Datei-Upload über REST-API und WebUI) funktionieren.
+## [2.12.37] - 2026-07-27
 
-### Added
-- **MCP-Keys-Verwaltung mit Tool-Berechtigungen** (`templates/settings/apikeys.html`, `backend/api/routes/auth.py`, `backend/api/routes/api.py`, `backend/api/routes/pages.py`): Neue Sektion „MCP Keys" im Keys-Tab erlaubt es Administratoren, mehrere benutzergebundene MCP-Schlüssel mit feingranularen Tool-Berechtigungen zu erstellen. Jeder MCP-Key ist einem Benutzer zugeordnet und kann auf eine Teilmenge von 34 Tools (9 Gruppen: wiki_read, wiki_write, raw_sources, system, users_admin, api_keys_admin, backup_admin, update_admin, audit) beschränkt werden. Die API-Key- und MCP-Key-Authentifizierung prüft nun, dass beide Schlüssel demselben Benutzer gehören.
-- **Per-User MCP-Key-Authentifizierung in MCP-Middleware** (`backend/main.py`): `McpApiKeyMiddleware` unterstützt nun zwei Modi — benutzergebundene MCP-Keys (aus `data/mcp_keys.json`) mit individuellen Tool-Berechtigungen sowie den Legacy-MCP-Key (global, rückwärtskompatibel). Erlaubte Tools werden via `ContextVar` an die MCP-Tools weitergegeben.
-- **Tool-Berechtigungsprüfung für MCP-Tools** (`backend/api/routes/mcp.py`): Alle 34 MCP-Tools verwenden den `@_require_tool()`-Dekorator, der vor der Tool-Ausführung prüft, ob der aufrufende MCP-Key die Berechtigung für dieses Tool besitzt. Bei fehlender Berechtigung wird ein informativer Fehler zurückgegeben.
-- **MCP-Key-CRUD-Funktionen** (`backend/core/security.py`, `backend/core/storage.py`): `gen_mcp_key()`, `verify_mcp_key()`, `encrypt_mcp_key()`, `decrypt_mcp_key()` zur sicheren Erstellung und Verwaltung von MCP-Keys. `data/mcp_keys.json` speichert Hash, verschlüsselten Key, Tool-Berechtigungen und Nutzungshistorie.
-- **MCP-Tool-Gruppen** (`backend/core/config.py`): 9 Tool-Gruppen mit Metadaten (Label DE/EN, Tool-Liste) für die UI-Darstellung und Berechtigungsverwaltung.
-- **REST API für MCP-Keys** (`backend/api/routes/api.py`): `GET /api/v1/mcp-keys`, `POST /api/v1/mcp-keys`, `DELETE /api/v1/mcp-keys/{id}` für automatisierte MCP-Key-Verwaltung.
-- **Neue Übersetzungsschlüssel für MCP-Keys** (`lang/de.json`, `lang/en.json`): 32 neue Keys pro Sprache für MCP-Key-Titel, Formulare, Tabellen, Tool-Gruppen-Labels und Aktionen.
-- **Dokumentation erweitert** (`templates/docs.html`, `templates/docs_de.html`): MCP-Keys-API-Endpunkte und curl-Beispiele hinzugefügt, Sicherheitsempfehlung aktualisiert.
+### Fixed
+- **`update_mcp_key` nicht importiert in `auth.py` (NameError)** (`backend/api/routes/auth.py`): Der Import von `update_mcp_key` fehlte in `auth.py`, obwohl die Funktion in der Route `POST /mcp-keys/{key_id}/edit` aufgerufen wurde. Das Bearbeiten von MCP-Keys über die Web-UI führte zu einem `NameError`. Import ergänzt.
+- **`delete_mcp_key()` gab `None` zurück statt `bool`** (`backend/core/storage.py`): Die Funktion gab implizit `None` zurück, sodass die Erfolgsprüfung in `mcp.py:1422` (`if success:`) immer `False` ergab. MCP-Tools zeigten bei jedem Löschversuch „konnte nicht gefunden werden", obwohl der Key erfolgreich gelöscht wurde. `delete_mcp_key()` gibt jetzt `True` bei Erfolg zurück.
+- **`system_secret_regenerate` aktualisierte `_key_cipher_mcp` nicht** (`backend/api/routes/auth.py`): Bei der Neugenerierung des System-Secrets wurden `_signer` und `_key_cipher` aktualisiert, aber nicht `_key_cipher_mcp`. Danach waren alle MCP-Keys unentschlüsselbar. `_key_cipher_mcp` wird jetzt ebenfalls mit dem neuen Secret neu instanziiert. Hinweismeldung erweitert (erwähnt MCP-Keys).
+- **`@_require_tool`-Dekorator umging Tool-Berechtigungsprüfung (Sicherheitslücke)** (`backend/api/routes/mcp.py`, 37 Stellen): Die Dekorator-Reihenfolge war `@_require_tool` außerhalb von `@mcp_server.tool()`. Da FastMCP die Originalfunktion registrierte, wurde der Permission-Wrapper beim Tool-Aufruf umgangen — alle MCP-Tools waren unabhängig von den Berechtigungen aufrufbar. Korrigierte Reihenfolge: `@mcp_server.tool()` außen, `@_require_tool` innen.
+- **`_default_wiki()` gab Wiki-Namen statt Slug zurück** (`backend/api/routes/pages.py`): `wikis[0]["name"]` wurde zurückgegeben, aber viele Funktionen erwarten einen Slug. Bei Wiki-Namen mit Leerzeichen oder Umlauten traten Fehler auf. Korrigiert zu `wikis[0]["slug"]`.
+- **`generate_mcp_keys`-Action nutzte noch das alte globale Key-System** (`backend/api/routes/pages.py`): Die Settings-Action speicherte einen generischen MCP-Key in `config.json` statt das neue per-User MCP-Key-System zu nutzen. Bei jedem Update (git reset) ging der Key verloren. Nutzt jetzt `create_mcp_key()` aus `core.storage`.
 
 ### Changed
-- **Tab-Bezeichnung „API-Keys" in „Keys" umbenannt** (`templates/settings.html`, `lang/de.json`, `lang/en.json`): Der Settings-Tab heißt nun „Keys" statt „API-Keys". Alle zugehörigen Übersetzungsschlüssel (`settings.tab_apikeys`, `apikeys.title`, `apikeys.create_heading`, `apikeys.raw_key`, `apikeys.no_keys`) wurden angepasst.
-- **System-Geheimnis (LLMWIKI_SECRET) von Backup-Tab in Keys-Tab verschoben** (`templates/settings/backup.html`, `templates/settings/apikeys.html`): Die Verwaltung des kryptografischen System-Geheimnisses (Anzeigen, Neu generieren) befindet sich nun im Keys-Tab statt im Backup-Tab — dort wo sie thematisch hingehört, in unmittelbarer Nähe zur API-Key-Verwaltung.
-- **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
-- **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
+- **MCP-Middleware-Imports auf Modulebene verschoben** (`backend/main.py`): Alle Imports in `McpApiKeyMiddleware.__call__()` (hashlib, parse_qs, storage-Funktionen, ContextVar) wurden in `__init__()` verschoben und als Instanzattribute gespeichert. Vermeidet wiederholte Import-Overheads bei jedem Request.
 
 ## [2.12.35] - 2026-07-27
 

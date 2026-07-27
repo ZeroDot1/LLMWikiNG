@@ -231,7 +231,7 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
-> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (31 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
+> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (37 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
 
 ### 🔌 Enable & Configure MCP Server
 
@@ -312,7 +312,7 @@ Add the configuration to your global MCP configuration file `~/.gemini/config/mc
 The configured tools will then be automatically available to the agent inside `agy`.
 
 > [!IMPORTANT]
-> **Security Recommendation:** It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (in the WebUI under *Settings ➜ Users / API Keys*) instead of sharing main administrator credentials or using the global config key. This isolates agent permissions and ensures clean, audit-logged actions.
+> **Security Recommendation:** It is highly recommended to create a dedicated, low-privilege user account and a specific API key for each AI agent/client (in the WebUI under *Settings ➜ Users / Keys*) instead of sharing main administrator credentials or using the global config key. Additionally, you can create per-user MCP keys with fine-grained tool permissions under *Settings ➜ Keys ➜ MCP Keys*. Each MCP key is tied to a specific user and can be restricted to a subset of tools (e.g., read-only access). This ensures clean, isolated audit logs and sensible permission boundaries for each agent.
 
 #### 💬 Copy-Paste AI Configuration Prompt
 You can copy and paste the following instruction directly into your AI assistant (e.g., Cursor Chat, Claude Code, OpenCode, or agy) to tell it to configure itself:
@@ -320,7 +320,7 @@ You can copy and paste the following instruction directly into your AI assistant
 Please configure yourself to connect to the LLMWikiNG MCP server. The server uses SSE (Server-Sent Events) at URL: http://localhost:8080/LLMWikiNG/mcp/sse. You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file.
 ```
 
-### 📋 Available MCP Tools (31 Tools)
+### 📋 Available MCP Tools (37 Tools)
 
 | Tool | Description |
 |------|-------------|
@@ -353,6 +353,12 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_list_api_keys` | Lists all API keys |
 | `okf_create_api_key` | Creates an API key |
 | `okf_delete_api_key` | Deletes an API key |
+| `okf_list_mcp_keys` | Lists all per-user MCP keys |
+| `okf_create_mcp_key` | Creates a per-user MCP key with tool permissions |
+| `okf_delete_mcp_key` | Deletes a per-user MCP key |
+| `okf_list_backups` | Lists available server backups |
+| `okf_create_backup` | Creates a new server backup |
+| `okf_restore_backup` | Restores a server backup |
 | `okf_check_update` | Checks for update via Git |
 | `okf_run_update` | Runs the system update |
 
@@ -459,7 +465,7 @@ backend/
 templates/                  # Jinja2 templates (Tailwind v4, responsive, dark mode)
 static/                     # static assets (css/tailwind-build.css, js/*, graph engine)
 wikis/<name>/               # multi-wiki storage (wiki/ → wikis/main/ on migration)
-data/                       # users.json, api_keys.json
+data/                       # users.json, api_keys.json, mcp_keys.json
 ```
 
 ### Frontend (Tailwind CSS v4)

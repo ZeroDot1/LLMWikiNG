@@ -101,3 +101,31 @@ class TestPerUserMcpKeys:
             assert "nicht erlaubt" in err
         finally:
             mcp_allowed_tools_ctx.reset(token)
+
+    def test_mcp_key_update(self, client):
+        """Testet das Aktualisieren von Name, User und Tool-Berechtigungen eines MCP-Keys via REST & Web Route."""
+        from core.storage import create_mcp_key, list_mcp_keys, update_mcp_key, create_user
+        import uuid
+
+        admin_user = create_user(f"admin_up_{uuid.uuid4().hex[:6]}", "pass123", role="admin")
+        key_obj, _ = create_mcp_key(admin_user["id"], "Old Key Name", allowed_tools=["okf_list_wikis"])
+        
+        # 1. Direct storage update
+        updated = update_mcp_key(key_obj["id"], name="New Key Name", allowed_tools=["okf_search", "okf_graph"])
+        assert updated is not None
+        assert updated["name"] == "New Key Name"
+        assert set(updated["allowed_tools"]) == {"okf_search", "okf_graph"}
+
+        # 2. REST API PUT update
+        from core.storage import create_key
+        _, admin_api_raw = create_key(admin_user["id"], "Admin API Key Test")
+        resp = client.put(
+            f"/LLMWikiNG/api/v1/mcp-keys/{key_obj['id']}",
+            headers={"X-API-Key": admin_api_raw},
+            json={"name": "API Updated Name", "tool_groups": ["wiki_read"]}
+        )
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+        assert resp.json()["mcp_key"]["name"] == "API Updated Name"
+        assert "okf_read_concept" in resp.json()["mcp_key"]["allowed_tools"]
+

@@ -23,6 +23,14 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.25] - 2026-07-27
+
+### Added
+- **Bearbeiten von Per-User MCP-Keys (`templates/settings/apikeys.html`, `backend/api/routes/auth.py`, `backend/api/routes/api.py`)**:
+  - Modal-Dialog in *Settings -> Keys (MCP-Keys)* hinzugefügt, mit dem Name, zugewiesener Benutzer, Aktiv-Status und Tool-Berechtigungen (Tool-Gruppen) bestehender MCP-Keys editiert werden können.
+  - Web-Route `POST /mcp-keys/{key_id}/edit` & REST-API-Endpunkt `PUT /api/v1/mcp-keys/{key_id}` implementiert.
+  - Unit-Tests in `tests/test_mcp_keys.py` erweitert.
+
 ## [2.12.24] - 2026-07-27
 
 ### Added

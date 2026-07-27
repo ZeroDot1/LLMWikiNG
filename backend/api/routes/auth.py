@@ -346,6 +346,46 @@ async def mcp_key_delete(key_id: str, request: Request, admin: dict = Depends(re
     return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+gelöscht")
 
 
+@router.post("/mcp-keys/{key_id}/edit")
+async def mcp_key_edit(key_id: str, request: Request, admin: dict = Depends(require_admin)):
+    """Bearbeitet Name, Zugeordneten User und Tool-Berechtigungen eines MCP-Keys."""
+    form = await request.form()
+    name = (form.get("name") or "").strip()
+    target_user_id = form.get("user_id") or admin["id"]
+    all_tools = form.get("all_tools") == "1"
+    active = form.get("active") == "1"
+    
+    if all_tools:
+        allowed_tools = []
+    else:
+        allowed_tools = form.getlist("allowed_tools")
+        if not allowed_tools:
+            selected_groups = form.getlist("tool_groups")
+            if selected_groups:
+                from core.config import MCP_TOOL_GROUPS
+                allowed_tools = []
+                for g in selected_groups:
+                    if g in MCP_TOOL_GROUPS:
+                        allowed_tools.extend(MCP_TOOL_GROUPS[g]["tools"])
+                allowed_tools = sorted(set(allowed_tools))
+
+    if not name:
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=Name+für+MCP-Schlüssel+erforderlich")
+        
+    updated = update_mcp_key(
+        key_id,
+        name=name,
+        user_id=target_user_id,
+        allowed_tools=allowed_tools,
+        active=active
+    )
+    if updated:
+        log_action(action="settings_change", details=f"MCP-Key '{name}' (ID: {key_id[:8]}) aktualisiert ({len(allowed_tools)} Tools)", user_id=admin["id"], username=admin["username"], request=request)
+        return redirect(f"{BASE_PATH}/settings?tab=apikeys&success=MCP-Schlüssel+erfolgreich+aktualisiert")
+    return redirect(f"{BASE_PATH}/settings?tab=apikeys&error=MCP-Schlüssel+nicht+gefunden")
+
+
+
 @router.post("/mcp-keys/reveal")
 async def mcp_key_reveal(request: Request, admin: dict = Depends(require_admin)):
     """Verifiziert das Admin-Passwort und gibt den entschlüsselten MCP-Schlüssel zurück."""

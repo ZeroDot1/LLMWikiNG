@@ -223,9 +223,12 @@
                         {{ key.last_used or '—' }}
                     </td>
                     <td class="py-3.5 px-2 text-right">
-                        <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('mcpkeys.delete_confirm') }}');">
-                            <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('mcpkeys.delete') }}</button>
-                        </form>
+                        <div class="flex items-center justify-end gap-2">
+                            <button type="button" onclick="openMcpKeyEditModal('{{ key.id }}', '{{ key.name | escape }}', '{{ key.user_id }}', {{ key.allowed_tools | tojson }}, {{ 'true' if key.active else 'false' }})" class="text-primary hover:underline text-xs font-bold transition-colors">✏️ Bearbeiten</button>
+                            <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('mcpkeys.delete_confirm') }}');">
+                                <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('mcpkeys.delete') }}</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -236,6 +239,99 @@
     <p class="text-sm text-text-secondary">{{ _('mcpkeys.no_keys') }}</p>
     {% endif %}
 </div>
+
+<!-- MCP Key Edit Modal -->
+<div id="mcpKeyEditModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface border border-border rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
+        <button type="button" onclick="closeMcpKeyEditModal()" class="absolute top-4 right-4 text-text-muted hover:text-text font-bold text-lg">&times;</button>
+        <h3 class="text-lg font-bold text-primary mb-1">✏️ MCP-Schlüssel bearbeiten</h3>
+        <p class="text-xs text-text-secondary mb-4">Passe den Namen, den zugewiesenen Benutzer und die berechtigten Tool-Gruppen an.</p>
+        
+        <form id="mcpKeyEditForm" action="" method="post" class="space-y-4">
+            <div>
+                <label for="edit_mcp_key_name" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('mcpkeys.name') }}</label>
+                <input type="text" name="name" id="edit_mcp_key_name" required class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            {% if users %}
+            <div>
+                <label for="edit_mcp_key_user_id" class="block text-xs font-semibold text-text-muted uppercase mb-1">Benutzer zuweisen</label>
+                <select id="edit_mcp_key_user_id" name="user_id" class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                    {% for u in users %}
+                    <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none">
+                <input type="checkbox" name="active" value="1" id="edit_mcp_key_active" class="rounded border-border text-primary focus:ring-primary">
+                <span class="font-medium text-text">Schlüssel Aktiv</span>
+            </label>
+
+            <div>
+                <label class="block text-xs font-semibold text-text-muted uppercase mb-2">{{ _('mcpkeys.allowed_tools') }}</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                    <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none rounded-lg border border-border px-3 py-2 hover:bg-bg-sunken/30 transition-colors">
+                        <input type="checkbox" name="all_tools" value="1" id="edit_mcp_key_all_tools" class="rounded border-border text-primary focus:ring-primary" onchange="document.querySelectorAll('.edit-mcp-group-check').forEach(c=>{c.checked=this.checked})">
+                        <span class="font-semibold text-primary">{{ _('mcpkeys.all_tools') }}</span>
+                    </label>
+                    {% for group_id, group in mcp_tool_groups.items() %}
+                    <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none rounded-lg border border-border px-3 py-2 hover:bg-bg-sunken/30 transition-colors">
+                        <input type="checkbox" name="tool_groups" value="{{ group_id }}" class="rounded border-border text-primary focus:ring-primary edit-mcp-group-check" data-group="{{ group_id }}">
+                        <span>{{ _('mcpkeys.group_' + group_id) }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-border">
+                <button type="button" onclick="closeMcpKeyEditModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold hover:bg-bg-sunken text-text transition-colors">Abbrechen</button>
+                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-xs font-semibold text-white transition-colors shadow-sm">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openMcpKeyEditModal(keyId, name, userId, allowedTools, active) {
+    var modal = document.getElementById("mcpKeyEditModal");
+    var form = document.getElementById("mcpKeyEditForm");
+    form.action = "{{ base_path }}/mcp-keys/" + keyId + "/edit";
+    
+    document.getElementById("edit_mcp_key_name").value = name;
+    
+    var userSel = document.getElementById("edit_mcp_key_user_id");
+    if (userSel) userSel.value = userId;
+    
+    document.getElementById("edit_mcp_key_active").checked = active;
+
+    var allToolsCheck = document.getElementById("edit_mcp_key_all_tools");
+    var isAll = !allowedTools || allowedTools.length === 0;
+    allToolsCheck.checked = isAll;
+
+    var toolGroupsMap = {{ mcp_tool_groups | tojson }};
+    document.querySelectorAll(".edit-mcp-group-check").forEach(function(chk) {
+        var gId = chk.getAttribute("data-group");
+        if (isAll) {
+            chk.checked = true;
+        } else if (toolGroupsMap[gId]) {
+            var groupTools = toolGroupsMap[gId].tools || [];
+            // Check if all tools in group are present
+            var hasAllInGroup = groupTools.every(function(t) { return allowedTools.includes(t); });
+            chk.checked = hasAllInGroup;
+        } else {
+            chk.checked = false;
+        }
+    });
+
+    modal.classList.remove("hidden");
+}
+
+function closeMcpKeyEditModal() {
+    document.getElementById("mcpKeyEditModal").classList.add("hidden");
+}
+</script>
 
 <!-- System Secret Management Card -->
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mt-6 max-w-2xl">

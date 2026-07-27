@@ -28,6 +28,7 @@ from core.storage import (
     delete_key,
     list_mcp_keys,
     create_mcp_key,
+    update_mcp_key,
     delete_mcp_key,
 )
 from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german, run_ingest_async, run_sync_async
@@ -384,6 +385,43 @@ async def api_create_mcp_key(request: Request, admin: dict = Depends(require_api
 def api_delete_mcp_key(key_id: str, admin: dict = Depends(require_api_admin)):
     delete_mcp_key(key_id)
     return {"ok": True}
+
+
+@router.put("/mcp-keys/{key_id}")
+async def api_update_mcp_key(key_id: str, request: Request, admin: dict = Depends(require_api_admin)):
+    """Aktualisiert einen MCP-Key (Name, User, Allowed Tools/Tool Groups, Status)."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiger JSON-Body")
+    
+    changes = {}
+    if "name" in body:
+        name = str(body["name"]).strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name darf nicht leer sein")
+        changes["name"] = name
+    if "user_id" in body:
+        changes["user_id"] = str(body["user_id"])
+    if "active" in body:
+        changes["active"] = bool(body["active"])
+    
+    if "allowed_tools" in body:
+        changes["allowed_tools"] = body["allowed_tools"] or []
+    elif "tool_groups" in body:
+        tool_groups = body["tool_groups"] or []
+        from core.config import MCP_TOOL_GROUPS
+        allowed = []
+        for g in tool_groups:
+            if g in MCP_TOOL_GROUPS:
+                allowed.extend(MCP_TOOL_GROUPS[g]["tools"])
+        changes["allowed_tools"] = sorted(set(allowed))
+
+    updated = update_mcp_key(key_id, **changes)
+    if not updated:
+        raise HTTPException(status_code=404, detail="MCP-Key nicht gefunden")
+    return {"ok": True, "mcp_key": updated}
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

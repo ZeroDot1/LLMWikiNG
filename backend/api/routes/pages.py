@@ -1258,7 +1258,10 @@ def settings_get(request: Request):
     app_version_text = _read_version()
     update_available_flag = (PROJECT_ROOT / "update.sh").exists()
     update_log_output = request.query_params.get("update_log")
-    if not update_log_output:
+    # Bei reloaded=1 (nach Countdown-Refresh) das update.log NICHT mehr laden,
+    # sonst entsteht ein Endlosschleifen-Refresh (Log -> Countdown -> Refresh -> Log -> ...).
+    reloaded = request.query_params.get("reloaded") == "1"
+    if not update_log_output and not reloaded:
         update_log_file = DATA_DIR / "update.log"
         if update_log_file.exists():
             update_log_output = update_log_file.read_text(encoding="utf-8").strip() or None

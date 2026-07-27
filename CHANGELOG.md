@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.12.42] - 2026-07-27
+
+### Fixed
+- **Update-Endlosschleife in WebUI** (`backend/api/routes/pages.py`): Wenn der Benutzer auf „Update ausfuehren" klickte, zeigte die WebUI nach dem Update den Log mit einem 5-Sekunden-Countdown, der automatisch auf `?tab=update&reloaded=1` weiterleitete. Beim Neuladen las `settings_get()` jedoch immer noch `data/update.log`, wodurch erneut der Log mit Countdown angezeigt wurde — eine endlose Refresh-Schleife. Fix: `settings_get()` laedt `update.log` nicht mehr, wenn `reloaded=1` im Query-String vorhanden ist.
+
 ## [2.12.41] - 2026-07-27
 
 ### Fixed

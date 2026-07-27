@@ -1255,6 +1255,7 @@ async def config_post(request: Request):
 @router.get("/settings")
 def settings_get(request: Request):
     app_version_text = _read_version()
+    update_available_flag = (PROJECT_ROOT / "update.sh").exists()
     update_log_output = request.query_params.get("update_log")
     if not update_log_output:
         update_log_file = PROJECT_ROOT / "update.log"

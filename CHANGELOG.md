@@ -23,6 +23,12 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Neue Übersetzungsschlüssel für System-Geheimnis** (`lang/de.json`, `lang/en.json`): `apikeys.system_secret_heading`, `apikeys.system_secret_desc`, `apikeys.system_secret_password_label`, `apikeys.system_secret_password_placeholder`, `apikeys.system_secret_reveal`, `apikeys.system_secret_regenerate` hinzugefügt.
 - **Dokumentation angepasst** (`templates/about.html`, `templates/about_de.html`, `templates/docs.html`): Settings-Beschreibungen aktualisiert, um den neuen Tab-Namen „Keys" widerzuspiegeln.
 
+## [2.12.35] - 2026-07-27
+
+### Fixed
+- **Behebung des NameErrors `update_available_flag` in `backend/api/routes/pages.py`**:
+  - Wiederherstellung der Variablen-Definition `update_available_flag = (PROJECT_ROOT / "update.sh").exists()` in der Route `settings_get`.
+
 ## [2.12.34] - 2026-07-27
 
 ### Added

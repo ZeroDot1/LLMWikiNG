@@ -100,6 +100,11 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System &amp; Traffic (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync aller Wikis (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Audit-Logs abrufen – filterbar nach Aktion, Benutzer, Zeitraum (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/audit/export?fmt=json|csv</code></td><td class="p-2">Audit-Logs als JSON oder CSV exportieren (Admin)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/backups</code></td><td class="p-2">Serverseitige Backups auflisten (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/backups</code></td><td class="p-2">Serverseitiges Backup erstellen (Admin)</td></tr>
+          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/backups/&lt;file&gt;/restore</code></td><td class="p-2">Serverseitiges Backup wiederherstellen (Admin)</td></tr>
+          <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/system/backups/&lt;file&gt;</code></td><td class="p-2">Serverseitiges Backup löschen (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/update/check</code></td><td class="p-2">Update-Verfügbarkeit prüfen (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/update/run</code></td><td class="p-2">Update ausführen (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/users</code></td><td class="p-2">Benutzer (Admin)</td></tr>
@@ -110,6 +115,7 @@
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/api-keys/&lt;id&gt;</code></td><td class="p-2">Key widerrufen (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">MCP-Keys auflisten (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/mcp-keys</code></td><td class="p-2">MCP-Key mit Tool-Berechtigungen erzeugen (Admin)</td></tr>
+          <tr><td class="p-2"><code>PUT</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">MCP-Key bearbeiten – Name, User, Tools, Status (Admin)</td></tr>
           <tr><td class="p-2"><code>DELETE</code></td><td class="p-2"><code>/api/v1/mcp-keys/&lt;id&gt;</code></td><td class="p-2">MCP-Key widerrufen (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/ingest</code></td><td class="p-2">Direkter Ingest für spezifisches Wiki (API-Key)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/wiki/&lt;wiki&gt;/api/sync</code></td><td class="p-2">Direktes Syncen für spezifisches Wiki (API-Key)</td></tr>

@@ -334,7 +334,7 @@ MCP_KEY="dein_sicherer_mcp_key_2026"
 MCP_SSE_URL="http://localhost:8080/LLMWikiNG/mcp/sse"
 ```
 
-### MCP-Tools (31 Stück)
+### MCP-Tools (37 Stück)
 
 Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität zwischen API-Key und MCP-Agenten-Zugang.
 
@@ -376,17 +376,73 @@ Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität
 | `okf_list_api_keys` | API-Keys auflisten |
 | `okf_create_api_key` | API-Key erstellen |
 | `okf_delete_api_key` | API-Key loeschen |
+| **MCP-Keys** | |
+| `okf_list_mcp_keys` | Per-User MCP-Keys auflisten |
+| `okf_create_mcp_key` | Per-User MCP-Key mit Tool-Berechtigungen erstellen |
+| `okf_delete_mcp_key` | Per-User MCP-Key loeschen |
+| **Backups** | |
+| `okf_list_backups` | Server-Backups auflisten |
+| `okf_create_backup` | Server-Backup erstellen (.tar.xz) |
+| `okf_restore_backup` | Server-Backup wiederherstellen |
 | **Update** | |
 | `okf_check_update` | Update-Verfuegbarkeit pruefen |
 | `okf_run_update` | System-Update ausfuehren |
 
-### Client-Einbindung (Cursor)
+### Client-Einbindung
+
+#### Antigravity CLI (`agy`) & Antigravity IDE
+
+Füge die MCP-Konfiguration in `~/.gemini/antigravity-cli/settings.json` (global) oder `.agents/mcp_config.json` (Workspace) ein:
+
+```json
+{
+  "mcpServers": {
+    "llmwiki-okf": {
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "headers": {
+        "X-MCP-Key": "dein_per_user_mcp_key",
+        "X-API-Key": "dein_api_key"
+      }
+    }
+  }
+}
+```
+
+Oder nutze die Agent-Prompt-Konfiguration:
+
+```
+Bitte konfiguriere dich so, dass du dich mit dem LLMWikiNG-MCP-Server verbindest.
+Der Server nutzt SSE (Server-Sent Events) unter der URL: http://localhost:8080/LLMWikiNG/mcp/sse.
+Du musst die Header 'X-MCP-Key' mit dem Wert '<DEIN_MCP_SERVER_KEY>' und
+'X-API-Key' mit dem Wert '<DEIN_AGENT_API_KEY>' mitsenden.
+```
+
+#### Cursor
 
 Füge in Cursor unter Settings → Features → MCP hinzu:
 - **Name:** LLMWikiNG-OKF
 - **Type:** SSE
 - **URL:** `http://localhost:8080/LLMWikiNG/mcp/sse`
 - **Headers:** `{"X-API-Key": "dein_sicherer_mcp_key_2026"}`
+
+#### OpenCode
+
+Füge in `opencode.json` unter `mcp` hinzu:
+```json
+{
+  "mcp": {
+    "llmwiki-okf": {
+      "type": "remote",
+      "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
+      "enabled": true,
+      "environment": {
+        "X-MCP-Key": "dein_per_user_mcp_key",
+        "X-API-Key": "dein_api_key"
+      }
+    }
+  }
+}
+```
 
 ---
 

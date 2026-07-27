@@ -3,7 +3,7 @@ type: Reference
 title: "LLMWikiNG MCP Server — Integration & Tool Reference"
 description: "Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts. Replace the example host/keys with your own."
 tags: [mcp, okf, opencode, agy, integration, reference, ai-agent]
-timestamp: "2026-07-19T20:05:00Z"
+timestamp: "2026-07-27T16:50:00Z"
 author: "LLMWikiNG Documentation"
 status: AI-Generated
 ---
@@ -28,9 +28,10 @@ LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a 
 5. [Connect Cursor (and other SSE clients)](#5-connect-cursor-and-other-sse-clients)
 6. [Copy-paste "self-configuration" prompt](#6-copy-paste-self-configuration-prompt)
 7. [How agents use the wiki automatically (workflows)](#7-how-agents-use-the-wiki-automatically-workflows)
-8. [Full tool reference](#8-full-tool-reference)
+8. [Full tool reference (37 tools)](#8-full-tool-reference-37-tools)
+10. [MCP Prompts (37 Remote Slash Commands)](#10-mcp-prompts-37-remote-slash-commands)
 9. [OKF v0.1 page format](#9-okf-v01-page-format)
-10. [Troubleshooting](#10-troubleshooting)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -178,7 +179,7 @@ After any write or ingest, ask:
 
 ---
 
-## 8. Full tool reference (31 tools)
+## 8. Full tool reference (37 tools)
 
 Each entry shows the tool, what it does, and a **copy-paste prompt** you can give your agent.
 
@@ -252,12 +253,28 @@ Each entry shows the tool, what it does, and a **copy-paste prompt** you can giv
     > "Create an API key for user 'ci-bot' named 'ci-key'."
 *   **`okf_delete_api_key`** — Delete an API key.
     > "Delete the API key 'ci-key'."
+*   **`okf_list_mcp_keys`** — List per-user MCP keys with tool permissions.
+    > "List all MCP keys."
+*   **`okf_create_mcp_key`** — Create a per-user MCP key with allowed tool groups.
+    > "Create an MCP key 'agent-key' with tool permissions."
+*   **`okf_delete_mcp_key`** — Revoke an MCP key.
+    > "Delete the MCP key 'agent-key'."
+
+### Backups
+*   **`okf_list_backups`** — List stored `.tar.xz` server backups.
+    > "List all server backups."
+*   **`okf_create_backup`** — Create a full `.tar.xz` system backup tarball.
+    > "Create a server backup."
+*   **`okf_restore_backup`** — Restore a server backup.
+    > "Restore the backup 'backup_2026.tar.xz'."
 
 ### Updates
 *   **`okf_check_update`** — Check GitHub for a newer version.
     > "Is there an update available?"
 *   **`okf_run_update`** — Run the Git-based system update.
     > "Run the system update."
+*   **`okf_run_update_stream`** — Run update with live progress stream output.
+    > "Run the system update with live streaming logs."
 
 ---
 
@@ -285,7 +302,57 @@ Required field: `type` (one of `Concept`, `Reference`, `Playbook`, `API-Doc`, `T
 
 ---
 
-## 10. Troubleshooting
+
+
+---
+
+## 10. MCP Prompts (37 Remote Slash Commands)
+
+Every MCP tool has a corresponding **MCP Prompt (Slash Command)** registered on the server. When connected to LLMWikiNG via MCP, type `/` in your client chat (AGY, OpenCode, Cursor, Claude Code) to invoke commands directly:
+
+| Slash Command | Arguments | Underlying Tool |
+|:---|:---|:---|
+| `/wikis` | — | `okf_list_wikis` |
+| `/wiki-create` | `<name> [slug] [description]` | `okf_create_wiki` |
+| `/wiki-update` | `<wiki> [name] [description] [new_slug]` | `okf_update_wiki` |
+| `/wiki-delete` | `<wiki>` | `okf_delete_wiki` |
+| `/pages` | `[wiki] [type_filter]` | `okf_list_pages` |
+| `/read` | `<slug> [wiki]` | `okf_read_concept` |
+| `/write` | `<slug> <title> <content> [wiki]` | `okf_write_concept` |
+| `/page-delete` | `<slug> [wiki]` | `okf_delete_page` |
+| `/export` | `<slug> [wiki]` | `okf_export_page` |
+| `/pending` | `[wiki]` | `okf_list_pending` |
+| `/ingest` | `[wiki]` | `okf_process_pending` |
+| `/ingest-text` | `<text> [wiki] [title]` | `okf_ingest_text` |
+| `/search` | `<query> [wiki]` | `okf_search` |
+| `/stats` | `[wiki]` | `okf_wiki_stats` |
+| `/graph` | `[wiki]` | `okf_graph` |
+| `/lint` | `[wiki]` | `okf_lint` |
+| `/raw-list` | — | `okf_list_raw` |
+| `/raw-read` | `<filename>` | `okf_read_raw` |
+| `/status` | — | `okf_system_status` |
+| `/sync` | `[wiki]` | `okf_system_sync` |
+| `/audit` | `[limit] [action] [username]` | `okf_audit_logs` |
+| `/cache` | — | `okf_cache_stats` |
+| `/cache-clear` | — | `okf_cache_clear` |
+| `/users` | — | `okf_list_users` |
+| `/user-create` | `<username> <password> [role]` | `okf_create_user` |
+| `/user-delete` | `<username>` | `okf_delete_user` |
+| `/api-keys` | — | `okf_list_api_keys` |
+| `/api-key-create` | `<name>` | `okf_create_api_key` |
+| `/api-key-delete` | `<key_id>` | `okf_delete_api_key` |
+| `/mcp-keys` | — | `okf_list_mcp_keys` |
+| `/mcp-key-create` | `<name> [allowed_tools]` | `okf_create_mcp_key` |
+| `/mcp-key-delete` | `<key_id>` | `okf_delete_mcp_key` |
+| `/backups` | — | `okf_list_backups` |
+| `/backup` | — | `okf_create_backup` |
+| `/restore` | `<filename>` | `okf_restore_backup` |
+| `/check-update` | — | `okf_check_update` |
+| `/update` | — | `okf_run_update` |
+
+---
+
+## 11. Troubleshooting
 
 *   **401 Unauthorized** — wrong `X-MCP-Key` or `X-API-Key`. Check `config.json` or regenerate the API key under *Settings → API Keys*.
 *   **Connection refused** — check the host/port and that the server is up (`okf_system_status` via the REST API or the Web UI).

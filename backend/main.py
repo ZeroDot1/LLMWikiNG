@@ -248,11 +248,8 @@ def create_app() -> FastAPI:
                 #   /mcp          → Streamable HTTP (POST / GET mit Accept: application/json)
                 #   /mcp/sse      → SSE (GET mit Accept: text/event-stream)
                 #   /mcp/messages → SSE Message-Endpoint (POST)
-                mcp_combined = get_mcp_combined_app()
-                if mcp_combined is not None:
-                    app.mount(f"{BASE_PATH}/mcp", mcp_combined, name="mcp")
-                else:
-                    # Fallback: Nur SSE (kein HTTP-Support)
+                mcp_sse_app = get_mcp_sse_app()
+                if mcp_sse_app is not None:
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
         else:
             # MCP-Paket nicht installiert – stille Deaktivierung

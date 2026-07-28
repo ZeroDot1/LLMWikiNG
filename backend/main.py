@@ -113,6 +113,7 @@ def create_app() -> FastAPI:
                         # Imports auf Modulebene (nur einmalig beim Start)
                         import hashlib as _hl
                         from urllib.parse import parse_qs as _pqs
+                        from starlette.responses import JSONResponse as _JSONResponse
                         from core.config import LLMWIKING_MCP_KEY as _mcp_global_key
                         from core.storage import get_key_by_hash as _gkbh
                         from core.storage import get_user as _gu
@@ -123,6 +124,7 @@ def create_app() -> FastAPI:
                         from datetime import datetime as _dt
                         self._hashlib = _hl
                         self._parse_qs = _pqs
+                        self._json_response = _JSONResponse
                         self._mcp_global_key = _mcp_global_key
                         self._get_key_by_hash = _gkbh
                         self._get_user = _gu
@@ -134,7 +136,7 @@ def create_app() -> FastAPI:
 
                     async def __call__(self, scope, receive, send):
                         path = scope.get("path", "")
-                        if scope["type"] == "http" and ("/mcp/" in path or path.endswith("/mcp")):
+                        if scope["type"] == "http" and ("/mcp/" in path or path.endswith("/mcp")) and "/api/" not in path:
                             headers_dict = dict(scope.get("headers", []))
 
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
@@ -145,7 +147,7 @@ def create_app() -> FastAPI:
                                 mcp_key = query_params.get("mcp_key", [None])[0]
 
                             if not mcp_key:
-                                res = JSONResponse({"detail": "MCP-Key erforderlich (X-MCP-Key)"}, status_code=401)
+                                res = self._json_response({"detail": "MCP-Key erforderlich (X-MCP-Key)"}, status_code=401)
                                 await res(scope, receive, send)
                                 return
 
@@ -157,7 +159,7 @@ def create_app() -> FastAPI:
                                 api_key = query_params.get("api_key", [None])[0]
 
                             if not api_key:
-                                res = JSONResponse({"detail": "API-Key erforderlich (X-API-Key)"}, status_code=401)
+                                res = self._json_response({"detail": "API-Key erforderlich (X-API-Key)"}, status_code=401)
                                 await res(scope, receive, send)
                                 return
 
@@ -169,18 +171,18 @@ def create_app() -> FastAPI:
                                 api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                 api_key_obj = self._get_key_by_hash(api_h)
                                 if not api_key_obj or not api_key_obj.get("active", True):
-                                    res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
+                                    res = self._json_response({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
 
                                 if api_key_obj["user_id"] != mcp_key_obj["user_id"]:
-                                    res = JSONResponse({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
+                                    res = self._json_response({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
                                     await res(scope, receive, send)
                                     return
 
                                 user = self._get_user(mcp_key_obj["user_id"])
                                 if not user or not user.get("active", True):
-                                    res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
+                                    res = self._json_response({"detail": "Benutzer inaktiv"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
 
@@ -209,13 +211,13 @@ def create_app() -> FastAPI:
                                 api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                 db_key = self._get_key_by_hash(api_h)
                                 if not db_key or not db_key.get("active", True):
-                                    res = JSONResponse({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
+                                    res = self._json_response({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
 
                                 user = self._get_user(db_key["user_id"])
                                 if not user or not user.get("active", True):
-                                    res = JSONResponse({"detail": "Benutzer inaktiv"}, status_code=401)
+                                    res = self._json_response({"detail": "Benutzer inaktiv"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
 
@@ -234,7 +236,7 @@ def create_app() -> FastAPI:
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
-                            res = JSONResponse({"detail": "Ungueltiger MCP-Key (X-MCP-Key)"}, status_code=401)
+                            res = self._json_response({"detail": "Ungueltiger MCP-Key (X-MCP-Key)"}, status_code=401)
                             await res(scope, receive, send)
                             return
 

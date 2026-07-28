@@ -253,9 +253,11 @@ if _MCP_AVAILABLE:
         if not slug:
             slug = "main"
 
+        root = WIKIS_ROOT / slug
+        existed = root.exists()
         root = wiki_path(slug)
 
-        if root.exists():
+        if existed:
             try:
                 save_wiki_meta(slug, name, description)
                 try:

@@ -7,6 +7,15 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.11] - 2026-07-28
+
+### Fixed & Improved
+- **MCP Server Stabilität & Bugfixes (`backend/api/routes/mcp.py` & `backend/core/config.py`)**:
+  - `okf_delete_wiki`: Verzeichnis- und Metadatenexistenz wird vor der Löschung sichergestellt (`delete_wiki` gibt nun `False` bei nicht existierenden Wikis zurück).
+  - `okf_create_wiki`: Existenzprüfung greift sauber an `WIKIS_ROOT / slug`, bevor `wiki_path()` das Verzeichnis anlegt.
+  - `okf_process_pending`: Ingest von ausstehenden Rohquellen auf `async def` mit non-blocking `asyncio.create_subprocess_exec` und Timeout-Handling umgestellt.
+  - Streamable HTTP Endpoint Mounting in `backend/main.py` erweitert.
+
 ## [2.13.10] - 2026-07-28
 
 ### Fixed

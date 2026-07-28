@@ -232,7 +232,7 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
-> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (37 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
+> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (38 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
 
 ### 🔌 Enable & Configure MCP Server
 
@@ -301,7 +301,7 @@ For **`/` autocomplete** in OpenCode's chat, copy the `.opencode/command/` direc
 cp -r pfad/zu/LLMWikiNG/.opencode/command/ .opencode/command/
 ```
 
-After restarting OpenCode, type `/` in chat to see all 37 LLMWikiNG commands:
+After restarting OpenCode, type `/` in chat to see all 38 LLMWikiNG commands:
 
 | Command | Description |
 |---------|-------------|
@@ -345,7 +345,7 @@ You can copy and paste the following instruction directly into your AI assistant
 Please configure yourself to connect to the LLMWikiNG MCP server. The server uses Streamable HTTP at URL: http://localhost:8080/LLMWikiNG/mcp (or SSE at http://localhost:8080/LLMWikiNG/mcp/sse). You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file with type 'http' and URL 'http://localhost:8080/LLMWikiNG/mcp'.
 ```
 
-### 📋 Available MCP Tools (37 Tools)
+### 📋 Available MCP Tools (38 Tools)
 
 | Tool | Description |
 |------|-------------|
@@ -387,9 +387,9 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_check_update` | Checks for update via Git |
 | `okf_run_update` | Runs the system update |
 
-### ⚡ MCP Prompts — Slash Commands (37 Total)
+### ⚡ MCP Prompts — Slash Commands (38 Total)
 
-MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 37 in total.
+MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 38 in total.
 
 > **Client support:**
 > - **AGY / Claude Code:** Support `list_prompts` natively — slash commands appear in autocomplete.
@@ -577,7 +577,7 @@ backend/
 │       ├── pages.py        # ALL HTML routes (under BASE_PATH)
 │       ├── auth.py         # /login, /logout, /users, /api-keys
 │       ├── api.py          # /api/v1/* (JSON, key-protected)
-│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 37 Tools)
+│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 38 Tools)
 └── services/               # wiki, markdown, search, sync, graph, lint,
                             #   analytics, editor, email_sender (all multi-wiki capable)
 templates/                  # Jinja2 templates (Tailwind v4, responsive, dark mode)

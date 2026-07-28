@@ -2147,12 +2147,9 @@ def get_mcp_combined_app():
     # Custom SSE-Route: Akzeptiert GET (SSE) + POST (AGY-Fallback)
     custom_sse_route = Route("/sse", endpoint=_sse_dispatch, methods=["GET", "POST"])
 
-    # Root Route fuer Clients, die direkte Streamable-HTTP POST/GET Aufrufe auf /LLMWikiNG/mcp ausfuehren
-    root_route = Route("/", endpoint=_sse_dispatch, methods=["GET", "POST"])
-
     # Messages-Mount bleibt fuer Standard-SSE-Clients (fuer endpoint-Event)
     messages_mount = sse_app.routes[1]
 
-    return Starlette(routes=[root_route, custom_sse_route, messages_mount])
+    return Starlette(routes=[custom_sse_route, messages_mount])
 
 

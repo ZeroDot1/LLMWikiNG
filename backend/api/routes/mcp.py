@@ -694,16 +694,11 @@ Willkommen im Wiki **{name}**.
 
     @mcp_server.tool()
     @_require_tool("okf_process_pending")
-    def okf_process_pending(wiki: str = "main") -> str:
+    async def okf_process_pending(wiki: str = "main") -> str:
         """Verarbeitet alle ausstehenden Rohquellen-Dateien (Ingest).
 
         Fuehrt den automatisierten Ingest-Prozess fuer alle Dateien
-        im raw/ Verzeichnis aus.
-
-        WICHTIG: FastMCP ruft Tools synchron auf. Daher ist diese Funktion
-        ein regulaeres ``def``. Die blockierenden Subprozesse (Ingest, Sync)
-        werden ueber ``subprocess.run`` direkt ausgefuehrt. Bei vielen oder
-        grossen Dateien kann die Laufzeit 60 Sekunden ueberschreiten (Timeout-Hinweis).
+        im raw/ Verzeichnis aus (asynchron).
 
         Args:
             wiki: Slug des Wikis (Default: 'main').
@@ -734,15 +729,22 @@ Willkommen im Wiki **{name}**.
             if not filepath.exists():
                 continue
             try:
-                result = subprocess.run(
-                    ["./wiki.sh", "ingest", str(filepath)],
-                    capture_output=True, text=True, timeout=120,
+                proc = await asyncio.create_subprocess_exec(
+                    "./wiki.sh", "ingest", str(filepath),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                     cwd=str(PROJECT_ROOT), env=env,
                 )
-                if result.returncode == 0:
-                    processed.append(item["name"])
-                else:
-                    errors.append(f"{item['name']}: {result.stderr.strip() or 'Fehler'}")
+                try:
+                    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+                    if proc.returncode == 0:
+                        processed.append(item["name"])
+                    else:
+                        errors.append(f"{item['name']}: {stderr.decode().strip() or 'Fehler'}")
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+                    errors.append(f"{item['name']}: Timeout (>120s)")
             except Exception as e:
                 errors.append(f"{item['name']}: {str(e)}")
 

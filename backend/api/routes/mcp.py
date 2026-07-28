@@ -250,10 +250,10 @@ if _MCP_AVAILABLE:
         else:
             slug = slugify_wiki(slug)
 
-        if not slug or slug == "main":
-            root = wiki_path("main")
-        else:
-            root = wiki_path(slug)
+        if not slug:
+            slug = "main"
+
+        root = wiki_path(slug)
 
         if root.exists():
             try:
@@ -371,10 +371,10 @@ Willkommen im Wiki **{name}**.
         if slug == "main":
             return "Das Standard-Wiki 'main' kann nicht geloescht werden."
         root = wiki_path(slug)
-        if not root.exists():
-            return f"Wiki '{wiki}' nicht gefunden."
         try:
-            delete_wiki(slug)
+            deleted = delete_wiki(slug)
+            if not deleted:
+                return f"Wiki '{wiki}' (slug: `{slug}`) nicht gefunden."
             try:
                 from services.audit import log_action
                 log_action(
@@ -700,8 +700,8 @@ Willkommen im Wiki **{name}**.
 
         WICHTIG: FastMCP ruft Tools synchron auf. Daher ist diese Funktion
         ein regulaeres ``def``. Die blockierenden Subprozesse (Ingest, Sync)
-        werden ueber ``subprocess.run`` direkt ausgefuehrt, da der MCP-Server
-        die Tools ohnehin synchron aufruft.
+        werden ueber ``subprocess.run`` direkt ausgefuehrt. Bei vielen oder
+        grossen Dateien kann die Laufzeit 60 Sekunden ueberschreiten (Timeout-Hinweis).
 
         Args:
             wiki: Slug des Wikis (Default: 'main').

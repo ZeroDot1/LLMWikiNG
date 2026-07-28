@@ -231,18 +231,23 @@ def delete_wiki(slug: str) -> bool:
     if slug == "main":
         return False
     d = WIKIS_ROOT / slug
-    if d.exists():
+    existed = d.exists()
+    if existed:
         shutil.rmtree(d)
     wikis_file = DATA_DIR / "wikis.json"
+    in_json = False
     if wikis_file.exists():
         try:
             wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+            initial_count = len(wikis)
             wikis = [w for w in wikis if w.get("slug") != slug]
+            if len(wikis) < initial_count:
+                in_json = True
             DATA_DIR.mkdir(parents=True, exist_ok=True)
             wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception:
             pass
-    return True
+    return existed or in_json
 
 
 def set_default_lang(lang: str) -> None:

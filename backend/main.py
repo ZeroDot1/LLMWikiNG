@@ -245,14 +245,14 @@ def create_app() -> FastAPI:
                         await self.app(scope, receive, send)
 
                 app.add_middleware(McpApiKeyMiddleware)
-                # MCP-Endpoint: Kombinierte App mit SSE + Streamable HTTP
-                # Mount bei /LLMWikiNG/mcp:
-                #   /mcp          → Streamable HTTP (POST / GET mit Accept: application/json)
-                #   /mcp/sse      → SSE (GET mit Accept: text/event-stream)
-                #   /mcp/messages → SSE Message-Endpoint (POST)
+                # MCP-Endpoints: Combined SSE (/mcp) + Streamable HTTP (/mcp/http)
                 mcp_sse_app = get_mcp_sse_app()
                 if mcp_sse_app is not None:
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
+
+                mcp_http_app = get_mcp_http_app()
+                if mcp_http_app is not None:
+                    app.mount(f"{BASE_PATH}/mcp/http", mcp_http_app, name="mcp_http")
         else:
             # MCP-Paket nicht installiert – stille Deaktivierung
             pass

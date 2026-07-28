@@ -372,7 +372,6 @@ Willkommen im Wiki **{name}**.
         slug = slugify_wiki(wiki)
         if slug == "main":
             return "Das Standard-Wiki 'main' kann nicht geloescht werden."
-        root = wiki_path(slug)
         try:
             deleted = delete_wiki(slug)
             if not deleted:

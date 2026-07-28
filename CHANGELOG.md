@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.10] - 2026-07-28
+
+### Fixed
+- **Settings-Endlos-Loop zum Update-Tab behoben** (`backend/api/routes/pages.py`): Besuchte man die Einstellungsseite, wechselte sie automatisch und immer wieder zum Update-Tab. Ursache: `data/update.log` wurde nach einem System-Update nie gelöscht. Bei jedem Aufruf von `/settings` lud der Server die alte Datei, der Countdown feuert und landete auf dem Update-Tab — ein endloser Loop. Fix: `settings_get()` löscht `update.log` sobald `reloaded=1` erkannt wird, sodass nach einmaligem Durchlauf Schluss ist.
+
 ## [2.13.9] - 2026-07-27
 
 ### Fixed & Improved

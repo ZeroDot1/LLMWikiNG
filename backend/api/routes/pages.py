@@ -1229,6 +1229,10 @@ def settings_get(request: Request):
     # Bei reloaded=1 (nach Countdown-Refresh) das update.log NICHT mehr laden,
     # sonst entsteht ein Endlosschleifen-Refresh (Log -> Countdown -> Refresh -> Log -> ...).
     reloaded = request.query_params.get("reloaded") == "1"
+    if reloaded:
+        _log_file = DATA_DIR / "update.log"
+        if _log_file.exists():
+            _log_file.unlink()
     if not update_log_output and not reloaded:
         update_log_file = DATA_DIR / "update.log"
         if update_log_file.exists():

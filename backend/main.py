@@ -190,6 +190,7 @@ def create_app() -> FastAPI:
                                     scope["state"] = {}
                                 scope["state"]["mcp_user"] = user
                                 scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
+                                scope["user"] = user
 
                                 _allowed_token = self._mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
                                 _user_token = self._mcp_user_ctx.set(user)
@@ -225,6 +226,7 @@ def create_app() -> FastAPI:
                                     scope["state"] = {}
                                 scope["state"]["mcp_user"] = user
                                 scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
+                                scope["user"] = user
 
                                 _allowed_token = self._mcp_allowed_tools_ctx.set([])
                                 _user_token = self._mcp_user_ctx.set(user)

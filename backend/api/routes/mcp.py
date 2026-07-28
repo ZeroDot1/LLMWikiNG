@@ -2099,31 +2099,17 @@ def get_mcp_http_app():
 
 
 def get_mcp_combined_app():
-    """Kombinierte Starlette App für Streamable HTTP und SSE MCP Transports.
+    """Starlette SSE-App für MCP Transport (native sse_app des SDKs).
     
-    Verarbeitet:
-      POST /    -> Streamable HTTP (FastMCP.streamable_http_app)
-      GET  /    -> Streamable HTTP
-      GET  /sse -> SSE Event-Stream (FastMCP.sse_app)
-      POST /messages/ -> SSE Message Endpoint
+    Liefert direkt mcp_server.sse_app(), welches standardmäßig:
+      GET  /sse -> SSE Event-Stream
+      POST /messages/ -> JSON-RPC Event Dispatcher
+    bereitstellt und den MCP SSE Handshake (initialize) fehlerfrei abwickelt.
     """
     if not _MCP_AVAILABLE or mcp_server is None:
         return None
 
-    try:
-        from starlette.applications import Starlette
-        from starlette.routing import Mount
-
-        http_app = mcp_server.streamable_http_app()
-        sse_app = mcp_server.sse_app()
-
-        routes = [
-            Mount("/sse", app=sse_app),
-            Mount("/", app=http_app),
-        ]
-        return Starlette(routes=routes)
-    except Exception:
-        return mcp_server.sse_app()
+    return mcp_server.sse_app()
 
 
 

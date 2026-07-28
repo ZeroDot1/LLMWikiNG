@@ -101,12 +101,13 @@ async def main():
             timeout=30,
         ) as (read, write):
             async with ClientSession(read, write) as session:
-                print("✅ Verbindung hergestellt!")
+                await session.initialize()
+                print("✅ Verbindung hergestellt & Session initialisiert!")
                 
                 # Zuerst das Update prüfen (okf_check_update)
                 print("\n🔍 Prüfe Update-Status...")
                 try:
-                    check_result = await session.call_tool("okf_check_update")
+                    check_result = await session.call_tool("okf_check_update", arguments={})
                     for content_item in check_result.content:
                         if hasattr(content_item, 'text'):
                             print(content_item.text)
@@ -118,7 +119,7 @@ async def main():
                 # Update ausführen
                 print("\n🚀 Führe Update aus (okf_run_update)...")
                 try:
-                    result = await session.call_tool("okf_run_update")
+                    result = await session.call_tool("okf_run_update", arguments={})
                     print("\n📋 Update-Ergebnis:")
                     print("=" * 60)
                     for content_item in result.content:

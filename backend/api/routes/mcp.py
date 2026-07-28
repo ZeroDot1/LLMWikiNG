@@ -2099,57 +2099,17 @@ def get_mcp_http_app():
 
 
 def get_mcp_combined_app():
-    """Kombinierte Starlette-App fuer SSE MCP Transport.
-
-    Das SSE-App intern /sse und /messages/ als Routen hat.
-    Ein separater Mount fuehrt zu doppelten Pfad-Praefixen
-    (z.B. /mcp/sse/sse), daher wird das SSE-App direkt als
-    kombinierte App verwendet.
-
-    AGY-Bug-Kompensation: AGY ignoriert den SSE endpoint-Event und
-    POSTet JSON-RPC direkt auf /sse statt auf /messages/.
-    Der /sse-Route wird daher als Dispatch installiert:
-      GET  /sse -> SseServerTransport.handle_sse (SSE-Stream)
-      POST /sse -> SseServerTransport.handle_post_message (Weiterleitung)
-
-    Hinweis: Streamable HTTP wurde entfernt, weil StreamableHTTPManager
-    ein initialisiertes Task-Group-Lifecycle benoetigt (run()),
-    das bei extrahierten Routen nicht verfuegbar ist.
+    """Starlette SSE-App für MCP Transport (native sse_app des SDKs).
+    
+    Liefert direkt mcp_server.sse_app(), welches standardmäßig:
+      GET  /sse -> SSE Event-Stream
+      POST /messages/ -> JSON-RPC Event Dispatcher
+    bereitstellt und den MCP SSE Handshake (initialize) fehlerfrei abwickelt.
     """
     if not _MCP_AVAILABLE or mcp_server is None:
         return None
 
-    from starlette.applications import Starlette
-    from starlette.routing import Route
+    return mcp_server.sse_app()
 
-    sse_app = mcp_server.sse_app()
-
-    # SseServerTransport Instance aus dem Mount (routes[1]) holen
-    sse_transport = sse_app.routes[1].app.__self__
-
-    # handle_sse aus dem Closure von sse_endpoint (routes[0]) extrahieren
-    sse_endpoint_fn = sse_app.routes[0].endpoint
-    handle_sse = sse_endpoint_fn.__closure__[
-        sse_endpoint_fn.__code__.co_freevars.index("handle_sse")
-    ].cell_contents
-
-    async def _sse_dispatch(scope, receive, send):
-        """GET -> SSE-Stream, POST -> Messages-Handler (AGY-Kompat)."""
-        if scope["method"] == "GET":
-            return await handle_sse(scope, receive, send)
-        elif scope["method"] == "POST":
-            return await sse_transport.handle_post_message(scope, receive, send)
-        else:
-            from starlette.responses import Response
-            res = Response("Method Not Allowed", status_code=405, headers={"Allow": "GET, POST"})
-            await res(scope, receive, send)
-
-    # Custom SSE-Route: Akzeptiert GET (SSE) + POST (AGY-Fallback)
-    custom_sse_route = Route("/sse", endpoint=_sse_dispatch, methods=["GET", "POST"])
-
-    # Messages-Mount bleibt fuer Standard-SSE-Clients (fuer endpoint-Event)
-    messages_mount = sse_app.routes[1]
-
-    return Starlette(routes=[custom_sse_route, messages_mount])
 
 

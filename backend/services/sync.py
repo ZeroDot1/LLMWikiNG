@@ -18,6 +18,9 @@ from services.cache import get_cache
 
 SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
 
+SYNC_CACHE_FILENAME = ".sync_cache.json"
+QMD_TIMEOUT = 180
+
 
 @dataclass
 class SyncStatus:
@@ -113,6 +116,70 @@ def _wiki_content_hash(wiki: str = "main") -> str:
                 pass
     return h.hexdigest()
 
+def _sync_cache_path(wiki: str = "main") -> Path:
+    return wiki_path(wiki) / SYNC_CACHE_FILENAME
+
+
+def _load_sync_cache(wiki: str = "main", default: dict | None = None) -> dict:
+    p = _sync_cache_path(wiki)
+    if p.exists():
+        try:
+            import json
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return default or {"version": 1, "fingerprints": {}, "last_sync": None}
+
+
+def _save_sync_cache(cache: dict, wiki: str = "main") -> None:
+    p = _sync_cache_path(wiki)
+    try:
+        import json
+        p.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"[sync] WARN: .sync_cache.json nicht schreibbar: {e}", flush=True)
+
+
+def _compute_blake2b_fingerprint(file_path: Path) -> str | None:
+    import hashlib
+    try:
+        h = hashlib.blake2b(digest_size=16)
+        h.update(file_path.read_bytes())
+        return h.hexdigest()
+    except Exception:
+        return None
+
+
+def _compute_file_fingerprints(wiki: str = "main") -> dict[str, str]:
+    root = wiki_path(wiki)
+    fps: dict[str, str] = {}
+    if root.exists():
+        try:
+            files = sorted(root.rglob("*.md"))
+        except OSError:
+            return fps
+        for f in files:
+            if f.stem in ("index", "log", "ingestlater"):
+                continue
+            fp = _compute_blake2b_fingerprint(f)
+            if fp:
+                fps[f.name] = fp
+    return fps
+
+
+def _get_changed_files(wiki: str = "main") -> tuple[list[str], list[str], list[str]]:
+    """Returns (added, changed, removed) file lists since last sync."""
+    cache = _load_sync_cache(wiki)
+    old_fps = cache.get("fingerprints", {})
+    new_fps = _compute_file_fingerprints(wiki)
+
+    added = [f for f in new_fps if f not in old_fps]
+    removed = [f for f in old_fps if f not in new_fps]
+    changed = [f for f in new_fps if f in old_fps and new_fps[f] != old_fps[f]]
+
+    return added, changed, removed
+
+
 def get_last_sync(wiki: str = "main") -> datetime | None:
     times = _load_sync_times()
     val = times.get(wiki)
@@ -194,7 +261,7 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
         env["COLLECTION_NAME"] = f"wiki_{wiki}"
         result = subprocess.run(
             [QMD_BIN, "embed"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=QMD_TIMEOUT,
             cwd=str(PROJECT_ROOT), env=env
         )
         if result.returncode == 0:
@@ -203,7 +270,7 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     except FileNotFoundError:
         return False, "qmd nicht installiert"
     except subprocess.TimeoutExpired:
-        return False, "qmd embed Zeitüberschreitung (>60s)"
+        return False, f"qmd embed Zeitüberschreitung (>{QMD_TIMEOUT}s)"
     except Exception as e:
         return False, str(e)
 
@@ -231,7 +298,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         try:
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 process.communicate(),
-                timeout=60.0
+                timeout=float(QMD_TIMEOUT)
             )
             returncode = process.returncode
         except asyncio.TimeoutExpired:
@@ -240,7 +307,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
                 await process.wait()
             except Exception:
                 pass
-            return False, "qmd embed Zeitüberschreitung (>60s)"
+            return False, f"qmd embed Zeitüberschreitung (>{QMD_TIMEOUT}s)"
             
         stdout = stdout_bytes.decode(encoding="utf-8", errors="replace").strip()
         stderr = stderr_bytes.decode(encoding="utf-8", errors="replace").strip()
@@ -308,7 +375,11 @@ def regenerate_index(wiki: str = "main") -> bool:
     return True
 
 def do_sync(wiki: str = "main", force: bool = False) -> dict:
-    """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
+    """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen.
+
+    Führt einen inkrementellen Sync durch: Erkennt geänderte/neue/gelöschte
+    Seiten über BLAKE2b-Fingerabdrücke und invalidiert nur betroffene Caches.
+    """
     import time as _time
     _start = _time.monotonic()
     status = SyncStatus()
@@ -321,9 +392,18 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
         return status
 
+    added, changed, removed = _get_changed_files(wiki)
+    if added:
+        status.messages.append(f"Neue Seiten: {', '.join(added)}")
+    if changed:
+        status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
+    if removed:
+        status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
+
     _cache = get_cache()
     _cache.invalidate_prefix(f"pages:{wiki}")
     _cache.invalidate(f"graph:{wiki}")
+    _cache.invalidate_prefix(f"tags:{wiki}")
 
     qmd_ok, qmd_msg = run_qmd_embed(wiki)
     status.qmd = qmd_ok
@@ -342,6 +422,13 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
         pass
 
     set_last_sync(datetime.now(), wiki)
+
+    _save_sync_cache({
+        "version": 1,
+        "fingerprints": _compute_file_fingerprints(wiki),
+        "last_sync": datetime.now().isoformat(),
+    }, wiki)
+
     status.duration_ms = int((_time.monotonic() - _start) * 1000)
 
     # Dict-compat für Bestandscode
@@ -383,9 +470,18 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             status.duration_ms = int((_time.monotonic() - _start) * 1000)
             return status
 
+        added, changed, removed = await asyncio.to_thread(_get_changed_files, wiki)
+        if added:
+            status.messages.append(f"Neue Seiten: {', '.join(added)}")
+        if changed:
+            status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
+        if removed:
+            status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
+
         _cache = get_cache()
         _cache.invalidate_prefix(f"pages:{wiki}")
         _cache.invalidate(f"graph:{wiki}")
+        _cache.invalidate_prefix(f"tags:{wiki}")
 
         qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
         status.qmd = qmd_ok
@@ -411,6 +507,14 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             pass
 
         await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
+
+        fps = await asyncio.to_thread(_compute_file_fingerprints, wiki)
+        await asyncio.to_thread(_save_sync_cache, {
+            "version": 1,
+            "fingerprints": fps,
+            "last_sync": datetime.now().isoformat(),
+        }, wiki)
+
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
 
         return {

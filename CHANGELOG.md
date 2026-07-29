@@ -7,6 +7,13 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.18] - 2026-07-29
+
+### Fixed
+- **Health Endpoint Fix** (`backend/api/routes/api.py`): Typo bei `datetime`-Modulimport korrigiert, um HTTP 500 Fehler zu beheben.
+- **Flexibles MCP Auth-Handling** (`backend/main.py`): `McpApiKeyMiddleware` umstrukturiert, sodass per-User MCP-Keys, globale MCP-Keys sowie reine API-Keys flexibel akzeptiert werden.
+- **Raw File Ingest Isolation & Dedup** (`wiki.sh`, `backend/services/wiki.py`): Ingest bereinigt kaskadierende Datums-Präfixe (`CLEAN_BASENAME`) und speichert Raw-Dateien isoliert pro Wiki unter `raw/<wiki>/`. `get_wiki_stats` zählt Raw- und Export-Dateien getrennt pro Wiki.
+
 ## [2.13.17] - 2026-07-29
 
 ### Added

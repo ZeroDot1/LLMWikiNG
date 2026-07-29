@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ _('tags.page_title') }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">{{ _('tags.heading') }}</h1>
+        <p class="text-text-secondary">{{ _('tags.subtitle') }}</p>
+    </div>
+</div>
+
+{% if tag_filter %}
+<div class="rounded-lg border border-primary/30 bg-primary-subtle p-3 mb-4 text-sm flex items-center gap-2">
+    <span>{{ _('tags.filtered_by') }} <strong>#{{ tag_filter }}</strong></span>
+    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}" class="text-text-muted hover:text-error ml-2">{{ _('tags.clear_filter') }}</a>
+</div>
+
+<div class="space-y-3">
+    {% for page in tagged_pages %}
+    <div class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors">
+        <div class="flex items-center justify-between gap-3">
+            <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-lg font-semibold text-primary no-underline">{{ page.title }}</a>
+            <span class="text-xs bg-bg-sunken border border-border text-text-secondary rounded-full px-2.5 py-0.5 font-mono">{{ page.type }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+
+{% if tag_cloud %}
+<div class="flex flex-wrap gap-2">
+    {% for item in tag_cloud %}
+    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ item.tag }}" class="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-primary-subtle hover:border-primary hover:text-primary transition-colors"
+       style="font-size: {{ [0.8 + (item.count / max_count) * 0.6, 1.4] | min }}rem;">
+        #{{ item.tag }}
+        <span class="text-xs text-text-muted bg-bg-sunken rounded-full px-2 py-0.5">{{ item.count }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
+    <p class="text-4xl mb-2">🏷️</p>
+    <p>{{ _('tags.no_tags') }}</p>
+</div>
+{% endif %}
+
+{% if tag_stats %}
+<div class="mt-8 rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-semibold mb-2">{{ _('tags.statistics') }}</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+        <div class="rounded-lg bg-bg-sunken p-3">
+            <div class="text-2xl font-bold text-primary">{{ tag_stats.total_tags }}</div>
+            <div class="text-text-muted text-xs">{{ _('tags.unique_tags') }}</div>
+        </div>
+        <div class="rounded-lg bg-bg-sunken p-3">
+            <div class="text-2xl font-bold text-primary">{{ tag_stats.tagged_pages }}</div>
+            <div class="text-text-muted text-xs">{{ _('tags.tagged_pages') }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

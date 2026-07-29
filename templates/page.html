@@ -42,6 +42,14 @@
 </div>
 {% endif %}
 
+{% if page_tags %}
+<div class="flex flex-wrap gap-2 mb-4">
+    {% for tag in page_tags %}
+    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ tag }}" class="inline-flex items-center rounded-full bg-primary-subtle text-primary text-xs font-medium px-3 py-1 hover:bg-primary hover:text-white transition-colors">#{{ tag }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="wiki-content">
     {{ content|safe }}
 </div>

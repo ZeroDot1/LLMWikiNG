@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import re
 import subprocess
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -16,6 +17,28 @@ from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
 SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
+
+
+@dataclass
+class SyncStatus:
+    qmd: bool = False
+    index: bool = False
+    messages: list[str] = field(default_factory=list)
+    skipped: bool = False
+    duration_ms: int = 0
+
+    @property
+    def success(self) -> bool:
+        return self.qmd and self.index
+
+    @property
+    def summary(self) -> str:
+        if self.skipped:
+            return "Sync nicht benötigt (keine Änderungen)"
+        parts = []
+        parts.append(f"qmd: {'ok' if self.qmd else 'err'}")
+        parts.append(f"index: {'ok' if self.index else 'err'}")
+        return ", ".join(parts)
 
 def _load_sync_times() -> dict[str, str]:
     if SYNC_STATUS_FILE.exists():
@@ -286,38 +309,50 @@ def regenerate_index(wiki: str = "main") -> bool:
 
 def do_sync(wiki: str = "main", force: bool = False) -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
-    results = {"qmd": False, "index": False, "messages": []}
+    import time as _time
+    _start = _time.monotonic()
+    status = SyncStatus()
 
     if not is_sync_needed(wiki) and not force:
-        results["qmd"] = True
-        results["index"] = True
-        results["messages"].append("Sync nicht benötigt (keine Änderungen)")
-        return results
+        status.qmd = True
+        status.index = True
+        status.skipped = True
+        status.messages.append("Sync nicht benötigt (keine Änderungen)")
+        status.duration_ms = int((_time.monotonic() - _start) * 1000)
+        return status
 
     _cache = get_cache()
     _cache.invalidate_prefix(f"pages:{wiki}")
     _cache.invalidate(f"graph:{wiki}")
 
     qmd_ok, qmd_msg = run_qmd_embed(wiki)
-    results["qmd"] = qmd_ok
-    results["messages"].append(qmd_msg)
+    status.qmd = qmd_ok
+    status.messages.append(qmd_msg)
 
     try:
         regenerate_index(wiki)
-        results["index"] = True
-        results["messages"].append("index.md neu aufgebaut")
+        status.index = True
+        status.messages.append("index.md neu aufgebaut")
     except Exception as e:
-        results["messages"].append(f"index.md Fehler: {e}")
+        status.messages.append(f"index.md Fehler: {e}")
 
     try:
-        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}", wiki)
+        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}", wiki)
     except Exception:
         pass
 
-    # WICHTIG: set_last_sync nach allen Schreiboperationen (siehe do_sync_async)
     set_last_sync(datetime.now(), wiki)
+    status.duration_ms = int((_time.monotonic() - _start) * 1000)
 
-    return results
+    # Dict-compat für Bestandscode
+    return {
+        "qmd": status.qmd,
+        "index": status.index,
+        "messages": status.messages,
+        "skipped": status.skipped,
+        "duration_ms": status.duration_ms,
+        "_status": status,
+    }
 
 async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
     """Async-Variante von :func:`do_sync`.
@@ -333,34 +368,38 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
     Returns:
         Dict {"qmd": bool, "index": bool, "messages": list[str]}
     """
-    results = {"qmd": False, "index": False, "messages": []}
+    import time as _time
+    _start = _time.monotonic()
+    status = SyncStatus()
 
     lock = await get_wiki_lock(wiki)
     async with lock:
         needed = await is_sync_needed_async(wiki)
         if not needed and not force:
-            results["qmd"] = True
-            results["index"] = True
-            results["messages"].append("Sync nicht benötigt (keine Änderungen)")
-            return results
+            status.qmd = True
+            status.index = True
+            status.skipped = True
+            status.messages.append("Sync nicht benötigt (keine Änderungen)")
+            status.duration_ms = int((_time.monotonic() - _start) * 1000)
+            return status
 
         _cache = get_cache()
         _cache.invalidate_prefix(f"pages:{wiki}")
         _cache.invalidate(f"graph:{wiki}")
 
         qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
-        results["qmd"] = qmd_ok
-        results["messages"].append(qmd_msg)
+        status.qmd = qmd_ok
+        status.messages.append(qmd_msg)
 
         try:
             await asyncio.to_thread(regenerate_index, wiki)
-            results["index"] = True
-            results["messages"].append("index.md neu aufgebaut")
+            status.index = True
+            status.messages.append("index.md neu aufgebaut")
         except Exception as e:
-            results["messages"].append(f"index.md Fehler: {e}")
+            status.messages.append(f"index.md Fehler: {e}")
 
         try:
-            log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if results['index'] else 'err'}"
+            log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}"
             await asyncio.to_thread(
                 append_okf_log,
                 "sync",
@@ -371,13 +410,17 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         except Exception:
             pass
 
-        # WICHTIG: set_last_sync MUSS nach allen Schreiboperationen (regenerate_index,
-        # append_okf_log) erfolgen, damit last_sync nach allen Sync-Schreibvorgängen
-        # liegt. Sonst meldet is_sync_needed sofort wieder "Sync empfohlen", weil
-        # log.md/index.md nach last_sync geschrieben wurden.
         await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
+        status.duration_ms = int((_time.monotonic() - _start) * 1000)
 
-        return results
+        return {
+            "qmd": status.qmd,
+            "index": status.index,
+            "messages": status.messages,
+            "skipped": status.skipped,
+            "duration_ms": status.duration_ms,
+            "_status": status,
+        }
 
 def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main") -> None:
     """Schreibt einen OKF-konformen Logbucheintrag (## YYYY-MM-DD mit Bullets)."""

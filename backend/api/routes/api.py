@@ -8,8 +8,7 @@ bzw. `api_password` (Anforderung 4).
 from __future__ import annotations
 
 import asyncio
-import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 import json
 import os
 import re
@@ -616,7 +615,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
             "git": shutil.which("git") is not None,
         },
         "cache_entries": get_cache().stats().get("entries", 0),
-        "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

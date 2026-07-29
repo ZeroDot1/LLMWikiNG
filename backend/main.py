@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     Platte übereinstimmt.
     """
     try:
-        from core.config import list_wikis
+        from core.config import list_wikis, load_app_config
         from services.sync import regenerate_index
 
         wikis = list_wikis() or [{"slug": "main"}]
@@ -61,8 +61,15 @@ async def lifespan(app: FastAPI):
             except Exception as e:  # ein fehlerhaftes Wiki darf den Start nicht blockieren
                 print(f"[lifespan] WARN: Index-Regeneration für '{slug}' fehlgeschlagen: {e}", flush=True)
         print(f"[lifespan] Wiki-Indizes für {len(wikis)} Wiki(s) neu aufgebaut.", flush=True)
+
+        cfg = load_app_config()
+        if cfg.get("enable_watcher", False):
+            from services.watcher import start_watchers
+            watchers = start_watchers(asyncio.get_running_loop())
+            app.state.watchers = watchers
+            print(f"[lifespan] File-Watcher für {len(watchers)} Wiki(s) gestartet.", flush=True)
     except Exception as e:
-        print(f"[lifespan] WARN: Index-Regeneration übersprungen: {e}", flush=True)
+        print(f"[lifespan] WARN: Initialisierung übersprungen: {e}", flush=True)
 
     yield
 

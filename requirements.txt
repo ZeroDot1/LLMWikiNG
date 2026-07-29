@@ -12,3 +12,9 @@ itsdangerous>=2.1
 mcp>=1.2.0
 sse-starlette>=2.1.0
 python-frontmatter>=1.1.0
+
+# Background File-Watcher (optional, enabled via config.json "enable_watcher")
+watchdog>=4.0.0
+
+# PDF Export (optional, requires weasyprint system deps)
+# weasyprint>=62.0

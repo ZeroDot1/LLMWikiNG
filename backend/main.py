@@ -7,6 +7,7 @@ Jinja-Templates werden wiederverwendet.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -71,7 +72,30 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[lifespan] WARN: Initialisierung übersprungen: {e}", flush=True)
 
-    yield
+    # MCP Session-Manager (Streamable HTTP Task-Group Management)
+    mcp_cm = None
+    try:
+        from core.config import ENABLE_MCP_SERVER
+        from api.routes.mcp import _MCP_AVAILABLE, mcp_server
+
+        if ENABLE_MCP_SERVER and _MCP_AVAILABLE and mcp_server is not None:
+            if hasattr(mcp_server, "session_manager") and hasattr(mcp_server.session_manager, "run"):
+                mcp_cm = mcp_server.session_manager.run()
+                await mcp_cm.__aenter__()
+                app.state.mcp_session_manager = mcp_server.session_manager
+                print("[lifespan] MCP session_manager gestartet", flush=True)
+    except Exception as e:
+        print(f"[lifespan] WARN: MCP session_manager: {e}", flush=True)
+        mcp_cm = None
+
+    try:
+        yield
+    finally:
+        if mcp_cm is not None:
+            try:
+                await mcp_cm.__aexit__(None, None, None)
+            except Exception as e:
+                print(f"[lifespan] WARN: MCP shutdown: {e}", flush=True)
 
 
 def create_app() -> FastAPI:
@@ -201,6 +225,11 @@ def create_app() -> FastAPI:
 
                                 try:
                                     await self.app(scope, receive, send)
+                                except Exception as e:
+                                    name = type(e).__name__
+                                    if name in ("ClosedResourceError", "BrokenResourceError", "ClientDisconnect"):
+                                        return
+                                    raise
                                 finally:
                                     self._mcp_user_ctx.reset(_user_token)
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
@@ -233,6 +262,11 @@ def create_app() -> FastAPI:
 
                                 try:
                                     await self.app(scope, receive, send)
+                                except Exception as e:
+                                    name = type(e).__name__
+                                    if name in ("ClosedResourceError", "BrokenResourceError", "ClientDisconnect"):
+                                        return
+                                    raise
                                 finally:
                                     self._mcp_user_ctx.reset(_user_token)
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)

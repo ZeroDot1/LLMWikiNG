@@ -28,6 +28,10 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **XSS HTML-Sanitizing** (`backend/services/markdown.py`): `sanitize_html()` bereinigt gerendertes HTML/Preview vor der Ausgabe.
   - **Auth Rate-Limiting** (`backend/services/rate_limit.py`): IP-basiertes Rate-Limiting für Login-Versuche (8 Versuche pro 5 Minuten).
   - **Dateirechte & Input-Validierung**: `config.json` wird mit `chmod 0o600` gespeichert. `run_ingest_async()` prüft absolute Pfadgrenzen.
+- **Docker-Log & MCP-Stabilität (Error Log Improvement Plan)**:
+  - **FastMCP Lifespan Management** (`backend/main.py`): `session_manager.run()` wird im App-Lifespan ordnungsgemäß gestartet und beendet (`mcp_session_manager`), um `Task group is not initialized` bei Streamable HTTP zu beheben.
+  - **Import `asyncio`** (`backend/main.py`): Ergänzt in Top-Level Imports.
+  - **SSE Disconnect Handling** (`backend/main.py`): `ClosedResourceError`, `BrokenResourceError` und `ClientDisconnect` in `McpApiKeyMiddleware` abgefangen, um 500er Traceback-Spam bei abbrechenden SSE-Clients zu verhindern.
 
 ### Changed
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.

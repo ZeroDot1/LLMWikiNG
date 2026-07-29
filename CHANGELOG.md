@@ -7,6 +7,21 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.13] - 2026-07-29
+
+### Added
+- **Inkrementeller Sync mit BLAKE2b-Fingerabdrücken** (`backend/services/sync.py`): Per-Datei-Fingerprinting mit `_compute_blake2b_fingerprint()`, `_compute_file_fingerprints()`, `_get_changed_files()`. `.sync_cache.json` speichert Fingerabdrücke für jede `.md`-Datei. Tag-Cache-Invalidierung während des Syncs (`tags:{wiki}`). qmd-Timeout von 60s auf 180s erhöht (`QMD_TIMEOUT`).
+- **Erweiterte Suche mit `tag:`- und `#`-Syntax** (`backend/services/search.py`, `backend/api/routes/pages.py`, `static/js/search.js`, `templates/search.html`): `parse_search_tags()` extrahiert `tag:name` und `#name` aus Suchanfragen. Tag-Autocomplete-Endpoint `/search/tags-autocomplete` mit AJAX-Dropdown und Tastaturnavigation.
+- **Verbesserte Ingest-Pipeline mit Chunking** (`backend/services/wiki.py`, `backend/api/routes/pages.py`): `chunk_content()` teilt große Texte (>6000 Zeichen) an Absatzgrenzen in mehrere Seiten (`Titel – Teil 1`, `Titel – Teil 2`). `suggest_tags_from_content()` schlägt Tags basierend auf vorhandenen Tags und Keyword-Matching vor.
+- **HTML-Export und Wiki-Bundle-Export** (`backend/api/routes/pages.py`, `templates/page.html`, `templates/export_list.html`): `?format=html` exportiert Seiten als standalone HTML mit eingebettetem CSS. `/wiki/{wiki}/export/bundle` exportiert das gesamte Wiki als ein HTML-Dokument.
+
+### Changed
+- **Sync-Pipeline**: Erweiterte Statusmeldungen mit detaillierten Angaben zu neuen/geänderten/gelöschten Seiten.
+- **Such-Pipeline**: `parse_search_tags()` wird vor jeder Suche angewendet; inline extrahierte Tags werden als `tag_filter` gesetzt.
+
+### i18n
+- **Neue Übersetzungsschlüssel** (`lang/de.json`, `lang/en.json`): `search.syntax_hint_tag` (Hinweis zur `tag:`/`#`-Syntax).
+
 ## [2.13.12] - 2026-07-29
 
 ### Added

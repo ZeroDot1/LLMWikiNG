@@ -733,7 +733,7 @@ def export_list(request: Request):
                 size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
                 mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 files.append({"name": f.name, "size_formatted": size_formatted, "mtime_formatted": mtime_formatted})
-    return render(request, "export_list.html", active_page="export_list", files=files)
+    return render(request, "export_list.html", active_page="export_list", files=files, wikis=list_wikis())
 
 
 @router.get("/export/{filename}")

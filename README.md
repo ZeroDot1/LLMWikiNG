@@ -61,8 +61,8 @@ In addition to the CLI, the project offers a full-featured, extremely performant
     - **Web Interface**: Convenient upload, URL import, text paste, or URL bookmarking in `ingestlater.md`.
     - **Direct Network Ingest (API)**: Enables fully automated uploading and immediate processing of source texts, URLs, or files remotely over the network. You can submit documents via curl or client scripts, which then immediately receive AI summaries and are integrated OKF-compliant into the desired wiki.
 *   **📤 Export Management**: View all exported documents in the browser, read them rendered, or download them directly.
-*   **🏷️ Tag Cloud & Tag Filter**: Each wiki page displays its tags as clickable chips. A dedicated **Tag Cloud** page (`/tags`) shows all tags with weighted sizing, aggregate statistics, and a per-tag filtered page list. The search page includes a **tag filter dropdown** to narrow results by tag.
-*   **🔍 Search with Term Highlighting**: Lightning-fast BM25 search with a new **Cross-Wiki-Search** feature allowing you to search either a single specific wiki or all wikis at once (selecting "All Wikis" or `wiki=all` parameter). Shows colored highlights, displays matching wiki labels on the results, and supports arrow key navigation.
+*   **🏷️ Tag Cloud & Tag Search**: Each wiki page displays its tags as clickable chips — normalized to lowercase with hyphen separators. A dedicated **Tag Cloud** page (`/tags`) shows all tags sorted by frequency with weighted sizing, aggregate statistics, and a per-tag filtered page list. The search page supports **`tag:name`** and **`#name`** syntax with **AND-linking** of multiple tags (`tag:privacy tag:mcp` returns only pages that have *both* tags). Tag normalization ensures `tag:Privacy` and `tag:privacy` are treated identically.
+*   **🔍 Search with Term Highlighting & Tag Syntax**: Lightning-fast BM25 search with **Cross-Wiki-Search** (`wiki=all`). Supports **`tag:name`** and **`#name`** inline syntax — multiple tags are AND-linked. Tag autocomplete dropdown appears when typing `tag:`. Shows colored highlights, wiki labels, and supports arrow key navigation.
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
 *   **⚙️ Settings & Keys Management**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management**, **API-Key & Per-User MCP-Key Management** (with interactive permission editing for tool groups, allowed tools, active status, user assignments, and secure password-based recovery), **Server-Side Backups** (create `.tar.xz` server backups, restore, download, delete), **Interactive MCP Client Configurator** (build customized config snippets for Antigravity `agy`/IDE, OpenCode, and Hermes Agent), SMTP email configuration, health check, and update function.
 *   **🛡️ Audit Logging & Data Export**: SQLite-based, per-category toggleable logging system recording all security actions (search, ingest, logins, API-keys, MCP-keys, backups, pages, wikis). Captures timestamps, usernames, IPs. Admins can search, filter by category/action, and export logs to **JSON** or **CSV**. Replaces logbuch entirely.
@@ -493,6 +493,9 @@ title: MCP Architecture 2026
 description: Technical specification of the SSE-based protocol
 tags: [backend, mcp, security]
 timestamp: 2026-07-18T16:43:00Z
+updated: 2026-07-29T12:40:00Z
+updated_by: web
+content_hash: a3f2c1d4e5b6f789
 author: Agent (Cursor-Dev)
 status: AI-Generated
 ---
@@ -501,6 +504,10 @@ status: AI-Generated
 
 Hier beginnt der freie, menschenlesbare Markdown-Textkörper.
 ```
+
+> **`content_hash`** – SHA-256 of the page body (first 16 hex chars), updated on every save by all write paths (Web Editor, MCP `okf_write_concept`, API). Enables **conflict detection**: if the stored hash differs from the incoming content, the write is rejected with an error prompt.
+>
+> **`updated_by`** – Records the write source: `web` (browser editor), `mcp` (AI agent), `cli` (wiki.sh).
 
 ---
 

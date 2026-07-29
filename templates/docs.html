@@ -98,7 +98,7 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis</code></td><td class="p-2">List all wikis</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">List pages in wiki</td></tr>
            <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;</code></td><td class="p-2">Get single page content</td></tr>
-           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/tags</code></td><td class="p-2">List tags with page counts (optional filter via <code>?tag=</code>)</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/tags</code></td><td class="p-2">List tags with page counts (optional filter via <code>?tag=</code>)</td></tr>
            <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">Create new page (scope <code>write</code> required)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;/export</code></td><td class="p-2">Export page</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/ingest</code></td><td class="p-2">Upload raw source file (to raw/)</td></tr>
@@ -109,6 +109,7 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/stats?wiki=</code></td><td class="p-2">Get statistics</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/lint?wiki=</code></td><td class="p-2">Run system linter</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/status</code></td><td class="p-2">Get basic server status</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Full health check: per-wiki sync status, qmd &amp; git availability, cache stats</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System metrics &amp; traffic logs (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync all wiki indexes (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Retrieve audit logs – filterable by action, user, date range (Admin only)</td></tr>

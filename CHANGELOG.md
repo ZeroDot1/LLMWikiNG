@@ -33,6 +33,10 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **Import `asyncio`** (`backend/main.py`): Ergänzt in Top-Level Imports.
   - **SSE Disconnect Handling** (`backend/main.py`): `ClosedResourceError`, `BrokenResourceError` und `ClientDisconnect` in `McpApiKeyMiddleware` abgefangen, um 500er Traceback-Spam bei abbrechenden SSE-Clients zu verhindern.
 - **Erweiterung `clean_release.sh`** (`clean_release.sh`): Skript bereinigt zusätzlich `mcp_keys.json`, `audit_logs.json`, per-Wiki `sync_status/`, `.history`-Verzeichnisse sowie temporäre Test-Wikis aus qmd.
+- **Remote Bug Report Fixes**:
+  - **Health Endpoint Fix** (`backend/api/routes/api.py`): Typo `datetime.now()` zu `datetime.datetime.now()` behoben, um HTTP 500 zu beseitigen.
+  - **Flexibleres MCP Multi-Header Auth** (`backend/main.py`): `McpApiKeyMiddleware` erlaubt den Zugriff via per-User MCP-Key, globalem MCP-Key oder reinem API-Key ohne starren Doppel-Header-Zwang.
+  - **Prevent Raw File Duplication & Isolation** (`wiki.sh`, `backend/services/wiki.py`): Ingest speichert Raw-Dateien isoliert pro Wiki unter `raw/<wiki>/` und bereinigt kaskadierende Datums-Präfixe (`CLEAN_BASENAME`). `get_wiki_stats` zählt Raw- und Export-Dateien getrennt pro Wiki.
 
 ### Changed
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.

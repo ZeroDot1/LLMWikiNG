@@ -616,7 +616,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
             "git": shutil.which("git") is not None,
         },
         "cache_entries": get_cache().stats().get("entries", 0),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
     }
 
 

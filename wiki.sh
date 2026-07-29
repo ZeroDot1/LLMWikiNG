@@ -358,11 +358,17 @@ ingest_wiki() {
     echo -e "${YELLOW}📥 Ingest: $SOURCE_FILE${NC}"
 
     local SOURCE_BASENAME=$(basename "$SOURCE_FILE")
-    local RAW_NAME="$(today)-${SOURCE_BASENAME}"
-    local RAW_PATH="$RAW_DIR/$RAW_NAME"
+    # Verhindere rekursive Präfix-Akkumulation (z.B. 2026-07-21-2026-07-21-...)
+    local CLEAN_BASENAME=$(echo "$SOURCE_BASENAME" | sed -E 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}-)+//')
+    local RAW_NAME="$(today)-${CLEAN_BASENAME}"
+    local WIKI_NAME=$(basename "$WIKI_DIR")
+    local TARGET_RAW_DIR="$RAW_DIR/$WIKI_NAME"
+    local RAW_PATH="$TARGET_RAW_DIR/$RAW_NAME"
 
-    mkdir -p "$RAW_DIR"
-    cp "$SOURCE_FILE" "$RAW_PATH"
+    mkdir -p "$TARGET_RAW_DIR"
+    if [ "$(realpath "$SOURCE_FILE" 2>/dev/null)" != "$(realpath "$RAW_PATH" 2>/dev/null)" ]; then
+        cp "$SOURCE_FILE" "$RAW_PATH"
+    fi
     echo -e "${GREEN}✓ Quelle archiviert: $RAW_PATH${NC}"
 
     local SOURCE_TEXT

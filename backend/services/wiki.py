@@ -373,7 +373,7 @@ def _yaml_minimal(text: str) -> dict:
 
 
 def get_wiki_stats(wiki: str = "main") -> dict:
-    """Ermittelt Wiki-Statistiken."""
+    """Ermittelt Wiki-Statistiken isoliert pro Wiki."""
     page_count = 0
     word_count = 0
     raw_count = 0
@@ -386,12 +386,13 @@ def get_wiki_stats(wiki: str = "main") -> dict:
                 page_count += 1
                 word_count += len(f.read_text(encoding="utf-8", errors="replace").split())
 
-    if RAW_DIR.exists():
-        raw_count = sum(1 for _ in RAW_DIR.iterdir() if _.is_file())
+    wiki_raw_dir = RAW_DIR / wiki if (RAW_DIR / wiki).exists() else RAW_DIR
+    if wiki_raw_dir.exists():
+        raw_count = sum(1 for _ in wiki_raw_dir.rglob("*") if _.is_file() and not _.name.startswith("."))
 
-    export_dir = PROJECT_ROOT / "output_docs"
-    if export_dir.exists():
-        export_count = sum(1 for _ in export_dir.iterdir() if _.is_file())
+    wiki_export_dir = EXPORT_DIR / wiki if (EXPORT_DIR / wiki).exists() else EXPORT_DIR
+    if wiki_export_dir.exists():
+        export_count = sum(1 for _ in wiki_export_dir.rglob("*") if _.is_file() and not _.name.startswith("."))
 
     return {
         "page_count": page_count,

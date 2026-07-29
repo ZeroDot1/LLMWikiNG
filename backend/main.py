@@ -173,107 +173,83 @@ def create_app() -> FastAPI:
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
                             mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
 
-                            if not mcp_key:
-                                res = self._json_response({"detail": "MCP-Key erforderlich (Header X-MCP-Key)"}, status_code=401)
-                                await res(scope, receive, send)
-                                return
-
                             api_key_bytes = headers_dict.get(b"x-api-key")
                             api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
 
-                            if not api_key:
-                                res = self._json_response({"detail": "API-Key erforderlich (Header X-API-Key)"}, status_code=401)
+                            if not mcp_key and not api_key:
+                                res = self._json_response({"detail": "MCP-Key (X-MCP-Key) oder API-Key (X-API-Key) erforderlich"}, status_code=401)
                                 await res(scope, receive, send)
                                 return
 
-                            # Modus 1: Per-User MCP-Key aus mcp_keys.json
-                            mcp_key_obj = self._get_mcp_key_by_hash(self._hashlib.sha256(mcp_key.encode()).hexdigest())
+                            user = None
+                            allowed_tools = []
 
-                            if mcp_key_obj:
-                                # API-Key muss demselben User gehören wie der MCP-Key
-                                api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
-                                api_key_obj = self._get_key_by_hash(api_h)
-                                if not api_key_obj or not api_key_obj.get("active", True):
-                                    res = self._json_response({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
-                                    await res(scope, receive, send)
-                                    return
+                            # 1. Prüfe per-User MCP-Key
+                            if mcp_key:
+                                mcp_key_obj = self._get_mcp_key_by_hash(self._hashlib.sha256(mcp_key.encode()).hexdigest())
+                                if mcp_key_obj:
+                                    if api_key:
+                                        api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
+                                        api_key_obj = self._get_key_by_hash(api_h)
+                                        if not api_key_obj or not api_key_obj.get("active", True) or api_key_obj["user_id"] != mcp_key_obj["user_id"]:
+                                            res = self._json_response({"detail": "API-Key passt nicht zum MCP-Key"}, status_code=403)
+                                            await res(scope, receive, send)
+                                            return
+                                    user_obj = self._get_user(mcp_key_obj["user_id"])
+                                    if user_obj and user_obj.get("active", True):
+                                        user = user_obj
+                                        allowed_tools = mcp_key_obj.get("allowed_tools", [])
+                                        try:
+                                            self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
+                                        except Exception:
+                                            pass
 
-                                if api_key_obj["user_id"] != mcp_key_obj["user_id"]:
-                                    res = self._json_response({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
-                                    await res(scope, receive, send)
-                                    return
+                            # 2. Prüfe Legacy Global MCP-Key
+                            if not user and mcp_key and self._mcp_global_key:
+                                import hmac as _hmac
+                                if _hmac.compare_digest(mcp_key, self._mcp_global_key):
+                                    if api_key:
+                                        api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
+                                        db_key = self._get_key_by_hash(api_h)
+                                        if db_key and db_key.get("active", True):
+                                            user = self._get_user(db_key["user_id"])
+                                    else:
+                                        # Aus Weitblick: Falls nur globaler Key übergeben wurde
+                                        user = {"id": "global_mcp", "username": "mcp_admin", "role": "admin"}
+                                    allowed_tools = []
 
-                                user = self._get_user(mcp_key_obj["user_id"])
-                                if not user or not user.get("active", True):
-                                    res = self._json_response({"detail": "Benutzer inaktiv"}, status_code=401)
-                                    await res(scope, receive, send)
-                                    return
-
-                                if "state" not in scope:
-                                    scope["state"] = {}
-                                scope["state"]["mcp_user"] = user
-                                scope["state"]["mcp_allowed_tools"] = mcp_key_obj.get("allowed_tools", [])
-                                scope["user"] = user
-
-                                _allowed_token = self._mcp_allowed_tools_ctx.set(mcp_key_obj.get("allowed_tools", []))
-                                _user_token = self._mcp_user_ctx.set(user)
-
-                                try:
-                                    self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
-                                except Exception:
-                                    pass
-
-                                try:
-                                    await self.app(scope, receive, send)
-                                except Exception as e:
-                                    name = type(e).__name__
-                                    if name in ("ClosedResourceError", "BrokenResourceError", "ClientDisconnect"):
-                                        return
-                                    raise
-                                finally:
-                                    self._mcp_user_ctx.reset(_user_token)
-                                    self._mcp_allowed_tools_ctx.reset(_allowed_token)
-                                return
-
-                            # Modus 2: Legacy-Key (Rueckwaertskompatibilitaet via hmac.compare_digest)
-                            import hmac as _hmac
-                            if self._mcp_global_key and _hmac.compare_digest(mcp_key, self._mcp_global_key):
+                            # 3. Fallback: Reiner API-Key (z.B. von REST/Standard Clients)
+                            if not user and api_key:
                                 api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                 db_key = self._get_key_by_hash(api_h)
-                                if not db_key or not db_key.get("active", True):
-                                    res = self._json_response({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
-                                    await res(scope, receive, send)
-                                    return
+                                if db_key and db_key.get("active", True):
+                                    user = self._get_user(db_key["user_id"])
+                                    allowed_tools = []
 
-                                user = self._get_user(db_key["user_id"])
-                                if not user or not user.get("active", True):
-                                    res = self._json_response({"detail": "Benutzer inaktiv"}, status_code=401)
-                                    await res(scope, receive, send)
-                                    return
-
-                                if "state" not in scope:
-                                    scope["state"] = {}
-                                scope["state"]["mcp_user"] = user
-                                scope["state"]["mcp_allowed_tools"] = []  # Legacy = alle Tools
-                                scope["user"] = user
-
-                                _allowed_token = self._mcp_allowed_tools_ctx.set([])
-                                _user_token = self._mcp_user_ctx.set(user)
-
-                                try:
-                                    await self.app(scope, receive, send)
-                                except Exception as e:
-                                    name = type(e).__name__
-                                    if name in ("ClosedResourceError", "BrokenResourceError", "ClientDisconnect"):
-                                        return
-                                    raise
-                                finally:
-                                    self._mcp_user_ctx.reset(_user_token)
-                                    self._mcp_allowed_tools_ctx.reset(_allowed_token)
+                            if not user or not user.get("active", True):
+                                res = self._json_response({"detail": "Ungueltige Authentifizierung fuer MCP"}, status_code=401)
+                                await res(scope, receive, send)
                                 return
 
-                            res = self._json_response({"detail": "Ungueltiger MCP-Key (X-MCP-Key)"}, status_code=401)
-                            await res(scope, receive, send)
+                            if "state" not in scope:
+                                scope["state"] = {}
+                            scope["state"]["mcp_user"] = user
+                            scope["state"]["mcp_allowed_tools"] = allowed_tools
+                            scope["user"] = user
+
+                            _allowed_token = self._mcp_allowed_tools_ctx.set(allowed_tools)
+                            _user_token = self._mcp_user_ctx.set(user)
+
+                            try:
+                                await self.app(scope, receive, send)
+                            except Exception as e:
+                                name = type(e).__name__
+                                if name in ("ClosedResourceError", "BrokenResourceError", "ClientDisconnect"):
+                                    return
+                                raise
+                            finally:
+                                self._mcp_user_ctx.reset(_user_token)
+                                self._mcp_allowed_tools_ctx.reset(_allowed_token)
                             return
 
                         await self.app(scope, receive, send)

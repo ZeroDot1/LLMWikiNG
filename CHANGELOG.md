@@ -17,6 +17,8 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Page Versioning / History** (`backend/services/history.py`): Dateibasierte Versionierung ohne Git. `save_version()`, `list_versions()`, `get_version()`. Maximal 30 Versionen pro Seite. Plan-Anforderung 7.
 - **PDF-Export** (`backend/services/export.py`): `export_pdf(wiki, slug)` erzeugt PDF via weasyprint aus dem bestehenden HTML-Export. Plan-Anforderung 8.
 - **`enable_watcher` Konfiguration** (`config.json`, `backend/core/config.py`): Neuer boolean `enable_watcher` (Default: false) steuert den Background File-Watcher.
+- **`qmd_embed_timeout` Konfiguration** (`config.json`, `backend/core/config.py`, `backend/services/sync.py`): Konfigurierbarer Timeout für `qmd embed` (Default: 180s).
+- **Logging Refactoring** (`backend/services/sync.py`): `print()`-Aufrufe durch strukturierte `logging.getLogger("llmwiking.sync")`-Aufrufe ersetzt.
 
 ### Changed
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.

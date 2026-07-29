@@ -6,20 +6,31 @@ Portiert aus llmWiki.py.
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
+from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR, load_app_config
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
-SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
+log = logging.getLogger("llmwiking.sync")
 
+SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
 SYNC_CACHE_FILENAME = ".sync_cache.json"
-QMD_TIMEOUT = 180
+
+
+def get_qmd_timeout() -> int:
+    """Liefert den konfigurierbaren QMD Embed Timeout (Default: 180s)."""
+    cfg = load_app_config()
+    try:
+        val = int(cfg.get("qmd_embed_timeout", 180))
+        return val if val > 0 else 180
+    except (ValueError, TypeError):
+        return 180
 
 
 @dataclass
@@ -79,7 +90,7 @@ def _load_sync_times() -> dict[str, str]:
             import json
             return json.loads(SYNC_STATUS_FILE.read_text(encoding="utf-8"))
         except Exception as e:
-            print(f"[sync] WARN: sync_status.json fehlerhaft: {e}", flush=True)
+            log.warning("sync_status.json fehlerhaft: %s", e)
             return {}
     return {}
 
@@ -89,10 +100,7 @@ def _save_sync_times(times: dict[str, str]) -> None:
         SYNC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         SYNC_STATUS_FILE.write_text(json.dumps(times, indent=2), encoding="utf-8")
     except Exception as e:
-        # Fallback: DATA_DIR evtl. nicht beschreibbar (read-only Mount im Container).
-        # In diesem Fall bleibt der Hash-Vergleich deaktiviert; is_sync_needed
-        # greift dann auf den mtime-Fallback zurück (siehe unten).
-        print(f"[sync] WARN: Konnte sync_status.json nicht schreiben: {e}", flush=True)
+        log.warning("Konnte sync_status.json nicht schreiben: %s", e)
 
 def _wiki_sync_hash_file(wiki: str = "main") -> "Path":
     """Pfad zur Hash-Statusdatei im Wiki-Verzeichnis.
@@ -118,7 +126,7 @@ def _save_wiki_sync_hash(wiki: str = "main", value: str = "") -> None:
     try:
         p.write_text(value, encoding="utf-8")
     except Exception as e:
-        print(f"[sync] WARN: Konnte .sync_hash für Wiki '{wiki}' nicht schreiben: {e}", flush=True)
+        log.warning("Konnte .sync_hash für Wiki '%s' nicht schreiben: %s", wiki, e)
 
 def _wiki_content_hash(wiki: str = "main") -> str:
     """Berechnet einen Hash über alle relevanten Wiki-Dateien (ohne index/log).
@@ -133,7 +141,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
         try:
             files = sorted(root.rglob("*.md"))
         except OSError as e:
-            print(f"[sync] WARN: rglob fehlgeschlagen für Wiki '{wiki}': {e}", flush=True)
+            log.warning("rglob fehlgeschlagen für Wiki '%s': %s", wiki, e)
             files = []
         for f in files:
             if f.stem in ("index", "log", "ingestlater"):
@@ -142,7 +150,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
                 h.update(f.relative_to(root).as_posix().encode("utf-8"))
                 h.update(f.read_bytes())
             except OSError as e:
-                print(f"[sync] WARN: Datei '{f}' nicht lesbar für Hash: {e}", flush=True)
+                log.warning("Datei '%s' nicht lesbar für Hash: %s", f, e)
                 pass
     return h.hexdigest()
 
@@ -167,7 +175,7 @@ def _save_sync_cache(cache: dict, wiki: str = "main") -> None:
         import json
         p.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
     except Exception as e:
-        print(f"[sync] WARN: .sync_cache.json nicht schreibbar: {e}", flush=True)
+        log.warning(".sync_cache.json nicht schreibbar: %s", e)
 
 
 def _compute_blake2b_fingerprint(file_path: Path) -> str | None:
@@ -246,21 +254,21 @@ def is_sync_needed(wiki: str = "main") -> bool:
             times = _load_sync_times()
             last_hash = times.get(f"{wiki}::hash")
         if last_hash is None:
-            print(f"[sync] INFO: Kein Sync-Status für Wiki '{wiki}' -> Sync empfohlen", flush=True)
+            log.info("Kein Sync-Status für Wiki '%s' -> Sync empfohlen", wiki)
             return True
         # Fallback: Voller Hash-Vergleich
         try:
             current_hash = _wiki_content_hash(wiki)
             return current_hash != last_hash
         except Exception as e:
-            print(f"[sync] ERROR: Hash für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
+            log.error("Hash für Wiki '%s' nicht berechenbar: %s", wiki, e)
             return True
 
     # Schnell: Nur Fingerprints vergleichen (BLAKE2b statt vollem Dateiinhalt-Hash)
     try:
         new_fps = _compute_file_fingerprints(wiki)
     except Exception as e:
-        print(f"[sync] ERROR: Fingerprints für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
+        log.error("Fingerprints für Wiki '%s' nicht berechenbar: %s", wiki, e)
         return True
 
     # Geändert wenn: neue Dateien, gelöschte Dateien, oder geänderter Inhalt
@@ -282,7 +290,7 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     try:
         content_hash = _wiki_content_hash(wiki)
     except Exception as e:
-        print(f"[sync] ERROR: Hash-Berechnung für Wiki '{wiki}' fehlgeschlagen: {e}", flush=True)
+        log.error("Hash-Berechnung für Wiki '%s' fehlgeschlagen: %s", wiki, e)
 
     if content_hash is not None:
         times[f"{wiki}::hash"] = content_hash
@@ -292,6 +300,7 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
 
 def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     """Führt qmd embed aus. Gibt (success, message) zurück."""
+    timeout = get_qmd_timeout()
     try:
         import os
         from core.config import wiki_path
@@ -300,7 +309,7 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
         env["COLLECTION_NAME"] = f"wiki_{wiki}"
         result = subprocess.run(
             [QMD_BIN, "embed"],
-            capture_output=True, text=True, timeout=QMD_TIMEOUT,
+            capture_output=True, text=True, timeout=timeout,
             cwd=str(PROJECT_ROOT), env=env
         )
         if result.returncode == 0:
@@ -309,7 +318,7 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
     except FileNotFoundError:
         return False, "qmd nicht installiert"
     except subprocess.TimeoutExpired:
-        return False, f"qmd embed Zeitüberschreitung (>{QMD_TIMEOUT}s)"
+        return False, f"qmd embed Zeitüberschreitung (>{timeout}s)"
     except Exception as e:
         return False, str(e)
 
@@ -319,6 +328,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
     Nutzt asyncio.create_subprocess_exec für echte asynchrone Prozesssteuerung
     ohne Blockieren von Threads.
     """
+    timeout = get_qmd_timeout()
     try:
         import os
         from core.config import wiki_path
@@ -337,7 +347,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         try:
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 process.communicate(),
-                timeout=float(QMD_TIMEOUT)
+                timeout=float(timeout)
             )
             returncode = process.returncode
         except asyncio.TimeoutExpired:
@@ -346,7 +356,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
                 await process.wait()
             except Exception:
                 pass
-            return False, f"qmd embed Zeitüberschreitung (>{QMD_TIMEOUT}s)"
+            return False, f"qmd embed Zeitüberschreitung (>{timeout}s)"
             
         stdout = stdout_bytes.decode(encoding="utf-8", errors="replace").strip()
         stderr = stderr_bytes.decode(encoding="utf-8", errors="replace").strip()

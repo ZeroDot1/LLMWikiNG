@@ -115,7 +115,7 @@ class TestApiAuth:
     def test_key_via_query_param(self, api_env):
         _, admin_key, _, client = api_env
         resp = client.get(f"/LLMWikiNG/api/v1/wikis?api_key={admin_key}")
-        assert resp.status_code == 200
+        assert resp.status_code == 401
 
     def test_editor_cannot_access_admin_endpoint(self, api_env):
         _, _, editor_key, client = api_env

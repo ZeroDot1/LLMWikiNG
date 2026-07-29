@@ -227,9 +227,17 @@ async def run_ingest_async(
     Returns:
         Das ``subprocess.CompletedProcess``-Ergebnis.
     """
-    cmd = ["./wiki.sh", "ingest", str(filepath)]
+    path = Path(filepath).resolve()
+    base_proj = PROJECT_ROOT.resolve()
+    if not str(path).startswith(str(base_proj)):
+        raise ValueError("Ingest-Pfad außerhalb des Projekt-Verzeichnisses verboten")
+    if not path.is_file():
+        raise FileNotFoundError(f"Ingest-Datei nicht gefunden: {path}")
+
+    cmd = ["./wiki.sh", "ingest", str(path)]
     if title:
-        cmd += ["--title", title]
+        safe_title = re.sub(r"[\x00-\x1f\x7f]", "", title)[:200]
+        cmd += ["--title", safe_title]
     run_env = env if env is not None else os.environ.copy()
     run_env["PROJECT_ROOT"] = str(PROJECT_ROOT)
     return await asyncio.to_thread(

@@ -19,6 +19,15 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`enable_watcher` Konfiguration** (`config.json`, `backend/core/config.py`): Neuer boolean `enable_watcher` (Default: false) steuert den Background File-Watcher.
 - **`qmd_embed_timeout` Konfiguration** (`config.json`, `backend/core/config.py`, `backend/services/sync.py`): Konfigurierbarer Timeout für `qmd embed` (Default: 180s).
 - **Logging Refactoring** (`backend/services/sync.py`): `print()`-Aufrufe durch strukturierte `logging.getLogger("llmwiking.sync")`-Aufrufe ersetzt.
+- **Sicherheits-Härtung (Security Audit 2026)**:
+  - **Timing-safe Key Verification** (`backend/core/security.py`): `verify_api_key()` und `verify_mcp_key()` nutzen jetzt `hmac.compare_digest()`.
+  - **Query-Param Key Restriction** (`backend/api/deps.py`, `backend/main.py`): API- und MCP-Keys werden nur noch über Request-Header akzeptiert (`X-API-Key`, `X-MCP-Key`). Query-Parameter (`?api_key=`, `?mcp_key=`) deaktiviert.
+  - **Path-Traversal Schutz** (`backend/core/paths.py`): Neue safe path helpers `safe_wiki_root()` und `safe_page_path()`.
+  - **GET User-Delete auf POST umgestellt** (`backend/api/routes/auth.py`, `templates/settings/users.html`).
+  - **CSRF Token-Hilfsfunktionen** (`backend/core/security.py`): `create_csrf_token()` und `verify_csrf_token()`.
+  - **XSS HTML-Sanitizing** (`backend/services/markdown.py`): `sanitize_html()` bereinigt gerendertes HTML/Preview vor der Ausgabe.
+  - **Auth Rate-Limiting** (`backend/services/rate_limit.py`): IP-basiertes Rate-Limiting für Login-Versuche (8 Versuche pro 5 Minuten).
+  - **Dateirechte & Input-Validierung**: `config.json` wird mit `chmod 0o600` gespeichert. `run_ingest_async()` prüft absolute Pfadgrenzen.
 
 ### Changed
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.

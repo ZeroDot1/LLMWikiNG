@@ -7,6 +7,7 @@ via itsdangerous, gehashte API-Keys (SHA-256, roher Key nur einmal sichtbar).
 from __future__ import annotations
 
 import hashlib
+import hmac
 import os
 import secrets
 
@@ -74,6 +75,20 @@ def read_session(token: str | None) -> str | None:
         return None
 
 
+def create_csrf_token(session_uid: str) -> str:
+    return _signer.dumps({"csrf": session_uid, "t": "csrf"}, salt="llmwikicsrf")
+
+
+def verify_csrf_token(token: str | None, session_uid: str) -> bool:
+    if not token or not session_uid:
+        return False
+    try:
+        data = _signer.loads(token, max_age=SESSION_MAX_AGE, salt="llmwikicsrf")
+        return data.get("csrf") == session_uid and data.get("t") == "csrf"
+    except Exception:
+        return False
+
+
 def gen_api_key() -> tuple[str, str]:
     """Liefert (roher Key, Hash)."""
     raw = "llmw_" + secrets.token_urlsafe(32)
@@ -83,7 +98,8 @@ def gen_api_key() -> tuple[str, str]:
 def verify_api_key(raw: str, stored_hash: str) -> bool:
     if not raw or not stored_hash:
         return False
-    return hashlib.sha256(raw.encode()).hexdigest() == stored_hash
+    computed = hashlib.sha256(raw.encode()).hexdigest()
+    return hmac.compare_digest(computed, stored_hash)
 
 
 _key_cipher = URLSafeTimedSerializer(SECRET, salt="llmwikingapikey")
@@ -115,10 +131,11 @@ def gen_mcp_key() -> tuple[str, str]:
 
 
 def verify_mcp_key(raw: str, stored_hash: str) -> bool:
-    """Verifiziert einen MCP-Key gegen seinen Hash."""
+    """Verifiziert einen MCP-Key gegen seinen Hash (timing-safe)."""
     if not raw or not stored_hash:
         return False
-    return hashlib.sha256(raw.encode()).hexdigest() == stored_hash
+    computed = hashlib.sha256(raw.encode()).hexdigest()
+    return hmac.compare_digest(computed, stored_hash)
 
 
 def encrypt_mcp_key(raw_key: str) -> str:

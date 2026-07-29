@@ -148,25 +148,17 @@ def create_app() -> FastAPI:
 
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
                             mcp_key = mcp_key_bytes.decode("utf-8", errors="ignore") if mcp_key_bytes else None
-                            if not mcp_key:
-                                query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
-                                query_params = self._parse_qs(query_string)
-                                mcp_key = query_params.get("mcp_key", [None])[0]
 
                             if not mcp_key:
-                                res = self._json_response({"detail": "MCP-Key erforderlich (X-MCP-Key)"}, status_code=401)
+                                res = self._json_response({"detail": "MCP-Key erforderlich (Header X-MCP-Key)"}, status_code=401)
                                 await res(scope, receive, send)
                                 return
 
                             api_key_bytes = headers_dict.get(b"x-api-key")
                             api_key = api_key_bytes.decode("utf-8", errors="ignore") if api_key_bytes else None
-                            if not api_key:
-                                query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
-                                query_params = self._parse_qs(query_string)
-                                api_key = query_params.get("api_key", [None])[0]
 
                             if not api_key:
-                                res = self._json_response({"detail": "API-Key erforderlich (X-API-Key)"}, status_code=401)
+                                res = self._json_response({"detail": "API-Key erforderlich (Header X-API-Key)"}, status_code=401)
                                 await res(scope, receive, send)
                                 return
 
@@ -214,8 +206,9 @@ def create_app() -> FastAPI:
                                     self._mcp_allowed_tools_ctx.reset(_allowed_token)
                                 return
 
-                            # Modus 2: Legacy-Key (Rueckwaertskompatibilitaet)
-                            if self._mcp_global_key and mcp_key == self._mcp_global_key:
+                            # Modus 2: Legacy-Key (Rueckwaertskompatibilitaet via hmac.compare_digest)
+                            import hmac as _hmac
+                            if self._mcp_global_key and _hmac.compare_digest(mcp_key, self._mcp_global_key):
                                 api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                 db_key = self._get_key_by_hash(api_h)
                                 if not db_key or not db_key.get("active", True):

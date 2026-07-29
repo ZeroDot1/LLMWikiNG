@@ -62,8 +62,8 @@ def require_api_admin(request: Request, background_tasks: BackgroundTasks) -> di
 
 
 def get_api_user(request: Request, background_tasks: BackgroundTasks) -> dict:
-    """API-Key Auth ODER Session-Cookie Fallback (für Browser-Frontend)."""
-    raw = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+    """API-Key Auth via X-API-Key Header (oder Session-Cookie Fallback für Browser-Frontend)."""
+    raw = request.headers.get("X-API-Key")
 
     if raw:
         h = hashlib.sha256(raw.encode()).hexdigest()

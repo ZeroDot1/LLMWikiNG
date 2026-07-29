@@ -104,10 +104,43 @@ def render_markdown(text: str, page_name: str | None = None, wiki: str = "main")
     return html
 
 
+ALLOWED_TAGS = [
+    "p", "br", "strong", "em", "u", "s", "sub", "sup", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6",
+    "blockquote", "code", "pre", "a", "img", "table", "thead", "tbody",
+    "tr", "th", "td", "hr", "span", "div", "details", "summary",
+]
+ALLOWED_ATTRS = {
+    "a": ["href", "title", "rel", "class", "target"],
+    "img": ["src", "alt", "title", "class", "width", "height"],
+    "*": ["class", "id"],
+}
+ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
+
+
+def sanitize_html(html: str) -> str:
+    """Sanitizes rendered HTML to prevent XSS attacks."""
+    try:
+        import bleach
+        return bleach.clean(
+            html,
+            tags=ALLOWED_TAGS,
+            attributes=ALLOWED_ATTRS,
+            protocols=ALLOWED_PROTOCOLS,
+            strip=True,
+        )
+    except ImportError:
+        # Fallback: remove dangerous script/iframe tags via regex if bleach is not installed
+        clean = re.sub(r"(?i)<script\b[^<]*(?:(?!</script>)<[^<]*)*</script>", "", html)
+        clean = re.sub(r"(?i)<iframe\b[^<]*(?:(?!</iframe>)<[^<]*)*</iframe>", "", clean)
+        clean = re.sub(r"(?i)on\w+\s*=\s*\"[^\"]*\"", "", clean)
+        clean = re.sub(r"(?i)on\w+\s*=\s*'[^']*'", "", clean)
+        return clean
+
+
 def render_markdown_preview(text: str) -> str:
-    """Vorschau-Rendering ohne Wikilink-Umschreibung (für Editor-Preview)."""
+    """Vorschau-Rendering ohne Wikilink-Umschreibung (für Editor-Preview), sanitized."""
     text = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL)
-    return markdown.markdown(
+    raw = markdown.markdown(
         text,
         extensions=["toc", "tables", "fenced_code", "codehilite"],
         extension_configs={
@@ -117,3 +150,4 @@ def render_markdown_preview(text: str) -> str:
             },
         },
     )
+    return sanitize_html(raw)

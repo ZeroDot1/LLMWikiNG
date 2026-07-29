@@ -48,6 +48,12 @@ def login_form(request: Request):
 
 @router.post("/login")
 async def login_post(request: Request):
+    from services.rate_limit import is_rate_limited, record_failure, clear_failures
+    client_ip = request.client.host if request.client else "unknown"
+    if is_rate_limited(client_ip):
+        log_action(action="login_rate_limited", details=f"IP {client_ip}", request=request)
+        return redirect(f"{BASE_PATH}/login?error=Zu+viele+Fehlversuche.+Bitte+warten.")
+
     form = await request.form()
     username = (form.get("username") or "").strip()
     password = form.get("password") or ""
@@ -63,13 +69,16 @@ async def login_post(request: Request):
         from core.config import save_app_config
         save_app_config({"registration_enabled": False})
         log_action(action="setup_admin", details=f"Erstes Administrator-Konto erstellt: {username}", user_id=user["id"], username=user["username"], request=request)
+        clear_failures(client_ip)
         return _set_session_and_redirect(user)
 
     user = get_user_by_name(username)
     if not user or not user.get("active", True) or not verify_password(password, user["password_hash"]):
+        record_failure(client_ip)
         log_action(action="login_failed", details=f"Fehlgeschlagener Login-Versuch für Benutzer: {username}", request=request)
         return redirect(f"{BASE_PATH}/login?error=Login+fehlgeschlagen")
 
+    clear_failures(client_ip)
     log_action(action="login", details=f"Benutzer erfolgreich angemeldet", user_id=user["id"], username=user["username"], request=request)
     return _set_session_and_redirect(user)
 
@@ -116,7 +125,7 @@ async def user_create(request: Request, admin: dict = Depends(require_admin)):
     return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+angelegt")
 
 
-@router.get("/users/{user_id}/delete")
+@router.post("/users/{user_id}/delete")
 async def user_delete(user_id: str, request: Request, admin: dict = Depends(require_admin)):
     if user_id == admin["id"]:
         return redirect(f"{BASE_PATH}/settings?tab=users&error=Du+kannst+dich+nicht+selbst+löschen")

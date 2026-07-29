@@ -228,9 +228,13 @@ def save_wiki_meta(name: str, display_name: str, description: str = "") -> None:
 def delete_wiki(slug: str) -> bool:
     """Löscht ein Wiki-Verzeichnis und den Eintrag in data/wikis.json."""
     import shutil
+    from core.paths import safe_wiki_root, UnsafePathError
     if slug == "main":
         return False
-    d = WIKIS_ROOT / slug
+    try:
+        d = safe_wiki_root(slug)
+    except UnsafePathError:
+        return False
     existed = d.exists()
     if existed:
         shutil.rmtree(d)
@@ -296,7 +300,7 @@ def load_app_config() -> dict[str, Any]:
 
 
 def save_app_config(config_dict: dict[str, Any]) -> bool:
-    """Speichert App-Konfigurationsparameter in config.json."""
+    """Speichert App-Konfigurationsparameter in config.json und setzt strikte Rechte."""
     try:
         current = load_app_config()
         current.update(config_dict)
@@ -304,6 +308,10 @@ def save_app_config(config_dict: dict[str, Any]) -> bool:
             json.dumps(current, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+        try:
+            CONFIG_FILE.chmod(0o600)
+        except OSError:
+            pass
         return True
     except Exception:
         return False

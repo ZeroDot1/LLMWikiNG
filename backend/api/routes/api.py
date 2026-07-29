@@ -169,7 +169,11 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
     slug = re.sub(r"\.md$", "", slug)
     if slug in ("index", "log", "ingestlater"):
         raise HTTPException(status_code=400, detail="System-Seite kann nicht überschrieben werden")
-    filepath = wiki_path(wiki) / f"{slug}.md"
+    from core.paths import safe_page_path, UnsafePathError
+    try:
+        filepath = safe_page_path(wiki, slug)
+    except UnsafePathError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if filepath.exists():
         try:
             from services.history import save_version

@@ -843,6 +843,7 @@ async def ingest_post(request: Request):
 async def search(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     query = request.query_params.get("q", "").strip()
+    tag_filter = request.query_params.get("tag", "").strip()
     results = []
     error = None
     sync_hint = False
@@ -872,7 +873,12 @@ async def search(request: Request):
                 error = search_result["error"]
 
         if not error:
+            from services.tags import get_page_tags
             for r in search_result.get("results", []):
+                if tag_filter:
+                    r_tags = get_page_tags(r.get("wiki", wiki), r["slug"])
+                    if tag_filter.lower() not in [t.lower() for t in r_tags]:
+                        continue
                 r["title_html"] = _highlight_text(r["title"], query)
                 r["snippet_html"] = _highlight_text(r["snippet"], query)
                 results.append(r)
@@ -912,6 +918,10 @@ async def search(request: Request):
         raw_mentions_count = 0
         slug_exists = False
 
+    from services.tags import list_all_tags as _list_tags
+    available_tags = _list_tags(wiki) if wiki != "all" else []
+    _tag_filter = tag_filter or ""
+
     return render(
         request, "search.html",
         active_page="search", wiki=wiki, wikis=list_wikis(),
@@ -919,6 +929,7 @@ async def search(request: Request):
         page_count=page_count,
         raw_mentions_count=raw_mentions_count if query else 0,
         slug_exists=slug_exists if query else False,
+        available_tags=available_tags, tag_filter=_tag_filter,
     )
 
 

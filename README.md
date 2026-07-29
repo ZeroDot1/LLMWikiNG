@@ -38,11 +38,15 @@ The CLI script `wiki.sh` bundles all operations for managing the wiki:
 *   `./wiki.sh lint` – Runs a health check (finds orphaned pages, missing links, incomplete pages).
 *   `./wiki.sh sync` – Updates the search embeddings for local search and rebuilds the index.
 *   `./wiki.sh export <page>` – Exports a page for sharing to `output_docs/`.
+*   `./wiki.sh export <page> --pdf` – Exports a page as PDF (via weasyprint, optional).
 *   `./wiki.sh list` – Lists all current wiki pages.
 *   `./wiki.sh status` – Shows statistics about the wiki, raw sources, and the LLM backend.
 *   `./wiki.sh config` – Shows the current configuration.
+*   `./wiki.sh watcher` – Starts the background file watcher (watchdog) for auto-sync on file changes.
+*   `./wiki.sh history <page>` – Shows the version history of a wiki page (date-based, no Git required).
 *   `./wiki.sh update` – Performs a self-update via GitHub (`git fetch origin && git reset --hard origin/main`).
 *   `./wiki.sh reindex` – Rebuilds the BM25 search index.
+*   `./wiki.sh --wiki <slug>` – Run any command against a specific wiki slug.
 *   `./wiki.sh help` – Shows the help page with all commands.
 *   `./wiki.sh --version` – Outputs the current version number.
 
@@ -66,6 +70,9 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
 *   **⚙️ Settings & Keys Management**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management**, **API-Key & Per-User MCP-Key Management** (with interactive permission editing for tool groups, allowed tools, active status, user assignments, and secure password-based recovery), **Server-Side Backups** (create `.tar.xz` server backups, restore, download, delete), **Interactive MCP Client Configurator** (build customized config snippets for Antigravity `agy`/IDE, OpenCode, and Hermes Agent), SMTP email configuration, health check, and update function.
 *   **🛡️ Audit Logging & Data Export**: SQLite-based, per-category toggleable logging system recording all security actions (search, ingest, logins, API-keys, MCP-keys, backups, pages, wikis). Captures timestamps, usernames, IPs. Admins can search, filter by category/action, and export logs to **JSON** or **CSV**. Replaces logbuch entirely.
+*   **🔄 Background File Watcher**: Optional watchdog-based file watcher (`enable_watcher` in config.json) that monitors wiki directories for `.md` changes and triggers incremental sync automatically — no manual intervention needed.
+*   **📜 Page Version History**: Date-based versioning without Git. Every page save creates a version snapshot (up to 30 per page). Accessible via `./wiki.sh history <page>` or through the history service.
+*   **📄 PDF Export**: Export wiki pages as PDF via `./wiki.sh export <page> --pdf` (requires weasyprint). Falls back gracefully if the library is not installed.
 *   **🌗 Appearance**: The theme (Dark/Light) is changed exclusively in the settings (`/settings?tab=theme`) and persisted in `config.json`. Dark mode is the default and is loaded server-side — without a toggle in the sidebar.
 
 ### Starting the Web Interface:
@@ -135,7 +142,8 @@ is automatically moved to `wikis/main/` on first start.
 *   `/search?q=` – BM25 full-text search with match highlighting.
 *   `/lang/<code>` – Language switch (cookie).
 *   `/about` – About page.
-*   `/admin/status`, `/admin/sync`, `/admin/update`, `/admin/clear-log` – Admin tools.
+*   `/admin/status`, `/admin/sync`, `/admin/update`, `/admin/clear-log` – Admin tools (sync now with persistent per-wiki SyncStatus JSON).
+*   `/api/v1/system/health` – System health endpoint with SyncStatus data per wiki.
 *   `/status`, `/lint`, `/config`, `/settings`, `/briefings` – Statistics, linter, SMTP, settings, weekly reports.
 *   `/edit`, `/edit/preview`, `/edit/save` – ✍️ Universal editor (WYSIWYG & Markdown).
 

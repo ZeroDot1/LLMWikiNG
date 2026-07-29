@@ -506,11 +506,15 @@ Willkommen im Wiki **{name}**.
         tags: list[str] | None = None,
         concept_type: str = "Concept",
         agent_name: str = "MCP-Agent",
+        force: bool = False,
     ) -> str:
         """Erstellt oder aktualisiert eine Wiki-Seite nach OKF v0.1 Standard.
 
         Die Seite erhaelt automatisch ein gueltiges YAML-Frontmatter mit
         dem Pflichtfeld 'type' gemaess Open Knowledge Format.
+
+        Bei bestehender Seite wird der content_hash verglichen – bei Abweichung
+        wird ein Konflikt gemeldet, es sei denn force=True (Plan §3).
 
         Args:
             slug: Eindeutiger Dateiname/Slug (z.B. 'sicherheitskonzept').
@@ -521,6 +525,7 @@ Willkommen im Wiki **{name}**.
             tags: Liste von Kategorie-Tags.
             concept_type: OKF-Typ (Concept, Playbook, API-Doc, Reference).
             agent_name: Name des schreibenden Agenten/Systems.
+            force: Bei True wird der Konflikt ignoriert und ueberschrieben.
 
         Returns:
             Bestaetigung mit Pfad zur geschriebenen Datei.
@@ -528,7 +533,7 @@ Willkommen im Wiki **{name}**.
         wiki_slug = slugify_wiki(wiki)
         root = wiki_path(wiki_slug)
         if not root.exists():
-            return f"Wiki '{wiki}' nicht gefunden."
+            return f"Wiki '{wiki}' not found."
 
         raw_slug = re.sub(r"\.md$", "", slug)
         filepath = root / f"{raw_slug}.md"
@@ -544,6 +549,18 @@ Willkommen im Wiki **{name}**.
         import hashlib as _hl, re as _re
         _body_for_hash = _re.sub(r"^---.*?---\s*", "", content_body, flags=_re.DOTALL)
         _content_hash = _hl.sha256(_body_for_hash.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
+
+        # Conflict-Detection: Prüfe ob Seite seit dem letzten Schreiben geändert wurde
+        if existed and not force:
+            from services.editor import detect_conflict
+            conflict = detect_conflict(wiki_slug, raw_slug, content_body)
+            if conflict:
+                return (
+                    f"CONFLICT: Page '{raw_slug}' was modified since last read.\n"
+                    f"Stored hash: {conflict.get('stored_hash', '?')}\n"
+                    f"Incoming hash: {conflict.get('incoming_hash', '?')}\n"
+                    f"Use force=True to overwrite."
+                )
 
         post = frontmatter.Post(
             content=content_body,

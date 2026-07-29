@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+from datetime import timezone
 import json
 import os
 import re
@@ -563,24 +564,27 @@ def api_system_health(user: dict = Depends(get_api_user)):
     """Gesundheitscheck des gesamten Systems.
     
     Prüft kritische Komponenten und gibt Status für jedes Wiki zurück.
+    Nutzt persistente SyncStatus-Daten (Plan §6).
     """
     import shutil
     from services.cache import get_cache
+    from services.sync import SyncStatus, is_sync_needed
     
     wikis_data = []
     all_ok = True
     for w in list_wikis():
         w_name = w["name"]
         root = wiki_path(w_name)
+        sync_status = SyncStatus.load(w_name)
         wiki_info = {
             "name": w_name,
             "exists": root.exists(),
             "page_count": 0,
             "sync_needed": False,
             "status": "unknown",
+            "sync": sync_status.to_dict() if root.exists() else None,
         }
         if root.exists():
-            from services.sync import is_sync_needed
             pages = [p for p in root.rglob("*.md") if p.stem not in ("index", "log", "ingestlater")]
             wiki_info["page_count"] = len(pages)
             try:
@@ -601,6 +605,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
             "git": shutil.which("git") is not None,
         },
         "cache_entries": get_cache().stats().get("entries", 0),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

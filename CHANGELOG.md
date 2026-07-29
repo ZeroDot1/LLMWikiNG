@@ -22,6 +22,10 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.
 - **tags.html**: Nutzt jetzt `tag-chip` / `tag-cloud--large` / `tag-chip--counted` CSS-Klassen aus `tags.css`.
 - **requirements.txt**: `watchdog>=4.0.0` für den File-Watcher. `weasyprint>=62.0` (auskommentiert, optional) für PDF-Export.
+- **SyncStatus persistent** (`backend/services/sync.py`): `SyncStatus` erweitert um `wiki`, `content_hash`, `last_success`, `last_attempt`, `error`, `pages_count`-Felder. Neue `to_dict()`, `load()`, `save()`-Methoden für per-Wiki JSON-Persistenz unter `DATA_DIR/sync_status/<wiki>.json`.
+- **MCP Conflict-Detection** (`backend/api/routes/mcp.py`): `okf_write_concept` prüft bei bestehenden Seiten den `content_hash` via `detect_conflict()` – bei Abweichung wird ein CONFLICT-Fehler gemeldet, es sei denn `force=True` wird gesetzt.
+- **API Health mit SyncStatus** (`backend/api/routes/api.py`): `GET /api/v1/system/health` liefert jetzt pro Wiki Sync-Daten aus `SyncStatus.load()` inklusive `timestamp`.
+- **Versionsnummer überall erhöht**: `VERSION` auf `2.13.17`, CSS-Dateien (`audit.css`, `graph.css`, `wikis.css`) Version-Kommentare aktualisiert, `config.py`-Fallbacks angepasst.
 
 ## [2.13.16] - 2026-07-29
 

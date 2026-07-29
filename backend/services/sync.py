@@ -9,7 +9,7 @@ import asyncio
 import re
 import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR
@@ -24,11 +24,17 @@ QMD_TIMEOUT = 180
 
 @dataclass
 class SyncStatus:
+    wiki: str = ""
     qmd: bool = False
     index: bool = False
     messages: list[str] = field(default_factory=list)
     skipped: bool = False
     duration_ms: int = 0
+    content_hash: str | None = None
+    last_success: str | None = None
+    last_attempt: str | None = None
+    error: str | None = None
+    pages_count: int = 0
 
     @property
     def success(self) -> bool:
@@ -37,11 +43,35 @@ class SyncStatus:
     @property
     def summary(self) -> str:
         if self.skipped:
-            return "Sync nicht benötigt (keine Änderungen)"
+            return "Sync not needed (no changes)"
         parts = []
         parts.append(f"qmd: {'ok' if self.qmd else 'err'}")
         parts.append(f"index: {'ok' if self.index else 'err'}")
         return ", ".join(parts)
+
+    def to_dict(self) -> dict:
+        from dataclasses import asdict
+        return asdict(self)
+
+    @classmethod
+    def load(cls, wiki: str) -> "SyncStatus":
+        p = DATA_DIR / "sync_status"
+        p.mkdir(parents=True, exist_ok=True)
+        f = p / f"{wiki}.json"
+        if f.exists():
+            try:
+                import json
+                return cls(**json.loads(f.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+        return cls(wiki=wiki)
+
+    def save(self) -> None:
+        import json
+        p = DATA_DIR / "sync_status"
+        p.mkdir(parents=True, exist_ok=True)
+        f = p / f"{self.wiki}.json"
+        f.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
 
 def _load_sync_times() -> dict[str, str]:
     if SYNC_STATUS_FILE.exists():
@@ -391,14 +421,18 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     """
     import time as _time
     _start = _time.monotonic()
-    status = SyncStatus()
+    status = SyncStatus.load(wiki)
+    status.wiki = wiki
+    status.last_attempt = datetime.now(timezone.utc).isoformat()
 
     if not is_sync_needed(wiki) and not force:
         status.qmd = True
         status.index = True
         status.skipped = True
-        status.messages.append("Sync nicht benötigt (keine Änderungen)")
+        status.messages.append("Sync not needed (no changes)")
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
+        status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+        status.save()
         return status
 
     added, changed, removed = _get_changed_files(wiki)
@@ -439,6 +473,9 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     }, wiki)
 
     status.duration_ms = int((_time.monotonic() - _start) * 1000)
+    status.last_success = datetime.now(timezone.utc).isoformat()
+    status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+    status.save()
 
     # Dict-compat für Bestandscode
     return {
@@ -466,7 +503,9 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
     """
     import time as _time
     _start = _time.monotonic()
-    status = SyncStatus()
+    status = SyncStatus.load(wiki)
+    status.wiki = wiki
+    status.last_attempt = datetime.now(timezone.utc).isoformat()
 
     lock = await get_wiki_lock(wiki)
     async with lock:
@@ -475,8 +514,10 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             status.qmd = True
             status.index = True
             status.skipped = True
-            status.messages.append("Sync nicht benötigt (keine Änderungen)")
+            status.messages.append("Sync not needed (no changes)")
             status.duration_ms = int((_time.monotonic() - _start) * 1000)
+            status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+            await asyncio.to_thread(status.save)
             return status
 
         added, changed, removed = await asyncio.to_thread(_get_changed_files, wiki)
@@ -525,6 +566,9 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         }, wiki)
 
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
+        status.last_success = datetime.now(timezone.utc).isoformat()
+        status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+        await asyncio.to_thread(status.save)
 
         return {
             "qmd": status.qmd,

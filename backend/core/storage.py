@@ -137,7 +137,12 @@ def get_key_by_hash(h: str) -> dict | None:
 
 def _load_mcp_data() -> dict:
     """Lädt die MCP-Key-Datenstruktur (Keys-Liste + Legacy-Key)."""
-    return _load(MCP_KEYS_FILE, {"mcp_keys": [], "legacy_mcp_key": ""})
+    raw = _load(MCP_KEYS_FILE, {"mcp_keys": [], "legacy_mcp_key": ""})
+    if isinstance(raw, list):
+        return {"mcp_keys": raw, "legacy_mcp_key": ""}
+    if not isinstance(raw, dict):
+        return {"mcp_keys": [], "legacy_mcp_key": ""}
+    return raw
 
 
 def _save_mcp_data(data: dict) -> None:

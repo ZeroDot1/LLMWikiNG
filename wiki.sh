@@ -18,12 +18,14 @@
 
 set -euo pipefail
 
-VERSION="2.12.43"
+VERSION="2.13.17"
 
-WIKI_DIR="${WIKI_DIR:-./wiki}"
+WIKI_SLUG="${WIKI_SLUG:-main}"
+WIKIS_ROOT="${WIKIS_ROOT:-./wikis}"
+WIKI_DIR="${WIKIS_ROOT}/${WIKI_SLUG}"
 RAW_DIR="${RAW_DIR:-./raw}"
 EXPORT_DIR="${EXPORT_DIR:-./output_docs}"
-COLLECTION_NAME="${COLLECTION_NAME:-my_wiki}"
+COLLECTION_NAME="wiki_${WIKI_SLUG}"
 
 # LLM-Backend (erkannt: ollama, agy, opencode)
 # Für Ingest-Zusammenfassungen / Lint-Analysen
@@ -40,6 +42,24 @@ NC='\033[0m' # No Color
 # Datum im ISO-Format
 today()    { date +%Y-%m-%d; }
 now_iso()  { date +%Y-%m-%dT%H:%M:%S; }
+
+# Argument-Parsing: --wiki <slug> vor dem Befehl
+_args=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --wiki)
+      WIKI_SLUG="$2"
+      WIKI_DIR="${WIKIS_ROOT}/${WIKI_SLUG}"
+      COLLECTION_NAME="wiki_${WIKI_SLUG}"
+      shift 2
+      ;;
+    *)
+      _args+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${_args[@]}"
 
 check_cmd() {
     if ! command -v "$1" &>/dev/null; then
@@ -147,10 +167,13 @@ show_help() {
     echo "  $0 ingest ~/Dokumente/artikel.md"
     echo "  $0 lint"
     echo "  $0 status"
+    echo "  $0 --wiki mysite status"
     echo ""
     echo -e "${CYAN}Umgebungsvariablen:${NC}"
     echo "  LLM_BACKEND=ollama|agy|opencode  (Standard: ollama)"
     echo "  OLLAMA_MODEL=llama3.2:3b          (Standard: llama3.2:3b)"
+    echo "  WIKI_SLUG=mywiki                    (Standard: main)"
+    echo "  WIKIS_ROOT=./wikis                  (Standard: ./wikis)"
 }
 
 init_wiki() {
@@ -679,6 +702,7 @@ show_config() {
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${CYAN}Verzeichnisse:${NC}"
+    echo "   WIKI_SLUG:     $WIKI_SLUG"
     echo "   WIKI_DIR:      $WIKI_DIR"
     echo "   RAW_DIR:       $RAW_DIR"
     echo "   EXPORT_DIR:    $EXPORT_DIR"
@@ -691,8 +715,8 @@ show_config() {
     echo "   OLLAMA_MODEL:  ${OLLAMA_MODEL:-llama3.2:3b}"
     echo ""
     echo -e "${CYAN}Umgebungsvariablen überschreiben:${NC}"
-    echo "   LLM_BACKEND=agy ./wiki.sh ..."
-    echo "   OLLAMA_MODEL=mistral ./wiki.sh ..."
+    echo "   WIKI_SLUG=mywiki ./wiki.sh ..."
+    echo "   ./wiki.sh --wiki mywiki ..."
 }
 
 case "${1:-help}" in

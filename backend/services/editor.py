@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 
 import yaml
 
@@ -18,7 +18,34 @@ def _compute_content_hash(text: str) -> str:
     return hashlib.sha256(body.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
-def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[str] | None = None) -> str:
+def update_content_hash(content: str, updated_by: str = "web") -> str:
+    """Aktualisiert ``content_hash``, ``updated`` und ``updated_by`` in
+    existierendem Frontmatter, ohne andere Felder zu verändern.
+
+    Wird bei jedem Speichern einer bestehenden OKF-Seite aufgerufen, damit
+    Conflict-Detection beim nächsten Laden korrekte Hashes vorfindet.
+
+    Args:
+        content: Vollständiger Seiteninhalt mit Frontmatter.
+        updated_by: Quelle der Änderung (``"web"``, ``"mcp"``, ``"cli"``).
+    """
+    fm_match = re.match(r"^---\s*\n(.*?)\n(?:---|\.\.\.)\s*\n", content, re.DOTALL)
+    if not fm_match:
+        return content
+
+    fm_text = fm_match.group(1)
+    fm_data = yaml.safe_load(fm_text) or {}
+
+    fm_data["content_hash"] = _compute_content_hash(content)
+    fm_data["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    fm_data["updated_by"] = updated_by
+
+    new_fm = yaml.dump(fm_data, sort_keys=False, allow_unicode=True)
+    body = content[fm_match.end():]
+    return f"---\n{new_fm}---\n{body}"
+
+
+def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[str] | None = None, updated_by: str = "web") -> str:
     """Stellt sicher, dass der Inhalt OKF-konformes YAML-Frontmatter mit type-Feld hat."""
     fm_match = re.match(r"^---\s*\n(.*?)\n(?:---|\.\.\.)\s*\n", content, re.DOTALL)
     if fm_match:
@@ -26,7 +53,7 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
         try:
             fm_data = yaml.safe_load(fm_text)
             if isinstance(fm_data, dict) and "type" in fm_data:
-                return content  # Bereits OKF-konform
+                return update_content_hash(content, updated_by=updated_by)
         except yaml.YAMLError:
             pass
         body = content[fm_match.end():]
@@ -37,6 +64,7 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
     page_title = title or "Neue Seite"
     content_hash = _compute_content_hash(content)
     tags_str = ", ".join(f'"{t}"' for t in tags) if tags else ""
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     new_fm = (
         f"---\n"
         f"type: Concept\n"
@@ -46,6 +74,8 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
         f"tags: [{tags_str}]\n"
         f"content_hash: {content_hash}\n"
         f"timestamp: {today}T00:00:00Z\n"
+        f"updated: {now_iso}\n"
+        f"updated_by: {updated_by}\n"
         f"---\n\n"
     )
     return new_fm + body.lstrip("\n")
@@ -67,7 +97,6 @@ def detect_conflict(wiki: str, slug: str, incoming_content: str) -> dict | None:
         Dict mit Konflikt-Details oder None, wenn kein Konflikt.
     """
     from core.config import wiki_path as _wp
-    from pathlib import Path as _P
     fp = _wp(wiki) / f"{slug}.md"
     if not fp.exists():
         return None

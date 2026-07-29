@@ -539,6 +539,12 @@ Willkommen im Wiki **{name}**.
         content_body = content
         if not content.startswith("#"):
             content_body = f"\n# {title}\n\n{content}"
+
+        # content_hash für Conflict-Detection berechnen
+        import hashlib as _hl, re as _re
+        _body_for_hash = _re.sub(r"^---.*?---\s*", "", content_body, flags=_re.DOTALL)
+        _content_hash = _hl.sha256(_body_for_hash.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
+
         post = frontmatter.Post(
             content=content_body,
             type=concept_type,
@@ -546,6 +552,9 @@ Willkommen im Wiki **{name}**.
             description=description,
             tags=tags or [],
             timestamp=now_iso,
+            updated=now_iso,
+            updated_by="mcp",
+            content_hash=_content_hash,
             author=f"Agent ({agent_name})",
             status="AI-Generated",
         )

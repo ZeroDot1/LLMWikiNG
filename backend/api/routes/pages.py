@@ -1036,13 +1036,19 @@ async def search(request: Request):
     error = None
     sync_hint = False
 
-    # Parse tag: and # syntax from query
+    # Parse tag: and # syntax from query – mehrere Tags werden AND-verknüpft
     from services.search import parse_search_tags
+    from services.tags import normalize_tag as _norm_tag
     parsed_query, inline_tags = parse_search_tags(query)
     if parsed_query != query:
         query = parsed_query
-    if inline_tags and not tag_filter:
-        tag_filter = inline_tags[0]
+    # Alle inline-tags UND den ?tag= Query-Parameter zusammenführen
+    active_tag_filters: list[str] = [_norm_tag(t) for t in inline_tags if t]
+    if tag_filter and (norm_tf := _norm_tag(tag_filter)):
+        if norm_tf not in active_tag_filters:
+            active_tag_filters.append(norm_tf)
+    # Für Rückwärtskompatibilität: tag_filter auf ersten aktiven Filter setzen
+    tag_filter = active_tag_filters[0] if active_tag_filters else ""
 
     if wiki == "all":
         page_count = sum(len(get_all_wiki_pages(w["name"])) for w in list_wikis())
@@ -1054,6 +1060,39 @@ async def search(request: Request):
     if query:
         if page_count > 0 and sync_needed_flag:
             sync_hint = True
+
+        # Tag-Filter VOR dem qmd-Call anwenden (Performance: Plan § 6)
+        candidate_slugs: set[str] | None = None
+        if active_tag_filters:
+            from services.tags import get_pages_by_tag as _get_by_tag
+            for _tag in active_tag_filters:
+                _tag_pages = _get_by_tag(_tag, wiki if wiki != "all" else "main")
+                _tag_slugs = {p["slug"] for p in _tag_pages}
+                if candidate_slugs is None:
+                    candidate_slugs = _tag_slugs
+                else:
+                    candidate_slugs &= _tag_slugs  # AND-Verknüpfung
+            if candidate_slugs is not None and not candidate_slugs:
+                # Keine Treffer für Tag-Kombination → qmd überspringen
+                results = []
+                raw_mentions_count = 0
+                slug_exists = False
+                if not results and page_count > 0 and sync_needed_flag:
+                    sync_hint = True
+                error = None
+                # direkt zu render springen
+                from services.tags import list_all_tags as _list_tags
+                available_tags = _list_tags(wiki) if wiki != "all" else []
+                _tag_filter = tag_filter or ""
+                return render(
+                    request, "search.html",
+                    active_page="search", wiki=wiki, wikis=list_wikis(),
+                    query=query, results=results, error=error, sync_hint=sync_hint,
+                    page_count=page_count,
+                    raw_mentions_count=0,
+                    slug_exists=False,
+                    available_tags=available_tags, tag_filter=_tag_filter,
+                )
 
         search_result = await run_qmd_search_async(query, wiki)
         if search_result.get("error"):
@@ -1069,11 +1108,16 @@ async def search(request: Request):
                 error = search_result["error"]
 
         if not error:
-            from services.tags import get_page_tags
             for r in search_result.get("results", []):
-                if tag_filter:
+                # Tag-Filter anwenden (Kandidaten-Set aus Pre-Filter oder per Lookup)
+                if candidate_slugs is not None:
+                    if r["slug"] not in candidate_slugs:
+                        continue
+                elif active_tag_filters:
+                    from services.tags import get_page_tags
                     r_tags = get_page_tags(r.get("wiki", wiki), r["slug"])
-                    if tag_filter.lower() not in [t.lower() for t in r_tags]:
+                    norm_r_tags = [_norm_tag(t) for t in r_tags]
+                    if not all(ft in norm_r_tags for ft in active_tag_filters):
                         continue
                 r["title_html"] = _highlight_text(r["title"], query)
                 r["snippet_html"] = _highlight_text(r["snippet"], query)

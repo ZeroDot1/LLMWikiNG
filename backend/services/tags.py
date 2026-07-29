@@ -102,14 +102,13 @@ def list_all_tags(wiki: str = "main") -> list[dict]:
 
 def get_tag_cloud(wiki: str = "main", min_count: int = 1) -> list[dict]:
     index = build_tag_index(wiki)
-    result = []
-    for tag, pages in sorted(index.items()):
-        c = len(pages)
-        if c >= min_count:
-            result.append({
-                "tag": tag,
-                "count": c,
-            })
+    result = [
+        {"tag": tag, "count": len(pages)}
+        for tag, pages in index.items()
+        if len(pages) >= min_count
+    ]
+    # Absteigend nach Häufigkeit, bei Gleichstand alphabetisch
+    result.sort(key=lambda x: (-x["count"], x["tag"]))
     return result
 
 

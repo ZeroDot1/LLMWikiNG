@@ -7,10 +7,34 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.16] - 2026-07-29
+
+### Fixed
+- **Conflict-Detection jetzt wirksam** (`backend/services/editor.py`): `ensure_okf_frontmatter()` aktualisierte den `content_hash` bisher nicht bei bestehenden OKF-Seiten – die Detection war dadurch wirkungslos. Neue Funktion `update_content_hash(content, updated_by)` schreibt bei jedem Speichern `content_hash`, `updated` (ISO-8601 UTC) und `updated_by` (`"web"` / `"mcp"` / `"cli"`) ins Frontmatter, ohne andere Felder zu verändern.
+- **Tag-Suche case-insensitiv** (`backend/api/routes/pages.py`): Tag-Vergleiche nutzen jetzt durchgehend `normalize_tag()` – `tag:Privacy` und `tag:privacy` liefern identische Ergebnisse.
+- **`get_tag_cloud()` nach Häufigkeit sortiert** (`backend/services/tags.py`): War bisher alphabetisch sortiert; jetzt absteigend nach Anzahl, bei Gleichstand alphabetisch (konsistent mit `list_all_tags()`).
+
+### Added
+- **`update_content_hash()`** (`backend/services/editor.py`): Neue öffentliche Hilfsfunktion, die `content_hash`, `updated` und `updated_by` in vorhandenem Frontmatter aktualisiert. Akzeptiert `updated_by`-Parameter (`"web"` / `"mcp"` / `"cli"`).
+- **`updated` und `updated_by` Felder** (`backend/services/editor.py`, `backend/api/routes/mcp.py`): Alle Schreibpfade (Web-Editor, MCP `okf_write_concept`) setzen jetzt diese Felder im Frontmatter. Plan-Anforderung 3.1.
+- **`content_hash` im MCP-Schreibpfad** (`backend/api/routes/mcp.py`): `okf_write_concept` berechnet und schreibt jetzt `content_hash` ins Frontmatter – Conflict-Detection funktioniert damit auch für agent-erstellte Seiten.
+
+### Changed
+- **Tag-Filter vor qmd-Call** (`backend/api/routes/pages.py`): Tag-Kandidaten-Set wird jetzt aus dem Tag-Index gebaut *bevor* qmd aufgerufen wird. Bei leerem Kandidaten-Set (kein Treffer für Tag-Kombination) wird qmd komplett übersprungen. Messbar schneller bei engem Tag-Filter.
+- **AND-Verknüpfung mehrerer inline-Tags** (`backend/api/routes/pages.py`): `tag:privacy tag:mcp` und `#privacy #mcp` werden als AND-Verknüpfung ausgewertet – nur Seiten mit allen genannten Tags erscheinen. Vorher wurde nur der erste Tag berücksichtigt.
+- **`ensure_okf_frontmatter()` mit `updated_by`-Parameter** (`backend/services/editor.py`): Signatur erweitert; Default `"web"`.
+
+## [2.13.15] - 2026-07-29
+
 ### Added
 - **Ingest-Tag-Integration**: `wiki.sh` liest `$SUGGESTED_TAGS` aus der Umgebung und setzt sie im Frontmatter der erstellten Seite (statt hartcodiertem `tags: []`). Web-Ingest generiert bereits Tag-Vorschläge via `suggest_tags_from_content()`; die Pipeline war jedoch unterbrochen – die Vorschläge wurden nie an `wiki.sh` übergeben. Behoben in `wiki.sh` und MCP `okf_ingest_text`.
 - **API `POST /api/v1/wikis/{wiki}/pages`**: Akzeptiert jetzt optionalen `tags`-Parameter (`list[str]`) und übergibt ihn an `ensure_okf_frontmatter()`. (`backend/api/routes/api.py`)
-- **`ensure_okf_frontmatter()`**: Neuer optionaler Parameter `tags: list[str] | None` – wenn gesetzt, werden die übergebenen Tags im Frontmatter gesetzt statt `[]`. (`backend/services/editor.py`)
+- **`normalize_tag()`** (`backend/services/tags.py`): Neue Funktion normalisiert Tags zu lowercase mit Bindestrichen statt Leerzeichen; entfernt Sonderzeichen (Unicode-sicher). Wird in `parse_tags_from_fm()` und `get_pages_by_tag()` genutzt.
+- **`is_sync_needed()` via Fingerprint-Cache** (`backend/services/sync.py`): Nutzt primär den BLAKE2b-Fingerprint-Cache (`.sync_cache.json`) statt alle Dateiinhalte zu lesen. Fallback auf `.sync_hash` wenn kein Cache vorhanden.
+- **`list_all_tags()` nach Häufigkeit sortiert** (`backend/services/tags.py`): Absteigend nach Anzahl, bei Gleichstand alphabetisch.
+
+### Changed
+- **`ensure_okf_frontmatter()`**: Neuer optionaler Parameter `tags: list[str] | None`.
 
 ## [2.13.14] - 2026-07-29
 

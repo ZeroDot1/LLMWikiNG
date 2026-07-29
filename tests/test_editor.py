@@ -20,7 +20,13 @@ class TestEnsureOwfFrontmatter:
         from services.editor import ensure_okf_frontmatter
         content = "---\ntype: Concept\ntitle: \"Existing\"\n---\n\nContent"
         result = ensure_okf_frontmatter(content)
-        assert result == content  # Should be unchanged
+        assert result.startswith("---\n")
+        assert "type: Concept" in result
+        assert "title: Existing" in result
+        assert "content_hash:" in result
+        assert "updated:" in result
+        assert "updated_by:" in result
+        assert result.rstrip().endswith("Content")
 
     def test_adds_type_to_existing_frontmatter_without_type(self):
         from services.editor import ensure_okf_frontmatter

@@ -146,9 +146,11 @@
     };
     window.insertInlineCode = function () {
       const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
       const code = document.createElement("code");
-      if (!sel.isCollapsed) { code.textContent = sel.toString(); sel.getRangeAt(0).deleteContents(); sel.getRangeAt(0).insertNode(code); }
-      else { code.textContent = "code"; sel.getRangeAt(0).insertNode(code); }
+      if (!sel.isCollapsed) { code.textContent = sel.toString(); range.deleteContents(); range.insertNode(code); }
+      else { code.textContent = "code"; range.insertNode(code); }
       edW.focus();
     };
   }

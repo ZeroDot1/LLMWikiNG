@@ -839,6 +839,28 @@ async def ingest_post(request: Request):
     )
 
 
+@router.get("/search/tags-autocomplete")
+async def search_tags_autocomplete(request: Request):
+    """Gibt passende Tags als JSON für das Autocomplete zurück.
+
+    Query-Parameter: ``q`` = Teilbegriff, ``wiki`` = Wiki-Slug.
+    """
+    from services.tags import list_all_tags as _list_tags
+
+    q = request.query_params.get("q", "").strip().lower()
+    wiki = request.query_params.get("wiki") or _default_wiki()
+    limit = 10
+
+    if not q:
+        return JSONResponse({"tags": []})
+
+    all_tags = _list_tags(wiki) if wiki != "all" else []
+    matched = [t for t in all_tags if q in t["tag"].lower()]
+    matched = matched[:limit]
+
+    return JSONResponse({"tags": matched})
+
+
 @router.get("/search")
 async def search(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
@@ -847,6 +869,14 @@ async def search(request: Request):
     results = []
     error = None
     sync_hint = False
+
+    # Parse tag: and # syntax from query
+    from services.search import parse_search_tags
+    parsed_query, inline_tags = parse_search_tags(query)
+    if parsed_query != query:
+        query = parsed_query
+    if inline_tags and not tag_filter:
+        tag_filter = inline_tags[0]
 
     if wiki == "all":
         page_count = sum(len(get_all_wiki_pages(w["name"])) for w in list_wikis())

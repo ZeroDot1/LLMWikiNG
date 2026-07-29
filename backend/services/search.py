@@ -14,6 +14,23 @@ from pathlib import Path
 from core.config import WIKI_DIR, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, QMD_BIN, BASE_PATH, wiki_path
 from services.wiki import is_text_file
 
+TAG_SYNTAX_RE = re.compile(r'(?:^|\s)(?:tag:([\w-]+)|#([\w-]+))')
+
+
+def parse_search_tags(query: str) -> tuple[str, list[str]]:
+    """Extrahiert Tag-Filter aus der Suchanfrage.
+
+    Unterstützt ``tag:tagname`` und ``#tagname`` Syntax.
+
+    Returns:
+        Tuple (bereinigter Suchtext, Liste der extrahierten Tags).
+    """
+    tags = TAG_SYNTAX_RE.findall(query)
+    extracted = [t[0] or t[1] for t in tags]
+    cleaned = TAG_SYNTAX_RE.sub("", query).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned, extracted
+
 
 def local_search(query: str, wiki: str = "main") -> dict:
     """Fallback Volltextsuche falls qmd nicht verfügbar ist. Unterstützt 'all' für Cross-Wiki-Suche."""

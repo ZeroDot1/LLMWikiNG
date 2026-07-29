@@ -1,14 +1,124 @@
-// search.js – Interaktivität auf der Suchseite (Keyboard-Navigation, Shortcuts)
+// search.js – Interaktivität auf der Suchseite (Keyboard-Navigation, Shortcuts, Tag-Autocomplete)
 (function () {
   "use strict";
 
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.querySelector(".search-input");
     const resultItems = document.querySelectorAll(".search-result-item");
+    const autocompleteBox = document.getElementById("search-autocomplete");
 
     // Auto-Fokus auf das Eingabefeld, falls leer
     if (searchInput && !searchInput.value) {
       searchInput.focus();
+    }
+
+    // Tag-Autocomplete
+    let autocompleteTimer = null;
+    let autocompleteFocus = -1;
+
+    if (searchInput && autocompleteBox) {
+      const autocompleteUrl = searchInput.dataset.autocomplete || "";
+
+      searchInput.addEventListener("input", function () {
+        clearTimeout(autocompleteTimer);
+        const val = this.value.trim();
+
+        // Nur nach "#" oder "tag:" suchen
+        const tagTrigger = val.match(/(?:^|\s)(?:tag:|#)(\w*)$/);
+        if (!tagTrigger) {
+          autocompleteBox.classList.add("hidden");
+          autocompleteBox.innerHTML = "";
+          return;
+        }
+
+        const partial = tagTrigger[1];
+        if (partial.length < 1) {
+          autocompleteBox.classList.add("hidden");
+          autocompleteBox.innerHTML = "";
+          return;
+        }
+
+        autocompleteTimer = setTimeout(function () {
+          fetch(autocompleteUrl + "?q=" + encodeURIComponent(partial))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (!data.tags || data.tags.length === 0) {
+                autocompleteBox.classList.add("hidden");
+                return;
+              }
+              autocompleteFocus = -1;
+              var html = "";
+              data.tags.forEach(function (t, idx) {
+                html += '<div class="px-3 py-2 cursor-pointer hover:bg-primary-subtle/20 text-sm border-b border-border last:border-b-0" data-index="' + idx + '">';
+                html += '<span class="text-primary font-mono">#' + t.tag + '</span>';
+                html += ' <span class="text-text-muted text-xs">(' + t.count + ')</span>';
+                html += "</div>";
+              });
+              autocompleteBox.innerHTML = html;
+              autocompleteBox.classList.remove("hidden");
+
+              // Klick auf Autocomplete-Eintrag
+              autocompleteBox.querySelectorAll("[data-index]").forEach(function (el) {
+                el.addEventListener("click", function () {
+                  var tag = this.querySelector(".font-mono").textContent.replace("#", "");
+                  insertTag(tag);
+                });
+              });
+            })
+            .catch(function () {
+              autocompleteBox.classList.add("hidden");
+            });
+        }, 200);
+      });
+
+      function insertTag(tag) {
+        var val = searchInput.value;
+        // Ersetze das letzte #partiell oder tag:partial durch tag:tag
+        val = val.replace(/(?:^|\s)(?:tag:|#)\w*$/, function (match) {
+          if (match.endsWith(":") || match.endsWith("#")) {
+            return match + tag;
+          }
+          return match.replace(/[\w-]+$/, tag);
+        });
+        searchInput.value = val + " ";
+        autocompleteBox.classList.add("hidden");
+        autocompleteBox.innerHTML = "";
+        searchInput.focus();
+      }
+
+      // Tastaturnavigation im Autocomplete
+      searchInput.addEventListener("keydown", function (e) {
+        var items = autocompleteBox.querySelectorAll("[data-index]");
+        if (items.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          autocompleteFocus++;
+          if (autocompleteFocus >= items.length) autocompleteFocus = 0;
+          updateAutocompleteFocus(items);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          autocompleteFocus--;
+          if (autocompleteFocus < 0) autocompleteFocus = items.length - 1;
+          updateAutocompleteFocus(items);
+        } else if (e.key === "Enter" && autocompleteFocus > -1) {
+          e.preventDefault();
+          items[autocompleteFocus].click();
+        } else if (e.key === "Escape") {
+          autocompleteBox.classList.add("hidden");
+          autocompleteFocus = -1;
+        }
+      });
+
+      function updateAutocompleteFocus(items) {
+        items.forEach(function (el, idx) {
+          if (idx === autocompleteFocus) {
+            el.classList.add("bg-primary-subtle/20");
+          } else {
+            el.classList.remove("bg-primary-subtle/20");
+          }
+        });
+      }
     }
 
     // Zusätzlicher Shortcut: "/" Taste fokussiert die Suche (falls kein Textfeld aktiv ist)
@@ -24,11 +134,12 @@
       }
     });
 
-    // Pfeiltasten-Navigation durch Suchergebnisse
+    // Pfeiltasten-Navigation durch Suchergebnisse (nur wenn Autocomplete nicht aktiv)
     let currentFocus = -1;
 
     document.addEventListener("keydown", function (e) {
       if (!resultItems || resultItems.length === 0) return;
+      if (!autocompleteBox.classList.contains("hidden")) return;
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -62,5 +173,12 @@
         item.classList.remove("border-primary", "bg-primary-subtle/10");
       });
     }
+
+    // Click outside closes autocomplete
+    document.addEventListener("click", function (e) {
+      if (autocompleteBox && !autocompleteBox.contains(e.target) && e.target !== searchInput) {
+        autocompleteBox.classList.add("hidden");
+      }
+    });
   });
 })();

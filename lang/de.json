@@ -123,7 +123,8 @@
     "path_prefix_raw": "raw/",
     "path_prefix_export": "output_docs/",
     "title_raw": "Rohquelle:",
-    "title_exported": "Exportiert:"
+    "title_exported": "Exportiert:",
+    "syntax_hint_tag": "Tipp: tag:name oder #name filtert nach Tag"
   },
   "ingest": {
     "page_title": "Quelle einspielen / merken",

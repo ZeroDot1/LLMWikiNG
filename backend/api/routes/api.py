@@ -35,6 +35,7 @@ from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, ge
 from services.search import local_search, qmd_search, run_qmd_search_async
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
+from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
 from services.editor import ensure_okf_frontmatter
 from services.sync import append_okf_log, request_sync_background
 from services.audit import log_action
@@ -232,6 +233,14 @@ def api_stats(wiki: str, user: dict = Depends(get_api_user)):
 def api_lint(wiki: str, user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
     return run_lint(wiki)
+
+
+@router.get("/wikis/{wiki}/tags")
+def api_tags(wiki: str, tag: str = "", user: dict = Depends(get_api_user)):
+    _wiki_or_404(wiki)
+    if tag:
+        return {"wiki": wiki, "tag": tag, "pages": get_pages_by_tag(tag, wiki)}
+    return {"wiki": wiki, "tags": list_all_tags(wiki), "stats": get_all_tags_aggregated(wiki)}
 
 
 @router.get("/search")

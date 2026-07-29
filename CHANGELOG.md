@@ -7,6 +7,19 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.14] - 2026-07-29
+
+### Added
+- **MCP-Tool `okf_list_tags`** (`backend/api/routes/mcp.py`): Listet Tags mit Seitenanzahl pro Wiki auf (Ausgabe als strukturierte Markdown-Tabelle). Filterbar via `?tag=`.
+- **API-Endpoint `/api/v1/wikis/{wiki}/tags`** (`backend/api/routes/api.py`): Gibt alle Tags eines Wikis mit Seitenanzahl zurück. optionaler `?tag=`-Filter.
+- **Syntax-Test-Suite** (`tests/test_syntax.py`): 80 parametrisierte Tests für Python (AST), CSS (tinycss2), JavaScript (acorn ES2022) und HTML (lxml+html5lib).
+
+### Changed
+- **Tailwind CSS v4.3.2 neu gebaut** (`frontend/npm run build`, 55ms).
+- **Sprachdateien**: Vollständige Schlüssel-Parität zwischen `de.json`/`en.json` überprüft und sichergestellt.
+- **Dokumentation**: MCP-Tool-Referenz in `about.html`, `docs.html` und deutschen Varianten von 37 auf 38 Tools aktualisiert. API-Endpoint-Tabelle in README.md und docs-Seiten um `/tags`-Eintrag ergänzt.
+- **Versionsnummer**: Auf 2.13.14 erhöht (VERSION-Datei).
+
 ## [2.13.13] - 2026-07-29
 
 ### Added

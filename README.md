@@ -169,6 +169,7 @@ curl -X POST \
 | `DELETE` | `/api/v1/wikis/<slug>` | API key (admin) |
 | `GET`  | `/api/v1/wikis/<wiki>/pages` | API key |
 | `GET`  | `/api/v1/wikis/<wiki>/pages/<slug>` | API key |
+| `GET`  | `/api/v1/wikis/<wiki>/tags` | API key |
 | `POST` | `/api/v1/wikis/<wiki>/pages` | API key (+ scope `write`) |
 | `POST` | `/api/v1/wikis/<wiki>/pages/<slug>/export` | API key |
 | `POST` | `/api/v1/wikis/<wiki>/ingest` | API key (file upload) |

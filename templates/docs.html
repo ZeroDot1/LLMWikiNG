@@ -56,7 +56,7 @@
       <li><strong>API Keys &amp; MCP Keys</strong> – Generate or revoke API Keys and Per-User MCP Keys with fine-grained tool permissions and password-based key recovery.</li>
       <li><strong>Registration</strong> – Turn public registration on or off.</li>
       <li><strong>Backups</strong> – Create, download, restore, and delete server-side <code>.tar.xz</code> backups.</li>
-      <li><strong>MCP</strong> – Interactive client configurator (AGY, OpenCode, Hermes) and categorized tool explorer for all 37 MCP tools.</li>
+      <li><strong>MCP</strong> – Interactive client configurator (AGY, OpenCode, Hermes) and categorized tool explorer for all 38 MCP tools.</li>
       <li><strong>Health Check</strong> – Run the wiki linter (orphans, missing targets, staleness, raw-file refs).</li>
       <li><strong>Wiki Management</strong> – Create, edit (inline), and delete wikis with page/file count and size.</li>
       <li><strong>Update</strong> – Pull updates directly from GitHub.</li>
@@ -97,8 +97,9 @@
         <tbody class="divide-y divide-border">
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis</code></td><td class="p-2">List all wikis</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">List pages in wiki</td></tr>
-          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;</code></td><td class="p-2">Get single page content</td></tr>
-          <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">Create new page (scope <code>write</code> required)</td></tr>
+           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;</code></td><td class="p-2">Get single page content</td></tr>
+           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/tags</code></td><td class="p-2">List tags with page counts (optional filter via <code>?tag=</code>)</td></tr>
+           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages</code></td><td class="p-2">Create new page (scope <code>write</code> required)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pages/&lt;slug&gt;/export</code></td><td class="p-2">Export page</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/ingest</code></td><td class="p-2">Upload raw source file (to raw/)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/pending</code></td><td class="p-2">List pending uploads</td></tr>
@@ -285,7 +286,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
     }
   }
 }</code></pre>
-          <p class="text-text-secondary text-xs mt-2"><strong>Usage in <code>agy</code>:</strong> Simply type <code>/</code> in the chat input. <code>agy</code> will autocomplete all 37 remote slash commands (e.g. <code>/wikis</code>, <code>/search</code>, <code>/read</code>, <code>/write</code>, <code>/status</code>, <code>/update</code>). You can also ask <code>agy</code> in plain language to read or update wiki pages.</p>
+          <p class="text-text-secondary text-xs mt-2"><strong>Usage in <code>agy</code>:</strong> Simply type <code>/</code> in the chat input. <code>agy</code> will autocomplete all 38 remote slash commands (e.g. <code>/wikis</code>, <code>/search</code>, <code>/read</code>, <code>/write</code>, <code>/status</code>, <code>/update</code>). You can also ask <code>agy</code> in plain language to read or update wiki pages.</p>
         </div>
       </div>
 
@@ -306,7 +307,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
       </div>
 
 
-      <h3 class="text-xl font-semibold mt-6">⚡ MCP Prompts & Remote Slash Commands (37 Commands)</h3>
+      <h3 class="text-xl font-semibold mt-6">⚡ MCP Prompts & Remote Slash Commands (38 Commands)</h3>
       <p class="text-text-secondary text-sm">Once connected to LLMWikiNG via MCP, typing <code>/</code> in supporting clients (AGY, OpenCode, Cursor, Claude Code) opens the slash command menu:</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-xs">
         <div class="bg-bg-sunken p-2.5 rounded border border-border">
@@ -342,7 +343,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
           <span class="text-text-secondary block mt-0.5">Synchronize qmd embeddings</span>
         </div>
       </div>
-      <p class="text-xs text-text-muted mt-2">The <strong>MCP Tool Explorer</strong> under <em>Settings ➜ MCP</em> in the WebUI provides a categorized accordion view of all 37 tools with their descriptions, parameters, and ready-to-use prompts. The <strong>Interactive Client Configurator</strong> in the same panel lets you select a user and their keys to generate a ready-made config snippet for AGY, OpenCode, or Hermes with one click.</p>
+      <p class="text-xs text-text-muted mt-2">The <strong>MCP Tool Explorer</strong> under <em>Settings ➜ MCP</em> in the WebUI provides a categorized accordion view of all 38 tools with their descriptions, parameters, and ready-to-use prompts. The <strong>Interactive Client Configurator</strong> in the same panel lets you select a user and their keys to generate a ready-made config snippet for AGY, OpenCode, or Hermes with one click.</p>
 
       <div class="mt-3">
         <strong>💬 Copy-Paste AI Configuration Prompt:</strong><br>

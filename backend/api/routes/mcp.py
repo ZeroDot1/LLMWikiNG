@@ -18,7 +18,7 @@ Verfuegbare MCP-Tools (37):
     okf_export_page, okf_list_pending, okf_process_pending, okf_ingest_text
 
   Suche & Analyse:
-    okf_search, okf_wiki_stats, okf_graph, okf_lint
+    okf_search, okf_wiki_stats, okf_graph, okf_lint, okf_list_tags
 
   Rohquellen:
     okf_read_raw, okf_list_raw
@@ -92,6 +92,7 @@ from services.search import local_search
 from services.sync import do_sync, append_okf_log, request_sync_background
 from services.lint import run_lint
 from services.graph import build_graph_data
+from services.tags import build_tag_index, list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
 
 import frontmatter
 
@@ -1017,6 +1018,32 @@ Willkommen im Wiki **{name}**.
             lines.append("Alle Pruefungen bestanden. Keine Probleme gefunden.")
 
         return "\n".join(lines).strip()
+
+    @mcp_server.tool()
+    @_require_tool("okf_list_tags")
+    def okf_list_tags(wiki: str = "main") -> str:
+        """Listet alle Tags eines Wikis mit Haeufigkeit und zugehoerigen Seiten auf.
+
+        Args:
+            wiki: Slug des Wikis (Default: 'main').
+
+        Returns:
+            Tag-Uebersicht als Markdown.
+        """
+        slug = slugify_wiki(wiki)
+        err = _ensure_wiki_exists(wiki)
+        if err:
+            return err
+        all_tags = list_all_tags(slug)
+        if not all_tags:
+            return f"# Tags in Wiki '{wiki}'\n\nKeine Tags gefunden."
+        lines = [f"# Tags in Wiki '{wiki}' ({len(all_tags)})\n"]
+        for t in all_tags:
+            pages_summary = ", ".join(f"[{p['title']}](./{p['slug']}.md)" for p in t["pages"][:10])
+            if len(t["pages"]) > 10:
+                pages_summary += f" und {len(t['pages']) - 10} weitere"
+            lines.append(f"- **{t['tag']}** ({t['count']} Seiten): {pages_summary}")
+        return "\n".join(lines)
 
     @mcp_server.tool()
     @_require_tool("okf_read_raw")

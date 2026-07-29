@@ -12,13 +12,21 @@
         <div class="flex-1">
             <input type="text" name="q" class="search-input w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-lg text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('search.input_placeholder') }}" value="{{ query|default('') }}" required autofocus>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <select name="wiki" class="rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle min-w-[140px]">
                 <option value="all" {% if wiki == 'all' %}selected{% endif %}>🌍 {{ _('search.all_wikis') }}</option>
                 {% for w in wikis %}
                 <option value="{{ w.name }}" {% if wiki == w.name %}selected{% endif %}>📄 {{ w.name }}</option>
                 {% endfor %}
             </select>
+            {% if available_tags %}
+            <select name="tag" class="rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle min-w-[120px]">
+                <option value="">{{ _('search.all_tags') }}</option>
+                {% for t in available_tags %}
+                <option value="{{ t.tag }}" {% if tag_filter == t.tag %}selected{% endif %}>#{{ t.tag }} ({{ t.count }})</option>
+                {% endfor %}
+            </select>
+            {% endif %}
             <button type="submit" class="rounded-lg bg-primary px-5 py-2.5 text-white hover:bg-primary-hover whitespace-nowrap">{{ _('search.button') }}</button>
         </div>
     </form>

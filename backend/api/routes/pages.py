@@ -369,6 +369,9 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
             }
             break
 
+    from services.tags import extract_tags
+    page_tags = extract_tags(data["content"])
+
     return render(
         request, "page.html",
         wiki=wiki_name,
@@ -384,6 +387,7 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
         success_msg=request.query_params.get("success_msg"),
         error_msg=request.query_params.get("error_msg"),
         trail_info=trail_info,
+        page_tags=page_tags,
     )
 
 
@@ -637,6 +641,28 @@ def export_view(filename: str, request: Request):
         )
     except Exception as e:
         abort(500, f"Fehler beim Lesen des Dokuments: {e}")
+
+
+@router.get("/tags")
+def tags_page(request: Request):
+    wiki = request.query_params.get("wiki") or _default_wiki()
+    tag_filter = request.query_params.get("tag", "").strip()
+    from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
+    if tag_filter:
+        tagged_pages = get_pages_by_tag(tag_filter, wiki)
+        # Sortieren: pages mit dem Tag im Titel zuerst
+        def _sort_key(p):
+            return 0 if tag_filter.lower() in p["title"].lower() else 1
+        tagged_pages.sort(key=_sort_key)
+        return render(request, "tags.html", active_page="tags", wiki=wiki, wikis=list_wikis(),
+                      tag_filter=tag_filter, tagged_pages=tagged_pages,
+                      tag_cloud=None, tag_stats=None, page_tags=None)
+    tag_cloud = get_tag_cloud(wiki)
+    max_count = max((t["count"] for t in tag_cloud), default=1)
+    tag_stats = get_all_tags_aggregated(wiki)
+    return render(request, "tags.html", active_page="tags", wiki=wiki, wikis=list_wikis(),
+                  tag_filter=None, tagged_pages=[], tag_cloud=tag_cloud,
+                  max_count=max_count, tag_stats=tag_stats, page_tags=None)
 
 
 @router.get("/graph")

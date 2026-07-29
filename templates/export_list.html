@@ -7,6 +7,14 @@
 </div>
 <p class="text-text-secondary mb-6">{{ _('export_list.subtitle') }}</p>
 
+<div class="flex flex-wrap gap-3 mb-6">
+    {% for w in wikis %}
+    <a href="{{ base_path }}/wiki/{{ w.name }}/export/bundle" class="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary-hover">
+        📦 {{ _('export_list.bundle_button', default='Bundle') }}: {{ w.name }}
+    </a>
+    {% endfor %}
+</div>
+
 {% if files %}
 <div class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
     <div class="overflow-x-auto">

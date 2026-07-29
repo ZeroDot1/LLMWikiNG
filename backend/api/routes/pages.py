@@ -391,6 +391,29 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
     )
 
 
+_EXPORT_CSS = """\
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a2e;background:#f8f9fa;padding:2rem;max-width:900px;margin:0 auto}
+h1,h2,h3,h4{color:#16213e;margin-top:1.5em;margin-bottom:.5em}
+h1{border-bottom:2px solid #0f3460;padding-bottom:.3em}
+h2{border-bottom:1px solid #e2e8f0;padding-bottom:.2em}
+a{color:#0f3460;text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:8px;overflow-x:auto;font-size:.9em;margin:1em 0}
+code{background:#e2e8f0;padding:.15em .35em;border-radius:4px;font-size:.9em}
+pre code{background:transparent;padding:0;color:inherit}
+blockquote{border-left:4px solid #0f3460;margin:1em 0;padding:.5em 1em;background:#fff;border-radius:0 8px 8px 0}
+img{max-width:100%;height:auto;border-radius:8px}
+table{border-collapse:collapse;width:100%;margin:1em 0}
+th,td{border:1px solid #e2e8f0;padding:.5em .75em;text-align:left}
+th{background:#0f3460;color:#fff}
+ul,ol{margin:.5em 0 .5em 1.5em}
+.meta{color:#64748b;font-size:.85em;margin-bottom:1.5em;padding-bottom:1em;border-bottom:1px solid #e2e8f0}
+.tags{display:flex;gap:.5em;flex-wrap:wrap;margin-bottom:1em}
+.tag{background:#e2e8f0;color:#0f3460;padding:.15em .6em;border-radius:99px;font-size:.8em}
+"""
+
+
 @router.get("/wiki/{wiki_name}/{page_name}/export")
 def wiki_export(wiki_name: str, page_name: str, request: Request):
     user = require_login(request)
@@ -399,19 +422,119 @@ def wiki_export(wiki_name: str, page_name: str, request: Request):
     if not src_file.exists():
         abort(404, f"Seite '{page_name}' existiert nicht.")
 
+    export_format = request.query_params.get("format", "md").lower()
+    EXPORT_DIR.mkdir(exist_ok=True)
+
     try:
-        EXPORT_DIR.mkdir(exist_ok=True)
-        dest_file = EXPORT_DIR / f"{wiki_name}__{page_name}.md"
-        dest_file.write_text(src_file.read_text(encoding="utf-8"), encoding="utf-8")
-        try:
-            append_okf_log("export", page_name, f"Seite exportiert nach {dest_file.relative_to(PROJECT_ROOT)}", wiki_name)
-            log_action(action="page_export", details=f"Seite '{page_name}' (Wiki: {wiki_name}) exportiert nach output_docs/", user_id=user["id"], username=user["username"], request=request)
-        except Exception:
-            pass
-        success_msg = f"Seite '{page_name}.md' erfolgreich nach output_docs/ exportiert!"
+        if export_format == "html":
+            content_md = src_file.read_text(encoding="utf-8")
+            body = re.sub(r"^---.*?---\s*", "", content_md, flags=re.DOTALL)
+            title_match = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+            title = title_match.group(1).strip() if title_match else page_name.replace("-", " ").title()
+
+            from services.tags import extract_tags
+            tags = extract_tags(content_md)
+            tags_html = ""
+            if tags:
+                tags_html = '<div class="tags">' + "".join(f'<span class="tag">#{t}</span>' for t in tags) + "</div>"
+
+            from services.markdown import render_markdown
+            rendered = render_markdown(body)
+            html = f"""<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title} – LLMWikiNG Export</title>
+<style>{_EXPORT_CSS}</style>
+</head>
+<body>
+<h1>{title}</h1>
+{tags_html}
+<div class="meta">Exportiert aus LLMWikiNG · Wiki: {wiki_name} · {datetime.now().strftime('%Y-%m-%d')}</div>
+{rendered}
+</body>
+</html>"""
+            dest_file = EXPORT_DIR / f"{wiki_name}__{page_name}.html"
+            dest_file.write_text(html, encoding="utf-8")
+            try:
+                append_okf_log("export", page_name, f"HTML exportiert nach {dest_file.relative_to(PROJECT_ROOT)}", wiki_name)
+                log_action(action="page_export_html", details=f"Seite '{page_name}' (Wiki: {wiki_name}) als HTML exportiert", user_id=user["id"], username=user["username"], request=request)
+            except Exception:
+                pass
+            success_msg = f"Seite '{page_name}.html' erfolgreich nach output_docs/ exportiert!"
+        else:
+            dest_file = EXPORT_DIR / f"{wiki_name}__{page_name}.md"
+            dest_file.write_text(src_file.read_text(encoding="utf-8"), encoding="utf-8")
+            try:
+                append_okf_log("export", page_name, f"Seite exportiert nach {dest_file.relative_to(PROJECT_ROOT)}", wiki_name)
+                log_action(action="page_export", details=f"Seite '{page_name}' (Wiki: {wiki_name}) exportiert nach output_docs/", user_id=user["id"], username=user["username"], request=request)
+            except Exception:
+                pass
+            success_msg = f"Seite '{page_name}.md' erfolgreich nach output_docs/ exportiert!"
         return redirect(f"{BASE_PATH}/wiki/{wiki_name}/{urlencode(page_name)}?success_msg={urlencode(success_msg)}")
     except Exception as e:
         return redirect(f"{BASE_PATH}/wiki/{wiki_name}/{urlencode(page_name)}?error_msg={urlencode(f'Export fehlgeschlagen: {e}')}")
+
+
+@router.get("/wiki/{wiki_name}/export/bundle")
+def wiki_export_bundle(wiki_name: str, request: Request):
+    user = require_login(request)
+    from services.wiki import get_all_wiki_pages
+
+    pages = get_all_wiki_pages(wiki_name)
+    if not pages:
+        abort(404, f"Keine Seiten im Wiki '{wiki_name}' gefunden.")
+
+    EXPORT_DIR.mkdir(exist_ok=True)
+    pages_html = ""
+
+    for p in pages:
+        slug = p["slug"]
+        fp = wiki_path(wiki_name) / f"{slug}.md"
+        if not fp.exists():
+            continue
+        try:
+            content_md = fp.read_text(encoding="utf-8", errors="replace")
+            body = re.sub(r"^---.*?---\s*", "", content_md, flags=re.DOTALL)
+            title = p["title"]
+            from services.markdown import render_markdown
+            rendered = render_markdown(body)
+            from services.tags import extract_tags
+            tags = extract_tags(content_md)
+            tags_html = ""
+            if tags:
+                tags_html = '<div class="tags">' + "".join(f'<span class="tag">#{t}</span>' for t in tags) + "</div>"
+            pages_html += f"""<section id="{slug}">
+<h2>{title}</h2>
+{tags_html}
+{rendered}
+<hr class="my-8 border-border">
+</section>
+"""
+        except Exception:
+            continue
+
+    html = f"""<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wiki-Bundle: {wiki_name} – LLMWikiNG Export</title>
+<style>{_EXPORT_CSS}
+hr{{margin:2rem 0;border:none;border-top:1px solid #e2e8f0}}
+</style>
+</head>
+<body>
+<h1>📦 Wiki-Bundle: {wiki_name}</h1>
+<div class="meta">Exportiert aus LLMWikiNG · {len(pages)} Seiten · {datetime.now().strftime('%Y-%m-%d')}</div>
+{pages_html}
+</body>
+</html>"""
+    dest_file = EXPORT_DIR / f"{wiki_name}__bundle.html"
+    dest_file.write_text(html, encoding="utf-8")
+    try:
+        log_action(action="bundle_export", details=f"Gesamtes Wiki '{wiki_name}' als HTML-Bundle exportiert ({len(pages)} Seiten)", user_id=user["id"], username=user["username"], request=request)
+    except Exception:
+        pass
+    success_msg = f"Wiki-Bundle '{wiki_name}' erfolgreich nach output_docs/ exportiert! ({len(pages)} Seiten)"
+    return redirect(f"{BASE_PATH}/export?success_msg={urlencode(success_msg)}")
 
 
 @router.get("/wiki/{wiki_name}/{page_name}/delete")

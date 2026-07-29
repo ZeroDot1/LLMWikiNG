@@ -34,6 +34,7 @@ if [ -d "wikis" ]; then
     
     if [ -d "wikis/main" ]; then
         find wikis/main/ -type f ! -name "index.md" ! -name "log.md" ! -name "mcp-server-integration.md" -delete
+        rm -rf wikis/main/.history 2>/dev/null || true
         
         cat > wikis/main/index.md <<EOF
 ---
@@ -56,16 +57,21 @@ EOF
     fi
 fi
 
-echo "  • Setze Benutzer- und API-Key-Datenbank zurück (data/)..."
+echo "  • Setze Benutzer-, API-Key-, MCP-Key- und Audit-Datenbank zurück (data/)..."
 mkdir -p data
 echo "[]" > data/users.json
 echo "[]" > data/api_keys.json
+echo "[]" > data/mcp_keys.json
+echo "[]" > data/audit_logs.json
+rm -rf data/sync_status 2>/dev/null || true
 
 echo "  • Bereinige qmd-Suchindex..."
 if command -v qmd &>/dev/null; then
     qmd collection remove my_wiki 2>/dev/null || true
     qmd collection remove wiki_main 2>/dev/null || true
     qmd collection remove wiki_test 2>/dev/null || true
+    qmd collection remove wiki_create_page 2>/dev/null || true
+    qmd collection remove wiki_fm_wiki 2>/dev/null || true
 fi
 
 echo "=== 🎉 Bereinigung abgeschlossen! Bereit für den Push auf GitHub ==="

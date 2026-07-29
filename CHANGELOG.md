@@ -32,6 +32,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **FastMCP Lifespan Management** (`backend/main.py`): `session_manager.run()` wird im App-Lifespan ordnungsgemäß gestartet und beendet (`mcp_session_manager`), um `Task group is not initialized` bei Streamable HTTP zu beheben.
   - **Import `asyncio`** (`backend/main.py`): Ergänzt in Top-Level Imports.
   - **SSE Disconnect Handling** (`backend/main.py`): `ClosedResourceError`, `BrokenResourceError` und `ClientDisconnect` in `McpApiKeyMiddleware` abgefangen, um 500er Traceback-Spam bei abbrechenden SSE-Clients zu verhindern.
+- **Erweiterung `clean_release.sh`** (`clean_release.sh`): Skript bereinigt zusätzlich `mcp_keys.json`, `audit_logs.json`, per-Wiki `sync_status/`, `.history`-Verzeichnisse sowie temporäre Test-Wikis aus qmd.
 
 ### Changed
 - **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.

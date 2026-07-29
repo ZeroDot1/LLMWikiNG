@@ -13,7 +13,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from core.config import WIKI_DIR, RAW_DIR, PROJECT_ROOT, wiki_path
+from core.config import WIKI_DIR, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, wiki_path
 from services.cache import get_cache
 
 SYSTEM_PAGES = ("index", "log", "ingestlater")

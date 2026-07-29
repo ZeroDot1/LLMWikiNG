@@ -211,15 +211,17 @@ def create_app() -> FastAPI:
                                     if api_key:
                                         api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                         db_key = self._get_key_by_hash(api_h)
-                                        if db_key and db_key.get("active", True):
-                                            user = self._get_user(db_key["user_id"])
+                                        if not db_key or not db_key.get("active", True):
+                                            res = self._json_response({"detail": "Ungueltiger API-Key (X-API-Key)"}, status_code=401)
+                                            await res(scope, receive, send)
+                                            return
+                                        user = self._get_user(db_key["user_id"])
                                     else:
-                                        # Aus Weitblick: Falls nur globaler Key übergeben wurde
                                         user = {"id": "global_mcp", "username": "mcp_admin", "role": "admin"}
                                     allowed_tools = []
 
                             # 3. Fallback: Reiner API-Key (z.B. von REST/Standard Clients)
-                            if not user and api_key:
+                            if not user and api_key and not mcp_key:
                                 api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                 db_key = self._get_key_by_hash(api_h)
                                 if db_key and db_key.get("active", True):

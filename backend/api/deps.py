@@ -41,7 +41,7 @@ def require_login(request: Request) -> dict:
         if _no_users_cache is None:
             _no_users_cache = len(list_users()) == 0
         target = f"{BASE_PATH}/register" if _no_users_cache else f"{BASE_PATH}/login"
-        raise HTTPException(status_code=307, headers={"Location": target})
+        raise HTTPException(status_code=303, headers={"Location": target})
     _no_users_cache = False
     return user
 

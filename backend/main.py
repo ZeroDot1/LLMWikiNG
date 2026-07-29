@@ -99,7 +99,14 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=f"{APP_NAME} {APP_EDITION}", version=APP_VERSION, lifespan=lifespan)
+    app = FastAPI(
+        title=f"{APP_NAME} {APP_EDITION}",
+        version=APP_VERSION,
+        lifespan=lifespan,
+        docs_url=f"{BASE_PATH}/docs",
+        redoc_url=f"{BASE_PATH}/redoc",
+        openapi_url=f"{BASE_PATH}/openapi.json",
+    )
 
     # Templates immer neu laden (auch im Produktionsmodus)
     templates.env.auto_reload = True

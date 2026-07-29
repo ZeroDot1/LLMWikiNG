@@ -11,7 +11,10 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - **Health Endpoint Fix** (`backend/api/routes/api.py`): Typo bei `datetime`-Modulimport korrigiert, um HTTP 500 Fehler zu beheben.
-- **Flexibles MCP Auth-Handling** (`backend/main.py`): `McpApiKeyMiddleware` umstrukturiert, sodass per-User MCP-Keys, globale MCP-Keys sowie reine API-Keys flexibel akzeptiert werden.
+- **Flexibles MCP Auth-Handling & Dual-Auth Fix** (`backend/main.py`): `McpApiKeyMiddleware` umstrukturiert, sodass per-User MCP-Keys, globale MCP-Keys sowie reine API-Keys flexibel ohne Doppel-Header-Zwang akzeptiert werden.
+- **Web UI Session & 307 Loop Fix** (`backend/api/deps.py`, `backend/api/routes/auth.py`): Auth-Redirects nutzen nun `303 See Other` (statt `307`) und generieren dynamische Cookie-Flags (`secure=is_https`).
+- **REST Endpunkte & Aliase** (`backend/api/routes/api.py`, `backend/main.py`): REST-Endpunkte `/raw`, `/export`, `/system/users`, `/system/api-keys`, `/wikis/{wiki}/page/{slug}` sowie OpenAPI-Dokumentationspfade (`/docs`, `/redoc`, `/openapi.json`) wiederhergestellt.
+- **Search URL Slugs** (`backend/services/search.py`): Cross-Wiki-Suche verwendet nun Wiki-Slugs statt Anzeigenamen in URLs.
 - **Raw File Ingest Isolation & Dedup** (`wiki.sh`, `backend/services/wiki.py`): Ingest bereinigt kaskadierende Datums-Präfixe (`CLEAN_BASENAME`) und speichert Raw-Dateien isoliert pro Wiki unter `raw/<wiki>/`. `get_wiki_stats` zählt Raw- und Export-Dateien getrennt pro Wiki.
 
 ## [2.13.17] - 2026-07-29

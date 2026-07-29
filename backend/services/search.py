@@ -51,7 +51,7 @@ def local_search(query: str, wiki: str = "main") -> dict:
     wikis_to_search = []
     if wiki == "all":
         from core.config import list_wikis
-        wikis_to_search = [w["name"] for w in list_wikis()]
+        wikis_to_search = [w.get("slug") or w.get("name") for w in list_wikis()]
     else:
         wikis_to_search = [wiki]
 

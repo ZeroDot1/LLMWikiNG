@@ -147,9 +147,11 @@ def api_list_pages(wiki: str, user: dict = Depends(get_api_user)):
     return {"wiki": wiki, "pages": get_all_wiki_pages(wiki)}
 
 
+@router.get("/wikis/{wiki}/page/{slug}")
 @router.get("/wikis/{wiki}/pages/{slug}")
 def api_get_page(wiki: str, slug: str, user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
+    slug = re.sub(r"\.md$", "", slug)
     data = read_wiki_file(f"{slug}.md", wiki)
     if not data:
         raise HTTPException(status_code=404, detail="Seite nicht gefunden")
@@ -987,7 +989,40 @@ async def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
     _wiki_or_404(slug)
     try:
         await run_sync_async(slug, force=True)
-        return {"ok": True, "wiki": slug}
+        return {"ok": True, "wiki": slug, "message": f"Sync für Wiki '{slug}' abgeschlossen."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Sync fehlgeschlagen: {e}")
 
+
+@router.get("/raw")
+def api_list_raw(user: dict = Depends(get_api_user)):
+    """Listet alle Rohdateien auf."""
+    files = []
+    if RAW_DIR.exists():
+        for p in RAW_DIR.rglob("*"):
+            if p.is_file() and not p.name.startswith("."):
+                files.append(str(p.relative_to(RAW_DIR)))
+    return {"raw_files": sorted(files), "count": len(files)}
+
+
+@router.get("/export")
+def api_list_export(user: dict = Depends(get_api_user)):
+    """Listet alle exportierten Dateien auf."""
+    files = []
+    if EXPORT_DIR.exists():
+        for p in EXPORT_DIR.rglob("*"):
+            if p.is_file() and not p.name.startswith("."):
+                files.append(str(p.relative_to(EXPORT_DIR)))
+    return {"export_files": sorted(files), "count": len(files)}
+
+
+@router.get("/system/users")
+def api_system_users(admin: dict = Depends(require_api_admin)):
+    """Gibt alle registrierten Benutzer zurück (Admin-only)."""
+    return {"users": list_users()}
+
+
+@router.get("/system/api-keys")
+def api_system_apikeys(admin: dict = Depends(require_api_admin)):
+    """Gibt alle API-Keys zurück (Admin-only)."""
+    return {"api_keys": list_keys()}

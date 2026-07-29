@@ -80,16 +80,17 @@ async def login_post(request: Request):
 
     clear_failures(client_ip)
     log_action(action="login", details=f"Benutzer erfolgreich angemeldet", user_id=user["id"], username=user["username"], request=request)
-    return _set_session_and_redirect(user)
+    return _set_session_and_redirect(user, request)
 
 
-def _set_session_and_redirect(user: dict) -> RedirectResponse:
+def _set_session_and_redirect(user: dict, request: Request | None = None) -> RedirectResponse:
     from fastapi.responses import RedirectResponse
 
+    is_https = request.url.scheme == "https" if request else False
     resp = RedirectResponse(f"{BASE_PATH}/", status_code=303)
     resp.set_cookie(
         "session", create_session(user["id"]),
-        httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7, secure=True,
+        httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7, secure=is_https,
     )
     return resp
 

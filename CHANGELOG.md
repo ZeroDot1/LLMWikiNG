@@ -7,6 +7,22 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.17] - 2026-07-29
+
+### Added
+- **Tag-Chip CSS** (`static/css/tags.css`): Dediziertes Stylesheet mit `.page-tags`, `.tag-chip`, `.tag-cloud`, `.tag-cloud--large` und `.tag-chip--counted` Klassen nach Planvorgabe.
+- **Conflict-Dialog im Browser** (`static/js/editor.js`): Bei HTTP 409 speichert die Seite nicht still, sondern zeigt einen confirm-Dialog (overwrite/cancel) – der Nutzer entscheidet. Plan-Anforderung 3.4.
+- **Multi-Wiki in wiki.sh** (`wiki.sh`): Neues `--wiki <slug>` Flag. `WIKI_DIR` wird automatisch aus `WIKIS_ROOT`/`WIKI_SLUG` gebildet. `COLLECTION_NAME` folgt dem Schema `wiki_<slug>`. Plan-Anforderung 4.
+- **Background File-Watcher** (`backend/services/watcher.py`): Überwacht Wiki-Verzeichnisse via watchdog. Startet bei `"enable_watcher": true` in `config.json`. Debounced (2s) inkrementeller Sync bei .md-Änderungen. Plan-Anforderung 5.
+- **Page Versioning / History** (`backend/services/history.py`): Dateibasierte Versionierung ohne Git. `save_version()`, `list_versions()`, `get_version()`. Maximal 30 Versionen pro Seite. Plan-Anforderung 7.
+- **PDF-Export** (`backend/services/export.py`): `export_pdf(wiki, slug)` erzeugt PDF via weasyprint aus dem bestehenden HTML-Export. Plan-Anforderung 8.
+- **`enable_watcher` Konfiguration** (`config.json`, `backend/core/config.py`): Neuer boolean `enable_watcher` (Default: false) steuert den Background File-Watcher.
+
+### Changed
+- **wiki.sh**: VERSION auf 2.13.17 aktualisiert. `WIKI_DIR` default von `./wiki` auf `./wikis/main`.
+- **tags.html**: Nutzt jetzt `tag-chip` / `tag-cloud--large` / `tag-chip--counted` CSS-Klassen aus `tags.css`.
+- **requirements.txt**: `watchdog>=4.0.0` für den File-Watcher. `weasyprint>=62.0` (auskommentiert, optional) für PDF-Export.
+
 ## [2.13.16] - 2026-07-29
 
 ### Fixed

@@ -267,6 +267,26 @@ def create_app() -> FastAPI:
                 # MCP-Endpoints: Combined SSE (/mcp) + Streamable HTTP (/mcp/http)
                 mcp_sse_app = get_mcp_sse_app()
                 if mcp_sse_app is not None:
+                    # Wrapper: Fange /mcp/ (root des Mounts) ab → /mcp/sse
+                    # Starlette-Mount leitet /mcp (ohne /) auf /mcp/ weiter.
+                    # Der SSE-App fehlt ein Root-Handler → 404 ohne diesen Wrapper.
+                    from starlette.responses import RedirectResponse as _Redirect
+
+                    class _McpRootRedirect:
+                        def __init__(self, _app, _mount_path):
+                            self._app = _app
+                            self._mount_path = _mount_path
+
+                        async def __call__(self, scope, receive, send):
+                            if scope["type"] == "http":
+                                p = scope.get("path", "")
+                                if p in ("", "/"):
+                                    resp = _Redirect(url=f"{self._mount_path}/sse")
+                                    await resp(scope, receive, send)
+                                    return
+                            await self._app(scope, receive, send)
+
+                    mcp_sse_app = _McpRootRedirect(mcp_sse_app, f"{BASE_PATH}/mcp")
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
 
                 mcp_http_app = get_mcp_http_app()

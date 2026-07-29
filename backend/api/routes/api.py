@@ -995,6 +995,44 @@ async def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
         raise HTTPException(status_code=500, detail=f"Sync fehlgeschlagen: {e}")
 
 
+@router.delete("/raw/{filename:path}")
+def api_delete_raw(filename: str, admin: dict = Depends(require_api_admin)):
+    """Loescht eine Rohquellen-Datei aus dem raw/-Verzeichnis (Admin only)."""
+    filepath = (RAW_DIR / filename).resolve()
+    if not str(filepath).startswith(str(RAW_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Pfad-Traversale nicht erlaubt")
+    if not filepath.exists() or not filepath.is_file():
+        raise HTTPException(status_code=404, detail="Rohquelle nicht gefunden")
+    try:
+        filepath.unlink()
+        return {"ok": True, "deleted": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fehler beim Loeschen: {e}")
+
+
+@router.post("/raw/delete")
+def api_delete_raw_batch(body: dict, admin: dict = Depends(require_api_admin)):
+    """Loescht mehrere Rohquellen-Dateien auf einmal (Admin only)."""
+    filenames = body.get("filenames", [])
+    if not filenames:
+        raise HTTPException(status_code=400, detail="Keine Dateinamen angegeben")
+    deleted = []
+    errors = []
+    for filename in filenames:
+        filepath = (RAW_DIR / filename).resolve()
+        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+            errors.append(f"{filename}: Ungueltiger Pfad")
+        elif not filepath.exists() or not filepath.is_file():
+            errors.append(f"{filename}: Nicht gefunden")
+        else:
+            try:
+                filepath.unlink()
+                deleted.append(filename)
+            except Exception as e:
+                errors.append(f"{filename}: {e}")
+    return {"ok": True, "deleted": deleted, "errors": errors, "deleted_count": len(deleted), "error_count": len(errors)}
+
+
 @router.get("/raw")
 def api_list_raw(user: dict = Depends(get_api_user)):
     """Listet alle Rohdateien auf."""

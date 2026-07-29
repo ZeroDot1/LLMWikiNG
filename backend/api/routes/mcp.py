@@ -21,7 +21,7 @@ Verfuegbare MCP-Tools (38):
     okf_search, okf_wiki_stats, okf_graph, okf_lint, okf_list_tags
 
   Rohquellen:
-    okf_read_raw, okf_list_raw
+    okf_read_raw, okf_list_raw, okf_delete_raw
 
   System:
     okf_system_status, okf_system_sync, okf_audit_logs
@@ -1132,6 +1132,30 @@ Willkommen im Wiki **{name}**.
             size = f.stat().st_size
             lines.append(f"- `{f.name}` ({_format_size(size)})")
         return "\n".join(lines)
+
+    @mcp_server.tool()
+    @_require_tool("okf_delete_raw")
+    def okf_delete_raw(filename: str) -> str:
+        """Loescht eine Rohquellen-Datei aus dem raw/-Verzeichnis.
+
+        Args:
+            filename: Name der Rohquellen-Datei (z.B. 'bugtest.md').
+
+        Returns:
+            Bestaetigung der Loeschung.
+        """
+        if not RAW_DIR.exists():
+            return "Rohquellen-Verzeichnis (raw/) nicht vorhanden."
+        filepath = (RAW_DIR / filename).resolve()
+        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+            return "Fehler: Ungueltiger Dateipfad (keine Pfad-Traversale erlaubt)."
+        if not filepath.exists() or not filepath.is_file():
+            return f"Rohquelle '{filename}' nicht gefunden."
+        try:
+            filepath.unlink()
+            return f"Rohquelle '{filename}' erfolgreich geloescht."
+        except Exception as e:
+            return f"Fehler beim Loeschen: {e}"
 
     @mcp_server.tool()
     @_require_tool("okf_system_status")

@@ -192,7 +192,7 @@ def create_app() -> FastAPI:
                                         api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
                                         api_key_obj = self._get_key_by_hash(api_h)
                                         if not api_key_obj or not api_key_obj.get("active", True) or api_key_obj["user_id"] != mcp_key_obj["user_id"]:
-                                            res = self._json_response({"detail": "API-Key passt nicht zum MCP-Key"}, status_code=403)
+                                            res = self._json_response({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
                                             await res(scope, receive, send)
                                             return
                                     user_obj = self._get_user(mcp_key_obj["user_id"])

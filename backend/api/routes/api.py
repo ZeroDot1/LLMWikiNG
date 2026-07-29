@@ -544,6 +544,52 @@ def api_system_audit(
 
 
 
+@router.get("/system/health")
+def api_system_health(user: dict = Depends(get_api_user)):
+    """Gesundheitscheck des gesamten Systems.
+    
+    Prüft kritische Komponenten und gibt Status für jedes Wiki zurück.
+    """
+    import shutil
+    from services.cache import get_cache
+    
+    wikis_data = []
+    all_ok = True
+    for w in list_wikis():
+        w_name = w["name"]
+        root = wiki_path(w_name)
+        wiki_info = {
+            "name": w_name,
+            "exists": root.exists(),
+            "page_count": 0,
+            "sync_needed": False,
+            "status": "unknown",
+        }
+        if root.exists():
+            from services.sync import is_sync_needed
+            pages = [p for p in root.rglob("*.md") if p.stem not in ("index", "log", "ingestlater")]
+            wiki_info["page_count"] = len(pages)
+            try:
+                wiki_info["sync_needed"] = is_sync_needed(w_name)
+            except Exception:
+                wiki_info["sync_needed"] = True
+            wiki_info["status"] = "ok" if not wiki_info["sync_needed"] else "sync_pending"
+        wikis_data.append(wiki_info)
+        if wiki_info["status"] != "ok":
+            all_ok = False
+
+    return {
+        "status": "healthy" if all_ok else "degraded",
+        "version": APP_VERSION,
+        "wikis": wikis_data,
+        "tools": {
+            "qmd": shutil.which("qmd") is not None,
+            "git": shutil.which("git") is not None,
+        },
+        "cache_entries": get_cache().stats().get("entries", 0),
+    }
+
+
 @router.get("/system/backups")
 async def api_list_backups(admin: dict = Depends(require_api_admin)):
     """Listet alle auf dem Server gespeicherten Backup-Dateien auf."""

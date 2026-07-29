@@ -18,7 +18,7 @@ def _compute_content_hash(text: str) -> str:
     return hashlib.sha256(body.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
-def ensure_okf_frontmatter(content: str, title: str | None = None) -> str:
+def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[str] | None = None) -> str:
     """Stellt sicher, dass der Inhalt OKF-konformes YAML-Frontmatter mit type-Feld hat."""
     fm_match = re.match(r"^---\s*\n(.*?)\n(?:---|\.\.\.)\s*\n", content, re.DOTALL)
     if fm_match:
@@ -36,13 +36,14 @@ def ensure_okf_frontmatter(content: str, title: str | None = None) -> str:
     today = date.today().isoformat()
     page_title = title or "Neue Seite"
     content_hash = _compute_content_hash(content)
+    tags_str = ", ".join(f'"{t}"' for t in tags) if tags else ""
     new_fm = (
         f"---\n"
         f"type: Concept\n"
         f'title: "{page_title}"\n'
         f'description: ""\n'
         f'resource: ""\n'
-        f"tags: []\n"
+        f"tags: [{tags_str}]\n"
         f"content_hash: {content_hash}\n"
         f"timestamp: {today}T00:00:00Z\n"
         f"---\n\n"

@@ -205,27 +205,36 @@ def is_sync_needed(wiki: str = "main") -> bool:
     Returns:
         True, wenn ein Sync empfohlen wird (kein Hash bekannt oder Inhalt geändert).
     """
-    # 1. Hash aus Wiki-Verzeichnis (robuster Fallback)
-    last_hash = _load_wiki_sync_hash(wiki)
-    # 2. Fallback auf DATA_DIR-basierten Hash
-    if last_hash is None:
-        times = _load_sync_times()
-        last_hash = times.get(f"{wiki}::hash")
+    # Schneller inkrementeller Vergleich via Fingerprint-Cache
+    cache = _load_sync_cache(wiki)
+    old_fps = cache.get("fingerprints", {})
 
-    if last_hash is None:
-        # Kein bekannter Sync-Zustand -> Sync empfohlen
-        print(f"[sync] INFO: Kein Hash für Wiki '{wiki}' gefunden -> Sync empfohlen", flush=True)
-        return True
+    # Falls kein Cache vorhanden, auf .sync_hash Fallback zurückgreifen
+    if not old_fps:
+        last_hash = _load_wiki_sync_hash(wiki)
+        if last_hash is None:
+            times = _load_sync_times()
+            last_hash = times.get(f"{wiki}::hash")
+        if last_hash is None:
+            print(f"[sync] INFO: Kein Sync-Status für Wiki '{wiki}' -> Sync empfohlen", flush=True)
+            return True
+        # Fallback: Voller Hash-Vergleich
+        try:
+            current_hash = _wiki_content_hash(wiki)
+            return current_hash != last_hash
+        except Exception as e:
+            print(f"[sync] ERROR: Hash für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
+            return True
 
+    # Schnell: Nur Fingerprints vergleichen (BLAKE2b statt vollem Dateiinhalt-Hash)
     try:
-        current_hash = _wiki_content_hash(wiki)
+        new_fps = _compute_file_fingerprints(wiki)
     except Exception as e:
-        print(f"[sync] ERROR: Aktuellen Hash für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
+        print(f"[sync] ERROR: Fingerprints für Wiki '{wiki}' nicht berechenbar: {e}", flush=True)
         return True
 
-    if current_hash != last_hash:
-        return True
-    return False
+    # Geändert wenn: neue Dateien, gelöschte Dateien, oder geänderter Inhalt
+    return old_fps != new_fps
 
 async def is_sync_needed_async(wiki: str = "main") -> bool:
     """Async-Variante von :func:`is_sync_needed`."""

@@ -8,12 +8,29 @@ from core.config import wiki_path
 from services.cache import get_cache
 
 
+def normalize_tag(tag: str) -> str:
+    """Normalisiert einen Tag: lowercase, Leerzeichen → Bindestriche,
+    entfernt alle Zeichen außer alphanumerisch, Bindestriche und Unicode-Buchstaben.
+    """
+    import unicodedata
+    tag = tag.strip().lower()
+    tag = tag.replace(" ", "-")
+    # Behalte alphanumerisch, Bindestriche und Unicode-Buchstaben/Zahlen
+    normalized = "".join(
+        c for c in tag
+        if c == "-" or unicodedata.category(c) in ("Ll", "Lu", "Lt", "Lo", "Nd", "Nl")
+    )
+    # Mehrfache Bindestriche zusammenfassen
+    normalized = re.sub(r"-{2,}", "-", normalized)
+    return normalized.strip("-")
+
+
 def parse_tags_from_fm(fm_text: str) -> list[str]:
     for line in fm_text.split("\n"):
         if line.startswith("tags:"):
             val = line.split(":", 1)[1].strip()
             val = val.strip("[]").replace('"', "").replace("'", "")
-            return [t.strip() for t in val.split(",") if t.strip()]
+            return [normalize_tag(t) for t in val.split(",") if t.strip()]
     return []
 
 
@@ -72,12 +89,14 @@ def build_tag_index(wiki: str = "main") -> dict[str, list[dict]]:
 def list_all_tags(wiki: str = "main") -> list[dict]:
     index = build_tag_index(wiki)
     result = []
-    for tag, pages in sorted(index.items()):
+    for tag, pages in index.items():
         result.append({
             "tag": tag,
             "count": len(pages),
             "pages": pages,
         })
+    # Sortierung nach Häufigkeit absteigend, bei Gleichstand alphabetisch
+    result.sort(key=lambda x: (-x["count"], x["tag"]))
     return result
 
 
@@ -96,7 +115,7 @@ def get_tag_cloud(wiki: str = "main", min_count: int = 1) -> list[dict]:
 
 def get_pages_by_tag(tag: str, wiki: str = "main") -> list[dict]:
     index = build_tag_index(wiki)
-    return index.get(tag, [])
+    return index.get(normalize_tag(tag), [])
 
 
 def get_all_tags_aggregated(wiki: str = "main") -> dict:

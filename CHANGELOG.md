@@ -7,6 +7,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Ingest-Tag-Integration**: `wiki.sh` liest `$SUGGESTED_TAGS` aus der Umgebung und setzt sie im Frontmatter der erstellten Seite (statt hartcodiertem `tags: []`). Web-Ingest generiert bereits Tag-Vorschläge via `suggest_tags_from_content()`; die Pipeline war jedoch unterbrochen – die Vorschläge wurden nie an `wiki.sh` übergeben. Behoben in `wiki.sh` und MCP `okf_ingest_text`.
+- **API `POST /api/v1/wikis/{wiki}/pages`**: Akzeptiert jetzt optionalen `tags`-Parameter (`list[str]`) und übergibt ihn an `ensure_okf_frontmatter()`. (`backend/api/routes/api.py`)
+- **`ensure_okf_frontmatter()`**: Neuer optionaler Parameter `tags: list[str] | None` – wenn gesetzt, werden die übergebenen Tags im Frontmatter gesetzt statt `[]`. (`backend/services/editor.py`)
+
 ## [2.13.14] - 2026-07-29
 
 ### Added

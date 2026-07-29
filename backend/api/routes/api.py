@@ -162,13 +162,14 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
     body = await request.json()
     slug = (body.get("slug") or "").strip()
     content = body.get("content", "")
+    tags = body.get("tags")
     if not slug:
         raise HTTPException(status_code=400, detail="slug erforderlich")
     slug = re.sub(r"\.md$", "", slug)
     if slug in ("index", "log", "ingestlater"):
         raise HTTPException(status_code=400, detail="System-Seite kann nicht überschrieben werden")
     filepath = wiki_path(wiki) / f"{slug}.md"
-    filepath.write_text(ensure_okf_frontmatter(content, title=slug), encoding="utf-8")
+    filepath.write_text(ensure_okf_frontmatter(content, title=slug, tags=tags), encoding="utf-8")
     try:
         append_okf_log("api-create", f"{slug}.md", "Über API erstellt", wiki)
         request_sync_background(wiki)
@@ -236,11 +237,15 @@ def api_lint(wiki: str, user: dict = Depends(get_api_user)):
 
 
 @router.get("/wikis/{wiki}/tags")
-def api_tags(wiki: str, tag: str = "", user: dict = Depends(get_api_user)):
+async def api_tags(wiki: str, tag: str = "", user: dict = Depends(get_api_user)):
     _wiki_or_404(wiki)
+    import asyncio
     if tag:
-        return {"wiki": wiki, "tag": tag, "pages": get_pages_by_tag(tag, wiki)}
-    return {"wiki": wiki, "tags": list_all_tags(wiki), "stats": get_all_tags_aggregated(wiki)}
+        pages = await asyncio.to_thread(get_pages_by_tag, tag, wiki)
+        return {"wiki": wiki, "tag": tag, "pages": pages, "count": len(pages)}
+    tags = await asyncio.to_thread(list_all_tags, wiki)
+    stats = await asyncio.to_thread(get_all_tags_aggregated, wiki)
+    return {"wiki": wiki, "tags": tags, "stats": stats}
 
 
 @router.get("/search")

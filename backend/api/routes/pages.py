@@ -62,7 +62,7 @@ from services.wiki import run_sync_async
 from services.graph import build_graph_data, build_graph_data_paginated, build_graph_data_all
 from services.lint import run_lint
 from services.analytics import get_wiki_analytics
-from services.editor import ensure_okf_frontmatter
+from services.editor import ensure_okf_frontmatter, detect_conflict
 from services.email_sender import load_smtp_config, save_smtp_config, send_real_email
 
 router = APIRouter(prefix=BASE_PATH, dependencies=[Depends(require_login)])
@@ -2014,6 +2014,16 @@ async def edit_save(request: Request):
         if folder == "wiki":
             page_title = filename[:-3]
             content = ensure_okf_frontmatter(content, title=page_title)
+
+        # Conflict-Detection: Prüfe ob Seite seit dem letzten Laden geändert wurde
+        if folder == "wiki" and filepath.exists():
+            conflict = detect_conflict(wiki, filename[:-3], content)
+            if conflict:
+                error_detail = "Konflikt erkannt: Die Seite wurde seit dem letzten Laden geändert. Bitte lade sie neu."
+                return redirect(
+                    f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}"
+                    f"&folder={urlencode(folder)}&error_msg={urlencode(error_detail)}"
+                )
         
         action_type = "Update" if filepath.exists() else "Creation"
         filepath.write_text(content, encoding="utf-8")

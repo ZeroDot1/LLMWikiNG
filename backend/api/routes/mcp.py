@@ -9,7 +9,7 @@ Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
 Per-User MCP-Keys mit Tool-Berechtigungen werden unterstuetzt.
 
-Verfuegbare MCP-Tools (37):
+Verfuegbare MCP-Tools (38):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -87,6 +87,7 @@ from services.wiki import (
     get_wiki_stats,
     slugify_german,
     run_sync_async,
+    suggest_tags_from_content,
 )
 from services.search import local_search
 from services.sync import do_sync, append_okf_log, request_sync_background
@@ -808,6 +809,10 @@ Willkommen im Wiki **{name}**.
         env["WIKI_DIR"] = str(root)
         env["RAW_DIR"] = str(RAW_DIR)
         env["PROJECT_ROOT"] = str(PROJECT_ROOT)
+
+        suggested_tags = suggest_tags_from_content(text, wiki)
+        if suggested_tags:
+            env["SUGGESTED_TAGS"] = ",".join(suggested_tags)
 
         try:
             result = subprocess.run(

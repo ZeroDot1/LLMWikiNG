@@ -387,6 +387,23 @@ print(clean_ingest_content(text, '''$PAGE_TITLE'''))
         echo -e "${YELLOW}⚠ Kein LLM-Backend verfügbar – verwende Rohtext als Basis${NC}"
     fi
 
+    local TAGS_LINE="tags: []"
+    if [ -n "${SUGGESTED_TAGS:-}" ]; then
+        local TAGS_ARRAY
+        IFS=',' read -ra TAGS_ARRAY <<< "$SUGGESTED_TAGS"
+        local FORMATTED=""
+        for tag in "${TAGS_ARRAY[@]}"; do
+            local t
+            t=$(echo "$tag" | xargs)
+            if [ -n "$FORMATTED" ]; then
+                FORMATTED+=", "
+            fi
+            FORMATTED+="\"$t\""
+        done
+        TAGS_LINE="tags: [$FORMATTED]"
+        echo -e "${GREEN}🏷️ Tags aus Inhaltsanalyse übernommen: [$FORMATTED]${NC}"
+    fi
+
     # Hinweis: "Original-Inhalt" nutzt den bereinigten Text (SOURCE_TEXT),
     # nicht die ungefilterte Quelldatei, damit Navigation/Scrape-Artefakte
     # und zerrissene URLs entfernt sind.
@@ -396,7 +413,7 @@ type: Concept
 title: "$PAGE_TITLE"
 description: "Ingested source from $RAW_NAME"
 resource: "file://raw/$RAW_NAME"
-tags: []
+$TAGS_LINE
 timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 ---
 

@@ -515,13 +515,13 @@ def api_export_page(wiki: str, slug: str, user: dict = Depends(get_api_user)):
 @router.get("/system/status")
 def api_system_status(user: dict = Depends(get_api_user)):
     wikis = list_wikis()
-    stats = {w["name"]: get_wiki_stats(w["name"]) for w in wikis}
+    stats = {w["slug"]: get_wiki_stats(w["slug"]) for w in wikis}
     return {
         "version": APP_VERSION,
         "authenticated_user": user.get("username"),
         "users": len(list_users()),
         "api_keys": len(list_keys()),
-        "wikis": [{"name": w["name"], "stats": stats[w["name"]]} for w in wikis],
+        "wikis": [{"name": w["name"], "slug": w["slug"], "stats": stats[w["slug"]]} for w in wikis],
     }
 
 
@@ -585,11 +585,12 @@ def api_system_health(user: dict = Depends(get_api_user)):
     wikis_data = []
     all_ok = True
     for w in list_wikis():
-        w_name = w["name"]
-        root = wiki_path(w_name)
-        sync_status = SyncStatus.load(w_name)
+        w_slug = w["slug"]
+        root = wiki_path(w_slug)
+        sync_status = SyncStatus.load(w_slug)
         wiki_info = {
-            "name": w_name,
+            "name": w["name"],
+            "slug": w_slug,
             "exists": root.exists(),
             "page_count": 0,
             "sync_needed": False,
@@ -600,7 +601,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
             pages = [p for p in root.rglob("*.md") if p.stem not in ("index", "log", "ingestlater")]
             wiki_info["page_count"] = len(pages)
             try:
-                wiki_info["sync_needed"] = is_sync_needed(w_name)
+                wiki_info["sync_needed"] = is_sync_needed(w_slug)
             except Exception:
                 wiki_info["sync_needed"] = True
             wiki_info["status"] = "ok" if not wiki_info["sync_needed"] else "sync_pending"

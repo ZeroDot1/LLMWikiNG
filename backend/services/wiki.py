@@ -324,6 +324,8 @@ def _get_all_wiki_pages_uncached(wiki: str = "main") -> list[dict]:
         if f.stem in SYSTEM_PAGES:
             continue
         rel_path = f.relative_to(root)
+        if any(p.startswith(".") for p in rel_path.parts):
+            continue
         slug = str(rel_path.with_suffix("")).lower().replace("\\", "/").replace(" ", "-").replace("_", "-")
 
         content = f.read_text(encoding="utf-8", errors="replace")
@@ -345,7 +347,8 @@ def _get_all_wiki_pages_uncached(wiki: str = "main") -> list[dict]:
                 pass
 
         if not desc:
-            desc_match = re.search(r"^([^.]+\.)", content.replace("#", "", 1).strip(), re.MULTILINE)
+            content_no_fm = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL).strip()
+            desc_match = re.search(r"^([^.]+\.)", content_no_fm.replace("#", "", 1).strip(), re.MULTILINE)
             desc = desc_match.group(1)[:120] if desc_match else title
 
         pages.append({
@@ -382,9 +385,12 @@ def get_wiki_stats(wiki: str = "main") -> dict:
     root = wiki_path(wiki)
     if root.exists():
         for f in root.rglob("*.md"):
-            if f.stem not in SYSTEM_PAGES:
-                page_count += 1
-                word_count += len(f.read_text(encoding="utf-8", errors="replace").split())
+            if f.stem in SYSTEM_PAGES:
+                continue
+            if any(p.startswith(".") for p in f.relative_to(root).parts):
+                continue
+            page_count += 1
+            word_count += len(f.read_text(encoding="utf-8", errors="replace").split())
 
     wiki_raw_dir = RAW_DIR / wiki if (RAW_DIR / wiki).exists() else RAW_DIR
     if wiki_raw_dir.exists():

@@ -154,8 +154,12 @@ def list_wikis() -> list[dict]:
     for w in stored_wikis:
         d = WIKIS_ROOT / w.get("slug", "")
         if d.exists() and d.is_dir():
-            # Seiten-Zähler (exkl. Systemseiten)
-            page_count = sum(1 for _ in d.rglob("*.md") if _.stem not in ("index", "log", "ingestlater"))
+            # Seiten-Zähler (exkl. Systemseiten + .history)
+            page_count = sum(
+                1 for _ in d.rglob("*.md")
+                if _.stem not in ("index", "log", "ingestlater")
+                and not any(p.startswith(".") for p in _.relative_to(d).parts)
+            )
             # Gesamtzahl aller Dateien im Wiki-Verzeichnis
             file_count = sum(1 for _ in d.rglob("*") if _.is_file())
             # Datum der letzten Änderung

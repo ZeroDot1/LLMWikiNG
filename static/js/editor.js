@@ -153,5 +153,41 @@
     };
   }
 
+  // Conflict-Dialog: 409 beim Speichern abfangen
+  const saveUrl = BASE_PATH + "/edit/save";
+  const origSave = window.savePage || null;
+  window.savePage = async function (payload) {
+    try {
+      const res = await fetch(saveUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 409) {
+        const data = await res.json();
+        const overwrite = confirm(
+          "The page was modified in the meantime.\n\n" +
+          "OK = overwrite anyway\nCancel = reload and discard changes"
+        );
+        if (overwrite) {
+          payload.force = true;
+          return window.savePage(payload);
+        }
+        location.reload();
+        return;
+      }
+      if (!res.ok) {
+        alert("Save failed: HTTP " + res.status);
+        return;
+      }
+      const result = await res.json();
+      if (result.redirect) {
+        window.location.href = result.redirect;
+      }
+    } catch (err) {
+      alert("Network error while saving: " + err.message);
+    }
+  };
+
   document.addEventListener("DOMContentLoaded", initEditor);
 })();

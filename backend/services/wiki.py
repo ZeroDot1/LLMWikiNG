@@ -18,6 +18,100 @@ from services.cache import get_cache
 
 SYSTEM_PAGES = ("index", "log", "ingestlater")
 
+CHUNK_THRESHOLD = 6000
+CHUNK_MIN = 2000
+
+
+def chunk_content(
+    text: str,
+    title: str,
+    max_chars: int = 8000,
+    min_chunk: int = 2000,
+) -> list[tuple[str, str]]:
+    """Zerlegt großen Text in mehrere Blöcke.
+
+    Teilt an Absatzgrenzen (doppelter Zeilenumbruch), damit jeder Block
+    separat ingestiert werden kann.
+
+    Args:
+        text:      Der vollständige Text.
+        title:     Basis-Titel für die Benennung.
+        max_chars: Maximale Zeichenzahl pro Chunk.
+        min_chunk: Mindestgröße eines Chunks (sonst wird er mit dem vorigen
+                   zusammengelegt).
+
+    Returns:
+        Liste von (Titel, Inhalt)-Tupeln.
+    """
+    if len(text) <= max_chars:
+        return [(title, text)]
+
+    paragraphs = re.split(r"\n\n+", text)
+    chunks: list[tuple[str, str]] = []
+    current_lines: list[str] = []
+    current_len = 0
+    chunk_num = 1
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+        para_len = len(para) + 2  # +2 für die zwei Newlines
+
+        if current_len + para_len > max_chars and current_len >= min_chunk:
+            chunk_title = f"{title} – Teil {chunk_num}" if len(chunks) > 0 or chunk_num > 1 else title
+            chunks.append((chunk_title, "\n\n".join(current_lines)))
+            current_lines = [para]
+            current_len = para_len
+            chunk_num += 1
+        else:
+            current_lines.append(para)
+            current_len += para_len
+
+    if current_lines:
+        chunk_title = f"{title} – Teil {chunk_num}" if (chunk_num > 1 or len(chunks) > 0) else title
+        chunks.append((chunk_title, "\n\n".join(current_lines)))
+
+    return chunks
+
+
+def suggest_tags_from_content(
+    content: str,
+    wiki: str = "main",
+    max_tags: int = 5,
+) -> list[str]:
+    """Schlägt Tags basierend auf Inhaltsanalyse vor.
+
+    Sucht nach häufigen Wörtern und gleicht sie mit vorhandenen Tags ab.
+
+    Args:
+        content: Der Textinhalt.
+        wiki:    Wiki-Slug.
+        max_tags: Maximale Anzahl Vorschläge.
+
+    Returns:
+        Liste von Tag-Vorschlägen.
+    """
+    from services.tags import get_tag_cloud
+
+    tag_cloud = get_tag_cloud(wiki)
+    if not tag_cloud:
+        return []
+
+    words = re.findall(r"[a-zA-ZäöüßÄÖÜ][a-zA-ZäöüßÄÖÜ-]{2,}", content.lower())
+    word_counts: dict[str, int] = {}
+    for w in words:
+        word_counts[w] = word_counts.get(w, 0) + 1
+
+    scored: list[tuple[int, str]] = []
+    for entry in tag_cloud:
+        tag = entry["tag"]
+        if tag.lower() in word_counts:
+            scored.append((word_counts[tag.lower()], tag))
+
+    scored.sort(key=lambda x: -x[0])
+    return [t for _, t in scored[:max_tags]]
+
 
 def clean_ingest_content(text: str, title: str = "") -> str:
     """Bereinigt rohen Ingest-Text (Web-Scrapes, Paste, Blog-Exports) für

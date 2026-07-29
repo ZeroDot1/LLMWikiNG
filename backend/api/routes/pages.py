@@ -790,6 +790,8 @@ async def ingest_post(request: Request):
 
         if filepath is not None:
             from core.config import load_app_config
+            from services.wiki import chunk_content, suggest_tags_from_content
+
             cfg = load_app_config()
             env = os.environ.copy()
             env["LLM_BACKEND"] = backend
@@ -797,29 +799,70 @@ async def ingest_post(request: Request):
             env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
             env["WIKI_DIR"] = str(wiki_path(wiki))
             env["COLLECTION_NAME"] = f"wiki_{wiki}"
-            cmd = ["./wiki.sh", "ingest", str(filepath)]
-            custom_title = (form.get("title") or "").strip()
-            if custom_title and ingest_type == "file":
-                cmd += ["--title", custom_title]
-            result = await run_ingest_async(filepath, title=custom_title or None, timeout=120, env=env)
-            if result.returncode != 0:
-                raise RuntimeError(result.stderr.strip() or f"Ingest fehlgeschlagen mit Exitcode {result.returncode}")
 
-            title_to_slug = custom_title if (custom_title and ingest_type == "file") else (form.get("title") or "").strip()
-            if not title_to_slug and filepath:
+            raw_text = filepath.read_text(encoding="utf-8", errors="replace")
+
+            # Tag-Vorschläge generieren
+            suggested_tags = suggest_tags_from_content(raw_text, wiki)
+            if suggested_tags:
+                env["SUGGESTED_TAGS"] = ",".join(suggested_tags)
+
+            # Große Texte chunken
+            from services.wiki import CHUNK_THRESHOLD
+            chunks = chunk_content(raw_text, title or Path(orig_filename).stem, max_chars=CHUNK_THRESHOLD)
+
+            created_slugs: list[str] = []
+
+            for chunk_title, chunk_body in chunks:
+                chunk_file = temp_dir / f"{slugify_german(chunk_title)}.md"
+                chunk_content_text = f"# {chunk_title}\n\n{chunk_body}"
+                chunk_file.write_text(chunk_content_text, encoding="utf-8")
+
+                custom_title = chunk_title
+                result = await run_ingest_async(
+                    chunk_file,
+                    title=custom_title or None,
+                    timeout=120,
+                    env=env,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(
+                        result.stderr.strip()
+                        or f"Ingest fehlgeschlagen für '{chunk_title}' (Exitcode {result.returncode})"
+                    )
+
+                current_slug = slugify_german(chunk_title)
+                created_slugs.append(current_slug)
+
                 try:
-                    f_content = filepath.read_text(encoding="utf-8")
-                    h1_match = re.search(r"^#\s+(.+)$", f_content, re.MULTILINE)
-                    if h1_match:
-                        title_to_slug = h1_match.group(1).strip()
+                    chunk_file.unlink()
                 except Exception:
                     pass
-            if not title_to_slug:
-                title_to_slug = Path(orig_filename).stem
 
+            # Aus dem aktuellen Inhalt den Slug ermitteln
+            if not title:
+                try:
+                    h1_match = re.search(r"^#\s+(.+)$", raw_text, re.MULTILINE)
+                    if h1_match:
+                        title = h1_match.group(1).strip()
+                except Exception:
+                    pass
+            title_to_slug = title or Path(orig_filename).stem
             new_slug = slugify_german(title_to_slug)
-            log_action(action="ingest", details=f"Ingest: '{new_slug}.md' aus '{orig_filename}' (Typ: {ingest_type}, Backend: {backend}, Wiki: {wiki})", username=user.get("username"), user_id=user.get("id"), request=request)
-            success_msg = f"Quelle erfolgreich eingespielt! ({new_slug}.md)"
+
+            slug_list = ", ".join(created_slugs)
+            log_action(
+                action="ingest",
+                details=f"Ingest: {slug_list} aus '{orig_filename}' ({len(chunks)} Chunk(s), Typ: {ingest_type}, Backend: {backend}, Wiki: {wiki})",
+                username=user.get("username"),
+                user_id=user.get("id"),
+                request=request,
+            )
+            success_msg = (
+                f"Quelle erfolgreich eingespielt! ({len(chunks)} Seite(n): {slug_list})"
+                if len(chunks) > 1
+                else f"Quelle erfolgreich eingespielt! ({new_slug}.md)"
+            )
             await run_sync_async(wiki)
 
     except Exception as e:

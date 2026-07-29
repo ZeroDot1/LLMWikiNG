@@ -23,6 +23,7 @@
     "knowledge_graph": "🕸️ Wissensgraph",
     "ingest": "📥 Quelle einspielen",
     "system_tools": "System & Tools",
+    "tags": "Tags",
     "search": "🔍 Suche",
     "health_check": "🏥 Gesundheitscheck (Lint)",
     "status_stats": "📊 Status & Statistik",
@@ -117,6 +118,7 @@
     "no_results_found": "gefunden.",
     "no_results_hint": "Überprüfe die Schreibweise oder verwende allgemeinere Begriffe.",
     "idle_hint": "Gib oben einen Suchbegriff ein, um das Wiki zu durchsuchen.",
+    "all_tags": "Alle Tags",
     "path_prefix_wiki": "wiki/",
     "path_prefix_raw": "raw/",
     "path_prefix_export": "output_docs/",
@@ -903,5 +905,16 @@
   "settings.syntax_heading": "Syntax-Hervorhebung",
   "settings.syntax_subtitle": "Code-Blöcke auf allen Wiki-Seiten farbig darstellen (Python, JS, JSON, Bash u. a.).",
   "settings.syntax_on": "Aktiviert",
-  "settings.syntax_off": "Deaktiviert"
+  "settings.syntax_off": "Deaktiviert",
+  "tags": {
+    "page_title": "Tag-Cloud",
+    "heading": "Tag-Cloud",
+    "subtitle": "Übersicht aller vergebenen Tags im Wiki. Klicke auf einen Tag, um alle zugehörigen Seiten anzuzeigen.",
+    "no_tags": "Noch keine Tags im Wiki vorhanden.",
+    "statistics": "Statistiken",
+    "unique_tags": "Eindeutige Tags",
+    "tagged_pages": "Markierte Seiten",
+    "filtered_by": "Gefiltert nach Tag:",
+    "clear_filter": "Filter zurücksetzen"
+  }
 }

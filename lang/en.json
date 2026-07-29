@@ -24,6 +24,7 @@
     "ingest": "📥 Ingest Source",
     "system_tools": "System & Tools",
     "search": "🔍 Search",
+    "tags": "Tags",
     "health_check": "🏥 Health Check (Lint)",
     "status_stats": "📊 Status & Statistics",
     "weekly_reports": "📰 Weekly Reports",
@@ -117,6 +118,7 @@
     "no_results_found": "found.",
     "no_results_hint": "Check your spelling or use more general terms.",
     "idle_hint": "Enter a search term above to search the wiki.",
+    "all_tags": "All tags",
     "path_prefix_wiki": "wiki/",
     "path_prefix_raw": "raw/",
     "path_prefix_export": "output_docs/",
@@ -903,5 +905,16 @@
   "settings.syntax_heading": "Syntax Highlighting",
   "settings.syntax_subtitle": "Colorize code blocks on all wiki pages (Python, JS, JSON, Bash, and more).",
   "settings.syntax_on": "Enabled",
-  "settings.syntax_off": "Disabled"
+  "settings.syntax_off": "Disabled",
+  "tags": {
+    "page_title": "Tag Cloud",
+    "heading": "Tag Cloud",
+    "subtitle": "Overview of all tags assigned in the wiki. Click a tag to show all associated pages.",
+    "no_tags": "No tags in the wiki yet.",
+    "statistics": "Statistics",
+    "unique_tags": "Unique Tags",
+    "tagged_pages": "Tagged Pages",
+    "filtered_by": "Filtered by tag:",
+    "clear_filter": "Clear filter"
+  }
 }

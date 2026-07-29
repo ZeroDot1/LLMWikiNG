@@ -7,6 +7,19 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.12] - 2026-07-29
+
+### Added
+- **Tag-Cloud-Seite (`/tags`)** (`backend/services/tags.py`, `backend/api/routes/pages.py`, `templates/tags.html`, `lang/*.json`): Neue Tags-Service-Schicht mit `parse_tags_from_fm()`, `extract_tags()`, `build_tag_index()`, `list_all_tags()`, `get_tag_cloud()`, `get_pages_by_tag()`. Tag-Cloud-Ansicht unter `/tags` mit responsiver Tag-Größen-Skalierung, Aggregat-Statistik-Karte und gefilterter Seitenliste pro Tag. Sidebar-Link in `base.html`.
+- **Tag-Chips auf Wiki-Seiten** (`templates/page.html`): Seiten-Tags aus dem YAML-Frontmatter werden oberhalb des Inhalts als klickbare Chips angezeigt. Führt zu `/tags?tag=...`.
+- **Tag-Filter in der Volltextsuche** (`templates/search.html`, `backend/api/routes/pages.py`): Neues `<select>`-Dropdown filtert Suchergebnisse nach Tags. `available_tags` wird aus dem Tag-Index geladen.
+- **SyncStatus-Dataclass** (`backend/services/sync.py`): Strukturierte Rückgabe für `do_sync()`/`do_sync_async()` mit Feldern `qmd`, `index`, `messages`, `skipped`, `duration_ms`, `success`, `summary`. Rückwärtskompatibel über `_status`-Schlüssel im Ergebnis-Dict.
+- **System-Health-Endpoint** (`backend/api/routes/api.py`): `GET /api/v1/system/health` liefert Status (ok/degraded) pro Wiki, qmd/Git-Verfügbarkeit und Cache-Statistiken.
+- **Konflikterkennung im Editor** (`backend/services/editor.py`): `_compute_content_hash()` (SHA-256, erste 16 Hex-Zeichen des Body) und `detect_conflict()` vergleichen gespeicherten mit eingehendem Hash. `content_hash` wird automatisch ins YAML-Frontmatter eingefügt.
+
+### i18n
+- **Neue Übersetzungsschlüssel** (`lang/de.json`, `lang/en.json`): `sidebar.tags`, `search.all_tags`, sowie vollständiger `tags.*`-Block (page_title, heading, subtitle, no_tags, statistics, unique_tags, tagged_pages, filtered_by, clear_filter). `sidebar.tags` ist ohne Emoji (wird im Template gesetzt).
+
 ## [2.13.11] - 2026-07-28
 
 ### Fixed & Improved

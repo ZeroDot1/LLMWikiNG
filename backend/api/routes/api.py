@@ -170,6 +170,13 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
     if slug in ("index", "log", "ingestlater"):
         raise HTTPException(status_code=400, detail="System-Seite kann nicht überschrieben werden")
     filepath = wiki_path(wiki) / f"{slug}.md"
+    if filepath.exists():
+        try:
+            from services.history import save_version
+            old_content = filepath.read_text(encoding="utf-8", errors="replace")
+            save_version(wiki, slug, old_content)
+        except Exception:
+            pass
     filepath.write_text(ensure_okf_frontmatter(content, title=slug, tags=tags), encoding="utf-8")
     try:
         append_okf_log("api-create", f"{slug}.md", "Über API erstellt", wiki)

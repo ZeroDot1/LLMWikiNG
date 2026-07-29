@@ -577,6 +577,14 @@ Willkommen im Wiki **{name}**.
         )
         okf_content = frontmatter.dumps(post)
 
+        if existed:
+            try:
+                from services.history import save_version
+                old_content = filepath.read_text(encoding="utf-8", errors="replace")
+                save_version(wiki_slug, raw_slug, old_content)
+            except Exception:
+                pass
+
         filepath.write_text(okf_content, encoding="utf-8")
 
         action = "update" if existed else "create"

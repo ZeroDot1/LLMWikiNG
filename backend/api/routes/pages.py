@@ -14,7 +14,7 @@ import subprocess
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request, UploadFile as FastAPIUploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile as FastAPIUploadFile
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from fastapi.responses import JSONResponse
 
@@ -2070,6 +2070,13 @@ async def edit_save(request: Request):
                 )
         
         action_type = "Update" if filepath.exists() else "Creation"
+        if filepath.exists() and folder == "wiki":
+            try:
+                from services.history import save_version
+                old_content = filepath.read_text(encoding="utf-8", errors="replace")
+                save_version(wiki, filename[:-3], old_content)
+            except Exception:
+                pass
         filepath.write_text(content, encoding="utf-8")
         try:
             append_okf_log(action_type, filename, f"Datei im Browser-Editor bearbeitet ({folder})", wiki)
@@ -2351,3 +2358,22 @@ def audit_export(
 @router.get("/wiki/{wiki_name}/{page_name}")
 async def wiki_page(wiki_name: str, page_name: str, request: Request):
     return await _render_page(wiki_name, page_name, request)
+
+
+@router.get("/wiki/{wiki_name}/{page_name}/history")
+async def wiki_page_history(wiki_name: str, page_name: str, request: Request):
+    user = require_login(request)
+    from services.history import list_versions
+    versions = list_versions(wiki_name, page_name)
+    return JSONResponse(content={"wiki": wiki_name, "slug": page_name, "versions": versions})
+
+
+@router.get("/wiki/{wiki_name}/{page_name}/history/{version_id}")
+async def wiki_page_version(wiki_name: str, page_name: str, version_id: str, request: Request):
+    user = require_login(request)
+    from services.history import get_version
+    content = get_version(wiki_name, page_name, version_id)
+    if content is None:
+        raise HTTPException(status_code=404, detail="Version nicht gefunden")
+    return JSONResponse(content={"wiki": wiki_name, "slug": page_name, "version_id": version_id, "content": content})
+

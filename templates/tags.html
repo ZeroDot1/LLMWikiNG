@@ -2,11 +2,9 @@
 {% block title %}{{ _('tags.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
-    <div>
-        <h1 class="text-2xl font-bold">{{ _('tags.heading') }}</h1>
-        <p class="text-text-secondary">{{ _('tags.subtitle') }}</p>
-    </div>
+<div class="tag-page-header">
+    <h1>{{ _('tags.heading') }}</h1>
+    <p>{{ _('tags.subtitle') }}</p>
 </div>
 
 {% if tag_filter %}
@@ -28,18 +26,19 @@
 {% else %}
 
 {% if tag_cloud %}
-<div class="flex flex-wrap gap-2">
+<div class="tag-cloud tag-cloud--large">
     {% for item in tag_cloud %}
-    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ item.tag }}" class="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-primary-subtle hover:border-primary hover:text-primary transition-colors"
+    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ item.tag }}"
+       class="tag-chip tag-chip--counted"
+       data-tag="{{ item.tag }}"
        style="font-size: {{ [0.8 + (item.count / max_count) * 0.6, 1.4] | min }}rem;">
         #{{ item.tag }}
-        <span class="text-xs text-text-muted bg-bg-sunken rounded-full px-2 py-0.5">{{ item.count }}</span>
+        <span class="tag-count">{{ item.count }}</span>
     </a>
     {% endfor %}
 </div>
 {% else %}
-<div class="text-center rounded-xl border border-border bg-surface p-10 shadow-sm">
-    <p class="text-4xl mb-2">🏷️</p>
+<div class="tag-empty">
     <p>{{ _('tags.no_tags') }}</p>
 </div>
 {% endif %}

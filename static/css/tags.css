@@ -1,0 +1,86 @@
+/* tags.css – Tag-Chip & Tag-Cloud Styles (Kompatibel mit LLMWikiNG Dark/Light-Theme)
+ * Version: 2.13.17
+ * Styleguide: Angelehnt an Graph-Tag-Filter, Tailwind-Variablen (--color-*).
+ */
+
+.page-tags {
+  margin: 1.25rem 0 1.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: var(--color-bg-sunken, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+
+.tags-heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.6rem;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  background: var(--color-primary-subtle, rgba(99, 102, 241, 0.15));
+  color: var(--color-primary, #818cf8);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.tag-chip:hover,
+.tag-chip:focus-visible {
+  background: var(--color-primary, #6366f1);
+  color: #fff;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.tag-chip:active {
+  transform: translateY(0);
+}
+
+/* Large variant for tag cloud page */
+.tag-cloud--large .tag-chip {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.9rem;
+}
+
+.tag-chip--counted .tag-count {
+  margin-left: 0.4rem;
+  opacity: 0.7;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.tag-page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem;
+}
+
+.tag-page-header p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 1rem;
+}
+
+.tag-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}

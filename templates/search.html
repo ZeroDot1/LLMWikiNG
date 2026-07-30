@@ -79,6 +79,13 @@
                 </div>
             </div>
             {% if result.snippet_html %}<div class="text-sm text-text-secondary leading-relaxed">{{ result.snippet_html|safe }}</div>{% endif %}
+            {% if result.tags %}
+            <div class="flex flex-wrap gap-1.5 mt-2">
+                {% for t in result.tags %}
+                <a href="{{ base_path }}/tags?wiki={{ result.wiki if result.wiki and result.wiki != 'global' else current_wiki }}&tag={{ t }}" class="inline-flex items-center text-xs font-mono bg-primary-subtle text-primary hover:bg-primary hover:text-white px-2 py-0.5 rounded-full transition-colors">#{{ t }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="flex justify-between items-center text-xs text-text-muted mt-2 pt-2 border-t border-border font-mono">
                 <span>{{ result.path }}</span>
                 <a href="{{ result.url }}" class="text-primary font-medium">{{ _('search.view') }}</a>

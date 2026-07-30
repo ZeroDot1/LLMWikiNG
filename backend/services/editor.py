@@ -63,6 +63,13 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
     today = date.today().isoformat()
     page_title = title or "Neue Seite"
     content_hash = _compute_content_hash(content)
+    
+    if not tags:
+        from services.tags import extract_tags, auto_generate_tags_for_content
+        tags = extract_tags(content)
+        if not tags:
+            tags = auto_generate_tags_for_content(content, title=page_title)
+
     tags_str = ", ".join(f'"{t}"' for t in tags) if tags else ""
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     new_fm = (

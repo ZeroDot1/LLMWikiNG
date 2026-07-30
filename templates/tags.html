@@ -2,61 +2,80 @@
 {% block title %}{{ _('tags.page_title') }}{% endblock %}
 
 {% block content %}
-<div class="tag-page-header">
-    <h1>{{ _('tags.heading') }}</h1>
-    <p>{{ _('tags.subtitle') }}</p>
+<div class="tag-page-header mb-6">
+    <h1 class="text-2xl font-bold mb-1">{{ _('tags.heading') }}</h1>
+    <p class="text-text-secondary">{{ _('tags.subtitle') }}</p>
 </div>
-
-{% if tag_filter %}
-<div class="rounded-lg border border-primary/30 bg-primary-subtle p-3 mb-4 text-sm flex items-center gap-2">
-    <span>{{ _('tags.filtered_by') }} <strong>#{{ tag_filter }}</strong></span>
-    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}" class="text-text-muted hover:text-error ml-2">{{ _('tags.clear_filter') }}</a>
-</div>
-
-<div class="space-y-3">
-    {% for page in tagged_pages %}
-    <div class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors">
-        <div class="flex items-center justify-between gap-3">
-            <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-lg font-semibold text-primary no-underline">{{ page.title }}</a>
-            <span class="text-xs bg-bg-sunken border border-border text-text-secondary rounded-full px-2.5 py-0.5 font-mono">{{ page.type }}</span>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% else %}
 
 {% if tag_cloud %}
-<div class="tag-cloud tag-cloud--large">
-    {% for item in tag_cloud %}
-    <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ item.tag }}"
-       class="tag-chip tag-chip--counted"
-       data-tag="{{ item.tag }}"
-       style="font-size: {{ [0.8 + (item.count / max_count) * 0.6, 1.4] | min }}rem;">
-        #{{ item.tag }}
-        <span class="tag-count">{{ item.count }}</span>
-    </a>
-    {% endfor %}
+<div class="rounded-xl border border-border bg-surface p-4 mb-6 shadow-sm">
+    <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center justify-between">
+        <span>🏷️ Alle Tags ({{ tag_cloud|length }})</span>
+        {% if tag_filter %}
+        <a href="{{ base_path }}/tags?wiki={{ current_wiki }}" class="text-xs text-primary font-normal hover:underline">← Alle Tags anzeigen</a>
+        {% endif %}
+    </h2>
+    <div class="tag-cloud tag-cloud--large flex flex-wrap gap-2">
+        {% for item in tag_cloud %}
+        <a href="{{ base_path }}/tags?wiki={{ current_wiki }}&tag={{ item.tag }}"
+           class="inline-flex items-center rounded-full text-xs font-semibold px-3 py-1.5 transition-all {% if tag_filter == item.tag %}bg-primary text-white shadow-sm ring-2 ring-primary/40{% else %}bg-primary-subtle text-primary border border-primary/20 hover:bg-primary hover:text-white{% endif %}"
+           data-tag="{{ item.tag }}">
+            #{{ item.tag }}
+            <span class="ml-1.5 text-[0.7em] opacity-80 bg-white/20 px-1.5 py-0.2 rounded-full">{{ item.count }}</span>
+        </a>
+        {% endfor %}
+    </div>
 </div>
 {% else %}
-<div class="tag-empty">
+<div class="tag-empty rounded-xl border border-border bg-surface p-8 text-center text-text-muted mb-6">
     <p>{{ _('tags.no_tags') }}</p>
+</div>
+{% endif %}
+
+{% if tag_filter %}
+<div class="mb-6">
+    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <span>Seiten mit Tag</span>
+        <span class="inline-flex items-center rounded-full bg-primary text-white text-xs px-3 py-1 font-mono">#{{ tag_filter }}</span>
+        <span class="text-xs text-text-muted font-normal">({{ tagged_pages|length }} Treffer)</span>
+    </h2>
+
+    {% if tagged_pages %}
+    <div class="space-y-3">
+        {% for page in tagged_pages %}
+        <div class="rounded-xl border border-border bg-surface p-4 shadow-sm hover:border-primary transition-colors flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📄</span>
+                <div>
+                    <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-lg font-semibold text-primary no-underline hover:underline">{{ page.title }}</a>
+                    <div class="text-xs text-text-muted font-mono mt-0.5">slug: {{ page.slug }}</div>
+                </div>
+            </div>
+            <span class="text-xs bg-bg-sunken border border-border text-text-secondary rounded-full px-3 py-1 font-mono shrink-0">{{ page.type }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-border bg-surface p-6 text-center text-text-muted">
+        Keine Seiten mit dem Tag #{{ tag_filter }} gefunden.
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 
 {% if tag_stats %}
 <div class="mt-8 rounded-xl border border-border bg-surface p-6 shadow-sm">
-    <h2 class="text-lg font-semibold mb-2">{{ _('tags.statistics') }}</h2>
+    <h2 class="text-lg font-semibold mb-3">📊 Tag-Statistiken</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-        <div class="rounded-lg bg-bg-sunken p-3">
-            <div class="text-2xl font-bold text-primary">{{ tag_stats.total_tags }}</div>
-            <div class="text-text-muted text-xs">{{ _('tags.unique_tags') }}</div>
+        <div class="rounded-lg bg-bg-sunken p-4 border border-border/60">
+            <div class="text-3xl font-bold text-primary">{{ tag_stats.total_tags }}</div>
+            <div class="text-text-muted text-xs mt-1">Eindeutige Tags</div>
         </div>
-        <div class="rounded-lg bg-bg-sunken p-3">
-            <div class="text-2xl font-bold text-primary">{{ tag_stats.tagged_pages }}</div>
-            <div class="text-text-muted text-xs">{{ _('tags.tagged_pages') }}</div>
+        <div class="rounded-lg bg-bg-sunken p-4 border border-border/60">
+            <div class="text-3xl font-bold text-primary">{{ tag_stats.tagged_pages }}</div>
+            <div class="text-text-muted text-xs mt-1">Verschlagwortete Seiten</div>
         </div>
     </div>
 </div>
-{% endif %}
 {% endif %}
 {% endblock %}

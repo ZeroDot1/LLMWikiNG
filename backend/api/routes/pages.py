@@ -771,18 +771,19 @@ def tags_page(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     tag_filter = request.query_params.get("tag", "").strip()
     from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
+    tag_cloud = get_tag_cloud(wiki)
+    max_count = max((t["count"] for t in tag_cloud), default=1)
+    tag_stats = get_all_tags_aggregated(wiki)
+
     if tag_filter:
         tagged_pages = get_pages_by_tag(tag_filter, wiki)
-        # Sortieren: pages mit dem Tag im Titel zuerst
         def _sort_key(p):
             return 0 if tag_filter.lower() in p["title"].lower() else 1
         tagged_pages.sort(key=_sort_key)
         return render(request, "tags.html", active_page="tags", wiki=wiki, wikis=list_wikis(),
                       tag_filter=tag_filter, tagged_pages=tagged_pages,
-                      tag_cloud=None, tag_stats=None, page_tags=None)
-    tag_cloud = get_tag_cloud(wiki)
-    max_count = max((t["count"] for t in tag_cloud), default=1)
-    tag_stats = get_all_tags_aggregated(wiki)
+                      tag_cloud=tag_cloud, max_count=max_count, tag_stats=tag_stats, page_tags=None)
+
     return render(request, "tags.html", active_page="tags", wiki=wiki, wikis=list_wikis(),
                   tag_filter=None, tagged_pages=[], tag_cloud=tag_cloud,
                   max_count=max_count, tag_stats=tag_stats, page_tags=None)

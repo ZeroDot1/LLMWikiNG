@@ -7,6 +7,16 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.13.19] - 2026-07-30
+
+### Added
+- **Tag-System & JSON-Persistenz** (`backend/services/tags.py`, `data/tags.json`): Überarbeitung der Tag-Extraktion & Indexierung. Unterstüzung für YAML-Listen (`- tag`), String-Tags (`[a, b]`), Komma-separierte Formate und Inline-Hashtags (`#tagname`). Tag-Indizes werden dauerhaft in `data/tags.json` im `data/`-Ordner gespeichert und per Wiki isoliert gepflegt.
+- **Wikipedia-Artikel-Style & Footer-Tags** (`templates/page.html`): Wiki-Seiten zeigen passende Tags nun unter dem Artikel in einer strukturierten *„Kategorien & Tags“*-Box im Wikipedia-Stil. Alle Tags sind klickbar und führen zur gefilterten Tag-Ansicht.
+- **Automatische Tag-Generierung bei Ingest & Sync** (`backend/services/editor.py`, `backend/services/sync.py`): Automatische Tag-Generierung (`auto_generate_tags_for_content`) bei Ingest ohne Frontmatter-Tags. Der Sync (`sync_tags_for_wiki`) ergänzt fehlende Tags im Frontmatter unverschlagworteter Seiten und baut `data/tags.json` auf.
+- **Inline-Hashtag Verlinkung** (`backend/services/markdown.py`): `#hashtags` im Markdown-Fließtext werden automatisch in klickbare Links umgewandelt (`/tags?wiki=...&tag=...`).
+- **Gezielte Tag-Suche** (`backend/services/search.py`, `templates/search.html`): Volltextsuche unterstützt `tag:name` und `#name` Syntax sowie Relevanz-Bonus für Tag-Treffer und zeigt Tag-Pills in den Suchergebnissen an.
+- **Interaktive Tags-Seite** (`templates/tags.html`, `backend/api/routes/pages.py`): Tags-Übersicht zeigt Tag-Cloud und gefilterte Seiten gleichzeitig zur bequemen Navigation.
+
 ## [2.13.18] - 2026-07-29
 
 ### Fixed

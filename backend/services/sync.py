@@ -423,6 +423,37 @@ def regenerate_index(wiki: str = "main") -> bool:
     idx_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return True
 
+
+def sync_tags_for_wiki(wiki: str = "main") -> int:
+    """Scannet alle Seiten im Wiki, generiert automatisch fehlende Tags im Frontmatter und aktualisiert data/tags.json."""
+    from services.tags import extract_tags, auto_generate_tags_for_content, build_tag_index
+    from services.editor import ensure_okf_frontmatter
+
+    root = wiki_path(wiki)
+    if not root.exists():
+        return 0
+
+    updated_count = 0
+    for f in root.rglob("*.md"):
+        if f.stem in ("index", "log", "ingestlater"):
+            continue
+        try:
+            content = f.read_text(encoding="utf-8", errors="replace")
+            tags = extract_tags(content)
+            if not tags:
+                title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
+                title = title_match.group(1) if title_match else f.stem
+                new_tags = auto_generate_tags_for_content(content, title=title, wiki=wiki)
+                if new_tags:
+                    new_content = ensure_okf_frontmatter(content, title=title, tags=new_tags, updated_by="sync")
+                    f.write_text(new_content, encoding="utf-8")
+                    updated_count += 1
+        except Exception as e:
+            log.warning("Fehler beim Auto-Tagging der Datei %s: %s", f.name, e)
+
+    build_tag_index(wiki, force_rebuild=True)
+    return updated_count
+
 def do_sync(wiki: str = "main", force: bool = False) -> dict:
     """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen.
 
@@ -468,6 +499,15 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
         status.messages.append("index.md neu aufgebaut")
     except Exception as e:
         status.messages.append(f"index.md Fehler: {e}")
+
+    try:
+        updated_tags_count = sync_tags_for_wiki(wiki)
+        if updated_tags_count > 0:
+            status.messages.append(f"Tags für {updated_tags_count} Seite(n) automatisch generiert und indiziert")
+        else:
+            status.messages.append("Tag-Index in data/tags.json aktualisiert")
+    except Exception as e:
+        status.messages.append(f"Tag-Sync Fehler: {e}")
 
     try:
         append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}", wiki)

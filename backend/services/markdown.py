@@ -101,6 +101,25 @@ def render_markdown(text: str, page_name: str | None = None, wiki: str = "main")
     )
 
     html = re.sub(r"<p>\s*</p>", "", html)
+
+    # Transform inline hashtags outside HTML tags into clickable tag links
+    def _replace_hashtag_node(match):
+        full_match = match.group(0)
+        tag_name = match.group(1)
+        from services.tags import normalize_tag
+        norm_tag = normalize_tag(tag_name)
+        if not norm_tag:
+            return full_match
+        prefix = full_match[:full_match.find('#')]
+        return f'{prefix}<a href="{BASE_PATH}/tags?wiki={wiki}&tag={norm_tag}" class="inline-tag-link text-primary font-medium hover:underline font-mono text-xs bg-primary-subtle px-1.5 py-0.5 rounded">#{tag_name}</a>'
+
+    # Match hashtags not inside HTML tags/attributes
+    html = re.sub(
+        r'(?<![/\w&="])\b(?:^|\s)#([a-zA-ZäöüßÄÖÜ][a-zA-ZäöüßÄÖÜ0-9_-]{1,30})\b(?![^<]*>)',
+        _replace_hashtag_node,
+        html,
+    )
+
     return html
 
 

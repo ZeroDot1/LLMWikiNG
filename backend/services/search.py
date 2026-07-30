@@ -33,12 +33,22 @@ def parse_search_tags(query: str) -> tuple[str, list[str]]:
 
 
 def local_search(query: str, wiki: str = "main") -> dict:
-    """Fallback Volltextsuche falls qmd nicht verfügbar ist. Unterstützt 'all' für Cross-Wiki-Suche."""
+    """Fallback Volltextsuche falls qmd nicht verfügbar ist. Unterstützt 'all' für Cross-Wiki-Suche und Tag-Suche."""
+    from services.tags import extract_tags, normalize_tag
+
     results: list[dict] = []
-    query_lower = query.lower()
+    cleaned_query, search_tags = parse_search_tags(query)
+    query_lower = (cleaned_query or query).lower()
+    norm_search_tags = [normalize_tag(t) for t in search_tags if t]
 
     def snippet_of(content: str, q: str) -> str:
+        if not q:
+            clean = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
+            return clean[:150].replace("\n", " ").strip() + "..."
         idx = content.lower().find(q)
+        if idx == -1:
+            clean = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
+            return clean[:150].replace("\n", " ").strip() + "..."
         start = max(0, idx - 80)
         end = min(len(content), idx + 120)
         snip = content[start:end].replace("\n", " ").strip()
@@ -51,6 +61,7 @@ def local_search(query: str, wiki: str = "main") -> dict:
     wikis_to_search = []
     if wiki == "all":
         from core.config import list_wikis
+
         wikis_to_search = [w.get("slug") or w.get("name") for w in list_wikis()]
     else:
         wikis_to_search = [wiki]
@@ -63,78 +74,109 @@ def local_search(query: str, wiki: str = "main") -> dict:
                     continue
                 try:
                     content = f.read_text(encoding="utf-8", errors="replace")
-                    clean_content = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
-                    title_match = re.search(r"^#\s+(.+)$", clean_content, re.MULTILINE)
-                    title = title_match.group(1) if title_match else f.stem.replace("-", " ").title()
+                    clean_content = re.sub(
+                        r"^---.*?---\s*", "", content, flags=re.DOTALL
+                    )
+                    title_match = re.search(
+                        r"^#\s+(.+)$", clean_content, re.MULTILINE
+                    )
+                    title = (
+                        title_match.group(1)
+                        if title_match
+                        else f.stem.replace("-", " ").title()
+                    )
+
+                    page_tags = extract_tags(content)
+                    norm_page_tags = [normalize_tag(t) for t in page_tags]
 
                     score = 0
-                    if query_lower in title.lower():
-                        score += 10
-                    if query_lower in clean_content.lower():
-                        score += clean_content.lower().count(query_lower)
+
+                    # Tag-Match Prüfung
+                    tag_matched = False
+                    if norm_search_tags:
+                        for st in norm_search_tags:
+                            if st in norm_page_tags:
+                                score += 20
+                                tag_matched = True
+                        if not tag_matched and not query_lower:
+                            continue
+                    elif query_lower in norm_page_tags or normalize_tag(query_lower) in norm_page_tags:
+                        score += 15
+
+                    if query_lower:
+                        if query_lower in title.lower():
+                            score += 10
+                        if query_lower in clean_content.lower():
+                            score += clean_content.lower().count(query_lower)
 
                     if score > 0:
-                        results.append({
-                            "title": title,
-                            "slug": f.stem,
-                            "path": f"wiki/{f.name}",
-                            "wiki": w,
-                            "url": f"{BASE_PATH}/wiki/{w}/{f.stem}",
-                            "snippet": snippet_of(clean_content, query_lower),
-                            "score": score,
-                        })
+                        results.append(
+                            {
+                                "title": title,
+                                "slug": f.stem,
+                                "path": f"wiki/{f.name}",
+                                "wiki": w,
+                                "url": f"{BASE_PATH}/wiki/{w}/{f.stem}",
+                                "snippet": snippet_of(clean_content, query_lower),
+                                "score": score,
+                                "tags": page_tags,
+                            }
+                        )
                 except Exception:
                     pass
 
-    if RAW_DIR.exists():
+    if RAW_DIR.exists() and not norm_search_tags:
         for f in sorted(RAW_DIR.iterdir()):
             if f.is_file() and f.name != ".gitkeep" and is_text_file(f.name):
                 try:
                     content = f.read_text(encoding="utf-8", errors="replace")
                     score = 0
-                    if query_lower in f.name.lower():
+                    if query_lower and query_lower in f.name.lower():
                         score += 8
-                    if query_lower in content.lower():
+                    if query_lower and query_lower in content.lower():
                         score += content.lower().count(query_lower)
                     if score > 0:
-                        results.append({
-                            "title": f"Rohquelle: {f.name}",
-                            "slug": f.stem,
-                            "path": f"raw/{f.name}",
-                            "wiki": "global",
-                            "url": f"/raw/{f.name}",
-                            "snippet": snippet_of(content, query_lower),
-                            "score": score,
-                        })
+                        results.append(
+                            {
+                                "title": f"Rohquelle: {f.name}",
+                                "slug": f.stem,
+                                "path": f"raw/{f.name}",
+                                "wiki": "global",
+                                "url": f"/raw/{f.name}",
+                                "snippet": snippet_of(content, query_lower),
+                                "score": score,
+                            }
+                        )
                 except Exception:
                     pass
 
-    if EXPORT_DIR.exists():
+    if EXPORT_DIR.exists() and not norm_search_tags:
         for f in sorted(EXPORT_DIR.iterdir()):
             if f.is_file() and f.name != ".gitkeep" and is_text_file(f.name):
-                # Falls ein spezifisches Wiki gesucht wird, filtern wir Exporte dieses Wikis (Präfix "wiki__")
                 if wiki != "all" and not f.name.startswith(f"{wiki}__"):
                     continue
                 try:
                     content = f.read_text(encoding="utf-8", errors="replace")
                     score = 0
-                    if query_lower in f.name.lower():
+                    if query_lower and query_lower in f.name.lower():
                         score += 8
-                    if query_lower in content.lower():
+                    if query_lower and query_lower in content.lower():
                         score += content.lower().count(query_lower)
                     if score > 0:
                         export_wiki = "global"
                         if "__" in f.name:
                             export_wiki = f.name.split("__")[0]
-                        results.append({
-                            "title": f"Exportiert: {f.name}",
-                            "slug": f.stem,
-                            "path": f"output_docs/{f.name}",
-                            "wiki": export_wiki,
-                            "url": f"/export/{f.name}",
-                            "snippet": snippet_of(content, query_lower),
-                            "score": score,
-                        })
+                        results.append(
+                            {
+                                "title": f"Exportiert: {f.name}",
+                                "slug": f.stem,
+                                "path": f"output_docs/{f.name}",
+                                "wiki": export_wiki,
+                                "url": f"/export/{f.name}",
+                                "snippet": snippet_of(content, query_lower),
+                                "score": score,
+                            }
+                        )
                 except Exception:
                     pass
 

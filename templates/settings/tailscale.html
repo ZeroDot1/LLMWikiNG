@@ -172,6 +172,11 @@
                         class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text-secondary px-3 py-2 text-xs font-medium transition-all">
                     ↩️ {{ _('settings.tailscale_btn_reset') }}
                 </button>
+
+                <button type="button" onclick="handleTailscaleRestart()"
+                        class="rounded-lg border border-border bg-surface hover:bg-warning/10 text-warning px-3 py-2 text-xs font-medium transition-all">
+                    🔄 {{ _('settings.tailscale_btn_restart') }}
+                </button>
             </div>
         </form>
 

@@ -7,14 +7,19 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-07-30
+
 ### Added
 - **🦈 Tailscale & Funnel Integration (Settings -> Tailscale)**: Same-Container Integration von Tailscale (Daemon, `serve` und `funnel`) in den LLMWikiNG-Container.
   - **Einstellungen-Tab `Tailscale`** (`templates/settings/tailscale.html`, `static/css/tailscale.css`, `static/js/tailscale.js`): Neues GUI-Modul unter Einstellungen zur One-Click Konfiguration und Verwaltung.
+  - **Dauerhafte Host-Persistenz**: Alle Tailscale-Zustände (`tailscaled.state`), Keys und Serve/Funnel Konfigurationen liegen auf persistenten Host-Volumes (`ts-data`, `ts-config`, `data/tailscale.json`). Beim Ersetzen/Neuerstellen des Containers startet Tailscale sofort automatisch mit den bestehenden Zugangsdaten weiter (`auto_restore_on_startup`).
+  - **Dynamische Hostname-Konfiguration**: Keine hartcodierten Keys oder Hostnames im Docker-Image/Compose. Die Einstellungen werden ausschließlich über `data/tailscale.json` bzw. den Admin-Settings-Tab definiert.
+  - **Unabhängiger Daemon-Neustart-Button**: Neuer Button *„Tailscale neustarten“* (`POST /api/v1/system/tailscale/restart`), um den `tailscaled` Daemon unabhängig vom laufenden LLMWikiNG Webserver neu zu starten.
   - **Sichere Key-Verwaltung** (`backend/services/tailscale.py`, `backend/core/security.py`): Speicherung in `data/tailscale.json` (chmod 0o600) mit umkehrbarer System-Secret Verschlüsselung (`encrypt_tailscale_key`) und Passwort-Schutz bei Anzeige.
   - **Status & URL Anzeige**: Live-Anzeige von Daemon-Status, MagicDNS Hostname (`<node>.<tailnet>.ts.net`), Tailscale-IPs, HTTPS Zertifikatsstatus und kopierbarer public Funnel-URL.
   - **KI-Agenten & MCP Access Guide**: Vorkonfigurierte MCP-SSE & REST-API Snippets für Claude, Grok, Cursor und AGY.
   - **Docker & Compose Update** (`Dockerfile`, `docker-compose.yml`, `docker/entrypoint.sh`): Installation von `tailscale`, `iptables`, `iproute2` im Container-Image, Entrypoint-Start von `tailscaled` und Mounting von TUN-Device sowie Volume-Strukturen (`ts-data`, `ts-config`).
-  - **Audit Logging** (`backend/services/audit.py`): Neue Audit-Kategorie `tailscale` und Protokollierung aller Konfigurations-, Setup-, Up-, Down- und Reveal-Aktionen.
+  - **Audit Logging** (`backend/services/audit.py`): Neue Audit-Kategorie `tailscale` und Protokollierung aller Konfigurations-, Setup-, Up-, Down-, Restart- und Reveal-Aktionen.
 
 ## [2.13.19] - 2026-07-30
 

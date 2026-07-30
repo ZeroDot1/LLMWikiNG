@@ -1193,6 +1193,15 @@ async def api_tailscale_reset(request: Request, admin: dict = Depends(require_ap
     return res
 
 
+@router.post("/system/tailscale/restart")
+async def api_tailscale_restart(request: Request, admin: dict = Depends(require_api_admin)):
+    """Restarts Tailscale daemon independently from the main web server."""
+    from services.tailscale import restart_tailscale
+    res = await restart_tailscale()
+    log_action("tailscale_restart", details=f"Tailscale Daemon neugestartet (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
 @router.get("/system/tailscale/status")
 async def api_tailscale_status(admin: dict = Depends(require_api_admin)):
     """Fetches live tailscale status."""

@@ -72,6 +72,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[lifespan] WARN: Initialisierung übersprungen: {e}", flush=True)
 
+    # Tailscale Auto-Restore (reconnects Tailscale on container restart/recreation)
+    try:
+        from services.tailscale import auto_restore_on_startup
+        asyncio.create_task(auto_restore_on_startup())
+    except Exception as e:
+        print(f"[lifespan] WARN: Tailscale auto-restore error: {e}", flush=True)
+
     # MCP Session-Manager (Streamable HTTP Task-Group Management)
     mcp_cm = None
     try:

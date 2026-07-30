@@ -2,7 +2,6 @@ services:
   llmwiking:
     build: .
     container_name: llmwiking_app
-    hostname: zerodot1sllmwiking
     ports:
       - "8082:8080" # Mappt Port 8082 des Hosts auf Port 8080 des Containers
     restart: unless-stopped
@@ -13,7 +12,6 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SERVE_CONFIG=/config/tailscale/serve.json
       - TS_AUTHKEY=${TS_AUTHKEY:-}
-      - TS_HOSTNAME=${TS_HOSTNAME:-zerodot1sllmwiking}
       - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
     volumes:
       - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/data:/app/data

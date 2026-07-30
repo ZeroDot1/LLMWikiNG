@@ -272,6 +272,58 @@ async def reset_funnel_serve() -> dict[str, Any]:
     }
 
 
+async def restart_tailscale() -> dict[str, Any]:
+    """Restarts Tailscale daemon/connection independently from the main server."""
+    if not _which_tailscale():
+        return {"ok": False, "error": "tailscale binary not found"}
+
+    cfg = load_config()
+
+    # 1. Stop current daemon process if running
+    await _run(["pkill", "-f", "tailscaled"])
+    await asyncio.sleep(1.5)
+
+    # 2. Relaunch tailscaled daemon using persistent host state directory
+    ts_state_dir = Path(os.getenv("TS_STATE_DIR", "/var/lib/tailscale"))
+    ts_state_dir.mkdir(parents=True, exist_ok=True)
+    state_file = ts_state_dir / "tailscaled.state"
+
+    if Path("/dev/net/tun").exists():
+        cmd = ["tailscaled", f"--state={state_file}", f"--statedir={ts_state_dir}"]
+    else:
+        cmd = ["tailscaled", "--tun=userspace-networking", f"--state={state_file}", f"--statedir={ts_state_dir}"]
+
+    try:
+        await asyncio.create_subprocess_exec(*cmd)
+    except Exception as e:
+        log.warning("Could not launch tailscaled daemon: %s", e)
+
+    await asyncio.sleep(2.0)
+
+    # 3. Re-apply connection and serve/funnel settings if enabled
+    if cfg.get("enabled"):
+        if cfg.get("auth_key_encrypted"):
+            await up(cfg)
+        await apply_serve_funnel(cfg)
+
+    status = await get_status()
+    return {"ok": True, "message": "Tailscale neugestartet", "status": status}
+
+
+async def auto_restore_on_startup() -> None:
+    """Restores Tailscale connection and serve/funnel proxy settings on app startup."""
+    cfg = load_config()
+    if not cfg.get("enabled"):
+        return
+    try:
+        st = await get_status()
+        if st.get("backend_state") not in ("Running", "Starting"):
+            await up(cfg)
+        await apply_serve_funnel(cfg)
+    except Exception as e:
+        log.warning("Tailscale auto-restore failed: %s", e)
+
+
 async def setup_all(
     *,
     hostname: str,

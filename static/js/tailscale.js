@@ -298,6 +298,27 @@
             });
     };
 
+    window.handleTailscaleRestart = function () {
+        if (!confirm("Möchtest du den Tailscale Daemon wirklich neustarten? (Der Webserver bleibt online)")) return;
+        clearMsg();
+        showMsg("⏳ Tailscale Daemon wird neugestartet...", false);
+
+        fetch(getBasePath() + "/api/v1/system/tailscale/restart", { method: "POST" })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    showMsg("🔄 Tailscale Daemon erfolgreich neugestartet.", false);
+                    if (data.status) updateStatusOverview(data.status);
+                    else window.refreshTailscaleStatus();
+                } else {
+                    showMsg("❌ Fehler beim Neustarten: " + (data.error || "Unbekannter Fehler"), true);
+                }
+            })
+            .catch(function (err) {
+                showMsg("❌ Neustart-Fehler: " + err.message, true);
+            });
+    };
+
     window.copyTsDns = function () {
         if (!currentDnsName) return;
         navigator.clipboard.writeText(currentDnsName).then(function () {

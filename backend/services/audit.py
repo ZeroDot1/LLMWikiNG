@@ -90,6 +90,7 @@ ACTION_CATEGORIES = {
     "tailscale_down": "tailscale",
     "tailscale_apply": "tailscale",
     "tailscale_reset": "tailscale",
+    "tailscale_restart": "tailscale",
     "tailscale_reveal": "tailscale",
 }
 

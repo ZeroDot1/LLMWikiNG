@@ -39,7 +39,7 @@
         <label for="wiki-switcher" class="block text-xs font-medium text-text-muted mb-1">{{ _('sidebar.nav_title') }}</label>
         <select id="wiki-switcher" data-wiki-switcher class="w-full rounded-lg border border-border bg-bg-sunken px-2 py-1.5 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
             {% for w in wikis %}
-            <option value="{{ w.name }}" {% if w.name == current_wiki %}selected{% endif %}>{{ w.name }}</option>
+            <option value="{{ w.slug }}" {% if w.slug == current_wiki or w.name == current_wiki %}selected{% endif %}>{{ w.name }}</option>
             {% endfor %}
         </select>
         <a href="{{ base_path }}/wikis/new" class="mt-2 inline-block text-xs font-medium text-primary hover:underline">+ Neues Wiki</a>

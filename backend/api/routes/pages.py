@@ -94,7 +94,10 @@ def _parse_week_string(s: str):
 
 def _default_wiki() -> str:
     wikis = list_wikis()
-    return wikis[0]["slug"] if wikis else "main"
+    slugs = [w.get("slug") for w in wikis if w.get("slug")]
+    if "main" in slugs:
+        return "main"
+    return slugs[0] if slugs else "main"
 
 
 @router.get("/")
@@ -109,8 +112,9 @@ def dashboard(request: Request):
     wiki_stats = []
     total_pages = total_words = total_raw = total_export = 0
     for w in wikis:
-        s = get_wiki_stats(w["name"])
-        wiki_stats.append({"name": w["name"], "stats": s})
+        slug = w.get("slug") or w.get("name")
+        s = get_wiki_stats(slug)
+        wiki_stats.append({"name": w["name"], "slug": slug, "stats": s})
         total_pages += s["page_count"]
         total_words += s["word_count"]
         total_raw += s["raw_count"]

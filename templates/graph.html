@@ -21,7 +21,7 @@
             <select id="graph-wiki-select" aria-label="{{ _('graph.wiki_select_label') }}">
                 <option value="__all__" {% if wiki == '__all__' %}selected{% endif %}>{{ _('graph.filter_all_wikis') }}</option>
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if w.slug == wiki or w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
             </select>
         </div>

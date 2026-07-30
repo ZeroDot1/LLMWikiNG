@@ -17,7 +17,7 @@
             <select name="wiki" class="rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle min-w-[140px]">
                 <option value="all" {% if wiki == 'all' %}selected{% endif %}>🌍 {{ _('search.all_wikis') }}</option>
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if wiki == w.name %}selected{% endif %}>📄 {{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if wiki == w.slug or wiki == w.name %}selected{% endif %}>📄 {{ w.name }}</option>
                 {% endfor %}
             </select>
             {% if available_tags %}

@@ -34,7 +34,7 @@
             <label for="wiki_file" class="block font-medium mb-1">Ziel-Wiki</label>
             <select id="wiki_file" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if w.slug == wiki or w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -67,7 +67,7 @@
             <label for="wiki_text" class="block font-medium mb-1">Ziel-Wiki</label>
             <select id="wiki_text" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if w.slug == wiki or w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -100,7 +100,7 @@
             <label for="wiki_url_later" class="block font-medium mb-1">Ziel-Wiki</label>
             <select id="wiki_url_later" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if w.slug == wiki or w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -125,7 +125,7 @@
             <label for="wiki_text_later" class="block font-medium mb-1">Ziel-Wiki</label>
             <select id="wiki_text_later" name="wiki" class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 {% for w in wikis %}
-                <option value="{{ w.name }}" {% if w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
+                <option value="{{ w.slug }}" {% if w.slug == wiki or w.name == wiki %}selected{% endif %}>{{ w.name }}</option>
                 {% endfor %}
             </select>
         </div>

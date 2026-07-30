@@ -1070,3 +1070,153 @@ def api_system_users(admin: dict = Depends(require_api_admin)):
 def api_system_apikeys(admin: dict = Depends(require_api_admin)):
     """Gibt alle API-Keys zurück (Admin-only)."""
     return {"api_keys": list_keys()}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Tailscale & Funnel Integration Endpoints (Admin only)
+# ═══════════════════════════════════════════════════════════════════
+
+@router.get("/system/tailscale")
+async def api_get_tailscale_config(admin: dict = Depends(require_api_admin)):
+    """Returns Tailscale configuration (without raw auth key) and current status."""
+    from services.tailscale import load_config, get_status
+    cfg = load_config()
+    status = await get_status()
+    # Strip raw/encrypted keys from public response
+    safe_cfg = {
+        "enabled": cfg.get("enabled", False),
+        "hostname": cfg.get("hostname", "llmwiking"),
+        "has_auth_key": bool(cfg.get("auth_key_encrypted")),
+        "auth_key_hint": cfg.get("auth_key_hint"),
+        "app_port": cfg.get("app_port", 8080),
+        "funnel_port": cfg.get("funnel_port", 443),
+        "funnel_enabled": cfg.get("funnel_enabled", False),
+        "serve_enabled": cfg.get("serve_enabled", True),
+        "serve_path": cfg.get("serve_path", "/"),
+        "extra_args": cfg.get("extra_args", ""),
+        "last_status": cfg.get("last_status", {}),
+        "updated_at": cfg.get("updated_at"),
+        "updated_by": cfg.get("updated_by"),
+    }
+    return {"config": safe_cfg, "status": status}
+
+
+@router.post("/system/tailscale")
+async def api_save_tailscale_config(request: Request, admin: dict = Depends(require_api_admin)):
+    """Saves Tailscale configuration parameters without changing daemon state."""
+    from services.tailscale import load_config, save_config, encrypt_tailscale_key
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON-Format")
+
+    cfg = load_config()
+    cfg["hostname"] = (data.get("hostname") or "llmwiking").strip()
+    cfg["app_port"] = int(data.get("app_port") or cfg.get("app_port", 8080))
+    cfg["funnel_port"] = int(data.get("funnel_port") or cfg.get("funnel_port", 443))
+    cfg["funnel_enabled"] = bool(data.get("funnel_enabled", cfg.get("funnel_enabled", False)))
+    cfg["serve_enabled"] = bool(data.get("serve_enabled", cfg.get("serve_enabled", True)))
+    cfg["extra_args"] = (data.get("extra_args") or "").strip()
+    cfg["updated_by"] = admin.get("username")
+
+    auth_key = data.get("auth_key")
+    if auth_key and auth_key.strip():
+        clean_key = auth_key.strip()
+        cfg["auth_key_encrypted"] = encrypt_tailscale_key(clean_key)
+        hint_start = clean_key[:12] if len(clean_key) >= 12 else clean_key[:4]
+        hint_end = clean_key[-4:] if len(clean_key) >= 4 else ""
+        cfg["auth_key_hint"] = f"{hint_start}…{hint_end}"
+
+    save_config(cfg)
+    log_action("tailscale_save", details=f"Tailscale-Konfiguration gespeichert (Hostname: {cfg['hostname']})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return {"ok": True, "message": "Tailscale-Konfiguration gespeichert."}
+
+
+@router.post("/system/tailscale/setup")
+async def api_setup_tailscale(request: Request, admin: dict = Depends(require_api_admin)):
+    """One-Click setup: saves parameters, connects to Tailnet and applies serve/funnel."""
+    from services.tailscale import setup_all
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+
+    res = await setup_all(
+        hostname=data.get("hostname", "llmwiking"),
+        auth_key=data.get("auth_key"),
+        app_port=data.get("app_port", 8080),
+        funnel_port=data.get("funnel_port", 443),
+        funnel_enabled=data.get("funnel_enabled", False),
+        serve_enabled=data.get("serve_enabled", True),
+        extra_args=data.get("extra_args", ""),
+        actor=admin.get("username") or "admin",
+    )
+    log_action("tailscale_setup", details=f"Tailscale One-Click Setup ausgeführt (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
+@router.post("/system/tailscale/up")
+async def api_tailscale_up(request: Request, admin: dict = Depends(require_api_admin)):
+    """Executes tailscale up."""
+    from services.tailscale import load_config, up
+    cfg = load_config()
+    res = await up(cfg)
+    log_action("tailscale_up", details=f"tailscale up (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
+@router.post("/system/tailscale/down")
+async def api_tailscale_down(request: Request, admin: dict = Depends(require_api_admin)):
+    """Executes tailscale down."""
+    from services.tailscale import down
+    res = await down()
+    log_action("tailscale_down", details=f"tailscale down (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
+@router.post("/system/tailscale/apply")
+async def api_tailscale_apply(request: Request, admin: dict = Depends(require_api_admin)):
+    """Applies serve and funnel settings."""
+    from services.tailscale import load_config, apply_serve_funnel
+    cfg = load_config()
+    res = await apply_serve_funnel(cfg)
+    log_action("tailscale_apply", details=f"tailscale serve/funnel angewendet (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
+@router.post("/system/tailscale/reset")
+async def api_tailscale_reset(request: Request, admin: dict = Depends(require_api_admin)):
+    """Resets tailscale funnel and serve settings."""
+    from services.tailscale import reset_funnel_serve
+    res = await reset_funnel_serve()
+    log_action("tailscale_reset", details="tailscale funnel & serve zurückgesetzt", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
+@router.get("/system/tailscale/status")
+async def api_tailscale_status(admin: dict = Depends(require_api_admin)):
+    """Fetches live tailscale status."""
+    from services.tailscale import get_status
+    return await get_status()
+
+
+@router.post("/system/tailscale/reveal")
+async def api_tailscale_reveal(request: Request, admin: dict = Depends(require_api_admin)):
+    """Verifies admin password and decrypts stored Tailscale auth key."""
+    from services.tailscale import reveal_auth_key
+    try:
+        data = await request.json()
+        password = data.get("password")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON-Format")
+
+    if not password:
+        raise HTTPException(status_code=400, detail="Passwort erforderlich")
+
+    raw_key = reveal_auth_key(password, admin.get("password_hash", ""))
+    if not raw_key:
+        raise HTTPException(status_code=403, detail="Ungültiges Passwort oder kein Key konfiguriert")
+
+    log_action("tailscale_reveal", details="Tailscale Auth-Key entschlüsselt und angezeigt", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return {"raw_key": raw_key}
+

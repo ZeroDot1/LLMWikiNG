@@ -143,10 +143,23 @@ def encrypt_mcp_key(raw_key: str) -> str:
     return _key_cipher_mcp.dumps(raw_key)
 
 
-def decrypt_mcp_key(encrypted_key: str) -> str | None:
-    """Entschlüsselt den verschlüsselten MCP-Key."""
+# ═══════════════════════════════════════════════════════════════════
+# Tailscale-Key-Verschlüsselung
+# ═══════════════════════════════════════════════════════════════════
+
+_key_cipher_tailscale = URLSafeTimedSerializer(SECRET, salt="llmwikingtailscale")
+
+
+def encrypt_tailscale_key(raw_key: str) -> str:
+    """Encrypts raw Tailscale auth key with system secret."""
+    return _key_cipher_tailscale.dumps(raw_key)
+
+
+def decrypt_tailscale_key(encrypted_key: str) -> str | None:
+    """Decrypts Tailscale auth key."""
     try:
-        return _key_cipher_mcp.loads(encrypted_key, max_age=None)
+        return _key_cipher_tailscale.loads(encrypted_key, max_age=None)
     except Exception:
         return None
+
 

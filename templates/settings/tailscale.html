@@ -1,0 +1,252 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-text flex items-center gap-2">
+                    <span>🦈</span> {{ _('settings.tailscale_heading') }}
+                </h2>
+                <p class="text-xs text-text-secondary mt-1">
+                    {{ _('settings.tailscale_subtitle') }}
+                </p>
+            </div>
+            <div id="ts-status-badge-container" class="flex items-center gap-2">
+                <span id="ts-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-bg-sunken text-text-secondary border border-border">
+                    <span class="w-2 h-2 rounded-full bg-text-secondary animate-pulse"></span>
+                    <span>Status wird geladen...</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Status Overview Card -->
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h3 class="text-sm font-semibold text-text uppercase tracking-wider mb-4 border-b border-border pb-2 flex items-center justify-between">
+            <span>{{ _('settings.tailscale_status_card_title') }}</span>
+            <button type="button" onclick="refreshTailscaleStatus()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1">
+                <span>🔄</span> {{ _('settings.tailscale_btn_refresh_status') }}
+            </button>
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div class="rounded-lg bg-bg-sunken p-3 border border-border">
+                <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_backend_state') }}</span>
+                <span id="ts-live-state" class="font-mono font-semibold text-text">--</span>
+            </div>
+            <div class="rounded-lg bg-bg-sunken p-3 border border-border">
+                <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_dns_name') }}</span>
+                <div class="flex items-center justify-between">
+                    <span id="ts-live-dns" class="font-mono font-semibold text-text truncate">--</span>
+                    <button type="button" id="ts-copy-dns-btn" onclick="copyTsDns()" class="hidden text-primary hover:text-primary-hover ml-1 text-xs">Kopieren</button>
+                </div>
+            </div>
+            <div class="rounded-lg bg-bg-sunken p-3 border border-border">
+                <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_ips') }}</span>
+                <span id="ts-live-ips" class="font-mono text-text">--</span>
+            </div>
+            <div class="rounded-lg bg-bg-sunken p-3 border border-border">
+                <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_cert_status') }}</span>
+                <span id="ts-live-cert" class="font-semibold text-text">--</span>
+            </div>
+        </div>
+
+        <!-- Funnel URL Display -->
+        <div id="ts-funnel-url-card" class="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs font-semibold text-primary block">🌐 Öffentliche Tailscale Funnel URL:</span>
+                    <a id="ts-funnel-url-link" href="#" target="_blank" class="font-mono text-sm font-bold text-primary hover:underline break-all"></a>
+                </div>
+                <button type="button" onclick="copyTsFunnelUrl()" class="px-3 py-1.5 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-medium shrink-0">
+                    URL kopieren
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tailscale Configuration Form -->
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-semibold text-text uppercase tracking-wider border-b border-border pb-2">
+            {{ _('settings.tailscale_config_title') }}
+        </h3>
+
+        <form id="tailscale-config-form" onsubmit="handleTailscaleSetup(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Hostname -->
+                <div>
+                    <label for="ts-hostname" class="block text-xs font-medium text-text mb-1">
+                        {{ _('settings.tailscale_field_hostname') }}
+                    </label>
+                    <input type="text" id="ts-hostname" name="hostname" value="llmwiking" required
+                           class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                           placeholder="z. B. llmwiking">
+                    <p class="text-[11px] text-text-secondary mt-1">{{ _('settings.tailscale_field_hostname_hint') }}</p>
+                </div>
+
+                <!-- Auth Key -->
+                <div>
+                    <label for="ts-auth-key" class="block text-xs font-medium text-text mb-1 flex items-center justify-between">
+                        <span>{{ _('settings.tailscale_field_auth_key') }}</span>
+                        <button type="button" id="ts-reveal-key-btn" onclick="openTsRevealModal()" class="text-primary hover:underline text-[11px] font-normal hidden">
+                            🔑 Key anzeigen
+                        </button>
+                    </label>
+                    <input type="password" id="ts-auth-key" name="auth_key"
+                           class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                           placeholder="tskey-auth-...">
+                    <p id="ts-auth-key-hint-text" class="text-[11px] text-text-secondary mt-1">{{ _('settings.tailscale_field_auth_key_hint') }}</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- App Port -->
+                <div>
+                    <label for="ts-app-port" class="block text-xs font-medium text-text mb-1">
+                        {{ _('settings.tailscale_field_app_port') }}
+                    </label>
+                    <input type="number" id="ts-app-port" name="app_port" value="8080" required
+                           class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                    <p class="text-[11px] text-text-secondary mt-1">{{ _('settings.tailscale_field_app_port_hint') }}</p>
+                </div>
+
+                <!-- Funnel Port -->
+                <div>
+                    <label for="ts-funnel-port" class="block text-xs font-medium text-text mb-1">
+                        {{ _('settings.tailscale_field_funnel_port') }}
+                    </label>
+                    <select id="ts-funnel-port" name="funnel_port"
+                            class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="443">443 (Standard HTTPS)</option>
+                        <option value="8443">8443 (Alternativ HTTPS)</option>
+                        <option value="10000">10000 (Alternativ HTTPS)</option>
+                    </select>
+                    <p class="text-[11px] text-text-secondary mt-1">{{ _('settings.tailscale_field_funnel_port_hint') }}</p>
+                </div>
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="space-y-2 pt-2 border-t border-border">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="ts-serve-enabled" name="serve_enabled" checked
+                           class="rounded border-border text-primary focus:ring-primary h-4 w-4">
+                    <span class="text-xs font-medium text-text">{{ _('settings.tailscale_field_serve_enabled') }}</span>
+                </label>
+                <p class="text-[11px] text-text-secondary ml-6">{{ _('settings.tailscale_field_serve_hint') }}</p>
+
+                <label class="flex items-center gap-2 cursor-pointer pt-2">
+                    <input type="checkbox" id="ts-funnel-enabled" name="funnel_enabled"
+                           class="rounded border-border text-primary focus:ring-primary h-4 w-4">
+                    <span class="text-xs font-medium text-text">{{ _('settings.tailscale_field_funnel_enabled') }}</span>
+                </label>
+                <p class="text-[11px] text-text-secondary ml-6">{{ _('settings.tailscale_field_funnel_hint') }}</p>
+            </div>
+
+            <!-- Extra Args -->
+            <div>
+                <label for="ts-extra-args" class="block text-xs font-medium text-text mb-1">
+                    {{ _('settings.tailscale_field_extra_args') }}
+                </label>
+                <input type="text" id="ts-extra-args" name="extra_args"
+                       class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                       placeholder="z. B. --advertise-tags=tag:container">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-border">
+                <button type="submit" id="ts-setup-btn"
+                        class="rounded-lg bg-primary hover:bg-primary-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
+                    <span>🚀</span> {{ _('settings.tailscale_btn_setup_all') }}
+                </button>
+
+                <button type="button" onclick="handleTailscaleSaveOnly()"
+                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text px-3 py-2 text-xs font-medium transition-all">
+                    💾 {{ _('settings.tailscale_btn_save_only') }}
+                </button>
+
+                <button type="button" onclick="handleTailscaleDown()"
+                        class="rounded-lg border border-border bg-surface hover:bg-error/10 text-error px-3 py-2 text-xs font-medium transition-all">
+                    🛑 {{ _('settings.tailscale_btn_stop') }}
+                </button>
+
+                <button type="button" onclick="handleTailscaleReset()"
+                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text-secondary px-3 py-2 text-xs font-medium transition-all">
+                    ↩️ {{ _('settings.tailscale_btn_reset') }}
+                </button>
+            </div>
+        </form>
+
+        <div id="ts-msg-box" class="p-3 rounded-lg text-xs hidden"></div>
+    </div>
+
+    <!-- External Agent / MCP Integration Guide Card -->
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-3">
+        <h3 class="text-sm font-semibold text-text uppercase tracking-wider border-b border-border pb-2 flex items-center gap-2">
+            <span>🤖</span> {{ _('settings.tailscale_agent_guide_title') }}
+        </h3>
+        <p class="text-xs text-text-secondary">
+            {{ _('settings.tailscale_agent_guide_subtitle') }}
+        </p>
+
+        <div class="space-y-2 font-mono text-xs">
+            <div class="p-2.5 rounded-lg bg-bg-sunken border border-border">
+                <span class="text-text-secondary text-[11px] block font-sans">MCP SSE Endpoint:</span>
+                <span id="ts-agent-mcp-sse-url" class="text-primary select-all">https://&lt;node&gt;.&lt;tailnet&gt;.ts.net/LLMWikiNG/mcp</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-bg-sunken border border-border">
+                <span class="text-text-secondary text-[11px] block font-sans">REST API Base:</span>
+                <span id="ts-agent-api-url" class="text-text select-all">https://&lt;node&gt;.&lt;tailnet&gt;.ts.net/LLMWikiNG/api/v1/</span>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <span class="text-xs font-medium text-text block mb-1">Beispiel Client Configuration (Claude / Cursor / AGY):</span>
+            <pre class="p-3 rounded-lg bg-bg-sunken border border-border text-[11px] text-text font-mono overflow-x-auto select-all">{
+  "mcpServers": {
+    "llmwiking": {
+      "url": "<span id="ts-json-mcp-url">https://&lt;node&gt;.&lt;tailnet&gt;.ts.net/LLMWikiNG/mcp</span>",
+      "headers": {
+        "X-MCP-Key": "mcp_...",
+        "X-API-Key": "llmw_..."
+      }
+    }
+  }
+}</pre>
+        </div>
+    </div>
+
+    <!-- Security Warning Box -->
+    <div class="rounded-xl border border-warning/30 bg-warning/5 p-4 text-xs text-text space-y-1">
+        <div class="font-bold text-warning flex items-center gap-1.5">
+            <span>⚠️</span> {{ _('settings.tailscale_warning_title') }}
+        </div>
+        <p class="text-text-secondary leading-relaxed">
+            {{ _('settings.tailscale_warning_text') }}
+        </p>
+    </div>
+</div>
+
+<!-- Modal for Revealing Tailscale Auth Key -->
+<div id="tsRevealModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black/60 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl animate-fade-in">
+        <h3 class="text-lg font-bold mb-2 text-text">Sicherheitsüberprüfung</h3>
+        <p class="text-xs text-text-secondary mb-4">Bitte gib dein Passwort ein, um den Tailscale Auth-Key anzuzeigen:</p>
+        
+        <form id="tsRevealForm" onsubmit="submitTsRevealKey(event)" class="space-y-4">
+            <div>
+                <label for="tsRevealPassword" class="block text-sm font-medium mb-1">Passwort</label>
+                <input type="password" id="tsRevealPassword" required class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                <p id="tsRevealError" class="text-error text-xs mt-1 hidden"></p>
+            </div>
+            
+            <div id="tsRevealKeyContainer" class="rounded-lg bg-bg-sunken p-3 border border-border font-mono text-xs text-text break-all hidden select-all">
+                <!-- Decrypted key inserted here -->
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeTsRevealModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm hover:bg-bg-sunken">Abbrechen</button>
+                <button type="submit" id="tsRevealSubmitBtn" class="rounded-lg bg-primary hover:bg-primary-hover px-4 py-2 text-sm text-white font-medium">Verifizieren</button>
+                <button type="button" id="tsRevealCopyBtn" class="rounded-lg bg-success px-4 py-2 text-sm text-white font-medium hidden">Kopieren</button>
+            </div>
+        </form>
+    </div>
+</div>

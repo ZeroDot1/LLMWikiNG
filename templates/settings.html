@@ -21,6 +21,7 @@
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-wikis">{{ _('settings.tab_wikis') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-audit">🛡️ Audit</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-mcp">{{ _('settings.tab_mcp') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-tailscale">{{ _('settings.tab_tailscale') }}</button>
     </div>
 
     <!-- Language Section -->
@@ -77,6 +78,11 @@
     <div id="tab-mcp" class="settings-tab-content hidden">
         {% include "settings/mcp.html" %}
     </div>
+
+    <!-- Tailscale Settings Section -->
+    <div id="tab-tailscale" class="settings-tab-content hidden">
+        {% include "settings/tailscale.html" %}
+    </div>
 </div>
 
 <!-- Modal für Passwortabfrage zum Anzeigen von Schlüsseln -->
@@ -108,6 +114,7 @@
 
 <script type="module" src="{{ base_path }}/static/js/presets.js?v={{ app_version }}"></script>
 <script type="module" src="{{ base_path }}/static/js/update.js?v={{ app_version }}"></script>
+<script src="{{ base_path }}/static/js/tailscale.js?v={{ app_version }}"></script>
 <script>
 (function () {
   "use strict";
@@ -124,7 +131,8 @@
       "tab-backup": document.getElementById("tab-backup"),
       "tab-wikis": document.getElementById("tab-wikis"),
       "tab-audit": document.getElementById("tab-audit"),
-      "tab-mcp": document.getElementById("tab-mcp")
+      "tab-mcp": document.getElementById("tab-mcp"),
+      "tab-tailscale": document.getElementById("tab-tailscale")
     };
     var tabs = document.querySelectorAll(".settings-tab");
 
@@ -136,6 +144,9 @@
       // 2. Show active panel
       if (panels[activeTabId]) {
         panels[activeTabId].classList.remove("hidden");
+        if (activeTabId === "tab-tailscale" && window.loadTailscaleData) {
+          window.loadTailscaleData();
+        }
       }
       // 3. Highlight tab button
       tabs.forEach(function (t) {
@@ -169,7 +180,8 @@
       backup: "tab-backup",
       wikis: "tab-wikis",
       audit: "tab-audit",
-      mcp: "tab-mcp"
+      mcp: "tab-mcp",
+      tailscale: "tab-tailscale"
     };
     switchTab(map[params.get("tab")] || "tab-language");
   });

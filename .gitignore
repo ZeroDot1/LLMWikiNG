@@ -49,6 +49,8 @@ node_modules/
 frontend/static/css/tailwind-build.css
 data/
 data/*
+ts-data/
+ts-config/
 backups/
 backups/*
 *.db

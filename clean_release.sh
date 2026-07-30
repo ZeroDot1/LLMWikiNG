@@ -57,13 +57,14 @@ EOF
     fi
 fi
 
-echo "  • Setze Benutzer-, API-Key-, MCP-Key- und Audit-Datenbank zurück (data/)..."
+echo "  • Setze Benutzer-, API-Key-, MCP-Key-, Tailscale- und Audit-Datenbank zurück (data/)..."
 mkdir -p data
 echo "[]" > data/users.json
 echo "[]" > data/api_keys.json
 echo "[]" > data/mcp_keys.json
 echo "[]" > data/audit_logs.json
-rm -rf data/sync_status 2>/dev/null || true
+rm -f data/tailscale.json 2>/dev/null || true
+rm -rf data/sync_status ts-data ts-config 2>/dev/null || true
 
 echo "  • Bereinige qmd-Suchindex..."
 if command -v qmd &>/dev/null; then

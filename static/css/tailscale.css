@@ -1,0 +1,25 @@
+/* LLMWikiNG – Tailscale Integration Styles */
+
+.ts-badge-online {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.ts-badge-offline {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ts-badge-needs-login {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ts-badge-funnel {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}

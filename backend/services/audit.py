@@ -14,7 +14,7 @@ from core.config import DATA_DIR, load_app_config
 
 AUDIT_DB = DATA_DIR / "audit_log.db"
 
-ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit", "mcp"])
+ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit", "mcp", "tailscale"])
 
 ACTION_CATEGORIES = {
     # auth
@@ -82,6 +82,15 @@ ACTION_CATEGORIES = {
     "mcp_clear_cache": "mcp",
     "mcp_create_backup": "mcp",
     "mcp_restore_backup": "mcp",
+
+    # tailscale
+    "tailscale_setup": "tailscale",
+    "tailscale_save": "tailscale",
+    "tailscale_up": "tailscale",
+    "tailscale_down": "tailscale",
+    "tailscale_apply": "tailscale",
+    "tailscale_reset": "tailscale",
+    "tailscale_reveal": "tailscale",
 }
 
 _db_initialized: bool = False

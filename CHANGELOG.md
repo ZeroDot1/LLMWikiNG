@@ -17,6 +17,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Gezielte Tag-Suche** (`backend/services/search.py`, `templates/search.html`): Volltextsuche unterstützt `tag:name` und `#name` Syntax sowie Relevanz-Bonus für Tag-Treffer und zeigt Tag-Pills in den Suchergebnissen an.
 - **Interaktive Tags-Seite** (`templates/tags.html`, `backend/api/routes/pages.py`): Tags-Übersicht zeigt Tag-Cloud und gefilterte Seiten gleichzeitig zur bequemen Navigation.
 
+### Fixed
+- **Default-Wiki & Multi-Wiki Slugs** (`backend/api/routes/pages.py`, `templates/`): `_default_wiki()` bevorzugt nun den `main`-Slug, falls vorhanden (statt starr das erste Element in `wikis.json`). Wiki-Switcher und Formulare in allen Templates (`base.html`, `graph.html`, `ingest.html`, `search.html`, `export_list.html`) nutzen nun konsistent `w.slug` anstelle des Anzeigenamens `w.name` als Formularwert und URL-Parameter.
+- **Artikel H1-Überschriften & Scrape-Bereinigung** (`backend/api/routes/pages.py`, `backend/services/wiki.py`): `_render_page` stellt sicher, dass jede Artikel-Seite eine korrekte `<h1>`-Überschrift mit dem echten Frontmatter-/H1-Titel enthält. `clean_ingest_content` filtert Blogger/WordPress-Scrape-Artefakte (Kommentar-Felder, Share-Buttons, Blog-Archiv) sauber heraus, ohne die Haupt-H1-Überschrift zu löschen.
+- **Index-Seiten Überschriften-Duplikat** (`backend/services/sync.py`): Doppelter Header `## Concepts` gefolgt von `### Concept` auf `index.md` durch sauberes `## Inhaltsverzeichnis` ersetzt.
+
 ## [2.13.18] - 2026-07-29
 
 ### Fixed

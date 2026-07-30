@@ -343,6 +343,29 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
 
     html_content = render_markdown(raw_content, page_name, wiki_name)
 
+    # Page Title Extraktion
+    page_title = data.get("title")
+    if not page_title:
+        fm_match = re.search(r"^---\s*\n(.*?)\n---", data["content"], re.DOTALL)
+        if fm_match:
+            try:
+                import yaml
+                fm_data = yaml.safe_load(fm_match.group(1))
+                if isinstance(fm_data, dict) and fm_data.get("title"):
+                    page_title = str(fm_data["title"]).strip()
+            except Exception:
+                pass
+    if not page_title:
+        h1_match = re.search(r"^#\s+(.+)$", raw_content, re.MULTILINE)
+        if h1_match:
+            page_title = h1_match.group(1).strip()
+        else:
+            page_title = data["name"].replace("-", " ").capitalize()
+
+    # Stellen sicher, dass jede Seite eine H1 Überschrift hat
+    if not re.search(r"<h1[^>]*>", html_content, re.IGNORECASE):
+        html_content = f'<h1 class="text-3xl font-bold mb-4 pb-2 border-b border-border text-primary">{page_title}</h1>\n' + html_content
+
     source_path = None
     fm_match = re.search(r"^---\s*\n(.*?)\n---", data["content"], re.DOTALL)
     if fm_match:
@@ -376,7 +399,7 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
         request, "page.html",
         wiki=wiki_name,
         active_page=page_name,
-        page_title=data["name"].replace("-", " ").title(),
+        page_title=page_title,
         content=html_content,
         is_index=is_index,
         is_log=is_log,

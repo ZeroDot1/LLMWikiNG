@@ -151,15 +151,25 @@ def clean_ingest_content(text: str, title: str = "") -> str:
             "Dieses Blog durchsuchen",
             "Startseite",
             "Impressum, Haftungsauschluss und Datenschutz",
+            "Post a Comment",
+            "Kommentar verfassen",
+            "Kommentare",
+            "Links zu diesem Post",
+            "Per E-Mail versenden",
+            "Diesem Blog folgen",
+            "Blog-Archiv",
+            "Home",
         ):
             continue
-        if stripped.startswith("Suchen") or stripped.startswith("Mehr"):
+        if stripped.startswith("Suchen") or stripped.startswith("Mehr") or stripped.startswith("Labels:"):
             continue
-        if re.match(r"^[\*\-]\s*\[(?:Startseite|Neuer Blog|Hörspiele|Hörbücher|Podcasts|Impressum)[^\]]*\]\(https?://", stripped):
+        if re.match(r"^[\*\-]\s*\[(?:Startseite|Neuer Blog|Hörspiele|Hörbücher|Podcasts|Impressum|Home)[^\]]*\]\(https?://", stripped):
             continue
-        if re.match(r"^#{1,4}\s*Dieses Blog durchsuchen\s*$", stripped):
+        if re.match(r"^#{1,4}\s*(?:Dieses Blog durchsuchen|Blog-Archiv|Labels|Kommentare|Links zu diesem Post)\s*$", stripped):
             continue
         if re.match(r"^#\s*\[\s*[^]]*\]\s*\(https?://", stripped):
+            continue
+        if re.match(r"^(?:Auf Facebook|Auf Twitter|Auf Pinterest) teilen", stripped):
             continue
 
         cleaned.append(line)
@@ -179,23 +189,6 @@ def clean_ingest_content(text: str, title: str = "") -> str:
         lambda m: f"{m.group(1).rstrip('-_')}{m.group(2)}",
         text,
     )
-
-    if title:
-        title_norm = title.strip().lower()
-        def _h1_match(l: str) -> bool:
-            m = re.match(r"^#\s+(.+)$", l.strip())
-            return bool(m) and m.group(1).strip().lower() == title_norm
-
-        first_h1_idx = None
-        for i, l in enumerate(text.splitlines()):
-            if _h1_match(l):
-                first_h1_idx = i
-                break
-        if first_h1_idx is not None:
-            # Entferne diese eine Zeile (der Seitentitel wird ohnehin als H1 gesetzt)
-            text_lines = text.splitlines()
-            del text_lines[first_h1_idx]
-            text = "\n".join(text_lines)
 
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     if not text.endswith("\n"):

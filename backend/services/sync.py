@@ -392,7 +392,7 @@ def regenerate_index(wiki: str = "main") -> bool:
         "> Automatisch gepflegtes Inhaltsverzeichnis.",
         f"> Aktualisiert am {datetime.now().strftime('%Y-%m-%d')}",
         "",
-        "## Concepts",
+        "## Inhaltsverzeichnis",
         "",
     ]
 

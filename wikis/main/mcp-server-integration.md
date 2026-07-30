@@ -51,13 +51,14 @@ The agent does this by calling **MCP tools** over an **SSE** (Server-Sent Events
 ## 2. Prerequisites
 
 1.  LLMWikiNG is running and reachable at its base path (default `/LLMWikiNG`). The MCP endpoints are:
-    *   Streamable HTTP channel: `http://<host>:<port>/LLMWikiNG/mcp`
-    *   SSE channel: `http://<host>:<port>/LLMWikiNG/mcp/sse`
+    *   Streamable HTTP channel: `http://<host>:<port>/LLMWikiNG/mcp` (or via Tailscale Funnel: `https://zerodot1sllmwiking.<tailnet>.ts.net/LLMWikiNG/mcp`)
+    *   SSE channel: `http://<host>:<port>/LLMWikiNG/mcp/sse` (or via Tailscale Funnel: `https://zerodot1sllmwiking.<tailnet>.ts.net/LLMWikiNG/mcp/sse`)
     *   Message channel: `http://<host>:<port>/LLMWikiNG/mcp/messages`
 2.  You have two keys:
-    *   **MCP Key** (`X-MCP-Key`) — set in `config.json` as `llmwiking_mcp_key`.
-    *   **API Key** (`X-API-Key`) — a normal user API key (create one under *Settings → Users / API Keys*).
+    *   **MCP Key** (`X-MCP-Key`) — set in `config.json` or generated per-user under *Settings → Keys → MCP Keys*.
+    *   **API Key** (`X-API-Key`) — a user API key (create one under *Settings → Keys → API Keys*).
 3.  The MCP server is enabled (`ENABLE_MCP_SERVER=true`, the default).
+4.  **Remote AI Agent Access (Tailscale Funnel):** Enable Tailscale under *Settings ➜ Tailscale*, enter an Auth Key, set hostname to `zerodot1sllmwiking`, check *Funnel*, and click *Setup Everything*. Exposes the MCP server securely on the public internet with Tailscale HTTPS certificates.
 
 > [!IMPORTANT]
 > **Security:** Create a **dedicated low-privilege user + API key** for each agent instead of reusing the admin key. This isolates the agent's permissions and produces a clean, audited action log.

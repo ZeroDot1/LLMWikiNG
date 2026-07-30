@@ -60,9 +60,22 @@
       <li><strong>Registrierung</strong> – Einstellen ob die Benutzerregistrierung unter /register aktiv ist.</li>
       <li><strong>Backups</strong> – Serverseitige <code>.tar.xz</code>-Backups erstellen, herunterladen, wiederherstellen und löschen.</li>
       <li><strong>MCP</strong> – Interaktiver Client-Konfigurator (AGY, OpenCode, Hermes) und kategorisierter Tool-Explorer für alle 38 MCP-Tools.</li>
+      <li><strong>Tailscale</strong> – Same-Container Integration von Tailscale (Daemon, Serve &amp; Funnel) für sicheren Remote-Zugriff von KI-Agenten (Claude, Grok, Cursor, AGY) über MagicDNS oder öffentliche Funnel-URLs.</li>
       <li><strong>Gesundheitscheck</strong> – Linter (Orphans, fehlende Links, Staleness, Raw-Refs).</li>
       <li><strong>Wiki-Verwaltung</strong> – Wikis anlegen, bearbeiten, löschen (Inline-Edit in der Tabelle).</li>
       <li><strong>Update</strong> – Selbstupdate via GitHub.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🦈 Tailscale &amp; Funnel Integration (Remote-Zugriff für Agenten)</h2>
+    <p class="text-text-secondary">LLMWikiNG enthält eine integrierte Same-Container Tailscale Integration (unter <em>Einstellungen ➜ Tailscale</em>). Damit kannst du deine Instanz im privaten Tailnet-Netzwerk bereitstellen oder per <strong>Tailscale Funnel</strong> öffentlich im Internet für externe KI-Agenten (z. B. Claude, Grok, Cursor, AGY) erreichbar machen – ohne Port-Forwarding, NGINX oder CGNAT-Probleme.</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><strong>One-Click Einrichtung:</strong> Auth-Key eingeben, Hostname (z. B. <code>zerodot1sllmwiking</code>) festlegen, Checkbox „Funnel (öffentlich im Internet)“ aktivieren und auf <em>„Alles einrichten“</em> klicken.</li>
+      <li><strong>Tailnet Serve (Privat):</strong> Leitet HTTPS-Traffic aus deinem privaten Tailnet auf den internen App-Port (8080) um.</li>
+      <li><strong>Tailscale Funnel (Öffentlich):</strong> Schaltet das Wiki weltweit unter <code>https://&lt;hostname&gt;.&lt;tailnet&gt;.ts.net</code> frei. Die Autorisierung erfolgt weiterhin über API-Keys / MCP-Keys.</li>
+      <li><strong>Sicherheit &amp; Key-Verschlüsselung:</strong> Auth-Keys werden kryptografisch mit dem System-Secret in <code>data/tailscale.json</code> (chmod 0o600) gespeichert. Die Anzeige erfordert die Eingabe des Admin-Passworts.</li>
+      <li><strong>Container-Anforderungen:</strong> Docker Compose benötigt <code>cap_add: [NET_ADMIN, NET_RAW]</code> und das Device <code>/dev/net/tun</code> sowie Mounts für <code>ts-data</code> und <code>ts-config</code>.</li>
     </ul>
   </section>
 

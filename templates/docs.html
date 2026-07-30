@@ -57,9 +57,22 @@
       <li><strong>Registration</strong> – Turn public registration on or off.</li>
       <li><strong>Backups</strong> – Create, download, restore, and delete server-side <code>.tar.xz</code> backups.</li>
       <li><strong>MCP</strong> – Interactive client configurator (AGY, OpenCode, Hermes) and categorized tool explorer for all 38 MCP tools.</li>
+      <li><strong>Tailscale</strong> – Same-container Tailscale integration (daemon, serve &amp; funnel) for secure remote access by AI agents (Claude, Grok, Cursor, AGY) via MagicDNS or public Funnel URLs.</li>
       <li><strong>Health Check</strong> – Run the wiki linter (orphans, missing targets, staleness, raw-file refs).</li>
       <li><strong>Wiki Management</strong> – Create, edit (inline), and delete wikis with page/file count and size.</li>
       <li><strong>Update</strong> – Pull updates directly from GitHub.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold mb-3">🦈 Tailscale &amp; Funnel Integration (Remote Agent Access)</h2>
+    <p class="text-text-secondary">LLMWikiNG includes an integrated same-container Tailscale feature (under <em>Settings ➜ Tailscale</em>). This allows you to serve your instance within a private Tailnet network or expose it via <strong>Tailscale Funnel</strong> to the public internet for remote AI agents (e.g., Claude, Grok, Cursor, AGY) — without port forwarding, NGINX, or CGNAT issues.</p>
+    <ul class="list-disc list-inside space-y-1 mt-2 text-text-secondary">
+      <li><strong>One-Click Setup:</strong> Enter an Auth key, set a hostname (e.g. <code>zerodot1sllmwiking</code>), check "Funnel (public internet access)", and click <em>"Setup Everything"</em>.</li>
+      <li><strong>Tailnet Serve (Private):</strong> Proxies HTTPS traffic from your private Tailnet to the internal application port (8080).</li>
+      <li><strong>Tailscale Funnel (Public):</strong> Makes the wiki accessible worldwide under <code>https://&lt;hostname&gt;.&lt;tailnet&gt;.ts.net</code>. Authentication remains enforced via API Keys / MCP Keys.</li>
+      <li><strong>Security &amp; Key Encryption:</strong> Auth keys are encrypted with the system secret and saved in <code>data/tailscale.json</code> (chmod 0o600). Revealing the key requires admin password verification.</li>
+      <li><strong>Container Requirements:</strong> Docker Compose requires <code>cap_add: [NET_ADMIN, NET_RAW]</code>, device <code>/dev/net/tun</code>, and volume mounts for <code>ts-data</code> and <code>ts-config</code>.</li>
     </ul>
   </section>
 

@@ -238,6 +238,67 @@ is the default and is loaded server-side from `config.json` — there is deliber
 
 ---
 
+## 🦈 Tailscale & Funnel Integration
+
+LLMWikiNG includes a same-container **Tailscale** daemon integration for One-Click setup of private VPN connections (**Tailscale Serve**) and public HTTPS access (**Tailscale Funnel**). This allows remote AI agents (Claude, Grok, Cursor, AGY) and mobile users to access LLMWikiNG & MCP endpoints from anywhere without port forwarding, NGINX, or CGNAT issues.
+
+### 🌟 Key Capabilities
+- **Same-Container Architecture:** Runs `tailscaled` daemon directly inside the LLMWikiNG Docker container (no sidecar container required).
+- **One-Click Setup:** Go to **Settings ➜ Tailscale**, enter your Auth-Key (`tskey-auth-...`), set your preferred hostname (default: `zerodot1sllmwiking`), check *Funnel*, and click **"Setup Everything"**.
+- **Tailnet Serve (Private):** Securely proxies HTTPS traffic within your private Tailnet to local port `8080`.
+- **Tailscale Funnel (Public):** Exposes your LLMWikiNG instance to the public internet under `https://<hostname>.<tailnet>.ts.net` with valid Tailscale HTTPS certificates. Access control remains enforced via session login, API Keys, and per-user MCP Keys.
+- **Encrypted Storage & Security:** Auth keys are encrypted with system secrets in `data/tailscale.json` (chmod 0o600). Key reveal requires admin password authentication.
+- **Audit Logging:** Every Tailscale operation (`tailscale_setup`, `tailscale_save`, `tailscale_up`, `tailscale_down`, `tailscale_apply`, `tailscale_reset`, `tailscale_reveal`) is logged under the `tailscale` category.
+
+### 🐳 Docker & Docker Compose Setup
+Ensure your `docker-compose.yml` mounts `/dev/net/tun` and grants networking capabilities:
+
+```yaml
+services:
+  llmwiking:
+    build: .
+    container_name: llmwiking_app
+    hostname: zerodot1sllmwiking
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/tailscale/serve.json
+      - TS_HOSTNAME=zerodot1sllmwiking
+    volumes:
+      - ./data:/app/data
+      - ./wikis:/app/wikis
+      - ./ts-data:/var/lib/tailscale
+      - ./ts-config:/config/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+```
+
+### 🤖 Remote Agent Access Snippet (Claude / Cursor / AGY)
+Once Funnel is active, configure your AI agent with your public Tailscale URL:
+
+```json
+{
+  "mcpServers": {
+    "llmwiking": {
+      "url": "https://zerodot1sllmwiking.<your-tailnet>.ts.net/LLMWikiNG/mcp",
+      "headers": {
+        "X-MCP-Key": "mcp_...",
+        "X-API-Key": "llmw_..."
+      }
+    }
+  }
+}
+```
+
+---
+
 ## 🤖 Model Context Protocol (MCP) & Open Knowledge Format (OKF)
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.

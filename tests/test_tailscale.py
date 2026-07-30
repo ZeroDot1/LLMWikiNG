@@ -32,7 +32,7 @@ def test_tailscale_config_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr("services.tailscale.DATA_DIR", tmp_path)
 
     cfg = load_config()
-    assert cfg["hostname"] == "llmwiking"
+    assert cfg["hostname"] == "zerodot1sllmwiking"
     assert cfg["funnel_enabled"] is False
 
     cfg["hostname"] = "my-wiki-node"

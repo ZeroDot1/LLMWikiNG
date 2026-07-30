@@ -1085,7 +1085,7 @@ async def api_get_tailscale_config(admin: dict = Depends(require_api_admin)):
     # Strip raw/encrypted keys from public response
     safe_cfg = {
         "enabled": cfg.get("enabled", False),
-        "hostname": cfg.get("hostname", "llmwiking"),
+        "hostname": cfg.get("hostname", "zerodot1sllmwiking"),
         "has_auth_key": bool(cfg.get("auth_key_encrypted")),
         "auth_key_hint": cfg.get("auth_key_hint"),
         "app_port": cfg.get("app_port", 8080),
@@ -1111,7 +1111,7 @@ async def api_save_tailscale_config(request: Request, admin: dict = Depends(requ
         raise HTTPException(status_code=400, detail="Ungültiges JSON-Format")
 
     cfg = load_config()
-    cfg["hostname"] = (data.get("hostname") or "llmwiking").strip()
+    cfg["hostname"] = (data.get("hostname") or "zerodot1sllmwiking").strip()
     cfg["app_port"] = int(data.get("app_port") or cfg.get("app_port", 8080))
     cfg["funnel_port"] = int(data.get("funnel_port") or cfg.get("funnel_port", 443))
     cfg["funnel_enabled"] = bool(data.get("funnel_enabled", cfg.get("funnel_enabled", False)))
@@ -1142,7 +1142,7 @@ async def api_setup_tailscale(request: Request, admin: dict = Depends(require_ap
         data = {}
 
     res = await setup_all(
-        hostname=data.get("hostname", "llmwiking"),
+        hostname=data.get("hostname", "zerodot1sllmwiking"),
         auth_key=data.get("auth_key"),
         app_port=data.get("app_port", 8080),
         funnel_port=data.get("funnel_port", 443),

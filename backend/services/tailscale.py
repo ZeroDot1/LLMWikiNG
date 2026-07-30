@@ -28,7 +28,7 @@ DEFAULT_APP_PORT = int(os.getenv("APP_PORT") or os.getenv("PORT") or "8080")
 
 DEFAULTS: dict[str, Any] = {
     "enabled": False,
-    "hostname": "llmwiking",
+    "hostname": "zerodot1sllmwiking",
     "auth_key_encrypted": None,
     "auth_key_hint": None,
     "app_port": DEFAULT_APP_PORT,
@@ -203,7 +203,7 @@ async def up(cfg: dict[str, Any], raw_auth_key: str | None = None) -> dict[str, 
     cmd = [
         "tailscale", "up",
         f"--authkey={key}",
-        f"--hostname={cfg.get('hostname') or 'llmwiking'}",
+        f"--hostname={cfg.get('hostname') or 'zerodot1sllmwiking'}",
         "--accept-dns=true",
     ]
     extra = (cfg.get("extra_args") or "").strip()
@@ -285,7 +285,7 @@ async def setup_all(
 ) -> dict[str, Any]:
     """One-Click setup: Save config -> tailscale up -> apply serve/funnel -> get status."""
     cfg = load_config()
-    cfg["hostname"] = (hostname or "llmwiking").strip()
+    cfg["hostname"] = (hostname or "zerodot1sllmwiking").strip()
     cfg["app_port"] = int(app_port)
     cfg["funnel_port"] = int(funnel_port)
     cfg["funnel_enabled"] = bool(funnel_enabled)

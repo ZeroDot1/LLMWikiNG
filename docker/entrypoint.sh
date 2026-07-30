@@ -6,7 +6,7 @@ APP_HOST="${HOST:-0.0.0.0}"
 TS_STATE_DIR="${TS_STATE_DIR:-/var/lib/tailscale}"
 TS_SERVE_CONFIG="${TS_SERVE_CONFIG:-/config/tailscale/serve.json}"
 TS_AUTHKEY="${TS_AUTHKEY:-}"
-TS_HOSTNAME="${TS_HOSTNAME:-llmwiking}"
+TS_HOSTNAME="${TS_HOSTNAME:-zerodot1sllmwiking}"
 
 mkdir -p "$TS_STATE_DIR" "$(dirname "$TS_SERVE_CONFIG")"
 

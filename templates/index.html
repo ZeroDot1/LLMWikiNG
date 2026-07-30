@@ -49,7 +49,7 @@
             {% if wiki_stats %}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {% for ws in wiki_stats %}
-                <a href="{{ base_path }}/wiki/{{ ws.name }}/index" class="no-underline rounded-lg border border-border bg-bg-sunken p-4 hover:border-primary transition-colors">
+                <a href="{{ base_path }}/wiki/{{ ws.slug }}/index" class="no-underline rounded-lg border border-border bg-bg-sunken p-4 hover:border-primary transition-colors">
                     <div class="flex items-center justify-between">
                         <span class="font-semibold text-primary text-lg">📚 {{ ws.name }}</span>
                         <span class="text-xs text-text-muted">{{ ws.stats.page_count }} {{ _('index.pages_short') }}</span>

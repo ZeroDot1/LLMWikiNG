@@ -488,6 +488,11 @@ async def api_ingest_process(wiki: str, user: dict = Depends(get_api_user)):
             result = await run_ingest_async(filepath, timeout=120, env=env)
             if result.returncode == 0:
                 processed.append(item["name"])
+                try:
+                    if filepath.exists() and filepath.is_file():
+                        filepath.unlink()
+                except Exception:
+                    pass
             else:
                 errors.append(f"{item['name']}: {result.stderr.strip() or 'Fehler beim Ingest'}")
         except Exception as e:

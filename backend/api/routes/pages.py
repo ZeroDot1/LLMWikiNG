@@ -671,12 +671,11 @@ async def pending_ingest_single(filename: str, request: Request):
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or f"Ingest fehlgeschlagen (Exitcode {result.returncode})")
 
-        today_prefix = datetime.now().strftime("%Y-%m-%d")
-        if not filename.startswith(today_prefix):
-            try:
+        try:
+            if filepath.exists() and filepath.is_file():
                 filepath.unlink()
-            except Exception:
-                pass
+        except Exception:
+            pass
 
         await run_sync_async("main")
         success_msg = f"Datei '{filename}' wurde erfolgreich ingestiert!"
@@ -727,12 +726,11 @@ async def pending_ingest_all(request: Request):
             result = await run_ingest_async(filepath, timeout=120, env=env)
             if result.returncode == 0:
                 success_count += 1
-                today_prefix = datetime.now().strftime("%Y-%m-%d")
-                if not filename.startswith(today_prefix):
-                    try:
+                try:
+                    if filepath.exists() and filepath.is_file():
                         filepath.unlink()
-                    except Exception:
-                        pass
+                except Exception:
+                    pass
             else:
                 errors.append(f"{filename}: {result.stderr.strip()}")
         except Exception as e:

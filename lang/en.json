@@ -590,6 +590,7 @@
     "tailscale_btn_stop": "Stop (down)",
     "tailscale_btn_reset": "Reset Funnel",
     "tailscale_btn_restart": "Restart Tailscale",
+    "tailscale_btn_fetch_cert": "Fetch SSL/TLS Certificate (tailscale cert)",
     "tailscale_agent_guide_title": "Access for AI Agents (Claude, Grok, Cursor, AGY)",
     "tailscale_agent_guide_subtitle": "Use the public Funnel URL or MagicDNS to connect your AI agent with LLMWikiNG and MCP.",
     "tailscale_warning_title": "Important Security Note",

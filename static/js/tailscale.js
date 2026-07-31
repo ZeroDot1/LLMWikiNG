@@ -298,6 +298,30 @@
             });
     };
 
+    window.handleTailscaleCert = function () {
+        clearMsg();
+        showMsg("⏳ SSL/TLS-Zertifikat wird von Tailscale / Let's Encrypt abgerufen...", false);
+
+        fetch(getBasePath() + "/api/v1/system/tailscale/cert", { method: "POST" })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    if (!res.ok) throw new Error(data.detail || data.error || "Zertifikatsabruf fehlgeschlagen");
+                    return data;
+                });
+            })
+            .then(function (data) {
+                if (data.ok) {
+                    showMsg("✅ SSL/TLS-Zertifikat für " + (data.dns_name || "Tailscale") + " erfolgreich abgerufen!", false);
+                    window.refreshTailscaleStatus();
+                } else {
+                    showMsg("⚠️ Zertifikatsfehler: " + (data.stderr || data.error || "Zertifikat konnte nicht erstellt werden"), true);
+                }
+            })
+            .catch(function (err) {
+                showMsg("❌ Fehler: " + err.message, true);
+            });
+    };
+
     window.handleTailscaleRestart = function () {
         if (!confirm("Möchtest du den Tailscale Daemon wirklich neustarten? (Der Webserver bleibt online)")) return;
         clearMsg();

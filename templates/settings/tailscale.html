@@ -46,7 +46,12 @@
             </div>
             <div class="rounded-lg bg-bg-sunken p-3 border border-border">
                 <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_cert_status') }}</span>
-                <span id="ts-live-cert" class="font-semibold text-text">--</span>
+                <div class="flex items-center justify-between">
+                    <span id="ts-live-cert" class="font-semibold text-text">--</span>
+                    <button type="button" onclick="handleTailscaleCert()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1">
+                        <span>📜</span> Abrufen
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -161,6 +166,11 @@
                 <button type="button" onclick="handleTailscaleSaveOnly()"
                         class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text px-3 py-2 text-xs font-medium transition-all">
                     💾 {{ _('settings.tailscale_btn_save_only') }}
+                </button>
+
+                <button type="button" onclick="handleTailscaleCert()"
+                        class="rounded-lg border border-border bg-surface hover:bg-primary/10 text-primary px-3 py-2 text-xs font-medium transition-all flex items-center gap-1">
+                    📜 {{ _('settings.tailscale_btn_fetch_cert') }}
                 </button>
 
                 <button type="button" onclick="handleTailscaleDown()"

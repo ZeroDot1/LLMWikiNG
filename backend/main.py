@@ -136,6 +136,12 @@ def create_app() -> FastAPI:
     app.include_router(wiki_api_router)
     app.include_router(pages_router)
 
+    @app.get(f"{BASE_PATH}/status")
+    @app.get("/status")
+    @app.get("/health")
+    def health_check():
+        return {"status": "ok", "app": APP_NAME, "version": APP_VERSION}
+
     from core.config import ENABLE_MCP_SERVER, LLMWIKING_MCP_KEY
 
     if ENABLE_MCP_SERVER:

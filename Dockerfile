@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && . "$HOME/.cargo/env" \
-    && cargo install qmd-cli \
+    && CARGO_BUILD_JOBS=2 cargo install qmd-cli \
     && cp "$HOME/.cargo/bin/qmd" /usr/local/bin/qmd \
     && rm -rf "$HOME/.cargo" "$HOME/.rustup"
 

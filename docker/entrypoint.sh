@@ -30,7 +30,7 @@ if [ -n "$TS_AUTHKEY" ]; then
     TS_UP_CMD+=(--hostname="$TS_HOSTNAME")
   fi
   if [ -n "${TS_EXTRA_ARGS:-}" ]; then
-    TS_UP_CMD+=(${TS_EXTRA_ARGS})
+    TS_UP_CMD+=(${TS_EXTRA_ARGS:-})
   fi
   "${TS_UP_CMD[@]}" || true
 fi

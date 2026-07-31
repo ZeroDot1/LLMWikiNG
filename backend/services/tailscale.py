@@ -223,6 +223,33 @@ async def down() -> dict[str, Any]:
     return {"ok": code == 0, "stdout": out, "stderr": err}
 
 
+async def fetch_cert(cert_dir: Path | str | None = None) -> dict[str, Any]:
+    """Runs `tailscale cert <dns_name>` to provision Let's Encrypt TLS certificate files."""
+    if not _which_tailscale():
+        return {"ok": False, "error": "tailscale binary not found"}
+
+    st = await get_status()
+    dns_name = st.get("dns_name")
+    if not dns_name:
+        return {"ok": False, "error": "Tailscale DNS-Name nicht gefunden. Stelle sicher, dass Tailscale online ist (tailscale up)."}
+
+    cmd = ["tailscale", "cert"]
+    if cert_dir:
+        out_path = Path(cert_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        cmd.extend(["--cert-file", str(out_path / f"{dns_name}.crt"), "--key-file", str(out_path / f"{dns_name}.key")])
+    cmd.append(dns_name)
+
+    code, out, err = await _run(cmd, timeout=120.0)
+    return {
+        "ok": code == 0,
+        "dns_name": dns_name,
+        "stdout": out,
+        "stderr": err,
+        "code": code,
+    }
+
+
 async def apply_serve_funnel(cfg: dict[str, Any]) -> dict[str, Any]:
     """Applies `tailscale serve` and `tailscale funnel` settings via CLI."""
     if not _which_tailscale():
@@ -232,6 +259,14 @@ async def apply_serve_funnel(cfg: dict[str, Any]) -> dict[str, Any]:
     fport = int(cfg.get("funnel_port") or 443)
     target = f"http://127.0.0.1:{app_port}"
     results = []
+
+    # Optional: fetch/provision HTTPS cert if enabled
+    if cfg.get("serve_enabled", True) or cfg.get("funnel_enabled"):
+        cert_res = await fetch_cert()
+        if cert_res.get("ok"):
+            results.append({"step": "cert", "ok": True, "out": cert_res.get("stdout"), "err": ""})
+        else:
+            log.info("tailscale cert info: %s", cert_res.get("stderr") or cert_res.get("error"))
 
     # Serve (Tailnet private)
     if cfg.get("serve_enabled", True):
@@ -253,7 +288,7 @@ async def apply_serve_funnel(cfg: dict[str, Any]) -> dict[str, Any]:
 
     write_serve_config(cfg)
     status = await get_status()
-    return {"ok": all(r.get("ok") for r in results), "steps": results, "status": status}
+    return {"ok": all(r.get("ok") for r in results if r.get("step") != "cert"), "steps": results, "status": status}
 
 
 async def reset_funnel_serve() -> dict[str, Any]:

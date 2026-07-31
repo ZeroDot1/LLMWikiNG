@@ -1184,6 +1184,15 @@ async def api_tailscale_apply(request: Request, admin: dict = Depends(require_ap
     return res
 
 
+@router.post("/system/tailscale/cert")
+async def api_tailscale_cert(request: Request, admin: dict = Depends(require_api_admin)):
+    """Executes tailscale cert to provision Let's Encrypt SSL/TLS certificate."""
+    from services.tailscale import fetch_cert
+    res = await fetch_cert()
+    log_action("tailscale_cert", details=f"tailscale cert ausgeführt (ok={res.get('ok')})", user_id=admin.get("id"), username=admin.get("username"), request=request)
+    return res
+
+
 @router.post("/system/tailscale/reset")
 async def api_tailscale_reset(request: Request, admin: dict = Depends(require_api_admin)):
     """Resets tailscale funnel and serve settings."""

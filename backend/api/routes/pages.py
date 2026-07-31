@@ -1324,7 +1324,8 @@ def admin_update_run(request: Request):
 @router.get("/admin/update/check")
 async def admin_update_check(request: Request):
     from fastapi.responses import JSONResponse
-    github_token = request.query_params.get("github_token", "").strip()
+    raw_token = request.query_params.get("github_token", "").strip()
+    github_token = "" if raw_token in ("ghp_xxxxxxxxxxxx", "ghp_...") else raw_token
 
     version_file = PROJECT_ROOT / "VERSION"
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
@@ -1354,8 +1355,25 @@ async def admin_update_check(request: Request):
             ["git", "ls-remote", "origin", "main"],
             capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
         )
+
+        # Fallback: Falls Token angegeben war aber mit Auth-Fehler scheiterte, ohne Token versuchen
+        if (ls_proc.returncode != 0 or not ls_proc.stdout.strip()) and original_url:
+            await asyncio.to_thread(
+                subprocess.run,
+                ["git", "remote", "set-url", "origin", original_url],
+                timeout=5, cwd=str(PROJECT_ROOT),
+            )
+            ls_proc = await asyncio.to_thread(
+                subprocess.run,
+                ["git", "ls-remote", "origin", "main"],
+                capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+            )
+
         if ls_proc.returncode != 0 or not ls_proc.stdout.strip():
-            return JSONResponse({"success": False, "error": "Konnte Version von GitHub nicht abrufen."})
+            err_msg = ls_proc.stderr.strip() or "Konnte Version von GitHub nicht abrufen."
+            if any(term in err_msg for term in ("Authentication failed", "401", "Bad credentials", "could not read Username")):
+                err_msg = "GitHub-Authentifizierung fehlgeschlagen: Der angegebene Personal Access Token ist ungültig oder abgelaufen."
+            return JSONResponse({"success": False, "error": err_msg})
 
         remote_hash = ls_proc.stdout.strip().split()[0]
         local_hash_proc = await asyncio.to_thread(
@@ -1387,8 +1405,8 @@ async def admin_update_check(request: Request):
             capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
         )
         github_version = show_proc.stdout.strip() if show_proc.returncode == 0 else None
-    except Exception:
-        github_version = None
+    except Exception as e:
+        return JSONResponse({"success": False, "error": f"Fehler bei der Versionsprüfung: {e}"})
     finally:
         # GitHub-Token aus remote URL entfernen (Sicherheit!)
         if original_url:

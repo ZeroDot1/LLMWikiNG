@@ -719,7 +719,10 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
             cwd=str(PROJECT_ROOT),
         )
         if ls_proc.returncode != 0 or not ls_proc.stdout.strip():
-            raise HTTPException(status_code=502, detail="Konnte Version von GitHub nicht abrufen.")
+            err_detail = ls_proc.stderr.strip() or "Konnte Version von GitHub nicht abrufen."
+            if any(term in err_detail for term in ("Authentication failed", "401", "Bad credentials", "could not read Username")):
+                err_detail = "GitHub-Authentifizierung fehlgeschlagen: Der angegebene Personal Access Token ist ungültig oder abgelaufen."
+            raise HTTPException(status_code=502, detail=err_detail)
 
         remote_hash = ls_proc.stdout.strip().split()[0]
         local_hash_proc = await asyncio.to_thread(

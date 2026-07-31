@@ -4,7 +4,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h2 class="text-xl font-bold text-text flex items-center gap-2">
-                    <span>🦈</span> {{ _('settings.tailscale_heading') }}
+                    {{ _('settings.tailscale_heading') }}
                 </h2>
                 <p class="text-xs text-text-secondary mt-1">
                     {{ _('settings.tailscale_subtitle') }}
@@ -23,7 +23,7 @@
     <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h3 class="text-sm font-semibold text-text uppercase tracking-wider mb-4 border-b border-border pb-2 flex items-center justify-between">
             <span>{{ _('settings.tailscale_status_card_title') }}</span>
-            <button type="button" onclick="refreshTailscaleStatus()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1">
+            <button type="button" onclick="refreshTailscaleStatus()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1 cursor-pointer transition-transform hover:scale-105">
                 <span>🔄</span> {{ _('settings.tailscale_btn_refresh_status') }}
             </button>
         </h3>
@@ -37,7 +37,7 @@
                 <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_dns_name') }}</span>
                 <div class="flex items-center justify-between">
                     <span id="ts-live-dns" class="font-mono font-semibold text-text truncate">--</span>
-                    <button type="button" id="ts-copy-dns-btn" onclick="copyTsDns()" class="hidden text-primary hover:text-primary-hover ml-1 text-xs">Kopieren</button>
+                    <button type="button" id="ts-copy-dns-btn" onclick="copyTsDns()" class="hidden text-primary hover:text-primary-hover ml-1 text-xs cursor-pointer font-medium">Kopieren</button>
                 </div>
             </div>
             <div class="rounded-lg bg-bg-sunken p-3 border border-border">
@@ -48,7 +48,7 @@
                 <span class="text-text-secondary block mb-1">{{ _('settings.tailscale_label_cert_status') }}</span>
                 <div class="flex items-center justify-between">
                     <span id="ts-live-cert" class="font-semibold text-text">--</span>
-                    <button type="button" onclick="handleTailscaleCert()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1">
+                    <button type="button" id="ts-live-cert-btn" onclick="handleTailscaleCert()" class="text-xs text-primary hover:underline font-normal flex items-center gap-1 cursor-pointer">
                         <span>📜</span> Abrufen
                     </button>
                 </div>
@@ -59,13 +59,16 @@
         <div id="ts-funnel-url-card" class="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20 hidden">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                    <span class="text-xs font-semibold text-primary block">🌐 Öffentliche Tailscale Funnel URL:</span>
+                    <span class="text-xs font-semibold text-primary block">🌐 Öffentliche Tailscale Funnel URL (Nur HTTPS!):</span>
                     <a id="ts-funnel-url-link" href="#" target="_blank" class="font-mono text-sm font-bold text-primary hover:underline break-all"></a>
                 </div>
-                <button type="button" onclick="copyTsFunnelUrl()" class="px-3 py-1.5 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-medium shrink-0">
+                <button type="button" onclick="copyTsFunnelUrl()" class="px-3 py-1.5 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-medium shrink-0 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm">
                     URL kopieren
                 </button>
             </div>
+            <p class="text-[11px] text-text-secondary mt-2 border-t border-primary/20 pt-1.5">
+                💡 <strong>Hinweis zur Erreichbarkeit:</strong> Tailscale Funnel erfordert zwingend das <code>https://</code> Protokoll (nicht <code>http://</code>). Zudem muss in der <a href="https://login.tailscale.com/admin/dns" target="_blank" class="text-primary underline">Tailscale Admin Console</a> unter <em>DNS ➜ HTTPS Certificates</em> die Zertifikatsausstellung aktiviert sein.
+            </p>
         </div>
     </div>
 
@@ -92,7 +95,7 @@
                 <div>
                     <label for="ts-auth-key" class="block text-xs font-medium text-text mb-1 flex items-center justify-between">
                         <span>{{ _('settings.tailscale_field_auth_key') }}</span>
-                        <button type="button" id="ts-reveal-key-btn" onclick="openTsRevealModal()" class="text-primary hover:underline text-[11px] font-normal hidden">
+                        <button type="button" id="ts-reveal-key-btn" onclick="openTsRevealModal()" class="text-primary hover:underline text-[11px] font-normal cursor-pointer hidden">
                             🔑 Key anzeigen
                         </button>
                     </label>
@@ -133,14 +136,14 @@
             <div class="space-y-2 pt-2 border-t border-border">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="ts-serve-enabled" name="serve_enabled" checked
-                           class="rounded border-border text-primary focus:ring-primary h-4 w-4">
+                           class="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer">
                     <span class="text-xs font-medium text-text">{{ _('settings.tailscale_field_serve_enabled') }}</span>
                 </label>
                 <p class="text-[11px] text-text-secondary ml-6">{{ _('settings.tailscale_field_serve_hint') }}</p>
 
                 <label class="flex items-center gap-2 cursor-pointer pt-2">
                     <input type="checkbox" id="ts-funnel-enabled" name="funnel_enabled"
-                           class="rounded border-border text-primary focus:ring-primary h-4 w-4">
+                           class="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer">
                     <span class="text-xs font-medium text-text">{{ _('settings.tailscale_field_funnel_enabled') }}</span>
                 </label>
                 <p class="text-[11px] text-text-secondary ml-6">{{ _('settings.tailscale_field_funnel_hint') }}</p>
@@ -159,32 +162,32 @@
             <!-- Action Buttons -->
             <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-border">
                 <button type="submit" id="ts-setup-btn"
-                        class="rounded-lg bg-primary hover:bg-primary-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
+                        class="rounded-lg bg-primary hover:bg-primary-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                     <span>🚀</span> {{ _('settings.tailscale_btn_setup_all') }}
                 </button>
 
-                <button type="button" onclick="handleTailscaleSaveOnly()"
-                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text px-3 py-2 text-xs font-medium transition-all">
+                <button type="button" id="ts-save-btn" onclick="handleTailscaleSaveOnly()"
+                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text px-3 py-2 text-xs font-medium transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     💾 {{ _('settings.tailscale_btn_save_only') }}
                 </button>
 
-                <button type="button" onclick="handleTailscaleCert()"
-                        class="rounded-lg border border-border bg-surface hover:bg-primary/10 text-primary px-3 py-2 text-xs font-medium transition-all flex items-center gap-1">
+                <button type="button" id="ts-cert-btn" onclick="handleTailscaleCert()"
+                        class="rounded-lg border border-border bg-surface hover:bg-primary/10 text-primary px-3 py-2 text-xs font-medium transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                     📜 {{ _('settings.tailscale_btn_fetch_cert') }}
                 </button>
 
-                <button type="button" onclick="handleTailscaleDown()"
-                        class="rounded-lg border border-border bg-surface hover:bg-error/10 text-error px-3 py-2 text-xs font-medium transition-all">
+                <button type="button" id="ts-stop-btn" onclick="handleTailscaleDown()"
+                        class="rounded-lg border border-border bg-surface hover:bg-error/10 text-error px-3 py-2 text-xs font-medium transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     🛑 {{ _('settings.tailscale_btn_stop') }}
                 </button>
 
-                <button type="button" onclick="handleTailscaleReset()"
-                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text-secondary px-3 py-2 text-xs font-medium transition-all">
+                <button type="button" id="ts-reset-btn" onclick="handleTailscaleReset()"
+                        class="rounded-lg border border-border bg-surface hover:bg-bg-sunken text-text-secondary px-3 py-2 text-xs font-medium transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     ↩️ {{ _('settings.tailscale_btn_reset') }}
                 </button>
 
-                <button type="button" onclick="handleTailscaleRestart()"
-                        class="rounded-lg border border-border bg-surface hover:bg-warning/10 text-warning px-3 py-2 text-xs font-medium transition-all">
+                <button type="button" id="ts-restart-btn" onclick="handleTailscaleRestart()"
+                        class="rounded-lg border border-border bg-surface hover:bg-warning/10 text-warning px-3 py-2 text-xs font-medium transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     🔄 {{ _('settings.tailscale_btn_restart') }}
                 </button>
             </div>

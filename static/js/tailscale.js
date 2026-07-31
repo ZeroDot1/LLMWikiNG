@@ -238,8 +238,23 @@
             });
     };
 
+    function setBtnLoading(btn, isBusy, busyText) {
+        if (!btn) return;
+        if (isBusy) {
+            btn.dataset.origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = "<span>⏳</span> " + busyText;
+        } else {
+            btn.disabled = false;
+            if (btn.dataset.origText) btn.innerHTML = btn.dataset.origText;
+        }
+    }
+
     window.handleTailscaleSaveOnly = function () {
         clearMsg();
+        var btn = document.getElementById("ts-save-btn");
+        setBtnLoading(btn, true, "Speichert...");
+
         var payload = {
             hostname: document.getElementById("ts-hostname").value,
             auth_key: document.getElementById("ts-auth-key").value,
@@ -270,12 +285,17 @@
             })
             .catch(function (err) {
                 showMsg("❌ Speicherfehler: " + err.message, true);
+            })
+            .finally(function () {
+                setBtnLoading(btn, false);
             });
     };
 
     window.handleTailscaleDown = function () {
         if (!confirm("Möchtest du die Tailscale-Verbindung wirklich trennen (down)?")) return;
         clearMsg();
+        var btn = document.getElementById("ts-stop-btn");
+        setBtnLoading(btn, true, "Trennt...");
 
         fetch(getBasePath() + "/api/v1/system/tailscale/down", {
             method: "POST",
@@ -292,12 +312,17 @@
             })
             .catch(function (err) {
                 showMsg("❌ Fehler: " + err.message, true);
+            })
+            .finally(function () {
+                setBtnLoading(btn, false);
             });
     };
 
     window.handleTailscaleReset = function () {
         if (!confirm("Möchtest du Tailscale Serve & Funnel zurücksetzen?")) return;
         clearMsg();
+        var btn = document.getElementById("ts-reset-btn");
+        setBtnLoading(btn, true, "Zurücksetzen...");
 
         fetch(getBasePath() + "/api/v1/system/tailscale/reset", {
             method: "POST",
@@ -314,12 +339,17 @@
             })
             .catch(function (err) {
                 showMsg("❌ Fehler: " + err.message, true);
+            })
+            .finally(function () {
+                setBtnLoading(btn, false);
             });
     };
 
     window.handleTailscaleCert = function () {
         clearMsg();
         showMsg("⏳ SSL/TLS-Zertifikat wird von Tailscale / Let's Encrypt abgerufen...", false);
+        var btn = document.getElementById("ts-cert-btn") || document.getElementById("ts-live-cert-btn");
+        setBtnLoading(btn, true, "Abrufen...");
 
         fetch(getBasePath() + "/api/v1/system/tailscale/cert", {
             method: "POST",
@@ -341,6 +371,9 @@
             })
             .catch(function (err) {
                 showMsg("❌ Fehler: " + err.message, true);
+            })
+            .finally(function () {
+                setBtnLoading(btn, false);
             });
     };
 
@@ -348,6 +381,8 @@
         if (!confirm("Möchtest du den Tailscale Daemon wirklich neustarten? (Der Webserver bleibt online)")) return;
         clearMsg();
         showMsg("⏳ Tailscale Daemon wird neugestartet...", false);
+        var btn = document.getElementById("ts-restart-btn");
+        setBtnLoading(btn, true, "Neustart...");
 
         fetch(getBasePath() + "/api/v1/system/tailscale/restart", {
             method: "POST",
@@ -365,6 +400,9 @@
             })
             .catch(function (err) {
                 showMsg("❌ Neustart-Fehler: " + err.message, true);
+            })
+            .finally(function () {
+                setBtnLoading(btn, false);
             });
     };
 

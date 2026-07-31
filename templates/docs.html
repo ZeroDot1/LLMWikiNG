@@ -71,6 +71,7 @@
       <li><strong>One-Click Setup:</strong> Enter an Auth key, set a hostname (e.g. <code>zerodot1sllmwiking</code>), check "Funnel (public internet access)", and click <em>"Setup Everything"</em>.</li>
       <li><strong>Tailnet Serve (Private):</strong> Proxies HTTPS traffic from your private Tailnet to the internal application port (8080).</li>
       <li><strong>Tailscale Funnel (Public):</strong> Makes the wiki accessible worldwide under <code>https://&lt;hostname&gt;.&lt;tailnet&gt;.ts.net</code>. Authentication remains enforced via API Keys / MCP Keys.</li>
+      <li><strong>HTTPS Certificates:</strong> Automated or manual SSL/TLS certificate fetching via <code>tailscale cert &lt;dns_name&gt;</code> with a dedicated UI button under <em>Settings ➜ Tailscale</em>.</li>
       <li><strong>Security &amp; Key Encryption:</strong> Auth keys are encrypted with the system secret and saved in <code>data/tailscale.json</code> (chmod 0o600). Revealing the key requires admin password verification.</li>
       <li><strong>Container Requirements:</strong> Docker Compose requires <code>cap_add: [NET_ADMIN, NET_RAW]</code>, device <code>/dev/net/tun</code>, and volume mounts for <code>ts-data</code> and <code>ts-config</code>.</li>
     </ul>

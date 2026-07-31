@@ -7,6 +7,23 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.15.0] - 2026-07-31
+
+### Added
+- **🦈 Tailscale SSL/TLS Certificate Provisioning & Web UI Integration (`tailscale cert`)**:
+  - **Zertifikatsanforderung & Backend Service** (`backend/services/tailscale.py`): Neue Funktion `fetch_cert()` führt `tailscale cert <dns_name>` aus, um SSL/TLS-Zertifikate von Let's Encrypt abzurufen. Automatische Ausführung bei `apply_serve_funnel`.
+  - **Admin REST API Endpunkt** (`backend/api/routes/api.py`): Neuer Endpunkt `POST /api/v1/system/tailscale/cert` zur manuellen Zertifikatsanforderung.
+  - **Web UI Buttons & i18n** (`templates/settings/tailscale.html`, `static/js/tailscale.js`, `lang/de.json`, `lang/en.json`): Schnell-Button `📜 Abrufen` in der Live-Status-Karte sowie Aktions-Button `📜 SSL/TLS Zertifikat abrufen (tailscale cert)`.
+  - **Dokumentations-Updates** (`templates/docs.html`, `templates/docs_de.html`, `README.md`): Erweiterte Anleitungen für Tailscale HTTPS-Zertifikate und `tailscale cert`.
+
+### Fixed
+- **Docker Container SyntaxError Crash** (`backend/api/routes/pages.py`): Behebung eines Syntax-Fehlers in Zeile 2144 (beschädigtes String-Literal), der den FastAPI Container beim Start abstürzen ließ und eine Endlos-Reboot-Schleife verursachte.
+- **Docker Healthcheck & Unauthenticated Status Endpoints** (`backend/main.py`): Hinzufügen von unauthentifizierten Endpunkten (`/LLMWikiNG/status`, `/status`, `/health`), damit Docker HEALTHCHECK (`curl -f`) nicht mehr durch 401 Unauthorized fehlschlägt.
+- **Docker Build Context & OOM Prevention** (`.dockerignore`, `Dockerfile`, `docker/entrypoint.sh`):
+  - `.dockerignore` angelegt zum Ausschluss großer/lokaler Volume-Ordner (`ts-data`, `ts-config`, `.pytest_cache`, `.git`).
+  - `CARGO_BUILD_JOBS=2` im `Dockerfile` zur Vermeidung von OOM-Kills (Code 137) während der Rust/C++ Kompilierung.
+  - Bash Parameter-Expansion in `entrypoint.sh` unter `set -u` abgesichert.
+
 ## [2.14.0] - 2026-07-31
 
 ### Added

@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-VERSION="2.15.0"
+VERSION="2.15.1"
 
 WIKI_SLUG="${WIKI_SLUG:-main}"
 WIKIS_ROOT="${WIKIS_ROOT:-./wikis}"

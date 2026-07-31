@@ -584,6 +584,8 @@
     "tailscale_field_serve_hint": "Enables secure access within your private Tailnet network.",
     "tailscale_field_funnel_enabled": "Enable Funnel (Public internet access)",
     "tailscale_field_funnel_hint": "Exposes the wiki on the public internet under https://<node>.<tailnet>.ts.net.",
+    "tailscale_field_proxy_target": "Proxy Address (Target URL)",
+    "tailscale_field_proxy_target_hint": "Custom proxy URL for Tailscale Serve/Funnel (e.g. http://127.0.0.1:44419). If empty, defaults to http://127.0.0.1:<App Port>.",
     "tailscale_field_extra_args": "Extra tailscale up arguments (optional)",
     "tailscale_btn_setup_all": "Setup Everything (One-Click)",
     "tailscale_btn_save_only": "Save configuration only",

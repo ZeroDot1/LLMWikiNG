@@ -36,6 +36,7 @@ DEFAULTS: dict[str, Any] = {
     "auth_key_encrypted": None,
     "auth_key_hint": None,
     "app_port": DEFAULT_APP_PORT,
+    "proxy_target": None,
     "funnel_port": 443,
     "funnel_enabled": False,
     "serve_enabled": True,
@@ -45,6 +46,17 @@ DEFAULTS: dict[str, Any] = {
     "updated_at": None,
     "updated_by": None,
 }
+
+
+def get_proxy_target(cfg: dict[str, Any]) -> str:
+    """Returns the configured proxy target URL or defaults to http://127.0.0.1:<app_port>."""
+    target = (cfg.get("proxy_target") or "").strip()
+    if target:
+        if not target.startswith("http://") and not target.startswith("https://"):
+            target = f"http://{target}"
+        return target
+    app_port = int(cfg.get("app_port") or DEFAULT_APP_PORT)
+    return f"http://127.0.0.1:{app_port}"
 
 
 def load_config() -> dict[str, Any]:
@@ -136,7 +148,7 @@ def build_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> d
     """Generates serve.json configuration structure for Tailscale."""
     domain = cert_domain or "${TS_CERT_DOMAIN}"
     port = int(cfg.get("funnel_port") or 443)
-    app_port = int(cfg.get("app_port") or DEFAULT_APP_PORT)
+    proxy_target = get_proxy_target(cfg)
     path = cfg.get("serve_path") or "/"
     key = f"{domain}:{port}"
     return {
@@ -144,7 +156,7 @@ def build_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> d
         "Web": {
             key: {
                 "Handlers": {
-                    path: {"Proxy": f"http://127.0.0.1:{app_port}"}
+                    path: {"Proxy": proxy_target}
                 }
             }
         },
@@ -320,7 +332,7 @@ async def apply_serve_funnel(cfg: dict[str, Any]) -> dict[str, Any]:
 
     app_port = int(cfg.get("app_port") or DEFAULT_APP_PORT)
     fport = int(cfg.get("funnel_port") or 443)
-    target = f"http://127.0.0.1:{app_port}"
+    target = get_proxy_target(cfg)
     results = []
 
     # Optional: fetch/provision HTTPS cert if enabled
@@ -452,6 +464,7 @@ async def setup_all(
     hostname: str,
     auth_key: str | None,
     app_port: int,
+    proxy_target: str | None = None,
     funnel_port: int,
     funnel_enabled: bool,
     serve_enabled: bool,
@@ -462,6 +475,8 @@ async def setup_all(
     cfg = load_config()
     cfg["hostname"] = (hostname or "llmwiking").strip()
     cfg["app_port"] = int(app_port)
+    if proxy_target is not None:
+        cfg["proxy_target"] = proxy_target.strip()
     cfg["funnel_port"] = int(funnel_port)
     cfg["funnel_enabled"] = bool(funnel_enabled)
     cfg["serve_enabled"] = bool(serve_enabled)

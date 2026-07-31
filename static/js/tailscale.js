@@ -145,6 +145,9 @@
         var funnelCb = document.getElementById("ts-funnel-enabled");
         if (funnelCb) funnelCb.checked = !!config.funnel_enabled;
 
+        var proxyInput = document.getElementById("ts-proxy-target");
+        if (proxyInput) proxyInput.value = config.proxy_target || "";
+
         var extraInput = document.getElementById("ts-extra-args");
         if (extraInput) extraInput.value = config.extra_args || "";
 
@@ -197,6 +200,7 @@
             hostname: document.getElementById("ts-hostname").value,
             auth_key: document.getElementById("ts-auth-key").value,
             app_port: parseInt(document.getElementById("ts-app-port").value, 10),
+            proxy_target: document.getElementById("ts-proxy-target").value,
             funnel_port: parseInt(document.getElementById("ts-funnel-port").value, 10),
             serve_enabled: document.getElementById("ts-serve-enabled").checked,
             funnel_enabled: document.getElementById("ts-funnel-enabled").checked,
@@ -259,6 +263,7 @@
             hostname: document.getElementById("ts-hostname").value,
             auth_key: document.getElementById("ts-auth-key").value,
             app_port: parseInt(document.getElementById("ts-app-port").value, 10),
+            proxy_target: document.getElementById("ts-proxy-target").value,
             funnel_port: parseInt(document.getElementById("ts-funnel-port").value, 10),
             serve_enabled: document.getElementById("ts-serve-enabled").checked,
             funnel_enabled: document.getElementById("ts-funnel-enabled").checked,

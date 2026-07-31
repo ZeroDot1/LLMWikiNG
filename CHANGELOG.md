@@ -7,6 +7,19 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.15.1] - 2026-07-31
+
+### Added
+- **Konfigurierbare Tailscale Proxy-Adresse (Settings → Tailscale)**: Neue Möglichkeit, die Proxy-Ziel-URL für Tailscale Serve/Funnel direkt in den Einstellungen zu ändern, mit automatischer Speicherung in `tailscale.json` und Anwendung in `serve.json`.
+  - **Neues Eingabefeld „Proxy-Adresse (Ziel-URL)"** (`templates/settings/tailscale.html`): Monospace-Input mit Platzhalter, platziert zwischen Port-Konfiguration und Checkboxen. Erlaubt benutzerdefinierte Proxy-URLs (z. B. `http://127.0.0.1:44419`) statt des Standard-Fallbacks `http://127.0.0.1:<App-Port>`.
+  - **Frontend-Integration** (`static/js/tailscale.js`): `populateForm()` befüllt das Feld aus der gespeicherten Konfiguration; `handleTailscaleSetup()` und `handleTailscaleSaveOnly()` senden `proxy_target` im Payload mit.
+  - **Backend-API Erweiterungen** (`backend/api/routes/api.py`):
+    - `GET /system/tailscale`: Liefert `proxy_target` in der Konfigurationsantwort (via `get_proxy_target()`).
+    - `POST /system/tailscale`: Speichert `proxy_target` in `tailscale.json`.
+    - `POST /system/tailscale/setup`: Übergibt `proxy_target` an `setup_all()` für die `serve.json`-Generierung.
+  - **i18n** (`lang/de.json`, `lang/en.json`): Neue Übersetzungsschlüssel `tailscale_field_proxy_target` und `tailscale_field_proxy_target_hint` in Deutsch und Englisch.
+  - **Serve-Config-Generierung** (`backend/services/tailscale.py`): `build_serve_config()` verwendet bereits `get_proxy_target()`, welches die benutzerdefinierte `proxy_target`-URL bevorzugt und nur bei leerem Wert auf `http://127.0.0.1:<app_port>` zurückfällt.
+
 ## [2.15.0] - 2026-07-31
 
 ### Added

@@ -1109,7 +1109,7 @@ def api_system_apikeys(admin: dict = Depends(require_api_admin)):
 @router.get("/system/tailscale")
 async def api_get_tailscale_config(admin: dict = Depends(require_api_admin)):
     """Returns Tailscale configuration (without raw auth key) and current status."""
-    from services.tailscale import load_config, get_status
+    from services.tailscale import load_config, get_status, get_proxy_target
     cfg = load_config()
     status = await get_status()
     # Strip raw/encrypted keys from public response
@@ -1119,6 +1119,7 @@ async def api_get_tailscale_config(admin: dict = Depends(require_api_admin)):
         "has_auth_key": bool(cfg.get("auth_key_encrypted")),
         "auth_key_hint": cfg.get("auth_key_hint"),
         "app_port": cfg.get("app_port", 8080),
+        "proxy_target": get_proxy_target(cfg),
         "funnel_port": cfg.get("funnel_port", 443),
         "funnel_enabled": cfg.get("funnel_enabled", False),
         "serve_enabled": cfg.get("serve_enabled", True),
@@ -1143,6 +1144,8 @@ async def api_save_tailscale_config(request: Request, admin: dict = Depends(requ
     cfg = load_config()
     cfg["hostname"] = (data.get("hostname") or "llmwiking").strip()
     cfg["app_port"] = int(data.get("app_port") or cfg.get("app_port", 8080))
+    if "proxy_target" in data:
+        cfg["proxy_target"] = (data.get("proxy_target") or "").strip()
     cfg["funnel_port"] = int(data.get("funnel_port") or cfg.get("funnel_port", 443))
     cfg["funnel_enabled"] = bool(data.get("funnel_enabled", cfg.get("funnel_enabled", False)))
     cfg["serve_enabled"] = bool(data.get("serve_enabled", cfg.get("serve_enabled", True)))
@@ -1175,6 +1178,7 @@ async def api_setup_tailscale(request: Request, admin: dict = Depends(require_ap
         hostname=data.get("hostname", "llmwiking"),
         auth_key=data.get("auth_key"),
         app_port=data.get("app_port", 8080),
+        proxy_target=data.get("proxy_target"),
         funnel_port=data.get("funnel_port", 443),
         funnel_enabled=data.get("funnel_enabled", False),
         serve_enabled=data.get("serve_enabled", True),

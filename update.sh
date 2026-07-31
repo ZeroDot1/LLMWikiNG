@@ -157,6 +157,26 @@ if [ -d "$BACKUP_DIR/data" ]; then
     mkdir -p data
     cp -rf "$BACKUP_DIR/data/"* data/ 2>/dev/null || true
 fi
+if [ -d "$BACKUP_DIR/wikis" ]; then
+    echo -e "  -> Stellt Wiki-Inhalte (wikis/) aus Backup wieder her..."
+    mkdir -p wikis
+    cp -rf "$BACKUP_DIR/wikis/"* wikis/ 2>/dev/null || true
+fi
+if [ -d "$BACKUP_DIR/raw" ]; then
+    echo -e "  -> Stellt Rohquellen (raw/) aus Backup wieder her..."
+    mkdir -p raw
+    cp -rf "$BACKUP_DIR/raw/"* raw/ 2>/dev/null || true
+fi
+if [ -d "$BACKUP_DIR/output_docs" ]; then
+    echo -e "  -> Stellt Exporte (output_docs/) aus Backup wieder her..."
+    mkdir -p output_docs
+    cp -rf "$BACKUP_DIR/output_docs/"* output_docs/ 2>/dev/null || true
+fi
+if [ -d "$BACKUP_DIR/scratch" ]; then
+    echo -e "  -> Stellt Arbeitsdateien (scratch/) aus Backup wieder her..."
+    mkdir -p scratch
+    cp -rf "$BACKUP_DIR/scratch/"* scratch/ 2>/dev/null || true
+fi
 if [ -f "$BACKUP_DIR/config.json" ]; then
     echo -e "  -> Stellt config.json aus Backup wieder her..."
     cp -f "$BACKUP_DIR/config.json" config.json 2>/dev/null || true

@@ -50,10 +50,14 @@ def _load(p: Path, default):
     return default
 
 
-def _save(p: Path, data) -> None:
+def _write(p: Path, data) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _save(p: Path, data) -> None:
     with _locked_write(p):
-        p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        _write(p, data)
 
 
 def list_users() -> list[dict]:
@@ -86,7 +90,7 @@ def create_user(username: str, password: str, role: str = "admin") -> dict:
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
         users.append(user)
-        save_users(users)
+        _write(USERS_FILE, users)
         return user
 
 
@@ -98,7 +102,7 @@ def update_user(user_id: str, **changes) -> dict | None:
                 if "password" in changes:
                     u["password_hash"] = hash_password(changes.pop("password"))
                 u.update(changes)
-                save_users(users)
+                _write(USERS_FILE, users)
                 return u
     return None
 
@@ -106,7 +110,7 @@ def update_user(user_id: str, **changes) -> dict | None:
 def delete_user(user_id: str) -> None:
     with _locked_write(USERS_FILE):
         users = [u for u in list_users() if u.get("id") != user_id]
-        save_users(users)
+        _write(USERS_FILE, users)
 
 
 def list_keys() -> list[dict]:
@@ -136,7 +140,7 @@ def create_key(user_id: str, name: str, require_password: bool = False,
     with _locked_write(KEYS_FILE):
         keys = list_keys()
         keys.append(key)
-        save_keys(keys)
+        _write(KEYS_FILE, keys)
     return key, raw
 
 

@@ -4,14 +4,17 @@ Uses watchdog to monitor wiki directories for .md file changes
 and triggers incremental sync automatically with debounce.
 """
 
-from __future__ import annotations
-
 import asyncio
+import concurrent.futures
 import logging
 from pathlib import Path
 
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+except ImportError:
+    Observer = object
+    FileSystemEventHandler = object
 
 from core.config import wiki_path
 from services.sync import do_sync_async
@@ -23,26 +26,35 @@ class WikiChangeHandler(FileSystemEventHandler):
     def __init__(self, wiki: str, loop: asyncio.AbstractEventLoop):
         self.wiki = wiki
         self.loop = loop
-        self._pending: asyncio.Task | None = None
+        self._pending: concurrent.futures.Future | None = None
 
     def on_any_event(self, event):
         if event.is_directory:
             return
         if not str(event.src_path).endswith(".md"):
             return
-        if self._pending and not self._pending.done():
-            self._pending.cancel()
-        self._pending = asyncio.run_coroutine_threadsafe(
-            self._debounced_sync(), self.loop
-        )
+        try:
+            if self._pending and not self._pending.done():
+                self._pending.cancel()
+            self._pending = asyncio.run_coroutine_threadsafe(
+                self._debounced_sync(), self.loop
+            )
+        except RuntimeError as e:
+            log.error("Watcher: Event-Loop nicht verfügbar für '%s': %s", self.wiki, e)
 
     async def _debounced_sync(self):
         await asyncio.sleep(2.0)
         log.info("Watcher: change in wiki '%s' -> sync", self.wiki)
-        try:
-            await do_sync_async(self.wiki, force=False)
-        except Exception as e:
-            log.exception("Watcher sync failed: %s", e)
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                await do_sync_async(self.wiki, force=False)
+                return
+            except Exception as e:
+                log.warning("Watcher sync Versuch %d/%d für '%s' fehlgeschlagen: %s", attempt, max_retries, self.wiki, e)
+                if attempt < max_retries:
+                    await asyncio.sleep(3.0 * attempt)
+        log.error("Watcher: Sync für '%s' nach %d Versuchen aufgegeben", self.wiki, max_retries)
 
 
 def start_watchers(loop: asyncio.AbstractEventLoop, wiki_slugs: list[str] | None = None) -> list[Observer]:
@@ -54,7 +66,7 @@ def start_watchers(loop: asyncio.AbstractEventLoop, wiki_slugs: list[str] | None
 
     observers = []
     for slug in wiki_slugs:
-        path = wiki_path(slug)
+        path = wiki_path(slug, create=False)
         if not path.exists():
             log.warning("Watcher: wiki path '%s' not found, skipping", path)
             continue
@@ -65,3 +77,4 @@ def start_watchers(loop: asyncio.AbstractEventLoop, wiki_slugs: list[str] | None
         observers.append(obs)
         log.info("Watcher started for wiki '%s'", slug)
     return observers
+

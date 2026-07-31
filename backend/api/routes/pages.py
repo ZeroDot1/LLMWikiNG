@@ -2056,33 +2056,42 @@ def edit_get(request: Request):
 @router.post("/edit/preview")
 async def edit_preview(request: Request):
     form = await request.form()
-    text = form.get("content", "")
-    text = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL)
-    return render_markdown_preview(text)
-
-
-@router.post("/edit/save")
+    text @router.post("/edit/save")
 async def edit_save(request: Request):
     user = require_login(request)
-    form = await request.form()
-    filename = (form.get("filename") or "").strip()
-    content = form.get("content", "")
-    folder = form.get("folder", "wiki")
-    wiki = (request.query_params.get("wiki") or form.get("wiki") or _default_wiki())
+    is_json = request.headers.get("content-type", "").startswith("application/json")
+    if is_json:
+        payload = await request.json()
+    else:
+        form = await request.form()
+        payload = dict(form)
+
+    filename = str(payload.get("filename") or "").strip()
+    content = str(payload.get("content") or "")
+    folder = str(payload.get("folder") or "wiki")
+    wiki = str(request.query_params.get("wiki") or payload.get("wiki") or _default_wiki())
+    force = bool(payload.get("force"))
+    client_hash = payload.get("client_hash")
 
     if not filename:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": "Dateiname erforderlich"})
         return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Dateiname erforderlich')}")
 
     if not filename.endswith(".md"):
         filename += ".md"
 
     if ".." in filename.split("/") or ".." in filename.split("\\"):
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": "Path-Traversal blockiert"})
         return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")
 
     target_dir = wiki_path(wiki) if folder == "wiki" else RAW_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
     filepath = (target_dir / filename).resolve()
     if not str(filepath).startswith(str(target_dir.resolve())):
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": "Path-Traversal blockiert"})
         return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")
 
     try:
@@ -2091,11 +2100,12 @@ async def edit_save(request: Request):
             content = ensure_okf_frontmatter(content, title=page_title)
 
         # Conflict-Detection: Prüfe ob Seite seit dem letzten Laden geändert wurde
-        client_hash = form.get("client_hash")
-        if folder == "wiki" and filepath.exists():
+        if folder == "wiki" and filepath.exists() and not force:
             conflict = detect_conflict(wiki, filename[:-3], content, client_loaded_hash=client_hash)
             if conflict:
                 error_detail = "Konflikt erkannt: Die Seite wurde seit dem letzten Laden geändert. Bitte lade sie neu."
+                if is_json:
+                    return JSONResponse(status_code=409, content={"detail": error_detail, "conflict": conflict})
                 return redirect(
                     f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}"
                     f"&folder={urlencode(folder)}&error_msg={urlencode(error_detail)}"
@@ -2120,10 +2130,18 @@ async def edit_save(request: Request):
         success_msg = f"Datei '{filename}' erfolgreich in {folder}/ gespeichert."
         if folder == "wiki":
             page_slug = filename[:-3]
-            return redirect(f"{BASE_PATH}/wiki/{wiki}/{urlencode(page_slug)}?success_msg={urlencode(success_msg)}")
-        return redirect(f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&folder={urlencode(folder)}&success_msg={urlencode(success_msg)}")
+            redirect_url = f"{BASE_PATH}/wiki/{wiki}/{urlencode(page_slug)}?success_msg={urlencode(success_msg)}"
+        else:
+            redirect_url = f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&folder={urlencode(folder)}&success_msg={urlencode(success_msg)}"
+
+        if is_json:
+            return JSONResponse(content={"ok": True, "redirect": redirect_url, "message": success_msg})
+        return redirect(redirect_url)
     except Exception as e:
+        if is_json:
+            return JSONResponse(status_code=500, content={"detail": f"Fehler beim Speichern: {e}"})
         return redirect(f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={urlencode(f'Fehler beim Speichern: {e}')}")
+wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={urlencode(f'Fehler beim Speichern: {e}')}")
 
 
 @router.get("/admin/clear-log")

@@ -21,19 +21,34 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **Docker & Compose Update** (`Dockerfile`, `docker-compose.yml`, `docker/entrypoint.sh`): Installation von `tailscale`, `iptables`, `iproute2` im Container-Image, Entrypoint-Start von `tailscaled` und Mounting von TUN-Device sowie Volume-Strukturen (`ts-data`, `ts-config`).
   - **Audit Logging** (`backend/services/audit.py`): Neue Audit-Kategorie `tailscale` und Protokollierung aller Konfigurations-, Setup-, Up-, Down-, Restart- und Reveal-Aktionen.
 - **Remote Raw-Duplikat-Cleanup Tool** (`cleanup-raw-duplicates.py`): Standalone-Skript zur Identifikation und Batch-Löschung verbliebener Datums-Präfix Raw-Duplikate auf Remote-Servern über die REST-API.
-- **Testsuite für Bugfixes & Python 3.14** (`tests/test_bugfixes_214.py`): Neue Tests für Fernet-Verschlüsselung, Logbook-Parsing mit Bindestrichen, Path-Traversal-Schutz, Konflikt-Erkennung und Dateisperren.
+- **Testsuite für Bugfixes & Python 3.14** (`tests/test_bugfixes_214.py`, `tests/test_sync_bugs.py`): Neue Tests für Fernet-Verschlüsselung, Sync-Typkonsistenz, mtime-Schnellchecks, Path-Traversal-Schutz, Konflikt-Erkennung und Dateisperren.
+- **Sync UI & CSS Komponenten (`frontend/src/css/input.css`)**: Dedizierte CSS-Klassen `.sync-badge`, `.sync-spinner` und `.sync-banner` für konsistentes visuelles Feedback.
 
 ### Security & Crypto
 - **Fernet API- & MCP-Key Verschlüsselung** (`backend/core/security.py`): Umstellung der API-, MCP- und Tailscale-Key Verschlüsselung auf Fernet (AES-128-CBC + HMAC) mit Abwärtskompatibilität für ältere `URLSafeTimedSerializer`-Tokens.
 - **Path-Traversal Schutz & Pfad-Validierung** (`backend/services/wiki.py`, `backend/api/routes/pages.py`): Striktes Prüfen von Stammverzeichnis-Grenzen (`filepath.resolve().startswith(...)`) in `read_wiki_file()` und `edit_save()` zur Vermeidung von Traversal-Sicherheitslücken.
 
 ### Fixed
+- **Vollständige Überarbeitung der Synchronisation & Bugfix-Paket S1–S19 (`backend/services/sync.py`, `backend/services/watcher.py`, `templates/`)**:
+  - **Typkonsistenz `do_sync()` / `do_sync_async()` (S1)**: `do_sync_async()` und `do_sync()` liefern auch im `skipped`-Fall stets ein Wörterbuch `dict` zurück (behebt `TypeError: 'SyncStatus' is not subscriptable`).
+  - **Async Tag-Sync (S2)**: `do_sync_async()` führt `sync_tags_for_wiki()` aus, damit automatische Tags und `data/tags.json` bei API- und Watcher-Syncs aktualisiert werden.
+  - **Titel-Erkennung Regex Fix (S3)**: `#s+` Regex-Tippfehler in `sync_tags_for_wiki()` korrigiert (`r"^#\s+(.+)$"`).
+  - **Watcher Typisierung & Stabilität (S4, S5, S18)**: `_pending` korrekt als `Future` typisiert, Exception-Handling für geschlossene Event-Loops ergänzt und bis zu 3 Retries mit Backoff bei Watcher-Sync-Fehlern hinzugefügt.
+  - **Präzise UTC-Zeitstempel (S6, S13)**: 1h-Puffer in `set_last_sync()` entfernt und timezone-aware UTC `datetime` genutzt.
+  - **System-Dateifilter (S7)**: Systemdateien (`index.md`, `log.md`, `ingestlater.md`) werden aus `pages_count` in `SyncStatus` herausgefiltert.
+  - **Performance mtime-Schnellcheck (S8)**: Vorab-Prüfung (`mtime_ns` + `size`) in `is_sync_needed()` verhindert teures Hashen bei unveränderten Wikis.
+  - **Verzögerte Cache-Invalidierung (S9)**: Cache-Invalidierung erfolgt erst nach erfolgreichem `qmd embed` und Index-Neuaufbau.
+  - **Nicht-blockierender Hintergrund-Sync (S10)**: `request_sync_background()` führt Syncs ohne laufende Event-Loop in einem Hintergrund-Thread aus.
+  - **Dataclass-Robustheit (S11, S12)**: `SyncStatus.load()` filtert unbekannte JSON-Keys; `_wiki_sync_hash_file()` vermeidet ungewolltes `mkdir()`.
+  - **Interaktiver AJAX-Sync & UI (S14, S15)**: `/admin/sync` auf `status.html` nutzt AJAX mit Spinner; Startseite `index.html` prüft Sync-Bedarf dynamisch per JS.
+  - **Interactive 409 Conflict Dialog in Editor (S17)**: Formular-Submit im Editor nutzt `window.savePage()` und sendet JSON an `/edit/save`, um HTTP 409 Bearbeitungskonflikte sauber abzufangen.
 - **Python 3.14 Datetime Deprecation Fixes**: Ersetzen aller veralteten `datetime.now()` und `datetime.fromtimestamp()` Aufrufe durch timezone-aware `datetime.now(timezone.utc)` und `datetime.fromtimestamp(..., tz=timezone.utc)` in API-Routen, Storage-, Lint-, Backup- und Wiki-Services.
 - **Thread- & Prozess-sichere Dateisperren (`backend/core/storage.py`)**: `_locked_write()` Kontext-Manager mit `fcntl.flock` schützt `data/users.json` und `data/keys.json` vor Concurrent-Write Race Conditions.
 - **Bearbeitungskonflikt-Erkennung (`backend/services/editor.py`, `backend/api/routes/pages.py`)**: `detect_conflict()` vergleicht nun `client_loaded_hash` exakt gegen den `content_hash` auf der Festplatte.
 - **Logbuch-Parsing mit Bindestrichen (`backend/services/wiki.py`)**: Überarbeitete Regex- und Zeilentrennung in `get_recent_logs()` erlaubt Titel und Dateinamen mit Bindestrichen.
 - **Such-Tag Extraction Fix (`backend/services/search.py`)**: `parse_search_tags()` trennt `#hashtags` und `tag:foo` präzise ab, ohne Endbuchstaben abzuschneiden.
 - **MCP-Server Feature-Toggle Middleware (`backend/main.py`)**: Deaktivierter `ENABLE_MCP_SERVER` schlägt `/mcp` Anfragen mit HTTP 503 fehl.
+
 
 ## [2.13.19] - 2026-07-30
 

@@ -120,14 +120,29 @@
       });
     }
 
-    // Submit: sync WYSIWYG -> markdown
-    form.addEventListener("submit", function () {
+    // Submit: sync WYSIWYG -> markdown & send via window.savePage for 409 conflict handling
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
       if (currentMode === "wysiwyg") {
         const mdContent = htmlToMarkdown(edW.innerHTML);
         const fm = edM.value.match(/^---.*?---\s*/s);
         edM.value = (fm ? fm[0] : wrapFrontmatter("")) + mdContent;
       }
+      const filenameInput = form.querySelector("[name=filename]");
+      const folderInput = form.querySelector("[name=folder]");
+      const wikiInput = form.querySelector("[name=wiki]");
+      const clientHashInput = form.querySelector("[name=client_hash]");
+
+      const payload = {
+        filename: filenameInput ? filenameInput.value : "",
+        folder: folderInput ? folderInput.value : "wiki",
+        wiki: wikiInput ? wikiInput.value : "",
+        content: edM.value,
+        client_hash: clientHashInput ? clientHashInput.value : null,
+      };
+      window.savePage(payload);
     });
+
 
     // Initial render of existing content into WYSIWYG
     if (edM && edM.value.trim()) {

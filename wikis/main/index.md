@@ -4,9 +4,9 @@ okf_version: "0.1"
 # Wiki-Index
 
 > Automatisch gepflegtes Inhaltsverzeichnis.
-> Aktualisiert am 2026-07-21
+> Aktualisiert am 2026-07-31
 
-## Concepts
+## Inhaltsverzeichnis
 
 ### Reference
 
@@ -16,5 +16,5 @@ okf_version: "0.1"
 ## Statistik
 
 - **Seiten gesamt:** 1
-- **Letzte Aktualisierung:** 2026-07-21
+- **Letzte Aktualisierung:** 2026-07-31
 

@@ -113,12 +113,52 @@
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
     <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.sync_heading') }}</h2>
-    <p>
-        {% if sync_needed %}<span class="text-warning font-semibold">{{ _('status.sync_needed_text') }}</span>
-        {% else %}<span class="text-success font-semibold">{{ _('status.sync_ok_text') }}</span>{% endif %}
+    <p id="syncStatusText">
+        {% if sync_needed %}<span class="sync-badge sync-badge--pending">⚠️ {{ _('status.sync_needed_text') }}</span>
+        {% else %}<span class="sync-badge sync-badge--ok">✅ {{ _('status.sync_ok_text') }}</span>{% endif %}
     </p>
-    <div class="mt-3"><a href="{{ base_path }}/admin/sync" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover inline-block">{{ _('status.sync_button') }}</a></div>
+    <div class="mt-3 flex items-center gap-3">
+        <button id="syncBtn" onclick="runSync()" class="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover inline-flex items-center gap-2 font-semibold">
+            <span id="syncSpinner" class="sync-spinner hidden"></span>
+            <span id="syncBtnText">{{ _('status.sync_button') }}</span>
+        </button>
+        <span id="syncFeedback" class="text-sm font-medium text-text-secondary hidden"></span>
+    </div>
 </div>
+
+<script>
+async function runSync() {
+    const btn = document.getElementById('syncBtn');
+    const btnText = document.getElementById('syncBtnText');
+    const spinner = document.getElementById('syncSpinner');
+    const feedback = document.getElementById('syncFeedback');
+    
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    feedback.classList.remove('hidden');
+    feedback.textContent = "Synchronisiere...";
+
+    try {
+        const res = await fetch('{{ base_path }}/admin/sync?wiki={{ wiki|default("main") }}&format=json');
+        const data = await res.json();
+        
+        if (data.success) {
+            feedback.className = "text-sm font-medium text-success";
+            feedback.textContent = "✅ Sync erfolgreich!";
+        } else {
+            feedback.className = "text-sm font-medium text-warning";
+            feedback.textContent = "⚠️ Sync abgeschlossen";
+        }
+        setTimeout(() => location.reload(), 1200);
+    } catch (err) {
+        feedback.className = "text-sm font-medium text-error";
+        feedback.textContent = "❌ Sync-Fehler: " + err.message;
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+    }
+}
+</script>
+
 
 <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
     <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.update_heading') }}</h2>

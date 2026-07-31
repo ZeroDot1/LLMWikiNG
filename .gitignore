@@ -70,3 +70,8 @@ wiki/*
 IMPLEMENTIERUNGSPLAN_MCP_KEYS.md
 IMPROVEMENT_PLAN.md
 
+# ─── Sync Cache & State ─────────────────────────────────────
+.sync_cache.json
+.sync_hash
+
+

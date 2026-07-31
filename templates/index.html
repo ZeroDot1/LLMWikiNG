@@ -15,7 +15,28 @@
     {{ _('index.sync_recommended_desc') }}
     <a href="{{ base_path }}/admin/sync" class="font-semibold text-primary">{{ _('index.sync_now') }}</a>
 </div>
+{% else %}
+<div id="dynamicSyncBanner" class="hidden rounded-lg border border-warning/40 bg-warning-subtle p-3 mb-4 text-sm">
+    <strong>{{ _('index.sync_recommended_title') }}</strong>
+    {{ _('index.sync_recommended_desc') }}
+    <a href="{{ base_path }}/admin/sync" class="font-semibold text-primary">{{ _('index.sync_now') }}</a>
+</div>
+<script>
+(async function checkSyncStatus() {
+    try {
+        const res = await fetch('{{ base_path }}/admin/status?wiki={{ current_wiki|default("main") }}');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.sync_needed) {
+                const banner = document.getElementById('dynamicSyncBanner');
+                if (banner) banner.classList.remove('hidden');
+            }
+        }
+    } catch(e) {}
+})();
+</script>
 {% endif %}
+
 
 <h1 class="text-2xl font-bold mb-1">{{ _('index.welcome_heading') }}</h1>
 <p class="text-text-secondary mb-6">{{ _('index.welcome_subtitle') }}</p>

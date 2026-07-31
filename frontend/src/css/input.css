@@ -128,3 +128,54 @@
   scrollbar-color: var(--color-border) var(--color-bg-sunken);
 }
 
+/* Sync UI Components */
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.sync-badge--ok {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.sync-badge--pending {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.sync-badge--error {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.sync-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: sync-spin 0.6s linear infinite;
+}
+@keyframes sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sync-banner {
+  border-radius: var(--radius-card);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--color-border);
+}
+.sync-banner--success {
+  background: var(--color-success-subtle);
+  border-color: var(--color-success);
+}
+.sync-banner--warning {
+  background: var(--color-warning-subtle);
+  border-color: var(--color-warning);
+}
+

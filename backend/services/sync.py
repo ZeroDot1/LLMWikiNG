@@ -3,8 +3,6 @@
 Portiert aus llmWiki.py.
 """
 
-from __future__ import annotations
-
 import asyncio
 import logging
 import re
@@ -21,6 +19,7 @@ log = logging.getLogger("llmwiking.sync")
 
 SYNC_STATUS_FILE = DATA_DIR / "sync_status.json"
 SYNC_CACHE_FILENAME = ".sync_cache.json"
+SYSTEM_STEMS = {"index", "log", "ingestlater"}
 
 
 def get_qmd_timeout() -> int:
@@ -71,8 +70,11 @@ class SyncStatus:
         f = p / f"{wiki}.json"
         if f.exists():
             try:
-                import json
-                return cls(**json.loads(f.read_text(encoding="utf-8")))
+                import json, dataclasses
+                data = json.loads(f.read_text(encoding="utf-8"))
+                known_fields = {field.name for field in dataclasses.fields(cls)}
+                filtered = {k: v for k, v in data.items() if k in known_fields}
+                return cls(**filtered)
             except Exception:
                 pass
         return cls(wiki=wiki)
@@ -102,15 +104,9 @@ def _save_sync_times(times: dict[str, str]) -> None:
     except Exception as e:
         log.warning("Konnte sync_status.json nicht schreiben: %s", e)
 
-def _wiki_sync_hash_file(wiki: str = "main") -> "Path":
-    """Pfad zur Hash-Statusdatei im Wiki-Verzeichnis.
-
-    Wird als robuste Alternative zu ``SYNC_STATUS_FILE`` (DATA_DIR) genutzt,
-    weil das Wiki-Verzeichnis im Container garantiert gemountet und beschreibbar
-    ist – im Gegensatz zu DATA_DIR, das bei read-only Mounts nicht geschrieben
-    werden kann (was sonst zu einem permanenten "Sync empfohlen" führte).
-    """
-    return wiki_path(wiki) / ".sync_hash"
+def _wiki_sync_hash_file(wiki: str = "main") -> Path:
+    """Pfad zur Hash-Statusdatei im Wiki-Verzeichnis (ohne unerwünschtes mkdir)."""
+    return wiki_path(wiki, create=False) / ".sync_hash"
 
 def _load_wiki_sync_hash(wiki: str = "main") -> str | None:
     p = _wiki_sync_hash_file(wiki)
@@ -129,13 +125,9 @@ def _save_wiki_sync_hash(wiki: str = "main", value: str = "") -> None:
         log.warning("Konnte .sync_hash für Wiki '%s' nicht schreiben: %s", wiki, e)
 
 def _wiki_content_hash(wiki: str = "main") -> str:
-    """Berechnet einen Hash über alle relevanten Wiki-Dateien (ohne index/log).
-
-    Wird genutzt, um Änderungen unabhängig von Datei-mtimes (die bei
-    Host/Container-Zeitverschiebungen unzuverlässig sind) zu erkennen.
-    """
+    """Berechnet einen Hash über alle relevanten Wiki-Dateien (ohne index/log)."""
     import hashlib
-    root = wiki_path(wiki)
+    root = wiki_path(wiki, create=False)
     h = hashlib.sha256()
     if root.exists():
         try:
@@ -144,7 +136,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
             log.warning("rglob fehlgeschlagen für Wiki '%s': %s", wiki, e)
             files = []
         for f in files:
-            if f.stem in ("index", "log", "ingestlater"):
+            if f.stem in SYSTEM_STEMS:
                 continue
             try:
                 h.update(f.relative_to(root).as_posix().encode("utf-8"))
@@ -155,7 +147,7 @@ def _wiki_content_hash(wiki: str = "main") -> str:
     return h.hexdigest()
 
 def _sync_cache_path(wiki: str = "main") -> Path:
-    return wiki_path(wiki) / SYNC_CACHE_FILENAME
+    return wiki_path(wiki, create=False) / SYNC_CACHE_FILENAME
 
 
 def _load_sync_cache(wiki: str = "main", default: dict | None = None) -> dict:
@@ -166,7 +158,7 @@ def _load_sync_cache(wiki: str = "main", default: dict | None = None) -> dict:
             return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             pass
-    return default or {"version": 1, "fingerprints": {}, "last_sync": None}
+    return default or {"version": 1, "fingerprints": {}, "mtimes": {}, "last_sync": None}
 
 
 def _save_sync_cache(cache: dict, wiki: str = "main") -> None:
@@ -188,28 +180,35 @@ def _compute_blake2b_fingerprint(file_path: Path) -> str | None:
         return None
 
 
-def _compute_file_fingerprints(wiki: str = "main") -> dict[str, str]:
-    root = wiki_path(wiki)
+def _compute_file_fingerprints(wiki: str = "main") -> tuple[dict[str, str], dict[str, str]]:
+    """Gibt (fingerprints, mtimes) für alle relevanten .md Dateien zurück."""
+    root = wiki_path(wiki, create=False)
     fps: dict[str, str] = {}
+    mtimes: dict[str, str] = {}
     if root.exists():
         try:
             files = sorted(root.rglob("*.md"))
         except OSError:
-            return fps
+            return fps, mtimes
         for f in files:
-            if f.stem in ("index", "log", "ingestlater"):
+            if f.stem in SYSTEM_STEMS:
                 continue
+            try:
+                stat = f.stat()
+                mtimes[f.name] = f"{stat.st_mtime_ns}:{stat.st_size}"
+            except OSError:
+                pass
             fp = _compute_blake2b_fingerprint(f)
             if fp:
                 fps[f.name] = fp
-    return fps
+    return fps, mtimes
 
 
 def _get_changed_files(wiki: str = "main") -> tuple[list[str], list[str], list[str]]:
     """Returns (added, changed, removed) file lists since last sync."""
     cache = _load_sync_cache(wiki)
     old_fps = cache.get("fingerprints", {})
-    new_fps = _compute_file_fingerprints(wiki)
+    new_fps, _ = _compute_file_fingerprints(wiki)
 
     added = [f for f in new_fps if f not in old_fps]
     removed = [f for f in old_fps if f not in new_fps]
@@ -229,25 +228,36 @@ def get_last_sync(wiki: str = "main") -> datetime | None:
     return None
 
 def is_sync_needed(wiki: str = "main") -> bool:
-    """Prüft, ob seit dem letzten Sync neue/geänderte Dateien im Wiki sind.
+    """Prüft, ob seit dem letzten Sync neue/geänderte Dateien im Wiki sind."""
+    root = wiki_path(wiki, create=False)
+    if not root.exists():
+        return False
 
-    Nutzt einen **Hash-basierten** Vergleich der Wiki-Inhalte (statt mtime),
-    um Zeitverschiebungen zwischen Host und Container (verschiedene Zeitzonen/
-    Clocks) zu umgehen. Ein frisch gelaufener Sync setzt den Referenz-Hash, sodass
-    danach kein falsches "Sync empfohlen" mehr erscheint.
-
-    Der Hash wird primär in ``SYNC_STATUS_FILE`` (DATA_DIR) gespeichert und als
-    robuster Fallback zusätzlich in ``.sync_hash`` im Wiki-Verzeichnis selbst
-    (garantiert gemountet/beschreibbar im Container).
-
-    Returns:
-        True, wenn ein Sync empfohlen wird (kein Hash bekannt oder Inhalt geändert).
-    """
-    # Schneller inkrementeller Vergleich via Fingerprint-Cache
     cache = _load_sync_cache(wiki)
     old_fps = cache.get("fingerprints", {})
+    old_mtimes = cache.get("mtimes", {})
 
-    # Falls kein Cache vorhanden, auf .sync_hash Fallback zurückgreifen
+    # Phase 1: Schneller mtime/size Vergleich vor teurem Hashing
+    current_mtimes = {}
+    try:
+        for f in root.rglob("*.md"):
+            if f.stem in SYSTEM_STEMS:
+                continue
+            try:
+                stat = f.stat()
+                current_mtimes[f.name] = f"{stat.st_mtime_ns}:{stat.st_size}"
+            except OSError:
+                pass
+    except OSError:
+        return True
+
+    if old_fps and old_mtimes:
+        if set(current_mtimes.keys()) != set(old_mtimes.keys()):
+            return True
+        if all(old_mtimes.get(name) == mtime_key for name, mtime_key in current_mtimes.items()):
+            return False
+
+    # Phase 2: Hash-Vergleich
     if not old_fps:
         last_hash = _load_wiki_sync_hash(wiki)
         if last_hash is None:
@@ -256,7 +266,6 @@ def is_sync_needed(wiki: str = "main") -> bool:
         if last_hash is None:
             log.info("Kein Sync-Status für Wiki '%s' -> Sync empfohlen", wiki)
             return True
-        # Fallback: Voller Hash-Vergleich
         try:
             current_hash = _wiki_content_hash(wiki)
             return current_hash != last_hash
@@ -264,14 +273,12 @@ def is_sync_needed(wiki: str = "main") -> bool:
             log.error("Hash für Wiki '%s' nicht berechenbar: %s", wiki, e)
             return True
 
-    # Schnell: Nur Fingerprints vergleichen (BLAKE2b statt vollem Dateiinhalt-Hash)
     try:
-        new_fps = _compute_file_fingerprints(wiki)
+        new_fps, _ = _compute_file_fingerprints(wiki)
     except Exception as e:
         log.error("Fingerprints für Wiki '%s' nicht berechenbar: %s", wiki, e)
         return True
 
-    # Geändert wenn: neue Dateien, gelöschte Dateien, oder geänderter Inhalt
     return old_fps != new_fps
 
 async def is_sync_needed_async(wiki: str = "main") -> bool:
@@ -280,11 +287,8 @@ async def is_sync_needed_async(wiki: str = "main") -> bool:
 
 def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
     times = _load_sync_times()
-    # Zeitstempel für Anzeige-Zwecke (mit 1h Puffer für Robustheit)
-    import datetime as dt
-    base = value or dt.datetime.now()
-    ref_time = base + dt.timedelta(seconds=3600)
-    times[wiki] = ref_time.isoformat()
+    base = value or datetime.now(timezone.utc)
+    times[wiki] = base.isoformat()
 
     content_hash: str | None = None
     try:
@@ -323,11 +327,7 @@ def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
         return False, str(e)
 
 async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
-    """Async-Variante von :func:`run_qmd_embed`.
-
-    Nutzt asyncio.create_subprocess_exec für echte asynchrone Prozesssteuerung
-    ohne Blockieren von Threads.
-    """
+    """Async-Variante von :func:`run_qmd_embed`."""
     timeout = get_qmd_timeout()
     try:
         import os
@@ -335,7 +335,6 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         env = os.environ.copy()
         env["WIKI_DIR"] = str(wiki_path(wiki))
         env["COLLECTION_NAME"] = f"wiki_{wiki}"
-        # Start command asynchronously
         process = await asyncio.create_subprocess_exec(
             QMD_BIN, "embed",
             stdout=asyncio.subprocess.PIPE,
@@ -370,14 +369,7 @@ async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
         return False, str(e)
 
 def regenerate_index(wiki: str = "main") -> bool:
-    """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf.
-
-    Nutzt bewusst die **un-cached** Variante ``_get_all_wiki_pages_uncached``,
-    damit der Index garantiert *alle* physisch vorhandenen Seiten enthält –
-    unabhängig von einem evtl. veralteten mtime-basierten Seiten-Cache. Sonst
-    kann es passieren, dass neu hinzugefügte Seiten (z. B. per MCP geschrieben)
-    im Index fehlen, obwohl sie auf der Platte liegen.
-    """
+    """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf."""
     from services.wiki import _get_all_wiki_pages_uncached
 
     idx_path = wiki_path(wiki) / "index.md"
@@ -390,7 +382,7 @@ def regenerate_index(wiki: str = "main") -> bool:
         "# Wiki-Index",
         "",
         "> Automatisch gepflegtes Inhaltsverzeichnis.",
-        f"> Aktualisiert am {datetime.now().strftime('%Y-%m-%d')}",
+        f"> Aktualisiert am {datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
         "",
         "## Inhaltsverzeichnis",
         "",
@@ -416,7 +408,7 @@ def regenerate_index(wiki: str = "main") -> bool:
         "## Statistik",
         "",
         f"- **Seiten gesamt:** {len(pages)}",
-        f"- **Letzte Aktualisierung:** {datetime.now().strftime('%Y-%m-%d')}",
+        f"- **Letzte Aktualisierung:** {datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
         "",
     ]
 
@@ -429,13 +421,13 @@ def sync_tags_for_wiki(wiki: str = "main") -> int:
     from services.tags import extract_tags, auto_generate_tags_for_content, build_tag_index
     from services.editor import ensure_okf_frontmatter
 
-    root = wiki_path(wiki)
+    root = wiki_path(wiki, create=False)
     if not root.exists():
         return 0
 
     updated_count = 0
     for f in root.rglob("*.md"):
-        if f.stem in ("index", "log", "ingestlater"):
+        if f.stem in SYSTEM_STEMS:
             continue
         try:
             content = f.read_text(encoding="utf-8", errors="replace")
@@ -454,12 +446,14 @@ def sync_tags_for_wiki(wiki: str = "main") -> int:
     build_tag_index(wiki, force_rebuild=True)
     return updated_count
 
-def do_sync(wiki: str = "main", force: bool = False) -> dict:
-    """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen.
+def _get_pages_count(wiki: str) -> int:
+    root = wiki_path(wiki, create=False)
+    if not root.exists():
+        return 0
+    return len([f for f in root.rglob("*.md") if f.stem not in SYSTEM_STEMS])
 
-    Führt einen inkrementellen Sync durch: Erkennt geänderte/neue/gelöschte
-    Seiten über BLAKE2b-Fingerabdrücke und invalidiert nur betroffene Caches.
-    """
+def do_sync(wiki: str = "main", force: bool = False) -> dict:
+    """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
     import time as _time
     _start = _time.monotonic()
     status = SyncStatus.load(wiki)
@@ -472,9 +466,16 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
         status.skipped = True
         status.messages.append("Sync not needed (no changes)")
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
-        status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+        status.pages_count = _get_pages_count(wiki)
         status.save()
-        return status
+        return {
+            "qmd": status.qmd,
+            "index": status.index,
+            "messages": status.messages,
+            "skipped": status.skipped,
+            "duration_ms": status.duration_ms,
+            "_status": status,
+        }
 
     added, changed, removed = _get_changed_files(wiki)
     if added:
@@ -483,11 +484,6 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
         status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
     if removed:
         status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
-
-    _cache = get_cache()
-    _cache.invalidate_prefix(f"pages:{wiki}")
-    _cache.invalidate(f"graph:{wiki}")
-    _cache.invalidate_prefix(f"tags:{wiki}")
 
     qmd_ok, qmd_msg = run_qmd_embed(wiki)
     status.qmd = qmd_ok
@@ -509,25 +505,32 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     except Exception as e:
         status.messages.append(f"Tag-Sync Fehler: {e}")
 
+    if qmd_ok and status.index:
+        _cache = get_cache()
+        _cache.invalidate_prefix(f"pages:{wiki}")
+        _cache.invalidate(f"graph:{wiki}")
+        _cache.invalidate_prefix(f"tags:{wiki}")
+
     try:
         append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}", wiki)
     except Exception:
         pass
 
-    set_last_sync(datetime.now(), wiki)
+    set_last_sync(datetime.now(timezone.utc), wiki)
 
+    fps, mtimes = _compute_file_fingerprints(wiki)
     _save_sync_cache({
         "version": 1,
-        "fingerprints": _compute_file_fingerprints(wiki),
-        "last_sync": datetime.now().isoformat(),
+        "fingerprints": fps,
+        "mtimes": mtimes,
+        "last_sync": datetime.now(timezone.utc).isoformat(),
     }, wiki)
 
     status.duration_ms = int((_time.monotonic() - _start) * 1000)
     status.last_success = datetime.now(timezone.utc).isoformat()
-    status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+    status.pages_count = _get_pages_count(wiki)
     status.save()
 
-    # Dict-compat für Bestandscode
     return {
         "qmd": status.qmd,
         "index": status.index,
@@ -538,19 +541,7 @@ def do_sync(wiki: str = "main", force: bool = False) -> dict:
     }
 
 async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
-    """Async-Variante von :func:`do_sync`.
-
-    Führt den Sync asynchron aus. Nutzt einen Mutex pro Wiki, um konkurrierende
-    Ausführungen zu verhindern, und überspringt den Sync, falls keine Änderungen
-    vorliegen (es sei denn, force=True).
-
-    Args:
-        wiki: Wiki-Slug, das synchronisiert wird.
-        force: Erzwingt den Sync auch wenn keine Änderungen vorliegen.
-
-    Returns:
-        Dict {"qmd": bool, "index": bool, "messages": list[str]}
-    """
+    """Async-Variante von :func:`do_sync`."""
     import time as _time
     _start = _time.monotonic()
     status = SyncStatus.load(wiki)
@@ -566,9 +557,16 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             status.skipped = True
             status.messages.append("Sync not needed (no changes)")
             status.duration_ms = int((_time.monotonic() - _start) * 1000)
-            status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+            status.pages_count = await asyncio.to_thread(_get_pages_count, wiki)
             await asyncio.to_thread(status.save)
-            return status
+            return {
+                "qmd": status.qmd,
+                "index": status.index,
+                "messages": status.messages,
+                "skipped": status.skipped,
+                "duration_ms": status.duration_ms,
+                "_status": status,
+            }
 
         added, changed, removed = await asyncio.to_thread(_get_changed_files, wiki)
         if added:
@@ -577,11 +575,6 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
         if removed:
             status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
-
-        _cache = get_cache()
-        _cache.invalidate_prefix(f"pages:{wiki}")
-        _cache.invalidate(f"graph:{wiki}")
-        _cache.invalidate_prefix(f"tags:{wiki}")
 
         qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
         status.qmd = qmd_ok
@@ -595,6 +588,21 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
             status.messages.append(f"index.md Fehler: {e}")
 
         try:
+            updated_tags_count = await asyncio.to_thread(sync_tags_for_wiki, wiki)
+            if updated_tags_count > 0:
+                status.messages.append(f"Tags für {updated_tags_count} Seite(n) automatisch generiert und indiziert")
+            else:
+                status.messages.append("Tag-Index in data/tags.json aktualisiert")
+        except Exception as e:
+            status.messages.append(f"Tag-Sync Fehler: {e}")
+
+        if qmd_ok and status.index:
+            _cache = get_cache()
+            _cache.invalidate_prefix(f"pages:{wiki}")
+            _cache.invalidate(f"graph:{wiki}")
+            _cache.invalidate_prefix(f"tags:{wiki}")
+
+        try:
             log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}"
             await asyncio.to_thread(
                 append_okf_log,
@@ -606,18 +614,19 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         except Exception:
             pass
 
-        await asyncio.to_thread(set_last_sync, datetime.now(), wiki)
+        await asyncio.to_thread(set_last_sync, datetime.now(timezone.utc), wiki)
 
-        fps = await asyncio.to_thread(_compute_file_fingerprints, wiki)
+        fps, mtimes = await asyncio.to_thread(_compute_file_fingerprints, wiki)
         await asyncio.to_thread(_save_sync_cache, {
             "version": 1,
             "fingerprints": fps,
-            "last_sync": datetime.now().isoformat(),
+            "mtimes": mtimes,
+            "last_sync": datetime.now(timezone.utc).isoformat(),
         }, wiki)
 
         status.duration_ms = int((_time.monotonic() - _start) * 1000)
         status.last_success = datetime.now(timezone.utc).isoformat()
-        status.pages_count = len(list((wiki_path(wiki)).rglob("*.md")))
+        status.pages_count = await asyncio.to_thread(_get_pages_count, wiki)
         await asyncio.to_thread(status.save)
 
         return {
@@ -632,7 +641,7 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
 def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main") -> None:
     """Schreibt einen OKF-konformen Logbucheintrag (## YYYY-MM-DD mit Bullets)."""
     log_path = wiki_path(wiki) / "log.md"
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     action_type = "Update"
     if action.lower() in ("ingest", "create", "creation"):
@@ -698,7 +707,6 @@ _sync_state_lock = asyncio.Lock()
 async def _run_bg_sync_loop(wiki: str) -> None:
     """Interne Schleife, die den Hintergrund-Sync für ein Wiki ausführt und ggf. wiederholt."""
     while True:
-        # Force-Flag für diesen Durchlauf aus den Pending-Daten lesen
         async with _sync_state_lock:
             force = wiki in _pending_force
             _pending_force.discard(wiki)
@@ -715,21 +723,7 @@ async def _run_bg_sync_loop(wiki: str) -> None:
                 break
 
 def request_sync_background(wiki: str = "main", force: bool = False) -> None:
-    """Fordert einen Wiki-Sync im Hintergrund an.
-    
-    Diese Funktion ist nicht-blockierend und kehrt sofort zurück. Wenn bereits
-    ein Sync für das Wiki läuft, wird ein weiterer Sync vorgemerkt und automatisch
-    nach dem aktuellen Lauf gestartet. Mehrere Anforderungen während eines Laufs
-    werden zu einem einzigen Folge-Lauf zusammengefasst (Coalescing), was
-    Ressourcen schont.
-
-    Args:
-        wiki: Slug des Wikis.
-        force: Wenn True, wird der Sync erzwungen (index.md wird immer neu
-            aufgebaut). Sollte bei expliziten Schreiboperationen (z. B. MCP
-            okf_write_concept) gesetzt werden, damit neu hinzugefügte Seiten
-            garantiert im Index landen.
-    """
+    """Fordert einen Wiki-Sync im Hintergrund an (nicht-blockierend)."""
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
@@ -738,10 +732,12 @@ def request_sync_background(wiki: str = "main", force: bool = False) -> None:
     if loop and loop.is_running():
         loop.create_task(_trigger_bg_sync(wiki, force=force))
     else:
-        try:
-            do_sync(wiki, force=force)
-        except Exception:
-            pass
+        import threading
+        t = threading.Thread(
+            target=do_sync, args=(wiki,), kwargs={"force": force},
+            daemon=True, name=f"sync-{wiki}"
+        )
+        t.start()
 
 async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
     """Hilfsfunktion, um die Hintergrundschleife atomar zu starten."""
@@ -756,3 +752,4 @@ async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
             _pending_force.add(wiki)
     
     await _run_bg_sync_loop(wiki)
+

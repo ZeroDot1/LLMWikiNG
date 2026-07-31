@@ -122,7 +122,7 @@ async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(req
                         "slug": new_slug,
                         "name": name,
                         "description": description,
-                        "created_at": datetime.datetime.now().isoformat(),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
                     })
                     wikis_file.write_text(json.dumps(wikis_data, indent=2, ensure_ascii=False), encoding="utf-8")
                 except Exception:

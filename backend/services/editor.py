@@ -88,39 +88,42 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
     return new_fm + body.lstrip("\n")
 
 
-def detect_conflict(wiki: str, slug: str, incoming_content: str) -> dict | None:
+def detect_conflict(wiki: str, slug: str, incoming_content: str, client_loaded_hash: str | None = None) -> dict | None:
     """Prüft auf Bearbeitungskonflikt.
     
-    Vergleicht den ``content_hash`` des letzten gespeicherten Frontmatters
-    mit einem Hash des aktuellen Speicherstands. Bei Abweichung liegt ein
-    Konflikt vor.
+    Vergleicht den ``client_loaded_hash`` (den Hash den der Client beim Laden
+    gesehen hat) mit dem aktuell gespeicherten ``content_hash`` im Frontmatter auf Disk.
+    Wenn kein ``client_loaded_hash`` übergeben wird oder dieser übereinstimmt, liegt kein Konflikt vor.
     
     Args:
         wiki: Wiki-Slug.
         slug: Seiten-Slug.
         incoming_content: Der neu eingehende Inhalt (mit Frontmatter).
+        client_loaded_hash: Hash des Inhalts zum Zeitpunkt des Ladens.
     
     Returns:
         Dict mit Konflikt-Details oder None, wenn kein Konflikt.
     """
+    if not client_loaded_hash:
+        return None
+
     from core.config import wiki_path as _wp
     fp = _wp(wiki) / f"{slug}.md"
     if not fp.exists():
         return None
     current_text = fp.read_text(encoding="utf-8", errors="replace")
-    incoming_hash = _compute_content_hash(incoming_content)
     fm = re.search(r"^---\s*\n(.*?)\n---", current_text, re.DOTALL)
     if not fm:
         return None
     for line in fm.group(1).split("\n"):
         if line.startswith("content_hash:"):
             stored_hash = line.split(":", 1)[1].strip().strip('"').strip("'")
-            if stored_hash and stored_hash != incoming_hash:
+            if stored_hash and stored_hash != client_loaded_hash:
                 return {
                     "slug": slug,
                     "wiki": wiki,
                     "stored_hash": stored_hash,
-                    "incoming_hash": incoming_hash,
+                    "client_hash": client_loaded_hash,
                     "detail": "Seite wurde seit dem letzten Laden extern bearbeitet.",
                 }
     return None

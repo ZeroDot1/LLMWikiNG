@@ -6,12 +6,14 @@ via itsdangerous, gehashte API-Keys (SHA-256, roher Key nur einmal sichtbar).
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import os
 import secrets
 
 import argon2
+from cryptography.fernet import Fernet
 from itsdangerous import URLSafeTimedSerializer
 
 def _get_persistent_secret() -> str:
@@ -102,27 +104,41 @@ def verify_api_key(raw: str, stored_hash: str) -> bool:
     return hmac.compare_digest(computed, stored_hash)
 
 
+import base64
+from cryptography.fernet import Fernet
+
 _key_cipher = URLSafeTimedSerializer(SECRET, salt="llmwikingapikey")
+_key_cipher_mcp = URLSafeTimedSerializer(SECRET, salt="llmwikingmcpkey")
+_key_cipher_tailscale = URLSafeTimedSerializer(SECRET, salt="llmwikingtailscale")
+
+
+def _get_fernet(salt: str = "llmwiking") -> Fernet:
+    """Leitet einen Fernet-Key aus dem System-Secret ab."""
+    key = hashlib.sha256(f"{SECRET}:{salt}".encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
+
 
 def encrypt_api_key(raw_key: str) -> str:
-    """Verschlüsselt den rohen API-Schlüssel umkehrbar mit dem System-Secret."""
-    return _key_cipher.dumps(raw_key)
+    """Verschlüsselt den rohen API-Schlüssel umkehrbar mit Fernet (AES-128-CBC + HMAC)."""
+    return _get_fernet("llmwikingapikey").encrypt(raw_key.encode()).decode()
 
 
 def decrypt_api_key(encrypted_key: str) -> str | None:
-    """Entschlüsselt den verschlüsselten API-Schlüssel."""
-    try:
-        return _key_cipher.loads(encrypted_key, max_age=None)
-    except Exception:
+    """Entschlüsselt den verschlüsselten API-Schlüssel mit Abwärtskompatibilität."""
+    if not encrypted_key:
         return None
+    try:
+        return _get_fernet("llmwikingapikey").decrypt(encrypted_key.encode()).decode()
+    except Exception:
+        try:
+            return _key_cipher.loads(encrypted_key, max_age=None)
+        except Exception:
+            return None
 
 
 # ═══════════════════════════════════════════════════════════════════
 # MCP-Key-Generierung und -Verschlüsselung
 # ═══════════════════════════════════════════════════════════════════
-
-_key_cipher_mcp = URLSafeTimedSerializer(SECRET, salt="llmwikingmcpkey")
-
 
 def gen_mcp_key() -> tuple[str, str]:
     """Liefert (rohen MCP-Key, Hash)."""
@@ -139,27 +155,42 @@ def verify_mcp_key(raw: str, stored_hash: str) -> bool:
 
 
 def encrypt_mcp_key(raw_key: str) -> str:
-    """Verschlüsselt den rohen MCP-Key umkehrbar mit dem System-Secret."""
-    return _key_cipher_mcp.dumps(raw_key)
+    """Verschlüsselt den rohen MCP-Key umkehrbar mit Fernet."""
+    return _get_fernet("llmwikingmcpkey").encrypt(raw_key.encode()).decode()
+
+
+def decrypt_mcp_key(encrypted_key: str) -> str | None:
+    """Entschlüsselt den verschlüsselten MCP-Key mit Abwärtskompatibilität."""
+    if not encrypted_key:
+        return None
+    try:
+        return _get_fernet("llmwikingmcpkey").decrypt(encrypted_key.encode()).decode()
+    except Exception:
+        try:
+            return _key_cipher_mcp.loads(encrypted_key, max_age=None)
+        except Exception:
+            return None
 
 
 # ═══════════════════════════════════════════════════════════════════
 # Tailscale-Key-Verschlüsselung
 # ═══════════════════════════════════════════════════════════════════
 
-_key_cipher_tailscale = URLSafeTimedSerializer(SECRET, salt="llmwikingtailscale")
-
-
 def encrypt_tailscale_key(raw_key: str) -> str:
-    """Encrypts raw Tailscale auth key with system secret."""
-    return _key_cipher_tailscale.dumps(raw_key)
+    """Encrypts raw Tailscale auth key with Fernet."""
+    return _get_fernet("llmwikingtailscale").encrypt(raw_key.encode()).decode()
 
 
 def decrypt_tailscale_key(encrypted_key: str) -> str | None:
-    """Decrypts Tailscale auth key."""
-    try:
-        return _key_cipher_tailscale.loads(encrypted_key, max_age=None)
-    except Exception:
+    """Decrypts Tailscale auth key with backwards compatibility."""
+    if not encrypted_key:
         return None
+    try:
+        return _get_fernet("llmwikingtailscale").decrypt(encrypted_key.encode()).decode()
+    except Exception:
+        try:
+            return _key_cipher_tailscale.loads(encrypted_key, max_age=None)
+        except Exception:
+            return None
 
 

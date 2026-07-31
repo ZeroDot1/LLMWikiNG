@@ -90,8 +90,8 @@ def list_server_backups() -> list[dict]:
                 "filepath": str(p),
                 "size_bytes": stat.st_size,
                 "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                "created_at_fmt": datetime.fromtimestamp(stat.st_mtime).strftime("%d.%m.%Y %H:%M:%S"),
+                "created_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+                "created_at_fmt": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%d.%m.%Y %H:%M:%S"),
                 "location": "backups" if folder == BACKUP_DIR else "data",
             })
 

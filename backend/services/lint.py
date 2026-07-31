@@ -103,13 +103,13 @@ def run_lint(wiki: str = "main") -> dict:
         file_path = root / f"{p['slug']}.md"
         if file_path.exists():
             try:
-                import datetime
+                from datetime import datetime, timezone
 
                 stat = file_path.stat()
                 stale_pages.append({
                     "slug": p["slug"],
                     "title": p["title"],
-                    "mtime_formatted": datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d"),
+                    "mtime_formatted": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d"),
                     "mtime": stat.st_mtime,
                 })
             except Exception:

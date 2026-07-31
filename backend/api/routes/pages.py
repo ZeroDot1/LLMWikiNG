@@ -11,7 +11,7 @@ import json
 import re
 import shutil
 import subprocess
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile as FastAPIUploadFile
@@ -599,7 +599,7 @@ def raw_list(request: Request):
                 stat = f.stat()
                 size_kb = stat.st_size / 1024
                 size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
-                mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                mtime_formatted = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                 wiki_slug = find_wiki_slug_for_raw(f.name, wiki)
                 files.append({
                     "name": f.name,
@@ -632,7 +632,7 @@ def raw_page(filename: str, request: Request):
         stat = filepath.stat()
         size_kb = stat.st_size / 1024
         size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
-        mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        mtime_formatted = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         wiki_slug = find_wiki_slug_for_raw(filename, wiki)
         return render(
             request, "raw_view.html",
@@ -756,7 +756,7 @@ def export_list(request: Request):
                 stat = f.stat()
                 size_kb = stat.st_size / 1024
                 size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
-                mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                mtime_formatted = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                 files.append({"name": f.name, "size_formatted": size_formatted, "mtime_formatted": mtime_formatted})
     return render(request, "export_list.html", active_page="export_list", files=files, wikis=list_wikis())
 
@@ -778,7 +778,7 @@ def export_view(filename: str, request: Request):
         stat = filepath.stat()
         size_kb = stat.st_size / 1024
         size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
-        mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        mtime_formatted = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         content_html = render_markdown(content) if is_markdown else ""
         return render(
             request, "export_view.html",
@@ -1896,7 +1896,7 @@ def _briefings(request: Request, form):
         if file_path.exists():
             try:
                 stat = file_path.stat()
-                mtime_date = date.fromtimestamp(stat.st_mtime)
+                mtime_date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).date()
                 created_date = None
                 content = file_path.read_text(encoding="utf-8", errors="replace")
                 fm_match = re.search(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
@@ -2076,9 +2076,14 @@ async def edit_save(request: Request):
     if not filename.endswith(".md"):
         filename += ".md"
 
+    if ".." in filename.split("/") or ".." in filename.split("\\"):
+        return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")
+
     target_dir = wiki_path(wiki) if folder == "wiki" else RAW_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
-    filepath = target_dir / filename
+    filepath = (target_dir / filename).resolve()
+    if not str(filepath).startswith(str(target_dir.resolve())):
+        return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")
 
     try:
         if folder == "wiki":
@@ -2086,8 +2091,9 @@ async def edit_save(request: Request):
             content = ensure_okf_frontmatter(content, title=page_title)
 
         # Conflict-Detection: Prüfe ob Seite seit dem letzten Laden geändert wurde
+        client_hash = form.get("client_hash")
         if folder == "wiki" and filepath.exists():
-            conflict = detect_conflict(wiki, filename[:-3], content)
+            conflict = detect_conflict(wiki, filename[:-3], content, client_loaded_hash=client_hash)
             if conflict:
                 error_detail = "Konflikt erkannt: Die Seite wurde seit dem letzten Laden geändert. Bitte lade sie neu."
                 return redirect(

@@ -85,10 +85,11 @@ def slugify_wiki(name: str) -> str:
 
 
 
-def wiki_path(name: str = "main") -> Path:
-    """Liefert (und erstellt) das Verzeichnis eines Wikis."""
+def wiki_path(name: str = "main", create: bool = True) -> Path:
+    """Liefert (und erstellt optional) das Verzeichnis eines Wikis."""
     p = WIKIS_ROOT / slugify_wiki(name)
-    p.mkdir(parents=True, exist_ok=True)
+    if create:
+        p.mkdir(parents=True, exist_ok=True)
     return p
 
 
@@ -115,40 +116,45 @@ def get_directory_size(path: Path) -> int:
     return total
 
 
+def _discover_wikis_from_filesystem() -> list[dict]:
+    """Sucht Wikis im Dateisystem unter WIKIS_ROOT."""
+    from datetime import datetime, timezone
+    discovered: list[dict] = []
+    if WIKIS_ROOT.exists():
+        for d in sorted(WIKIS_ROOT.iterdir()):
+            if d.is_dir():
+                meta = d / "wiki.json"
+                name = d.name
+                display = name
+                desc = ""
+                if meta.exists():
+                    try:
+                        data = json.loads(meta.read_text(encoding="utf-8"))
+                        display = data.get("name", name)
+                        desc = data.get("description", "")
+                    except Exception:
+                        pass
+                discovered.append({
+                    "slug": name,
+                    "name": display,
+                    "description": desc,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+    return discovered
+
+
 def list_wikis() -> list[dict]:
     """Listet alle vorhandenen Wikis mit Metadaten (aus data/wikis.json, plus dynamische Stats)."""
-    import datetime
+    from datetime import datetime, timezone
     wikis_file = DATA_DIR / "wikis.json"
 
     if not wikis_file.exists():
-        initial_wikis = []
-        if WIKIS_ROOT.exists():
-            for d in sorted(WIKIS_ROOT.iterdir()):
-                if d.is_dir():
-                    meta = d / "wiki.json"
-                    name = d.name
-                    display = name
-                    desc = ""
-                    if meta.exists():
-                        try:
-                            data = json.loads(meta.read_text(encoding="utf-8"))
-                            display = data.get("name", name)
-                            desc = data.get("description", "")
-                        except Exception:
-                            pass
-                    initial_wikis.append({
-                        "slug": name,
-                        "name": display,
-                        "description": desc,
-                        "created_at": datetime.datetime.now().isoformat()
-                    })
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        wikis_file.write_text(json.dumps(initial_wikis, indent=2), encoding="utf-8")
-
-    try:
-        stored_wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
-    except Exception:
-        stored_wikis = []
+        stored_wikis = _discover_wikis_from_filesystem()
+    else:
+        try:
+            stored_wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
+        except Exception:
+            stored_wikis = []
 
     result = []
     for w in stored_wikis:
@@ -172,7 +178,7 @@ def list_wikis() -> list[dict]:
                         if mt > latest_mtime:
                             latest_mtime = mt
                 if latest_mtime > 0:
-                    last_modified = datetime.datetime.fromtimestamp(latest_mtime).strftime("%Y-%m-%d %H:%M")
+                    last_modified = datetime.fromtimestamp(latest_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
             except Exception:
                 pass
             w["page_count"] = page_count
@@ -187,7 +193,7 @@ def list_wikis() -> list[dict]:
 
 def save_wiki_meta(name: str, display_name: str, description: str = "") -> None:
     """Speichert Anzeigename/Beschreibung eines Wikis in data/wikis.json."""
-    import datetime
+    from datetime import datetime, timezone
     wikis_file = DATA_DIR / "wikis.json"
     wikis = list_wikis()
     found = False
@@ -202,7 +208,7 @@ def save_wiki_meta(name: str, display_name: str, description: str = "") -> None:
             "slug": name,
             "name": display_name,
             "description": description,
-            "created_at": datetime.datetime.now().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "page_count": 0,
             "size": 0,
             "status": "online"

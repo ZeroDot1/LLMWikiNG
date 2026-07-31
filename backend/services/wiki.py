@@ -402,12 +402,17 @@ def get_wiki_stats(wiki: str = "main") -> dict:
 
 
 def read_wiki_file(filename: str, wiki: str = "main") -> dict | None:
-    """Liest eine Wiki-Datei und gibt Inhalt + Metadaten zurück."""
-    root = wiki_path(wiki)
-    filepath = root / filename
+    """Liest eine Wiki-Datei und gibt Inhalt + Metadaten zurück (mit Path-Traversal-Schutz)."""
+    from datetime import timezone
+    root = wiki_path(wiki, create=False)
+    if not root.exists():
+        return None
+    filepath = (root / filename).resolve()
+    if not str(filepath).startswith(str(root.resolve())):
+        return None
     if not filepath.exists():
-        filepath_md = root / f"{filename}.md"
-        if filepath_md.exists():
+        filepath_md = (root / f"{filename}.md").resolve()
+        if filepath_md.exists() and str(filepath_md).startswith(str(root.resolve())):
             filepath = filepath_md
         else:
             return None
@@ -420,7 +425,7 @@ def read_wiki_file(filename: str, wiki: str = "main") -> dict | None:
             "path": str(filepath.relative_to(PROJECT_ROOT)),
             "name": filepath.stem,
             "filename": filepath.name,
-            "modified": datetime.fromtimestamp(filepath.stat().st_mtime),
+            "modified": datetime.fromtimestamp(filepath.stat().st_mtime, tz=timezone.utc),
             "wiki": wiki,
         }
     except Exception:
@@ -435,7 +440,7 @@ def is_text_file(filename: str) -> bool:
 
 
 def find_wiki_slug_for_raw(filename: str, wiki: str = "main") -> str | None:
-    root = wiki_path(wiki)
+    root = wiki_path(wiki, create=False)
     if not root.exists():
         return None
     for f in root.iterdir():
@@ -456,6 +461,7 @@ def find_wiki_slug_for_raw(filename: str, wiki: str = "main") -> str | None:
 
 def get_pending_files() -> list[dict]:
     """Gibt eine Liste aller un-ingestierten Dateien in raw/ zurück."""
+    from datetime import timezone
     files: list[dict] = []
     if RAW_DIR.exists():
         for f in sorted(RAW_DIR.iterdir()):
@@ -465,7 +471,7 @@ def get_pending_files() -> list[dict]:
                     stat = f.stat()
                     size_kb = stat.st_size / 1024
                     size_formatted = f"{size_kb:.1f} KB" if size_kb >= 1 else f"{stat.st_size} Bytes"
-                    mtime_formatted = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    mtime_formatted = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     files.append({
                         "name": f.name,
                         "size": stat.st_size,
@@ -526,7 +532,7 @@ def save_to_ingestlater(item_type: str, title: str, content: str, wiki: str = "m
 
 def get_recent_logs(wiki: str = "main", limit: int = 5) -> list[dict]:
     """Liest die neuesten Logbuch-Einträge aus <wiki>/log.md."""
-    log_path = wiki_path(wiki) / "log.md"
+    log_path = wiki_path(wiki, create=False) / "log.md"
     logs: list[dict] = []
     if log_path.exists():
         try:
@@ -536,20 +542,24 @@ def get_recent_logs(wiki: str = "main", limit: int = 5) -> list[dict]:
                 for i in range(len(sections) - 2, 0, -2):
                     date_str = sections[i].strip()
                     section_body = sections[i + 1].strip()
-                    items = re.findall(
-                        r"^\*\s+\*\*([^*]+)\*\*:\s*([^-\n]+)(?:-\s*([^\n]+))?",
-                        section_body,
-                        re.MULTILINE,
-                    )
-                    for action, title, details in items:
-                        logs.append({
-                            "date": date_str,
-                            "action": action.strip(),
-                            "details": details.strip() if details else "",
-                            "body": title.strip(),
-                        })
-                        if len(logs) >= limit:
-                            return logs
+                    lines = section_body.splitlines()
+                    for line in lines:
+                        m = re.match(r"^\*\s+\*\*([^*]+)\*\*:\s*(.+)$", line.strip())
+                        if m:
+                            action = m.group(1).strip()
+                            rest = m.group(2).strip()
+                            if " - " in rest:
+                                body, details = rest.split(" - ", 1)
+                            else:
+                                body, details = rest, ""
+                            logs.append({
+                                "date": date_str,
+                                "action": action,
+                                "details": details.strip(),
+                                "body": body.strip(),
+                            })
+                            if len(logs) >= limit:
+                                return logs
         except Exception:
             pass
     return logs

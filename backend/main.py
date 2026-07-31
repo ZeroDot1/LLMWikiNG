@@ -182,6 +182,12 @@ def create_app() -> FastAPI:
                     async def __call__(self, scope, receive, send):
                         path = scope.get("path", "")
                         if scope["type"] == "http" and ("/mcp/" in path or path.endswith("/mcp")) and "/api/" not in path:
+                            import core.config as _cfg
+                            if not _cfg.ENABLE_MCP_SERVER:
+                                res = self._json_response({"detail": "MCP-Server deaktiviert"}, status_code=503)
+                                await res(scope, receive, send)
+                                return
+
                             headers_dict = dict(scope.get("headers", []))
 
                             mcp_key_bytes = headers_dict.get(b"x-mcp-key")
@@ -209,14 +215,25 @@ def create_app() -> FastAPI:
                                             res = self._json_response({"detail": "API-Key und MCP-Key gehoeren nicht demselben Benutzer"}, status_code=403)
                                             await res(scope, receive, send)
                                             return
-                                    user_obj = self._get_user(mcp_key_obj["user_id"])
-                                    if user_obj and user_obj.get("active", True):
-                                        user = user_obj
-                                        allowed_tools = mcp_key_obj.get("allowed_tools", [])
-                                        try:
-                                            self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now().isoformat(timespec="seconds"))
-                                        except Exception:
-                                            pass
+                                    user = self._get_user(mcp_key_obj["user_id"])
+                                    if not user or not user.get("active", True):
+                                        res = self._json_response({"detail": "Benutzer inaktiv"}, status_code=403)
+                                        await res(scope, receive, send)
+                                        return
+                                    allowed_tools = mcp_key_obj.get("allowed_tools") or []
+                                    from datetime import timezone as _tz
+                                    self._update_mcp_key(mcp_key_obj["id"], last_used=self._datetime.now(_tz.utc).isoformat(timespec="seconds"))
+                                elif _cfg.LLMWIKING_MCP_KEY and mcp_key == _cfg.LLMWIKING_MCP_KEY:
+                                    if api_key:
+                                        api_h = self._hashlib.sha256(api_key.encode()).hexdigest()
+                                        api_key_obj = self._get_key_by_hash(api_h)
+                                        if api_key_obj and api_key_obj.get("active", True):
+                                            user = self._get_user(api_key_obj["user_id"])
+                                    allowed_tools = []
+                                else:
+                                    res = self._json_response({"detail": "Ungültiger MCP-Key"}, status_code=403)
+                                    await res(scope, receive, send)
+                                    return
 
                             # 2. Prüfe Legacy Global MCP-Key
                             if not user and mcp_key and self._mcp_global_key:

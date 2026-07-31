@@ -14,15 +14,14 @@ from core.config import wiki_path, slugify_wiki, BASE_PATH
 from core.security import read_session, verify_password
 from core.storage import get_user, get_key_by_hash, list_users
 
-_no_users_cache: bool | None = None
 
 def update_key_last_used(key_id: str):
     from core.storage import list_keys, save_keys
-    import datetime
+    from datetime import datetime, timezone
     keys = list_keys()
     for k in keys:
         if k["id"] == key_id:
-            k["last_used"] = datetime.datetime.now().isoformat(timespec="seconds")
+            k["last_used"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
             save_keys(keys)
             break
 
@@ -34,15 +33,12 @@ def get_current_user(request: Request) -> dict | None:
 
 
 def require_login(request: Request) -> dict:
-    global _no_users_cache
     user = get_current_user(request)
-    # Erstinrichtung: Gibt es noch keine User, zum Login (Setup) durchlassen
+    # Erstinrichtung: Gibt es noch keine User, zum Register/Setup durchlassen
     if not user or not user.get("active", True):
-        if _no_users_cache is None:
-            _no_users_cache = len(list_users()) == 0
-        target = f"{BASE_PATH}/register" if _no_users_cache else f"{BASE_PATH}/login"
+        no_users = len(list_users()) == 0
+        target = f"{BASE_PATH}/register" if no_users else f"{BASE_PATH}/login"
         raise HTTPException(status_code=303, headers={"Location": target})
-    _no_users_cache = False
     return user
 
 

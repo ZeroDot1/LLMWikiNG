@@ -7,7 +7,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [2.14.0] - 2026-07-30
+## [2.14.0] - 2026-07-31
 
 ### Added
 - **🦈 Tailscale & Funnel Integration (Settings -> Tailscale)**: Same-Container Integration von Tailscale (Daemon, `serve` und `funnel`) in den LLMWikiNG-Container.
@@ -20,6 +20,20 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **KI-Agenten & MCP Access Guide**: Vorkonfigurierte MCP-SSE & REST-API Snippets für Claude, Grok, Cursor und AGY.
   - **Docker & Compose Update** (`Dockerfile`, `docker-compose.yml`, `docker/entrypoint.sh`): Installation von `tailscale`, `iptables`, `iproute2` im Container-Image, Entrypoint-Start von `tailscaled` und Mounting von TUN-Device sowie Volume-Strukturen (`ts-data`, `ts-config`).
   - **Audit Logging** (`backend/services/audit.py`): Neue Audit-Kategorie `tailscale` und Protokollierung aller Konfigurations-, Setup-, Up-, Down-, Restart- und Reveal-Aktionen.
+- **Remote Raw-Duplikat-Cleanup Tool** (`cleanup-raw-duplicates.py`): Standalone-Skript zur Identifikation und Batch-Löschung verbliebener Datums-Präfix Raw-Duplikate auf Remote-Servern über die REST-API.
+- **Testsuite für Bugfixes & Python 3.14** (`tests/test_bugfixes_214.py`): Neue Tests für Fernet-Verschlüsselung, Logbook-Parsing mit Bindestrichen, Path-Traversal-Schutz, Konflikt-Erkennung und Dateisperren.
+
+### Security & Crypto
+- **Fernet API- & MCP-Key Verschlüsselung** (`backend/core/security.py`): Umstellung der API-, MCP- und Tailscale-Key Verschlüsselung auf Fernet (AES-128-CBC + HMAC) mit Abwärtskompatibilität für ältere `URLSafeTimedSerializer`-Tokens.
+- **Path-Traversal Schutz & Pfad-Validierung** (`backend/services/wiki.py`, `backend/api/routes/pages.py`): Striktes Prüfen von Stammverzeichnis-Grenzen (`filepath.resolve().startswith(...)`) in `read_wiki_file()` und `edit_save()` zur Vermeidung von Traversal-Sicherheitslücken.
+
+### Fixed
+- **Python 3.14 Datetime Deprecation Fixes**: Ersetzen aller veralteten `datetime.now()` und `datetime.fromtimestamp()` Aufrufe durch timezone-aware `datetime.now(timezone.utc)` und `datetime.fromtimestamp(..., tz=timezone.utc)` in API-Routen, Storage-, Lint-, Backup- und Wiki-Services.
+- **Thread- & Prozess-sichere Dateisperren (`backend/core/storage.py`)**: `_locked_write()` Kontext-Manager mit `fcntl.flock` schützt `data/users.json` und `data/keys.json` vor Concurrent-Write Race Conditions.
+- **Bearbeitungskonflikt-Erkennung (`backend/services/editor.py`, `backend/api/routes/pages.py`)**: `detect_conflict()` vergleicht nun `client_loaded_hash` exakt gegen den `content_hash` auf der Festplatte.
+- **Logbuch-Parsing mit Bindestrichen (`backend/services/wiki.py`)**: Überarbeitete Regex- und Zeilentrennung in `get_recent_logs()` erlaubt Titel und Dateinamen mit Bindestrichen.
+- **Such-Tag Extraction Fix (`backend/services/search.py`)**: `parse_search_tags()` trennt `#hashtags` und `tag:foo` präzise ab, ohne Endbuchstaben abzuschneiden.
+- **MCP-Server Feature-Toggle Middleware (`backend/main.py`)**: Deaktivierter `ENABLE_MCP_SERVER` schlägt `/mcp` Anfragen mit HTTP 503 fehl.
 
 ## [2.13.19] - 2026-07-30
 

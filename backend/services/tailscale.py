@@ -11,6 +11,8 @@ import json
 import logging
 import os
 import shutil
+import shlex
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,12 +25,14 @@ log = logging.getLogger("llmwiking.tailscale")
 CONFIG_PATH = DATA_DIR / "tailscale.json"
 SERVE_CONFIG_HOST_DIR = Path(os.getenv("TS_CONFIG_DIR", "/config/tailscale"))
 SERVE_CONFIG_PATH = SERVE_CONFIG_HOST_DIR / "serve.json"
+STATE_DIR = Path(os.getenv("TS_STATE_DIR", "/var/lib/tailscale"))
+PID_FILE = STATE_DIR / "tailscaled.pid"
 
 DEFAULT_APP_PORT = int(os.getenv("APP_PORT") or os.getenv("PORT") or "8080")
 
 DEFAULTS: dict[str, Any] = {
     "enabled": False,
-    "hostname": "zerodot1sllmwiking",
+    "hostname": "llmwiking",
     "auth_key_encrypted": None,
     "auth_key_hint": None,
     "app_port": DEFAULT_APP_PORT,
@@ -69,13 +73,17 @@ def _which_tailscale() -> str | None:
     return shutil.which("tailscale")
 
 
-async def _run(cmd: list[str], timeout: float = 60.0) -> tuple[int, str, str]:
+async def _run(cmd: list[str], timeout: float = 60.0, env: dict[str, str] | None = None) -> tuple[int, str, str]:
     """Executes a shell command asynchronously and returns (code, stdout, stderr)."""
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=run_env,
         )
         try:
             out_b, err_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
@@ -90,6 +98,38 @@ async def _run(cmd: list[str], timeout: float = 60.0) -> tuple[int, str, str]:
         )
     except Exception as e:
         return 1, "", str(e)
+
+
+def _check_https_cert(dns_name: str, serve_info: dict[str, Any], funnel_info: dict[str, Any]) -> bool:
+    """Checks whether an actual HTTPS SSL/TLS certificate exists or is active."""
+    if not dns_name:
+        return False
+
+    # 1. Check certificate files on disk
+    possible_paths = [
+        STATE_DIR / "certs" / f"{dns_name}.crt",
+        STATE_DIR / f"{dns_name}.crt",
+        SERVE_CONFIG_HOST_DIR / f"{dns_name}.crt",
+        STATE_DIR / "certs" / f"{dns_name}.key",
+    ]
+    if any(p.exists() and p.stat().st_size > 0 for p in possible_paths):
+        return True
+
+    # 2. Check active serve / funnel HTTPS configuration
+    def _has_active_https(info: dict[str, Any]) -> bool:
+        if not isinstance(info, dict):
+            return False
+        tcp = info.get("TCP") or {}
+        for port_data in tcp.values():
+            if isinstance(port_data, dict) and port_data.get("HTTPS"):
+                return True
+        web = info.get("Web") or {}
+        for web_key in web:
+            if dns_name in web_key:
+                return True
+        return False
+
+    return _has_active_https(serve_info) or _has_active_https(funnel_info)
 
 
 def build_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> dict[str, Any]:
@@ -124,8 +164,11 @@ def write_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> P
         return None
 
 
-async def get_status() -> dict[str, Any]:
+async def get_status(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
     """Fetches live status from Tailscale daemon."""
+    if cfg is None:
+        cfg = load_config()
+
     if not _which_tailscale():
         return {
             "available": False,
@@ -173,19 +216,22 @@ async def get_status() -> dict[str, Any]:
 
     funnel_urls = []
     if dns_name:
-        fport = 443
+        fport = int(cfg.get("funnel_port") or 443)
         funnel_urls.append(f"https://{dns_name}:{fport}" if fport != 443 else f"https://{dns_name}")
+
+    is_online = bool(self_info.get("Online"))
+    https_cert_ok = _check_https_cert(dns_name, serve_info, funnel_info)
 
     return {
         "available": True,
         "backend_state": st.get("BackendState", "Unknown"),
         "dns_name": dns_name,
         "tailscale_ips": ips,
-        "online": self_info.get("Online", False),
+        "online": is_online,
         "funnel_urls": funnel_urls,
         "funnel": funnel_info,
         "serve": serve_info,
-        "https_cert_ok": bool(dns_name and self_info.get("Online")),
+        "https_cert_ok": https_cert_ok,
     }
 
 
@@ -200,18 +246,35 @@ async def up(cfg: dict[str, Any], raw_auth_key: str | None = None) -> dict[str, 
     if not key:
         return {"ok": False, "error": "No Auth key configured"}
 
-    cmd = [
-        "tailscale", "up",
-        f"--authkey={key}",
-        f"--hostname={cfg.get('hostname') or 'zerodot1sllmwiking'}",
-        "--accept-dns=true",
-    ]
-    extra = (cfg.get("extra_args") or "").strip()
-    if extra:
-        cmd.extend(extra.split())
+    # Pass Auth key securely via a temporary restricted file to prevent process list leakage (ps aux)
+    key_fd, key_file_path = tempfile.mkstemp(prefix=".ts_key_", dir="/tmp")
+    try:
+        with os.fdopen(key_fd, "w", encoding="utf-8") as f:
+            f.write(key.strip())
+        os.chmod(key_file_path, 0o600)
 
-    code, out, err = await _run(cmd, timeout=120.0)
-    return {"ok": code == 0, "stdout": out, "stderr": err, "code": code}
+        cmd = [
+            "tailscale", "up",
+            f"--authkey=file:{key_file_path}",
+            f"--hostname={cfg.get('hostname') or 'llmwiking'}",
+            "--accept-dns=true",
+        ]
+        extra = (cfg.get("extra_args") or "").strip()
+        if extra:
+            try:
+                cmd.extend(shlex.split(extra))
+            except Exception as e:
+                log.warning("shlex parsing error in extra_args, falling back to split(): %s", e)
+                cmd.extend(extra.split())
+
+        code, out, err = await _run(cmd, timeout=120.0)
+        return {"ok": code == 0, "stdout": out, "stderr": err, "code": code}
+    finally:
+        try:
+            if os.path.exists(key_file_path):
+                os.remove(key_file_path)
+        except Exception:
+            pass
 
 
 async def down() -> dict[str, Any]:
@@ -287,7 +350,7 @@ async def apply_serve_funnel(cfg: dict[str, Any]) -> dict[str, Any]:
         results.append({"step": "funnel_reset", "ok": c_res == 0, "out": o_res, "err": e_res})
 
     write_serve_config(cfg)
-    status = await get_status()
+    status = await get_status(cfg)
     return {"ok": all(r.get("ok") for r in results if r.get("step") != "cert"), "steps": results, "status": status}
 
 
@@ -308,28 +371,53 @@ async def reset_funnel_serve() -> dict[str, Any]:
 
 
 async def restart_tailscale() -> dict[str, Any]:
-    """Restarts Tailscale daemon/connection independently from the main server."""
+    """Restarts Tailscale daemon/connection independently from the main server using targeted PID signal management."""
     if not _which_tailscale():
         return {"ok": False, "error": "tailscale binary not found"}
 
     cfg = load_config()
 
-    # 1. Stop current daemon process if running
-    await _run(["pkill", "-f", "tailscaled"])
+    # 1. Targeted daemon shutdown using PID file or specific process matching
+    pid_killed = False
+    if PID_FILE.exists():
+        try:
+            pid = int(PID_FILE.read_text(encoding="utf-8").strip())
+            if pid > 1:
+                os.kill(pid, 15)  # SIGTERM
+                pid_killed = True
+        except Exception as e:
+            log.warning("Could not terminate tailscaled PID from file: %s", e)
+
+    if not pid_killed:
+        # Targeted process check for container tailscaled daemon
+        code, pids, _ = await _run(["pgrep", "-x", "tailscaled"])
+        if code == 0 and pids.strip():
+            for p_str in pids.strip().split():
+                try:
+                    p_val = int(p_str)
+                    if p_val > 1:
+                        os.kill(p_val, 15)  # SIGTERM
+                except Exception:
+                    pass
+
     await asyncio.sleep(1.5)
 
     # 2. Relaunch tailscaled daemon using persistent host state directory
-    ts_state_dir = Path(os.getenv("TS_STATE_DIR", "/var/lib/tailscale"))
-    ts_state_dir.mkdir(parents=True, exist_ok=True)
-    state_file = ts_state_dir / "tailscaled.state"
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    state_file = STATE_DIR / "tailscaled.state"
 
     if Path("/dev/net/tun").exists():
-        cmd = ["tailscaled", f"--state={state_file}", f"--statedir={ts_state_dir}"]
+        cmd = ["tailscaled", f"--state={state_file}", f"--statedir={STATE_DIR}"]
     else:
-        cmd = ["tailscaled", "--tun=userspace-networking", f"--state={state_file}", f"--statedir={ts_state_dir}"]
+        cmd = ["tailscaled", "--tun=userspace-networking", f"--state={state_file}", f"--statedir={STATE_DIR}"]
 
     try:
-        await asyncio.create_subprocess_exec(*cmd)
+        proc = await asyncio.create_subprocess_exec(*cmd)
+        if proc and proc.pid:
+            try:
+                PID_FILE.write_text(str(proc.pid), encoding="utf-8")
+            except Exception:
+                pass
     except Exception as e:
         log.warning("Could not launch tailscaled daemon: %s", e)
 
@@ -341,7 +429,7 @@ async def restart_tailscale() -> dict[str, Any]:
             await up(cfg)
         await apply_serve_funnel(cfg)
 
-    status = await get_status()
+    status = await get_status(cfg)
     return {"ok": True, "message": "Tailscale neugestartet", "status": status}
 
 
@@ -372,7 +460,7 @@ async def setup_all(
 ) -> dict[str, Any]:
     """One-Click setup: Save config -> tailscale up -> apply serve/funnel -> get status."""
     cfg = load_config()
-    cfg["hostname"] = (hostname or "zerodot1sllmwiking").strip()
+    cfg["hostname"] = (hostname or "llmwiking").strip()
     cfg["app_port"] = int(app_port)
     cfg["funnel_port"] = int(funnel_port)
     cfg["funnel_enabled"] = bool(funnel_enabled)

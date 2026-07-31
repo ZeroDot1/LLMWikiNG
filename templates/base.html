@@ -9,7 +9,9 @@
     <link rel="stylesheet" href="{{ base_path }}/static/css/tailscale.css?v={{ app_version }}">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>📖</text></svg>">
     <meta name="description" content="LLMWikiNG – Dein lokales LLM-Wiki by ZeroDot1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <script>window.BASE_PATH = "{{ base_path }}";</script>
+    <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
     <script>window.SYNTAX_HIGHLIGHTING = {% if syntax_highlighting %}true{% else %}false{% endif %};</script>
     {% block head %}{% endblock %}
 </head>

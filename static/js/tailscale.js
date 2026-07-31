@@ -13,6 +13,13 @@
         return window.BASE_PATH || "/LLMWikiNG";
     }
 
+    function getCsrfToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        if (window.CSRF_TOKEN) return window.CSRF_TOKEN;
+        return "";
+    }
+
     function showMsg(msg, isError) {
         var box = document.getElementById("ts-msg-box");
         if (!box) return;
@@ -198,7 +205,10 @@
 
         fetch(getBasePath() + "/api/v1/system/tailscale/setup", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": getCsrfToken()
+            },
             body: JSON.stringify(payload)
         })
             .then(function (res) {
@@ -242,7 +252,10 @@
 
         fetch(getBasePath() + "/api/v1/system/tailscale", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": getCsrfToken()
+            },
             body: JSON.stringify(payload)
         })
             .then(function (res) { return res.json(); })
@@ -264,7 +277,10 @@
         if (!confirm("Möchtest du die Tailscale-Verbindung wirklich trennen (down)?")) return;
         clearMsg();
 
-        fetch(getBasePath() + "/api/v1/system/tailscale/down", { method: "POST" })
+        fetch(getBasePath() + "/api/v1/system/tailscale/down", {
+            method: "POST",
+            headers: { "X-CSRF-Token": getCsrfToken() }
+        })
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (data.ok) {
@@ -283,7 +299,10 @@
         if (!confirm("Möchtest du Tailscale Serve & Funnel zurücksetzen?")) return;
         clearMsg();
 
-        fetch(getBasePath() + "/api/v1/system/tailscale/reset", { method: "POST" })
+        fetch(getBasePath() + "/api/v1/system/tailscale/reset", {
+            method: "POST",
+            headers: { "X-CSRF-Token": getCsrfToken() }
+        })
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (data.ok) {
@@ -302,7 +321,10 @@
         clearMsg();
         showMsg("⏳ SSL/TLS-Zertifikat wird von Tailscale / Let's Encrypt abgerufen...", false);
 
-        fetch(getBasePath() + "/api/v1/system/tailscale/cert", { method: "POST" })
+        fetch(getBasePath() + "/api/v1/system/tailscale/cert", {
+            method: "POST",
+            headers: { "X-CSRF-Token": getCsrfToken() }
+        })
             .then(function (res) {
                 return res.json().then(function (data) {
                     if (!res.ok) throw new Error(data.detail || data.error || "Zertifikatsabruf fehlgeschlagen");
@@ -327,7 +349,10 @@
         clearMsg();
         showMsg("⏳ Tailscale Daemon wird neugestartet...", false);
 
-        fetch(getBasePath() + "/api/v1/system/tailscale/restart", { method: "POST" })
+        fetch(getBasePath() + "/api/v1/system/tailscale/restart", {
+            method: "POST",
+            headers: { "X-CSRF-Token": getCsrfToken() }
+        })
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (data.ok) {
@@ -391,7 +416,10 @@
 
         fetch(getBasePath() + "/api/v1/system/tailscale/reveal", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": getCsrfToken()
+            },
             body: JSON.stringify({ password: pw })
         })
             .then(function (res) {

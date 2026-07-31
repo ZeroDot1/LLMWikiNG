@@ -59,6 +59,11 @@ def base_context(request: Request, wiki: str = "main") -> dict:
     )
     _t = Translator(lang)
     current_user = get_current_user(request)
+    csrf_token = ""
+    if current_user and current_user.get("id"):
+        from core.security import create_csrf_token
+        csrf_token = create_csrf_token(current_user["id"])
+
     return {
         "request": request,
         "all_pages": get_all_wiki_pages(wiki),
@@ -74,6 +79,7 @@ def base_context(request: Request, wiki: str = "main") -> dict:
         "syntax_highlighting": load_app_config().get("syntax_highlighting", True),
         "sync_needed": is_sync_needed(wiki),
         "current_user": current_user,
+        "csrf_token": csrf_token,
         "_": _t,
         "current_lang": lang,
         "available_languages": get_available_languages(),

@@ -49,11 +49,25 @@ def require_admin(request: Request) -> dict:
     return user
 
 
+from core.security import read_session, verify_password, create_csrf_token, verify_csrf_token
+
+
+def verify_request_csrf(request: Request, user: dict) -> None:
+    """Prüft den CSRF-Token bei zustandsverändernden Requests, die über Session-Cookies kommen."""
+    if request.headers.get("X-API-Key"):
+        return
+    token = request.headers.get("X-CSRF-Token") or request.headers.get("X-CSRFToken") or request.query_params.get("csrf_token")
+    if not token or not verify_csrf_token(token, user["id"]):
+        raise HTTPException(status_code=403, detail="CSRF-Token ungültig oder fehlt")
+
+
 def require_api_admin(request: Request, background_tasks: BackgroundTasks) -> dict:
     """API-Variante: Benutzer muss über gültigen API-Key mit Admin-Rolle kommen."""
     user = get_api_user(request, background_tasks)
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Administratorrechte erforderlich")
+    if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+        verify_request_csrf(request, user)
     return user
 
 

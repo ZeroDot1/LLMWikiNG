@@ -68,7 +68,7 @@ In addition to the CLI, the project offers a full-featured, extremely performant
 *   **🏷️ Tag Cloud & Wikipedia-Style Tags**: Each wiki page displays its tags in a clean, Wikipedia-style category/tags box at the bottom of the article. All tags and inline `#hashtags` in body content are clickable links leading to the **Tag Cloud** page (`/tags`). Tags are automatically generated during ingest and sync if missing, and centrally persisted in `data/tags.json`. The search page supports **`tag:name`** and **`#name`** syntax with score boosting.
 *   **🔍 Search with Term Highlighting & Tag Syntax**: Lightning-fast BM25 search with **Cross-Wiki-Search** (`wiki=all`). Supports **`tag:name`** and **`#name`** inline syntax with tag pills rendered on search results. Tag autocomplete dropdown appears when typing `tag:`. Shows colored highlights, wiki labels, and supports arrow key navigation.
 *   **⬇️ Self-Update**: Integrated update function — checks for new GitHub versions and updates itself with one click. Safely backs up all files, wiki pages, raw sources, database registers, and configurations into `/tmp` beforehand, auto-restoring user data post-update.
-*   **⚙️ Settings & Keys Management**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management**, **API-Key & Per-User MCP-Key Management** (with interactive permission editing for tool groups, allowed tools, active status, user assignments, and secure password-based recovery), **🦈 Tailscale & Funnel Integration** (same-container One-Click Tailscale setup, Tailnet private access via `serve`, public HTTPS ingress via `funnel`, and automated/manual SSL/TLS certificate fetching via `tailscale cert` for remote MCP/API access by Claude, Grok, Cursor, or AGY), **Server-Side Backups** (create `.tar.xz` server backups, restore, download, delete), **Interactive MCP Client Configurator** (build customized config snippets for Antigravity `agy`/IDE, OpenCode, and Hermes Agent), SMTP email configuration, health check, and update function.
+*   **⚙️ Settings & Keys Management**: Central configuration page with tabs for language selection, **Appearance (Dark/Light)**, **Wiki Management** (create, edit, delete wikis with responsive table view showing page count, file count, total size, and last modified date per wiki), **User Management** (create, edit, delete users; change name, password, role, active status with self/last-admin lockout protection), **API-Key & Per-User MCP-Key Management** (with interactive permission editing for tool groups, allowed tools, active status, user assignments, and secure password-based recovery), **🦈 Tailscale & Funnel Integration** (same-container One-Click Tailscale setup, Tailnet private access via `serve`, public HTTPS ingress via `funnel`, and automated/manual SSL/TLS certificate fetching via `tailscale cert` for remote MCP/API access by Claude, Grok, Cursor, or AGY), **Server-Side Backups** (create `.tar.xz` server backups, restore, download, delete), **Interactive MCP Client Configurator** (build customized config snippets for Antigravity `agy`/IDE, OpenCode, and Hermes Agent), SMTP email configuration, health check, and update function.
 *   **🛡️ Audit Logging & Data Export**: SQLite-based, per-category toggleable logging system recording all security actions (search, ingest, logins, API-keys, MCP-keys, Tailscale operations, backups, pages, wikis). Captures timestamps, usernames, IPs. Admins can search, filter by category/action, and export logs to **JSON** or **CSV**. Replaces logbuch entirely.
 *   **🔄 Background File Watcher**: Optional watchdog-based file watcher (`enable_watcher` in config.json) that monitors wiki directories for `.md` changes and triggers incremental sync automatically — no manual intervention needed.
 *   **📜 Page Version History**: Date-based versioning without Git. Every page save creates a version snapshot (up to 30 per page). Accessible via `./wiki.sh history <page>` or through the history service.
@@ -124,7 +124,7 @@ is automatically moved to `wikis/main/` on first start.
 *   `/` – Dashboard: Overview of all wikis + activity.
 *   `/login`, `/logout` – Login (username + password, signed cookie).
 *   `/register` – User registration (called on first start for setup).
-*   `/users`, `/users/<id>/delete` – User management (admin only).
+*   `/users`, `/users/<id>/edit`, `/users/<id>/delete` – User management (admin only).
 *   `/api-keys`, `/api-keys/<id>/delete` – API-key management (admin only).
 *   `/api-keys/reveal` – **API-Key Recovery**: After password entry, securely decrypts and displays existing keys in the web interface.
 *   `/wikis/new` – Create a new wiki via the web UI.
@@ -303,7 +303,7 @@ Once Funnel is active, configure your AI agent with your public Tailscale URL:
 
 LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
-> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (38 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
+> 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (47 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
 
 ### 🔌 Enable & Configure MCP Server
 
@@ -372,7 +372,7 @@ For **`/` autocomplete** in OpenCode's chat, copy the `.opencode/command/` direc
 cp -r pfad/zu/LLMWikiNG/.opencode/command/ .opencode/command/
 ```
 
-After restarting OpenCode, type `/` in chat to see all 38 LLMWikiNG commands:
+After restarting OpenCode, type `/` in chat to see all 44 LLMWikiNG commands:
 
 | Command | Description |
 |---------|-------------|
@@ -382,7 +382,9 @@ After restarting OpenCode, type `/` in chat to see all 38 LLMWikiNG commands:
 | `/search` | Volltextsuche |
 | `/status` | Systemstatus anzeigen |
 | `/update` / `/update-lwk` | System-Update ausführen |
-| … | … und 31 weitere |
+| `/user-edit` | Benutzer bearbeiten |
+| `/tailscale-status` | Tailscale-Status anzeigen |
+| … | … und 35 weitere |
 
 > **Note:** OpenCode loads MCP Prompts (via `list_prompts`) as AI hints, but does **not** show them in the `/` chat autocomplete by default. Use the `.opencode/command/` files above for native `/`-support.
 
@@ -416,7 +418,7 @@ You can copy and paste the following instruction directly into your AI assistant
 Please configure yourself to connect to the LLMWikiNG MCP server. The server uses Streamable HTTP at URL: http://localhost:8080/LLMWikiNG/mcp (or SSE at http://localhost:8080/LLMWikiNG/mcp/sse). You must include the headers 'X-MCP-Key' set to '<YOUR_MCP_SERVER_KEY>' and 'X-API-Key' set to '<YOUR_AGENT_API_KEY>'. In OpenCode, add it under the 'mcp' section in your config file. In Antigravity (agy), add it under the 'mcpServers' object in your ~/.gemini/config/mcp_config.json file with type 'http' and URL 'http://localhost:8080/LLMWikiNG/mcp'.
 ```
 
-### 📋 Available MCP Tools (38 Tools)
+### 📋 Available MCP Tools (47 Tools)
 
 | Tool | Description |
 |------|-------------|
@@ -445,6 +447,7 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_cache_clear` | Clears the cache |
 | `okf_list_users` | Lists all users |
 | `okf_create_user` | Creates a user |
+| `okf_update_user` | Edits a user (name, password, role, active status) |
 | `okf_delete_user` | Deletes a user |
 | `okf_list_api_keys` | Lists all API keys |
 | `okf_create_api_key` | Creates an API key |
@@ -457,10 +460,16 @@ Please configure yourself to connect to the LLMWikiNG MCP server. The server use
 | `okf_restore_backup` | Restores a server backup |
 | `okf_check_update` | Checks for update via Git |
 | `okf_run_update` | Runs the system update |
+| `okf_tailscale_status` | Shows Tailscale status & configuration |
+| `okf_tailscale_save` | Saves the Tailscale configuration |
+| `okf_tailscale_setup` | Runs the Tailscale one-click setup (up + serve/funnel) |
+| `okf_tailscale_apply` | Applies the Tailscale serve/funnel configuration |
+| `okf_tailscale_cert` | Requests the HTTPS certificate via `tailscale cert` |
+| `okf_tailscale_reset` | Resets Tailscale funnel & serve |
 
-### ⚡ MCP Prompts — Slash Commands (38 Total)
+### ⚡ MCP Prompts — Slash Commands (46 Total)
 
-MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 38 in total.
+MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, OpenCode, Cursor, Claude Code). Every MCP tool has its own slash command — 46 in total.
 
 > **Client support:**
 > - **AGY / Claude Code:** Support `list_prompts` natively — slash commands appear in autocomplete.
@@ -655,7 +664,7 @@ backend/
 │       ├── pages.py        # ALL HTML routes (under BASE_PATH)
 │       ├── auth.py         # /login, /logout, /users, /api-keys
 │       ├── api.py          # /api/v1/* (JSON, key-protected)
-│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 38 Tools)
+│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 47 Tools)
 └── services/               # wiki, markdown, search, sync, graph, lint,
                             #   analytics, editor, email_sender (all multi-wiki capable)
 templates/                  # Jinja2 templates (Tailwind v4, responsive, dark mode)

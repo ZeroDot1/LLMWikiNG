@@ -30,7 +30,7 @@ if not MCP_KEY:
     print("❌ Kein MCP-Key in config.json gefunden (llmwiking_mcp_key)")
     sys.exit(1)
 
-REMOTE_URL = "http://192.168.2.247:44419/LLMWikiNG/mcp"
+REMOTE_URL = "https://zerodot1sllmwiking.tail21a7ee.ts.net/LLMWikiNG/mcp"
 SSE_URL = f"{REMOTE_URL}/sse"
 
 # Versuche einen API-Key aus den lokalen API-Keys zu entschlüsseln
@@ -142,7 +142,7 @@ async def main():
         print("  - MCP-Server auf Remote nicht aktiviert")
         print("  - MCP-Key auf Remote ist anders als lokal")
         print("\nTipp: Prüfe den MCP-Key in den Einstellungen des Remote-Servers:")
-        print("  http://192.168.2.247:44419/LLMWikiNG/settings")
+        print("  https://zerodot1sllmwiking.tail21a7ee.ts.net/LLMWikiNG/settings")
         sys.exit(1)
 
 

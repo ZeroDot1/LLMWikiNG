@@ -10,7 +10,7 @@ status: AI-Generated
 
 # LLMWikiNG MCP Server — Integration & Tool Reference
 
-This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 37 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
+This page explains exactly how to connect the LLMWikiNG **MCP (Model Context Protocol)** server to AI coding agents such as **Antigravity `agy`**, **Claude Desktop**, **Cursor**, **OpenCode**, and any other MCP-compatible client. It also documents **every one of the 47 MCP tools** with ready-to-use prompts you can paste into your agent so it reads from and writes to your wiki automatically.
 
 LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a plain, human-readable Markdown file with a small YAML frontmatter block. That means the AI never works with a proprietary blob — it reads and writes normal Markdown, and you can open every page in any editor.
 
@@ -28,8 +28,8 @@ LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a 
 5. [Connect Cursor (and other SSE clients)](#5-connect-cursor-and-other-sse-clients)
 6. [Copy-paste "self-configuration" prompt](#6-copy-paste-self-configuration-prompt)
 7. [How agents use the wiki automatically (workflows)](#7-how-agents-use-the-wiki-automatically-workflows)
-8. [Full tool reference (37 tools)](#8-full-tool-reference-37-tools)
-10. [MCP Prompts (37 Remote Slash Commands)](#10-mcp-prompts-37-remote-slash-commands)
+8. [Full tool reference (47 tools)](#8-full-tool-reference-47-tools)
+10. [MCP Prompts (46 Remote Slash Commands)](#10-mcp-prompts-46-remote-slash-commands)
 9. [OKF v0.1 page format](#9-okf-v01-page-format)
 11. [Troubleshooting](#11-troubleshooting)
 
@@ -88,7 +88,7 @@ Add the following config block (replace `<host>:<port>` and the keys with your o
 
 ### Wie du Remote-Slashcommands in `agy` nutzt:
 
-Sobald die Konfiguration gespeichert ist, werden alle **37 MCP Tools** und **37 Remote Slash-Commands** automatisch in `agy` geladen:
+Sobald die Konfiguration gespeichert ist, werden alle **47 MCP Tools** und **46 Remote Slash-Commands** automatisch in `agy` geladen:
 
 1. **Intellisense / Autocomplete:** Tippe `/` in der `agy`-Interaktionszeile. `agy` zeigt dir das Autocomplete-Menü aller Remote-Commands an.
 2. **Direkte Ausführung:**
@@ -189,7 +189,7 @@ After any write or ingest, ask:
 
 ---
 
-## 8. Full tool reference (37 tools)
+## 8. Full tool reference (47 tools)
 
 Each entry shows the tool, what it does, and a **copy-paste prompt** you can give your agent.
 
@@ -255,6 +255,8 @@ Each entry shows the tool, what it does, and a **copy-paste prompt** you can giv
     > "List all users."
 *   **`okf_create_user`** — Create a user.
     > "Create a user 'ci-bot' with role 'user'."
+*   **`okf_update_user`** — Edit a user (name, password, role, active status). Blocks self-deactivation, self role-demotion, and removal of the last admin.
+    > "Rename the user 'ci-bot' to 'cicd-bot' and set role to 'viewer'."
 *   **`okf_delete_user`** — Delete a user.
     > "Delete the user 'ci-bot'."
 *   **`okf_list_api_keys`** — List API keys (no secrets shown).
@@ -286,6 +288,20 @@ Each entry shows the tool, what it does, and a **copy-paste prompt** you can giv
 *   **`okf_run_update_stream`** — Run update with live progress stream output.
     > "Run the system update with live streaming logs."
 
+### Tailscale & Funnel
+*   **`okf_tailscale_status`** — Show Tailscale status & configuration (serve/funnel URLs, cert state).
+    > "What is the current Tailscale status?"
+*   **`okf_tailscale_save`** — Save the Tailscale configuration (hostname, auth key, ports, funnel/serve flags).
+    > "Save the Tailscale config with hostname 'llmwiking' and funnel enabled."
+*   **`okf_tailscale_setup`** — Run the One-Click setup (Tailscale up + serve/funnel + certificate).
+    > "Run the full Tailscale setup with my auth key."
+*   **`okf_tailscale_apply`** — Apply the serve/funnel configuration.
+    > "Apply the Tailscale serve and funnel config."
+*   **`okf_tailscale_cert`** — Request the HTTPS certificate via `tailscale cert`.
+    > "Fetch the Tailscale HTTPS certificate."
+*   **`okf_tailscale_reset`** — Reset Tailscale funnel & serve.
+    > "Reset Tailscale funnel and serve."
+
 ---
 
 ## 9. OKF v0.1 page format
@@ -316,7 +332,7 @@ Required field: `type` (one of `Concept`, `Reference`, `Playbook`, `API-Doc`, `T
 
 ---
 
-## 10. MCP Prompts (37 Remote Slash Commands)
+## 10. MCP Prompts (46 Remote Slash Commands)
 
 Every MCP tool has a corresponding **MCP Prompt (Slash Command)** registered on the server. When connected to LLMWikiNG via MCP, type `/` in your client chat (AGY, OpenCode, Cursor, Claude Code) to invoke commands directly:
 
@@ -347,6 +363,7 @@ Every MCP tool has a corresponding **MCP Prompt (Slash Command)** registered on 
 | `/cache-clear` | — | `okf_cache_clear` |
 | `/users` | — | `okf_list_users` |
 | `/user-create` | `<username> <password> [role]` | `okf_create_user` |
+| `/user-edit` | `<username> [new_username] [password] [role] [active]` | `okf_update_user` |
 | `/user-delete` | `<username>` | `okf_delete_user` |
 | `/api-keys` | — | `okf_list_api_keys` |
 | `/api-key-create` | `<name>` | `okf_create_api_key` |
@@ -359,6 +376,12 @@ Every MCP tool has a corresponding **MCP Prompt (Slash Command)** registered on 
 | `/restore` | `<filename>` | `okf_restore_backup` |
 | `/check-update` | — | `okf_check_update` |
 | `/update` | — | `okf_run_update` |
+| `/tailscale-status` | — | `okf_tailscale_status` |
+| `/tailscale-save` | `[hostname] [proxy_target] [auth_key]` | `okf_tailscale_save` |
+| `/tailscale-setup` | `<auth_key> [hostname] [funnel]` | `okf_tailscale_setup` |
+| `/tailscale-apply` | — | `okf_tailscale_apply` |
+| `/tailscale-cert` | — | `okf_tailscale_cert` |
+| `/tailscale-reset` | — | `okf_tailscale_reset` |
 
 ---
 

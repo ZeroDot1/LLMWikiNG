@@ -9,7 +9,7 @@ Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
 Per-User MCP-Keys mit Tool-Berechtigungen werden unterstuetzt.
 
-Verfuegbare MCP-Tools (38):
+Verfuegbare MCP-Tools (47):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -28,7 +28,7 @@ Verfuegbare MCP-Tools (38):
     okf_cache_stats, okf_cache_clear
 
   Benutzer-Verwaltung:
-    okf_list_users, okf_create_user, okf_delete_user
+    okf_list_users, okf_create_user, okf_update_user, okf_delete_user
 
   API-Key-Verwaltung:
     okf_list_api_keys, okf_create_api_key, okf_delete_api_key
@@ -38,18 +38,23 @@ Verfuegbare MCP-Tools (38):
     okf_list_backups, okf_create_backup, okf_restore_backup
 
   Update:
-    okf_check_update, okf_run_update
+    okf_check_update, okf_run_update, okf_run_update_stream
 
-Verfuegbare MCP-Prompts (37 Slash-Commands):
+  Tailscale & Funnel:
+    okf_tailscale_status, okf_tailscale_save, okf_tailscale_setup
+    okf_tailscale_apply, okf_tailscale_cert, okf_tailscale_reset
+
+Verfuegbare MCP-Prompts (46 Slash-Commands):
   Wiki-Verwaltung   : /wikis /wiki-create /wiki-update /wiki-delete
   Seiten-Verwaltung : /pages /read /write /page-delete /export /pending /ingest /ingest-text
   Suche & Analyse   : /search /stats /graph /lint
   Rohquellen        : /raw-list /raw-read
   System            : /status /sync /audit /cache /cache-clear
-  Benutzer          : /users /user-create /user-delete
+  Benutzer          : /users /user-create /user-edit /user-delete
   API-/MCP-Keys     : /api-keys /api-key-create /api-key-delete /mcp-keys /mcp-key-create /mcp-key-delete
   Backups           : /backups /backup /restore
   Update            : /check-update /update /update-lwk /updatelwk
+  Tailscale         : /tailscale-status /tailscale-setup /tailscale-save /tailscale-apply /tailscale-cert /tailscale-reset
 """
 
 from __future__ import annotations
@@ -1292,6 +1297,242 @@ Willkommen im Wiki **{name}**.
         return "Cache erfolgreich geleert."
 
     @mcp_server.tool()
+    @_require_tool("okf_tailscale_status")
+    async def okf_tailscale_status() -> str:
+        """Zeigt den aktuellen Tailscale-Status und die Konfiguration an.
+
+        Holt Live-Status vom Tailscale-Daemon (verbunden, DNS-Name, IPs,
+        Funnel-URLs, HTTPS-Zertifikat) sowie die gespeicherte Konfiguration.
+
+        Returns:
+            Formatierter Status inklusive Proxy-Ziel und Funnel-URLs.
+        """
+        from services.tailscale import load_config, get_status, get_proxy_target
+        cfg = load_config()
+        status = await get_status(cfg)
+
+        lines = ["# Tailscale Status\n"]
+        lines.append(f"- **Aktiviert:** {'Ja' if cfg.get('enabled') else 'Nein'}")
+        lines.append(f"- **Hostname:** {cfg.get('hostname', 'llmwiking')}")
+        lines.append(f"- **Proxy-Ziel:** {get_proxy_target(cfg)}")
+        lines.append(f"- **Funnel aktiviert:** {'Ja' if cfg.get('funnel_enabled') else 'Nein'}")
+        lines.append(f"- **Serve aktiviert:** {'Ja' if cfg.get('serve_enabled') else 'Nein'}")
+
+        if cfg.get("auth_key_hint"):
+            lines.append(f"- **Auth-Key-Hinweis:** `{cfg['auth_key_hint']}`")
+
+        if not status.get("available"):
+            lines.append(f"\n- **Tailscale:** Nicht installiert ({status.get('error', 'unbekannt')})")
+            return "\n".join(lines)
+
+        lines.append(f"\n- **Backend-State:** {status.get('backend_state')}")
+        lines.append(f"- **Online:** {'Ja' if status.get('online') else 'Nein'}")
+        dns = status.get("dns_name")
+        if dns:
+            lines.append(f"- **DNS-Name:** {dns}")
+        ips = status.get("tailscale_ips") or []
+        if ips:
+            lines.append(f"- **Tailscale-IPs:** {', '.join(ips)}")
+        for url in status.get("funnel_urls") or []:
+            lines.append(f"- **Funnel-URL:** {url}")
+        cert_ok = status.get("https_cert_ok")
+        if cert_ok is not None:
+            lines.append(f"- **HTTPS-Zertifikat:** {'OK' if cert_ok else 'Fehlt noch (z.B. okf_tailscale_cert ausfuehren)'}")
+        if status.get("error"):
+            lines.append(f"\n- **Hinweis:** {status['error']}")
+        return "\n".join(lines)
+
+    @mcp_server.tool()
+    @_require_tool("okf_tailscale_save")
+    def okf_tailscale_save(
+        hostname: str | None = None,
+        auth_key: str | None = None,
+        app_port: int | None = None,
+        proxy_target: str | None = None,
+        funnel_port: int | None = None,
+        funnel_enabled: bool | None = None,
+        serve_enabled: bool | None = None,
+        extra_args: str | None = None,
+    ) -> str:
+        """Speichert die Tailscale-Konfiguration (ohne `tailscale up` auszufuehren).
+
+        Nur uebergebene Werte werden aktualisiert. Fuer den vollen One-Click-
+        Aufbau (Config + up + serve/funnel) `okf_tailscale_setup` verwenden.
+
+        Args:
+            hostname: Hostname im Tailnet.
+            auth_key: Optionaler Tailscale-Auth-Key (wird verschluesselt gespeichert).
+            app_port: Port der lokalen Anwendung (Default aus config).
+            proxy_target: Ziel-URL fuer serve/funnel (z.B. 'http://127.0.0.1:8080').
+            funnel_port: Port fuer den oeffentlichen Funnel (Default 443).
+            funnel_enabled: Funnel aktivieren.
+            serve_enabled: Serve (Tailnet-privat) aktivieren.
+            extra_args: Zusaetzliche tailscale-up Argumente.
+
+        Returns:
+            Bestaetigung der gespeicherten Konfiguration.
+        """
+        from services.tailscale import load_config, save_config
+        from core.security import encrypt_tailscale_key
+        cfg = load_config()
+        actor = (mcp_user_ctx.get() or {}).get("username", "mcp-agent")
+
+        if hostname is not None:
+            cfg["hostname"] = hostname.strip() or "llmwiking"
+        if auth_key is not None:
+            clean_key = auth_key.strip()
+            if clean_key:
+                cfg["auth_key_encrypted"] = encrypt_tailscale_key(clean_key)
+                hint_start = clean_key[:12] if len(clean_key) >= 12 else clean_key[:4]
+                hint_end = clean_key[-4:] if len(clean_key) >= 4 else ""
+                cfg["auth_key_hint"] = f"{hint_start}…{hint_end}"
+        if app_port is not None:
+            cfg["app_port"] = int(app_port)
+        if proxy_target is not None:
+            cfg["proxy_target"] = proxy_target.strip() or None
+        if funnel_port is not None:
+            cfg["funnel_port"] = int(funnel_port)
+        if funnel_enabled is not None:
+            cfg["funnel_enabled"] = bool(funnel_enabled)
+        if serve_enabled is not None:
+            cfg["serve_enabled"] = bool(serve_enabled)
+        if extra_args is not None:
+            cfg["extra_args"] = extra_args.strip()
+        cfg["enabled"] = True
+        cfg["updated_by"] = actor
+
+        try:
+            save_config(cfg)
+        except Exception as e:
+            return f"Fehler beim Speichern der Tailscale-Konfiguration: {e}"
+        try:
+            from services.audit import log_action
+            log_action(action="tailscale_save", details=f"MCP: Tailscale-Konfiguration gespeichert (Hostname: {cfg['hostname']})", username=actor)
+        except Exception:
+            pass
+        return (
+            f"Tailscale-Konfiguration gespeichert.\n"
+            f"Hostname: {cfg['hostname']}\n"
+            f"Proxy-Ziel: {cfg.get('proxy_target') or 'auto'}\n"
+            f"Funnel: {'Ja' if cfg.get('funnel_enabled') else 'Nein'} | Serve: {'Ja' if cfg.get('serve_enabled') else 'Nein'}"
+        )
+
+    @mcp_server.tool()
+    @_require_tool("okf_tailscale_setup")
+    async def okf_tailscale_setup(
+        hostname: str = "llmwiking",
+        auth_key: str | None = None,
+        app_port: int = 8080,
+        proxy_target: str | None = None,
+        funnel_port: int = 443,
+        funnel_enabled: bool = False,
+        serve_enabled: bool = True,
+        extra_args: str = "",
+    ) -> str:
+        """Fuehrt das Tailscale One-Click-Setup aus.
+
+        Speichert die Konfiguration, verbindet mit dem Tailnet (`tailscale up`)
+        und wendet serve/funnel an.
+
+        Args:
+            hostname: Hostname im Tailnet.
+            auth_key: Tailscale-Auth-Key (erforderlich fuer die erste Verbindung).
+            app_port: Port der lokalen Anwendung.
+            proxy_target: Ziel-URL fuer serve/funnel.
+            funnel_port: Port fuer den oeffentlichen Funnel (Default 443).
+            funnel_enabled: Funnel aktivieren.
+            serve_enabled: Serve (Tailnet-privat) aktivieren.
+            extra_args: Zusaetzliche tailscale-up Argumente.
+
+        Returns:
+            Ergebnis von Setup, up und serve/funnel.
+        """
+        from services.tailscale import setup_all
+        actor = (mcp_user_ctx.get() or {}).get("username", "mcp-agent")
+        res = await setup_all(
+            hostname=hostname,
+            auth_key=auth_key,
+            app_port=int(app_port),
+            proxy_target=proxy_target,
+            funnel_port=int(funnel_port),
+            funnel_enabled=funnel_enabled,
+            serve_enabled=serve_enabled,
+            extra_args=extra_args,
+            actor=actor,
+        )
+        try:
+            from services.audit import log_action
+            log_action(action="tailscale_setup", details=f"MCP: Tailscale One-Click Setup ausgefuehrt (ok={res.get('ok')})", username=actor)
+        except Exception:
+            pass
+        lines = ["# Tailscale Setup-Ergebnis\n"]
+        lines.append(f"- **OK:** {'Ja' if res.get('ok') else 'Nein'}")
+        lines.append(f"- **Schritt:** {res.get('step', '-')}")
+        if res.get("error"):
+            lines.append(f"- **Fehler:** {res['error']}")
+        up_res = res.get("up") or {}
+        lines.append(f"- **tailscale up:** {'OK' if up_res.get('ok') else 'Fehlgeschlagen'}")
+        if up_res.get("stderr"):
+            lines.append(f"  - {up_res['stderr'][:500]}")
+        apply_res = res.get("apply") or {}
+        lines.append(f"- **serve/funnel:** {'OK' if apply_res.get('ok') else 'Fehlgeschlagen'}")
+        status = res.get("status") or {}
+        if status.get("dns_name"):
+            lines.append(f"- **DNS-Name:** {status['dns_name']}")
+        for url in status.get("funnel_urls") or []:
+            lines.append(f"- **Funnel-URL:** {url}")
+        return "\n".join(lines)
+
+    @mcp_server.tool()
+    @_require_tool("okf_tailscale_apply")
+    async def okf_tailscale_apply() -> str:
+        """Wendet serve/funnel-Konfiguration auf Tailscale an."""
+        from services.tailscale import load_config, apply_serve_funnel
+        actor = (mcp_user_ctx.get() or {}).get("username", "mcp-agent")
+        cfg = load_config()
+        res = await apply_serve_funnel(cfg)
+        try:
+            from services.audit import log_action
+            log_action(action="tailscale_apply", details=f"MCP: tailscale serve/funnel angewendet (ok={res.get('ok')})", username=actor)
+        except Exception:
+            pass
+        if res.get("ok"):
+            return "Tailscale serve/funnel erfolgreich angewendet."
+        return f"Fehler beim Anwenden von serve/funnel: {res.get('error') or res.get('stderr') or 'unbekannt'}"
+
+    @mcp_server.tool()
+    @_require_tool("okf_tailscale_cert")
+    async def okf_tailscale_cert() -> str:
+        """Fordert das Let's-Encrypt HTTPS-Zertifikat via `tailscale cert` an."""
+        from services.tailscale import fetch_cert
+        actor = (mcp_user_ctx.get() or {}).get("username", "mcp-agent")
+        res = await fetch_cert()
+        try:
+            from services.audit import log_action
+            log_action(action="tailscale_cert", details=f"MCP: tailscale cert ausgefuehrt (ok={res.get('ok')})", username=actor)
+        except Exception:
+            pass
+        if res.get("ok"):
+            return "HTTPS-Zertifikat erfolgreich bereitgestellt."
+        return f"Fehler beim Zertifikatsabruf: {res.get('error') or res.get('stderr') or 'unbekannt'}"
+
+    @mcp_server.tool()
+    @_require_tool("okf_tailscale_reset")
+    async def okf_tailscale_reset() -> str:
+        """Setzt Tailscale funnel und serve Einstellungen zurueck."""
+        from services.tailscale import reset_funnel_serve
+        actor = (mcp_user_ctx.get() or {}).get("username", "mcp-agent")
+        res = await reset_funnel_serve()
+        try:
+            from services.audit import log_action
+            log_action(action="tailscale_reset", details="MCP: tailscale funnel & serve zurueckgesetzt", username=actor)
+        except Exception:
+            pass
+        if res.get("ok"):
+            return "Tailscale funnel & serve wurden zurueckgesetzt."
+        return f"Fehler beim Zuruecksetzen: {res.get('error') or res.get('stderr') or 'unbekannt'}"
+
+    @mcp_server.tool()
     @_require_tool("okf_list_users")
     def okf_list_users() -> str:
         """Listet alle Benutzer auf.
@@ -1306,8 +1547,11 @@ Willkommen im Wiki **{name}**.
         lines = ["# Benutzer\n"]
         for u in users:
             status = "aktiv" if u.get("active", True) else "deaktiviert"
+            username = u.get("username", "?")
+            role = u.get("role", "?")
+            user_id = u.get("id", "?")
             lines.append(
-                f"- **{u['username']}** (Rolle: `{u['role']}`, {status})"
+                f"- **{username}** (ID: `{user_id}`, Rolle: `{role}`, {status})"
             )
         return "\n".join(lines)
 
@@ -1323,16 +1567,24 @@ Willkommen im Wiki **{name}**.
         Args:
             username: Benutzername.
             password: Passwort.
-            role: Rolle ('admin' oder 'editor').
+            role: Rolle ('admin', 'editor' oder 'viewer').
 
         Returns:
             Bestaetigung der Erstellung.
         """
         from core.storage import create_user
+        if role not in ("admin", "editor", "viewer"):
+            return f"Fehler: Ungueltige Rolle '{role}'. Erlaubt: admin, editor, viewer."
         try:
-            create_user(username, password, role=role)
+            user = create_user(username, password, role=role)
+            try:
+                from services.audit import log_action
+                log_action(action="user_create", details=f"MCP: Benutzer '{username}' erstellt (Rolle: {role})", username=(mcp_user_ctx.get() or {}).get("username", "mcp-agent"))
+            except Exception:
+                pass
             return (
                 f"Benutzer '{username}' erfolgreich erstellt.\n"
+                f"ID: {user.get('id')}\n"
                 f"Rolle: {role}"
             )
         except ValueError as e:
@@ -1358,20 +1610,122 @@ Willkommen im Wiki **{name}**.
         users = list_users()
         target = None
         for u in users:
-            if u["username"] == username:
+            if u.get("username", "").lower() == username.lower():
                 target = u
                 break
         if not target:
             return f"Benutzer '{username}' nicht gefunden."
+        target_id = target.get("id")
+        if not target_id:
+            return f"Fehler: Benutzer '{username}' hat keine gueltige ID und kann nicht geloescht werden."
         if target.get("role") == "admin":
             admin_count = sum(1 for u in users if u.get("role") == "admin")
             if admin_count <= 1:
                 return "Fehler: Der letzte Admin kann nicht geloescht werden."
         try:
-            delete_user(target["id"])
+            delete_user(target_id)
+            try:
+                from services.audit import log_action
+                log_action(action="user_delete", details=f"MCP: Benutzer '{username}' geloescht", username=(current_user or {}).get("username", "mcp-agent"))
+            except Exception:
+                pass
             return f"Benutzer '{username}' erfolgreich geloescht."
         except Exception as e:
             return f"Fehler beim Loeschen: {e}"
+
+    @mcp_server.tool()
+    @_require_tool("okf_update_user")
+    def okf_update_user(
+        username: str,
+        new_username: str | None = None,
+        password: str | None = None,
+        role: str | None = None,
+        active: bool | None = None,
+    ) -> str:
+        """Bearbeitet einen bestehenden Benutzer (Name, Passwort, Rolle, Aktivstatus).
+
+        Schuetzt vor Sperr- und Rollen-Manipulation: Der eigene Account kann
+        weder deaktiviert noch degradiert werden, und es muss immer mindestens
+        ein aktiver Administrator erhalten bleiben.
+
+        Args:
+            username: Benutzername des zu bearbeitenden Benutzers.
+            new_username: Optional neuer Benutzername.
+            password: Optional neues Passwort.
+            role: Optional neue Rolle ('admin', 'editor' oder 'viewer').
+            active: Optional Aktivstatus (True/False).
+
+        Returns:
+            Bestaetigung der Aktualisierung.
+        """
+        from core.storage import list_users, update_user
+        current_user = mcp_user_ctx.get()
+        users = list_users()
+        target = None
+        for u in users:
+            if u.get("username", "").lower() == username.lower():
+                target = u
+                break
+        if not target:
+            return f"Benutzer '{username}' nicht gefunden."
+        target_id = target.get("id")
+        if not target_id:
+            return f"Fehler: Benutzer '{username}' hat keine gueltige ID."
+
+        is_self = current_user and current_user.get("username", "").lower() == username.lower()
+
+        if new_username is not None:
+            new_username = new_username.strip()
+            if not new_username:
+                return "Fehler: Der Benutzername darf nicht leer sein."
+            if new_username.lower() != target.get("username", "").lower():
+                for u in users:
+                    if u.get("username", "").lower() == new_username.lower() and u.get("id") != target_id:
+                        return f"Fehler: Benutzername '{new_username}' ist bereits vergeben."
+
+        if role is not None and role not in ("admin", "editor", "viewer"):
+            return f"Fehler: Ungueltige Rolle '{role}'. Erlaubt: admin, editor, viewer."
+
+        new_role = role if role is not None else target.get("role")
+        new_active = active if active is not None else target.get("active", True)
+
+        if is_self and active is False:
+            return "Fehler: Du kannst dich nicht selbst deaktivieren."
+        if is_self and role is not None and role != "admin":
+            return "Fehler: Du kannst dir die Administratorrolle nicht selbst entziehen."
+
+        if target.get("role") == "admin" or new_role == "admin":
+            admin_count = sum(1 for u in users if u.get("role") == "admin")
+            last_admin = admin_count <= 1 and (target.get("role") == "admin" and (new_role != "admin" or new_active is False))
+            if last_admin:
+                return "Fehler: Es muss mindestens ein aktiver Administrator erhalten bleiben."
+
+        changes: dict = {}
+        if new_username is not None:
+            changes["username"] = new_username
+        if password is not None and password.strip():
+            changes["password"] = password
+        if role is not None:
+            changes["role"] = role
+        if active is not None:
+            changes["active"] = active
+        if not changes:
+            return "Keine Aenderungen uebergeben."
+
+        updated = update_user(target_id, **changes)
+        if not updated:
+            return f"Fehler beim Aktualisieren von Benutzer '{username}'."
+        try:
+            from services.audit import log_action
+            log_action(action="user_update", details=f"MCP: Benutzer '{username}' aktualisiert ({', '.join(changes.keys())})", username=(current_user or {}).get("username", "mcp-agent"))
+        except Exception:
+            pass
+        return (
+            f"Benutzer '{username}' erfolgreich aktualisiert.\n"
+            f"Benutzername: {updated.get('username')}\n"
+            f"Rolle: {updated.get('role')}\n"
+            f"Aktiv: {'Ja' if updated.get('active', True) else 'Nein'}"
+        )
 
     @mcp_server.tool()
     @_require_tool("okf_list_api_keys")
@@ -2037,6 +2391,32 @@ if _MCP_AVAILABLE and mcp_server is not None:
                 f"Bestatige die Erstellung."
             )))]
 
+        @mcp_server.prompt(name="user-edit", description="Bearbeitet einen Systembenutzer (Name, Passwort, Rolle, Status).")
+        async def prompt_user_edit(
+            username: str,
+            new_username: str = "",
+            password: str = "",
+            role: str = "",
+            active: str = "",
+        ) -> list[PromptMessage]:
+            """Slash-Command: /user-edit <username> [new_username] [password] [role] [active]"""
+            args = f"username='{username}'"
+            if new_username:
+                args += f", new_username='{new_username}'"
+            if password:
+                args += ", password='...'"
+            if role:
+                args += f", role='{role}'"
+            if active.lower() in ("true", "1", "ja", "aktiv"):
+                args += ", active=True"
+            elif active.lower() in ("false", "0", "nein", "inaktiv"):
+                args += ", active=False"
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                f"Bitte bearbeite den Benutzer '{username}':\n"
+                f"`okf_update_user({args})`\n"
+                f"Bestatige die Aenderungen. Zeige den neuen Status."
+            )))]
+
         @mcp_server.prompt(name="user-delete", description="Loescht einen Systembenutzer.")
         async def prompt_user_delete(username: str) -> list[PromptMessage]:
             """Slash-Command: /user-delete <username>"""
@@ -2171,6 +2551,79 @@ if _MCP_AVAILABLE and mcp_server is not None:
                 "1. `okf_check_update()` – pruefe ob Update verfuegbar.\n"
                 "2. `okf_run_update()` – Update ausfuehren (falls verfuegbar).\n"
                 "3. Berichte das Ergebnis und den Update-Log.\n"
+            )))]
+
+        # ── Tailscale & Funnel ─────────────────────────────────────────────────
+
+        @mcp_server.prompt(name="tailscale-status", description="Zeigt den Tailscale-Status und die Konfiguration.")
+        async def prompt_tailscale_status() -> list[PromptMessage]:
+            """Slash-Command: /tailscale-status"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte zeige den aktuellen Tailscale-Status:\n"
+                "`okf_tailscale_status()`\n"
+                "Erklaere Verbindungsstatus, Funnel-URLs und ob das HTTPS-Zertifikat fehlt."
+            )))]
+
+        @mcp_server.prompt(name="tailscale-save", description="Speichert die Tailscale-Konfiguration.")
+        async def prompt_tailscale_save(
+            hostname: str = "llmwiking",
+            proxy_target: str = "",
+            auth_key: str = "",
+        ) -> list[PromptMessage]:
+            """Slash-Command: /tailscale-save [hostname] [proxy_target] [auth_key]"""
+            args = f"hostname='{hostname}'"
+            if proxy_target:
+                args += f", proxy_target='{proxy_target}'"
+            if auth_key:
+                args += ", auth_key='...'"
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte speichere die Tailscale-Konfiguration:\n"
+                f"`okf_tailscale_save({args})`\n"
+                "Bestatige die gespeicherten Werte."
+            )))]
+
+        @mcp_server.prompt(name="tailscale-setup", description="Fuehrt das Tailscale One-Click-Setup aus.")
+        async def prompt_tailscale_setup(
+            hostname: str = "llmwiking",
+            auth_key: str = "",
+            funnel_enabled: bool = False,
+            proxy_target: str = "",
+        ) -> list[PromptMessage]:
+            """Slash-Command: /tailscale-setup <auth_key> [funnel_enabled]"""
+            args = f"hostname='{hostname}', auth_key='...', funnel_enabled={funnel_enabled}"
+            if proxy_target:
+                args += f", proxy_target='{proxy_target}'"
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte fuehre das Tailscale One-Click-Setup durch:\n"
+                f"`okf_tailscale_setup({args})`\n"
+                "Zeige den Verbindungsstatus und die Funnel-URL."
+            )))]
+
+        @mcp_server.prompt(name="tailscale-apply", description="Wendet Tailscale serve/funnel an.")
+        async def prompt_tailscale_apply() -> list[PromptMessage]:
+            """Slash-Command: /tailscale-apply"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte wende die Tailscale serve/funnel-Konfiguration an:\n"
+                "`okf_tailscale_apply()`\n"
+                "Bestatige das Ergebnis."
+            )))]
+
+        @mcp_server.prompt(name="tailscale-cert", description="Fordert das HTTPS-Zertifikat via tailscale cert an.")
+        async def prompt_tailscale_cert() -> list[PromptMessage]:
+            """Slash-Command: /tailscale-cert"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte stelle das HTTPS-Zertifikat bereit:\n"
+                "`okf_tailscale_cert()`\n"
+                "Bestatige, ob das Zertifikat erfolgreich ausgestellt wurde."
+            )))]
+
+        @mcp_server.prompt(name="tailscale-reset", description="Setzt Tailscale funnel & serve zurueck.")
+        async def prompt_tailscale_reset() -> list[PromptMessage]:
+            """Slash-Command: /tailscale-reset"""
+            return [PromptMessage(role="user", content=TextContent(type="text", text=(
+                "Bitte setze Tailscale funnel & serve zurueck:\n"
+                "`okf_tailscale_reset()`\n"
+                "WARNUNG: Funnel- und Serve-Einstellungen werden entfernt! Bitte bestaetigen."
             )))]
 
     except ImportError:

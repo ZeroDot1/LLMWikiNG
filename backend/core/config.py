@@ -443,7 +443,15 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
     "users_admin": {
         "label_de": "Benutzer verwalten",
         "label_en": "Manage Users",
-        "tools": ["okf_list_users", "okf_create_user", "okf_delete_user"],
+        "tools": ["okf_list_users", "okf_create_user", "okf_update_user", "okf_delete_user"],
+    },
+    "tailscale_admin": {
+        "label_de": "Tailscale & Funnel verwalten",
+        "label_en": "Manage Tailscale & Funnel",
+        "tools": [
+            "okf_tailscale_status", "okf_tailscale_save", "okf_tailscale_setup",
+            "okf_tailscale_apply", "okf_tailscale_cert", "okf_tailscale_reset",
+        ],
     },
     "api_keys_admin": {
         "label_de": "API- & MCP-Keys verwalten",

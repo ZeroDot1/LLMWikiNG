@@ -7,6 +7,23 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **MCP-Server: Benutzer-Bearbeitung & Tailscale-Tools** (`backend/api/routes/mcp.py`, `backend/core/config.py`):
+  - **Neues Tool `okf_update_user`** — bearbeitet Systembenutzer (Name, Passwort, Rolle, Aktivstatus) mit Schutz vor Selbst-Deaktivierung, Selbst-Degradierung und Entfernung des letzten Admins. Neuer Slash-Command `/user-edit`. Die Tools `okf_list_users`, `okf_create_user` und `okf_delete_user` wurden defensiv gehärtet (`.get()`-Zugriffe, ID-Ausgabe, `user_create`/`user_delete` Audit-Log).
+  - **Neue Tool-Gruppe „Tailscale & Funnel"** (`tailscale_admin` in `MCP_TOOL_GROUPS`) mit 6 neuen Tools + Slash-Commands: `okf_tailscale_status` (`/tailscale-status`), `okf_tailscale_save` (`/tailscale-save`), `okf_tailscale_setup` (`/tailscale-setup`), `okf_tailscale_apply` (`/tailscale-apply`), `okf_tailscale_cert` (`/tailscale-cert`), `okf_tailscale_reset` (`/tailscale-reset`). Jetzt insgesamt **47 MCP-Tools und 46 Slash-Commands**.
+  - **Dokumentation aktualisiert**: `skills/SKILL.md`, `README.md`, `templates/about.html`, `templates/about_de.html`, `templates/docs.html`, `templates/docs_de.html`, `wikis/main/mcp-server-integration.md`, `.opencode/command/*` (7 neue Slash-Command-Dateien: `user-edit`, `tailscale-status`, `tailscale-save`, `tailscale-setup`, `tailscale-apply`, `tailscale-cert`, `tailscale-reset`). MCP-URL in `opencode.json`/`update_remote_mcp.py` auf die Tailscale-Funnel-Domain umgestellt.
+  - **i18n** (`lang/de.json`, `lang/en.json`): Neue Schlüssel `settings.mcp_group_tailscale`, `settings.prompt_user_edit_desc` sowie `settings.prompt_tailscale_{status,save,setup,apply,cert,reset}_desc`.
+
+## [2.15.2] - 2026-07-31
+
+### Fixed
+- **Benutzerverwaltung: Löschen und Bearbeiten von Benutzern/Admins repariert und erweitert** (Settings → Users):
+  - **Neue Bearbeiten-Funktion (Frontend + Backend)**: Jeder Benutzer (auch Admins) kann jetzt direkt in der Tabelle über den neuen ✏️-Bearbeiten-Button geöffnet und über ein Modal angepasst werden — Benutzername, Passwort, Rolle und Aktiv-Status. Backend-Route `POST /users/{user_id}/edit` in `backend/api/routes/auth.py` nutzt die bisher ungenutzte `update_user()`-Funktion aus `core/storage.py`.
+  - **Schutz vor Lockout**: Selbst-Deaktivierung und Selbst-Entzug der Admin-Rolle sind blockiert; der letzte verbliebene Administrator kann weder gelöscht, deaktiviert noch degradiert werden.
+  - **Robustes Löschen**: Der Lösch-Button funktioniert nun auch zuverlässig — fehlende Benutzer führen zu einer klaren Fehlermeldung statt eines stillen Fehlschlags, und Benutzer ohne gültige ID werden nicht mehr mit kaputten Formular-Aktionen (Doppel-Slash → 404) gerendert.
+  - **Defensive Datenspeicherung** (`backend/core/storage.py`, `backend/api/routes/api.py`): `get_user`, `get_user_by_name`, `update_user`, `delete_user` und der API-`GET /users`-Endpunkt verwenden jetzt `.get()` statt `[]`, sodass fehlerhafte/legacy `users.json`-Einträge ohne `id`/`username` keinen 500er (KeyError) mehr auslösen.
+  - **i18n** (`lang/de.json`, `lang/en.json`): Neue Übersetzungsschlüssel `users.edit`, `users.edit_title`, `users.edit_desc`, `users.save`, `users.cancel`, `users.password_placeholder`.
+
 ## [2.15.1] - 2026-07-31
 
 ### Added

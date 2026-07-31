@@ -307,6 +307,10 @@
                 <span class="text-text-secondary text-xs">{{ _('settings.prompt_user_create_desc') }}</span>
             </div>
             <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/user-edit &lt;name&gt; [new_name] [role] [active]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_user_edit_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
                 <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/user-delete &lt;username&gt;</code>
                 <span class="text-text-secondary text-xs">{{ _('settings.prompt_user_delete_desc') }}</span>
             </div>
@@ -370,11 +374,40 @@
                 <span class="text-text-secondary text-xs">{{ _('settings.prompt_update_desc') }}</span>
             </div>
         </div>
+
+        <!-- Tailscale -->
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">🛰️ {{ _('settings.mcp_group_tailscale') }}</p>
+        <div class="grid gap-1.5 mb-3">
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-status</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_status_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-save [hostname] [proxy_target]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_save_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-setup &lt;auth_key&gt; [funnel]</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_setup_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-apply</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_apply_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-cert</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_cert_desc') }}</span>
+            </div>
+            <div class="flex items-start gap-3 rounded-lg bg-bg-sunken px-3 py-2 border border-border hover:border-primary/50 transition-colors">
+                <code class="text-primary font-mono text-xs min-w-[13rem] font-semibold shrink-0">/tailscale-reset</code>
+                <span class="text-text-secondary text-xs">{{ _('settings.prompt_tailscale_reset_desc') }}</span>
+            </div>
+        </div>
     </div>
 
     <!-- Tool-Gruppen Accordion -->
     <div>
-        <h3 class="text-sm font-semibold text-text mb-3">{{ _('settings.mcp_tool_groups_heading') }} <span class="text-text-muted font-normal text-xs">(37 Tools)</span></h3>
+        <h3 class="text-sm font-semibold text-text mb-3">{{ _('settings.mcp_tool_groups_heading') }} <span class="text-text-muted font-normal text-xs">(47 Tools)</span></h3>
         <div class="space-y-1.5">
             {% for group_key, group in mcp_tool_groups.items() %}
             <details class="rounded-lg border border-border overflow-hidden">

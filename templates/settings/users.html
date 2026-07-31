@@ -92,10 +92,21 @@
                         </span>
                     </td>
                     <td class="py-3.5 px-3 text-right">
-                        {% if not current_user or user.id != current_user.id %}
-                        <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
-                            <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('users.delete') }}</button>
-                        </form>
+                        {% if user.id %}
+                        <div class="flex items-center justify-end gap-3">
+                            <button type="button"
+                                    data-user-id="{{ user.id }}"
+                                    data-username="{{ user.username | escape }}"
+                                    data-role="{{ user.role }}"
+                                    data-active="{{ 'true' if user.active else 'false' }}"
+                                    onclick="openUserEditModalFromBtn(this)"
+                                    class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('users.edit') }}</button>
+                            {% if not current_user or user.id != current_user.id %}
+                            <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
+                                <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('users.delete') }}</button>
+                            </form>
+                            {% endif %}
+                        </div>
                         {% else %}
                         <span class="text-xs text-text-muted italic">—</span>
                         {% endif %}
@@ -109,3 +120,70 @@
     <p class="text-sm text-text-secondary">{{ _('users.no_users') }}</p>
     {% endif %}
 </div>
+
+<!-- User Edit Modal -->
+<div id="userEditModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface border border-border rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
+        <button type="button" onclick="closeUserEditModal()" class="absolute top-4 right-4 text-text-muted hover:text-text font-bold text-lg">&times;</button>
+        <h3 class="text-lg font-bold text-primary mb-1">✏️ {{ _('users.edit_title') }}</h3>
+        <p class="text-xs text-text-secondary mb-4">{{ _('users.edit_desc') }}</p>
+
+        <form id="userEditForm" action="" method="post" class="space-y-4">
+            <div>
+                <label for="edit_user_username" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.username') }}</label>
+                <input type="text" name="username" id="edit_user_username" required class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <div>
+                <label for="edit_user_password" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.password') }}</label>
+                <input type="password" name="password" id="edit_user_password" autocomplete="new-password" class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary" placeholder="{{ _('users.password_placeholder') }}">
+            </div>
+
+            <div>
+                <label for="edit_user_role" class="block text-xs font-semibold text-text-muted uppercase mb-1">{{ _('users.role') }}</label>
+                <select name="role" id="edit_user_role" class="w-full rounded-lg border border-border bg-bg-sunken px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="admin">{{ _('users.role_admin') }}</option>
+                    <option value="editor">{{ _('users.role_editor') }}</option>
+                    <option value="viewer">{{ _('users.role_viewer') }}</option>
+                </select>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none">
+                <input type="checkbox" name="active" value="1" id="edit_user_active" class="rounded border-border text-primary focus:ring-primary">
+                <span class="font-medium text-text">{{ _('users.table_active') }}</span>
+            </label>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-border">
+                <button type="button" onclick="closeUserEditModal()" class="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-semibold hover:bg-bg-sunken text-text transition-colors">{{ _('users.cancel') }}</button>
+                <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-xs font-semibold text-white transition-colors shadow-sm">{{ _('users.save') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openUserEditModalFromBtn(btn) {
+    var userId = btn.getAttribute("data-user-id");
+    var username = btn.getAttribute("data-username");
+    var role = btn.getAttribute("data-role");
+    var active = btn.getAttribute("data-active") === "true";
+    openUserEditModal(userId, username, role, active);
+}
+
+function openUserEditModal(userId, username, role, active) {
+    var modal = document.getElementById("userEditModal");
+    var form = document.getElementById("userEditForm");
+    form.action = "{{ base_path }}/users/" + encodeURIComponent(userId) + "/edit";
+
+    document.getElementById("edit_user_username").value = username || "";
+    document.getElementById("edit_user_password").value = "";
+    document.getElementById("edit_user_role").value = role || "viewer";
+    document.getElementById("edit_user_active").checked = !!active;
+
+    modal.classList.remove("hidden");
+}
+
+function closeUserEditModal() {
+    document.getElementById("userEditModal").classList.add("hidden");
+}
+</script>

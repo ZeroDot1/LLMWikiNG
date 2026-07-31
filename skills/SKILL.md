@@ -241,8 +241,8 @@ Antwort:
 ```json
 {
   "ok": true,
-  "local_version": "2.11.0",
-  "remote_version": "2.12.0",
+  "local_version": "2.15.2",
+  "remote_version": "2.16.0",
   "update_available": true,
   "up_to_date": false
 }
@@ -256,8 +256,8 @@ Antwort:
 ```json
 {
   "ok": true,
-  "old_version": "2.11.0",
-  "new_version": "2.12.0",
+  "old_version": "2.15.1",
+  "new_version": "2.15.2",
   "updated": true,
   "output": "... Update-Log ..."
 }
@@ -274,6 +274,45 @@ curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/cache/stats"
 curl -X POST \
   -H "X-API-Key: $API_KEY" \
   "$SERVER_URL/api/v1/cache/clear"
+```
+
+#### 23.1 Tailscale-Status abrufen (Admin-API-Key erforderlich)
+```bash
+curl -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/status"
+```
+
+#### 23.2 Tailscale-Konfiguration speichern (Admin-API-Key erforderlich)
+```bash
+curl -X POST \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"hostname": "llmwiking", "auth_key": "tskey-...", "proxy_target": "http://127.0.0.1:8080", "funnel_enabled": false, "serve_enabled": true}' \
+  "$SERVER_URL/api/v1/system/tailscale"
+```
+
+#### 23.3 Tailscale One-Click-Setup (Admin-API-Key erforderlich)
+```bash
+curl -X POST \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"hostname": "llmwiking", "auth_key": "tskey-...", "funnel_enabled": true}' \
+  "$SERVER_URL/api/v1/system/tailscale/setup"
+```
+
+#### 23.4 Weitere Tailscale-Aktionen (Admin-API-Key erforderlich)
+```bash
+# serve/funnel anwenden:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/apply"
+
+# HTTPS-Zertifikat via tailscale cert anfordern:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/cert"
+
+# Funnel & serve zurücksetzen:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/reset"
+
+# tailscale up / down:
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/up"
+curl -X POST -H "X-API-Key: $API_KEY" "$SERVER_URL/api/v1/system/tailscale/down"
 ```
 
 #### 24. Benutzer auflisten
@@ -297,6 +336,17 @@ curl -X DELETE \
   -H "X-API-Key: $API_KEY" \
   "$SERVER_URL/api/v1/users/USER_ID"
 ```
+
+#### 26.1 Benutzer bearbeiten (WebUI-Route, Session-basiert)
+```bash
+# Ersetze USER_ID durch die ID aus der Benutzerliste
+# Felder: username, password (optional), role (admin/editor/viewer), active
+curl -X POST \
+  -b "session=DEIN_SESSION_COOKIE" \
+  -d "username=neuer_name&role=editor&active=1" \
+  "$SERVER_URL/users/USER_ID/edit"
+```
+Der eigene Account kann weder deaktiviert noch degradiert werden; der letzte aktive Administrator ist geschützt. Über MCP steht dasselbe als `okf_update_user` zur Verfügung.
 
 #### 27. API-Keys auflisten
 ```bash
@@ -334,7 +384,7 @@ MCP_KEY="dein_sicherer_mcp_key_2026"
 MCP_SSE_URL="http://localhost:8080/LLMWikiNG/mcp/sse"
 ```
 
-### MCP-Tools (37 Stück)
+### MCP-Tools (47 Stück)
 
 Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität zwischen API-Key und MCP-Agenten-Zugang.
 
@@ -371,6 +421,7 @@ Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität
 | **Benutzer** | |
 | `okf_list_users` | Benutzer auflisten |
 | `okf_create_user` | Benutzer erstellen |
+| `okf_update_user` | Benutzer bearbeiten (Name, Passwort, Rolle, Aktivstatus) |
 | `okf_delete_user` | Benutzer loeschen |
 | **API-Keys** | |
 | `okf_list_api_keys` | API-Keys auflisten |
@@ -387,6 +438,13 @@ Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität
 | **Update** | |
 | `okf_check_update` | Update-Verfuegbarkeit pruefen |
 | `okf_run_update` | System-Update ausfuehren |
+| **Tailscale & Funnel** | |
+| `okf_tailscale_status` | Tailscale-Status & Konfiguration anzeigen |
+| `okf_tailscale_save` | Tailscale-Konfiguration speichern |
+| `okf_tailscale_setup` | Tailscale One-Click-Setup (up + serve/funnel) |
+| `okf_tailscale_apply` | serve/funnel-Konfiguration anwenden |
+| `okf_tailscale_cert` | HTTPS-Zertifikat via `tailscale cert` anfordern |
+| `okf_tailscale_reset` | Funnel & serve zuruecksetzen |
 
 ### Client-Einbindung
 
@@ -436,7 +494,24 @@ Füge in `opencode.json` unter `mcp` hinzu:
       "type": "remote",
       "url": "http://localhost:8080/LLMWikiNG/mcp/sse",
       "enabled": true,
-      "environment": {
+      "headers": {
+        "X-MCP-Key": "dein_per_user_mcp_key",
+        "X-API-Key": "dein_api_key"
+      }
+    }
+  }
+}
+```
+
+Beispiel mit öffentlicher Tailscale-Funnel-URL:
+```json
+{
+  "mcp": {
+    "llmwiki-okf": {
+      "type": "remote",
+      "url": "https://DEIN_TAILNET.ts.net/LLMWikiNG/mcp/sse",
+      "enabled": true,
+      "headers": {
         "X-MCP-Key": "dein_per_user_mcp_key",
         "X-API-Key": "dein_api_key"
       }

@@ -18,6 +18,7 @@ from core.storage import (
     create_user,
     get_user,
     get_user_by_name,
+    update_user,
     delete_user,
     list_keys,
     create_key,
@@ -131,10 +132,64 @@ async def user_delete(user_id: str, request: Request, admin: dict = Depends(requ
     if user_id == admin["id"]:
         return redirect(f"{BASE_PATH}/settings?tab=users&error=Du+kannst+dich+nicht+selbst+löschen")
     target_user = get_user(user_id)
-    target_username = target_user["username"] if target_user else user_id
+    if not target_user:
+        return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzer+nicht+gefunden")
+    target_username = target_user.get("username") or user_id
+    if target_user.get("role") == "admin":
+        admin_count = sum(1 for u in list_users() if u.get("role") == "admin")
+        if admin_count <= 1:
+            return redirect(f"{BASE_PATH}/settings?tab=users&error=Der+letzte+Administrator+kann+nicht+gelöscht+werden")
     delete_user(user_id)
     log_action(action="user_delete", details=f"Benutzer '{target_username}' gelöscht", user_id=admin["id"], username=admin["username"], request=request)
     return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+gelöscht")
+
+
+@router.post("/users/{user_id}/edit")
+async def user_edit(user_id: str, request: Request, admin: dict = Depends(require_admin)):
+    target_user = get_user(user_id)
+    if not target_user:
+        return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzer+nicht+gefunden")
+
+    form = await request.form()
+    username = (form.get("username") or "").strip()
+    password = form.get("password") or ""
+    role = form.get("role") or target_user.get("role") or "viewer"
+    active = form.get("active") == "1"
+
+    if not username:
+        return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzername+ist+erforderlich")
+    if role not in ("admin", "editor", "viewer"):
+        role = "viewer"
+
+    for u in list_users():
+        if u.get("id") != user_id and u.get("username", "").lower() == username.lower():
+            return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzername+bereits+vergeben")
+
+    if user_id == admin["id"]:
+        if not active:
+            return redirect(f"{BASE_PATH}/settings?tab=users&error=Du+kannst+dich+nicht+selbst+deaktivieren")
+        if role != "admin":
+            return redirect(f"{BASE_PATH}/settings?tab=users&error=Du+kannst+dir+die+Administratorrolle+nicht+selbst+entziehen")
+
+    if target_user.get("role") == "admin" and (role != "admin" or not active):
+        admin_count = sum(1 for u in list_users() if u.get("role") == "admin")
+        if admin_count <= 1:
+            return redirect(f"{BASE_PATH}/settings?tab=users&error=Es+muss+mindestens+ein+Administrator+bleiben")
+
+    changes = {"username": username, "role": role, "active": active}
+    if password:
+        changes["password"] = password
+    updated = update_user(user_id, **changes)
+    if not updated:
+        return redirect(f"{BASE_PATH}/settings?tab=users&error=Benutzer+nicht+gefunden")
+    log_action(
+        action="user_update",
+        details=f"Benutzer '{username}' aktualisiert (Rolle: {role}, aktiv: {'ja' if active else 'nein'})",
+        user_id=admin["id"],
+        username=admin["username"],
+        request=request,
+    )
+    return redirect(f"{BASE_PATH}/settings?tab=users&success=Benutzer+aktualisiert")
 
 
 @router.get("/api-keys")

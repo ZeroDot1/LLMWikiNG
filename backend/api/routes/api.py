@@ -280,7 +280,7 @@ def api_status(user: dict = Depends(get_api_user)):
 
 @router.get("/users")
 def api_list_users(admin: dict = Depends(require_api_admin)):
-    return {"users": [{"id": u["id"], "username": u["username"], "role": u["role"], "active": u.get("active", True)} for u in list_users()]}
+    return {"users": [{"id": u.get("id"), "username": u.get("username"), "role": u.get("role"), "active": u.get("active", True)} for u in list_users()]}
 
 
 @router.post("/users")

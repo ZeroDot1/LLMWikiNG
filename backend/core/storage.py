@@ -65,17 +65,17 @@ def save_users(users: list[dict]) -> None:
 
 
 def get_user(user_id: str) -> dict | None:
-    return next((u for u in list_users() if u["id"] == user_id), None)
+    return next((u for u in list_users() if u.get("id") == user_id), None)
 
 
 def get_user_by_name(username: str) -> dict | None:
-    return next((u for u in list_users() if u["username"].lower() == username.lower()), None)
+    return next((u for u in list_users() if u.get("username", "").lower() == username.lower()), None)
 
 
 def create_user(username: str, password: str, role: str = "admin") -> dict:
     with _locked_write(USERS_FILE):
         users = list_users()
-        if any(u["username"].lower() == username.lower() for u in users):
+        if any(u.get("username", "").lower() == username.lower() for u in users):
             raise ValueError("Benutzer existiert bereits")
         user = {
             "id": secrets.token_hex(8),
@@ -94,7 +94,7 @@ def update_user(user_id: str, **changes) -> dict | None:
     with _locked_write(USERS_FILE):
         users = list_users()
         for u in users:
-            if u["id"] == user_id:
+            if u.get("id") == user_id:
                 if "password" in changes:
                     u["password_hash"] = hash_password(changes.pop("password"))
                 u.update(changes)
@@ -105,7 +105,7 @@ def update_user(user_id: str, **changes) -> dict | None:
 
 def delete_user(user_id: str) -> None:
     with _locked_write(USERS_FILE):
-        users = [u for u in list_users() if u["id"] != user_id]
+        users = [u for u in list_users() if u.get("id") != user_id]
         save_users(users)
 
 

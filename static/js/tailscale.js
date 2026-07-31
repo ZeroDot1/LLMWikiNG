@@ -406,22 +406,61 @@
             });
     };
 
+    function copyTextToClipboard(text) {
+        return new Promise(function (resolve, reject) {
+            if (!text) {
+                reject("Kein Text zum Kopieren vorhanden");
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(resolve).catch(function () {
+                    execCopyFallback(text, resolve, reject);
+                });
+            } else {
+                execCopyFallback(text, resolve, reject);
+            }
+        });
+    }
+
+    function execCopyFallback(text, resolve, reject) {
+        try {
+            var textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            textarea.style.top = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            var successful = document.execCommand("copy");
+            document.body.removeChild(textarea);
+            if (successful) resolve();
+            else reject("Kopieren nicht unterstützt");
+        } catch (err) {
+            reject(err);
+        }
+    }
+
     window.copyTsDns = function () {
         if (!currentDnsName) return;
-        navigator.clipboard.writeText(currentDnsName).then(function () {
+        copyTextToClipboard(currentDnsName).then(function () {
             var btn = document.getElementById("ts-copy-dns-btn");
             if (btn) {
                 var orig = btn.innerText;
                 btn.innerText = "✓ Kopiert!";
                 setTimeout(function () { btn.innerText = orig; }, 2000);
             }
+        }).catch(function (err) {
+            alert("Kopieren fehlgeschlagen: " + err);
         });
     };
 
     window.copyTsFunnelUrl = function () {
         if (!currentFunnelUrl) return;
-        navigator.clipboard.writeText(currentFunnelUrl).then(function () {
-            alert("Funnel URL kopiert: " + currentFunnelUrl);
+        copyTextToClipboard(currentFunnelUrl).then(function () {
+            showMsg("📋 Funnel URL in die Zwischenablage kopiert: " + currentFunnelUrl, false);
+        }).catch(function (err) {
+            alert("Kopieren fehlgeschlagen: " + err);
         });
     };
 
@@ -474,7 +513,7 @@
                 copyBtn.classList.remove("hidden");
 
                 copyBtn.onclick = function () {
-                    navigator.clipboard.writeText(decryptedAuthKey).then(function () {
+                    copyTextToClipboard(decryptedAuthKey).then(function () {
                         copyBtn.innerText = "✓ Kopiert!";
                         setTimeout(function () { copyBtn.innerText = "Kopieren"; }, 2000);
                     });

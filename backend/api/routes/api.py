@@ -710,6 +710,25 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
     version_file = PROJECT_ROOT / "VERSION"
     local_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
+    # Stellt sicher, dass ein Git-Repository existiert
+    git_dir_check = await asyncio.to_thread(
+        subprocess.run,
+        ["git", "rev-parse", "--git-dir"],
+        capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
+    )
+    if git_dir_check.returncode != 0:
+        await asyncio.to_thread(
+            subprocess.run,
+            ["git", "init"],
+            capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
+        )
+        await asyncio.to_thread(
+            subprocess.run,
+            ["git", "remote", "add", "origin", "https://github.com/ZeroDot1/LLMWikiNG.git"],
+            capture_output=True, text=True, timeout=5, cwd=str(PROJECT_ROOT),
+        )
+
+    remote_version = None
     try:
         # 1. Read-only Hash-Vergleich
         ls_proc = await asyncio.to_thread(
@@ -718,44 +737,52 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
             capture_output=True, text=True, timeout=15,
             cwd=str(PROJECT_ROOT),
         )
-        if ls_proc.returncode != 0 or not ls_proc.stdout.strip():
-            err_detail = ls_proc.stderr.strip() or "Konnte Version von GitHub nicht abrufen."
-            if any(term in err_detail for term in ("Authentication failed", "401", "Bad credentials", "could not read Username")):
-                err_detail = "GitHub-Authentifizierung fehlgeschlagen: Der angegebene Personal Access Token ist ungültig oder abgelaufen."
-            raise HTTPException(status_code=502, detail=err_detail)
+        if ls_proc.returncode == 0 and ls_proc.stdout.strip():
+            remote_hash = ls_proc.stdout.strip().split()[0]
+            local_hash_proc = await asyncio.to_thread(
+                subprocess.run,
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=5,
+                cwd=str(PROJECT_ROOT),
+            )
+            local_hash = local_hash_proc.stdout.strip() if local_hash_proc.returncode == 0 else ""
 
-        remote_hash = ls_proc.stdout.strip().split()[0]
-        local_hash_proc = await asyncio.to_thread(
-            subprocess.run,
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=5,
-            cwd=str(PROJECT_ROOT),
-        )
-        local_hash = local_hash_proc.stdout.strip() if local_hash_proc.returncode == 0 else ""
+            if remote_hash == local_hash:
+                return {
+                    "ok": True,
+                    "local_version": local_version,
+                    "remote_version": local_version,
+                    "update_available": False,
+                    "up_to_date": True,
+                }
 
-        if remote_hash == local_hash:
-            return {
-                "ok": True,
-                "local_version": local_version,
-                "remote_version": local_version,
-                "update_available": False,
-                "up_to_date": True,
-            }
+            # 2. Hash-Differenz -> fetch noetig um VERSION zu lesen
+            await asyncio.to_thread(
+                subprocess.run,
+                ["git", "fetch", "origin"],
+                capture_output=True, text=True, timeout=30,
+                cwd=str(PROJECT_ROOT),
+            )
+            proc = await asyncio.to_thread(
+                subprocess.run,
+                ["git", "show", "origin/main:VERSION"],
+                capture_output=True, text=True, timeout=15,
+                cwd=str(PROJECT_ROOT),
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                remote_version = proc.stdout.strip()
 
-        # 2. Hash-Differenz -> fetch noetig um VERSION zu lesen
-        await asyncio.to_thread(
-            subprocess.run,
-            ["git", "fetch", "origin"],
-            capture_output=True, text=True, timeout=30,
-            cwd=str(PROJECT_ROOT),
-        )
-        proc = await asyncio.to_thread(
-            subprocess.run,
-            ["git", "show", "origin/main:VERSION"],
-            capture_output=True, text=True, timeout=15,
-            cwd=str(PROJECT_ROOT),
-        )
-        remote_version = proc.stdout.strip() if proc.returncode == 0 else None
+        # HTTP-Fallback fuer VERSION
+        if not remote_version:
+            import urllib.request
+            try:
+                raw_url = "https://raw.githubusercontent.com/ZeroDot1/LLMWikiNG/main/VERSION"
+                req = urllib.request.Request(raw_url, headers={"User-Agent": "LLMWikiNG-UpdateCheck/2.15"})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    if resp.status == 200:
+                        remote_version = resp.read().decode("utf-8").strip()
+            except Exception:
+                pass
     except HTTPException:
         raise
     except Exception:

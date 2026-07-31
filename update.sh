@@ -42,7 +42,9 @@ if ! command -v git &>/dev/null; then
 fi
 
 if ! git rev-parse --git-dir &>/dev/null; then
-    die "Kein Git-Repository gefunden. Bitte klone das Repository: git clone https://github.com/ZeroDot1/LLMWikiNG.git"
+    echo -e "  ${YELLOW}Kein Git-Repository im Ordner gefunden – initialisiere Git automatisiert...${NC}"
+    git init >/dev/null 2>&1 || true
+    git remote add origin https://github.com/ZeroDot1/LLMWikiNG.git 2>/dev/null || git remote set-url origin https://github.com/ZeroDot1/LLMWikiNG.git 2>/dev/null || true
 fi
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then

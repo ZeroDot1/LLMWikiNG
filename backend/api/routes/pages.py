@@ -2140,8 +2140,8 @@ async def edit_save(request: Request):
     except Exception as e:
         if is_json:
             return JSONResponse(status_code=500, content={"detail": f"Fehler beim Speichern: {e}"})
-        return redirect(f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={urlencode(f'Fehler beim Speichern: {e}')}")
-wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={urlencode(f'Fehler beim Speichern: {e}')}")
+        err_msg = urlencode(f"Fehler beim Speichern: {e}")
+        return redirect(f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}&folder={urlencode(folder)}&error_msg={err_msg}")
 
 
 @router.get("/admin/clear-log")

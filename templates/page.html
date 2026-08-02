@@ -38,7 +38,7 @@
 {% if is_log %}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6 rounded-lg border border-border bg-bg-sunken p-3 text-sm">
     <span class="text-text-muted flex items-center gap-1">{{ _('page.log_auto_desc') }}</span>
-    <a href="{{ base_path }}/admin/clear-log" class="rounded-lg border border-error/40 text-error px-2.5 py-1 hover:bg-error-subtle" onclick="return confirm('{{ _('page.log_clear_confirm') }}');">{{ _('page.log_clear') }}</a>
+    <a href="{{ base_path }}/admin/clear-log" class="rounded-lg border border-error/40 text-error px-2.5 py-1 hover:bg-error-subtle" onclick="return confirm({{ _('page.log_clear_confirm')|tojson }});">{{ _('page.log_clear') }}</a>
 </div>
 {% endif %}
 
@@ -79,7 +79,7 @@
             <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ raw_page_name }}/export?format=html" class="rounded-lg border border-border bg-surface px-3 py-1.5 font-medium hover:bg-bg-sunken text-sm">{{ _('page.export_page') }} (HTML)</a>
         </div>
         {% if raw_page_name not in ("index", "log", "ingestlater") %}
-        <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ raw_page_name }}/delete" class="rounded-lg border border-error/40 text-error px-3 py-1.5 font-medium hover:bg-error-subtle" onclick="return confirm('{{ _('page.delete_confirm') }}');">{{ _('page.delete_page') }}</a>
+        <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ raw_page_name }}/delete" class="rounded-lg border border-error/40 text-error px-3 py-1.5 font-medium hover:bg-error-subtle" onclick="return confirm({{ _('page.delete_confirm')|tojson }});">{{ _('page.delete_page') }}</a>
         {% endif %}
     </div>
 </div>

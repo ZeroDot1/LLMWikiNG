@@ -14,6 +14,21 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **Dokumentation aktualisiert**: `skills/SKILL.md`, `README.md`, `templates/about.html`, `templates/about_de.html`, `templates/docs.html`, `templates/docs_de.html`, `wikis/main/mcp-server-integration.md`, `.opencode/command/*` (7 neue Slash-Command-Dateien: `user-edit`, `tailscale-status`, `tailscale-save`, `tailscale-setup`, `tailscale-apply`, `tailscale-cert`, `tailscale-reset`). MCP-URL in `opencode.json`/`update_remote_mcp.py` auf die Tailscale-Funnel-Domain umgestellt.
   - **i18n** (`lang/de.json`, `lang/en.json`): Neue Schlüssel `settings.mcp_group_tailscale`, `settings.prompt_user_edit_desc` sowie `settings.prompt_tailscale_{status,save,setup,apply,cert,reset}_desc`.
 
+## [2.15.3] - 2026-08-02
+
+### Security
+- **XSS-/JS-Breakout-Härtung in Templates** (`templates/settings/apikeys.html`, `templates/settings/mcp.html`, `templates/settings/wikis.html`, `templates/index.html`, `templates/status.html`):
+  - Inline-`onclick`-Handler mit interpolierter Benutzereingabe durch sichere Muster ersetzt: `|tojson` für JS-Kontexte (z. B. `openRevealModal({{ key.id|tojson }}, {{ key.name|tojson }})`), DOM-basiertes Auslesen bei Copy-Buttons (`document.getElementById(...).textContent`) und `data-slug`-Attributzugriff (`btn.closest("tr").getAttribute("data-slug")`) statt String-Interpolation in `settings/wikis.html`.
+  - `globalMcpKey`/`newlyGenApiKey` in `settings/mcp.html` mit `|tojson` statt roher String-Interpolation in `<script>`-Block.
+  - Wiki-Parameter in Fetch-URLs (`index.html`, `status.html`) mit `|urlencode` abgesichert.
+  - Alle 15 `target="_blank"`-Links mit `rel="noopener noreferrer"` versehen (base.html, status.html, about.html, about_de.html, update.html, settings/update.html, settings/tailscale.html).
+
+### Fixed
+- **Doppelte Element-ID**: `id="syncBtn"` in `templates/status.html` kollidierte mit dem Sidebar-Link in `base.html` — in `syncNowBtn` umbenannt (inkl. JS-Referenz).
+- **i18n-JS-Strings**: 13 `confirm('{{ _('...') }}')`-Aufrufe auf `|tojson` umgestellt (Apostroph-Bruch-Risiko bei Übersetzungen); hardcodierter Neustart-Text in `update.html` auf Übersetzungsschlüssel `update.restart_confirm` umgestellt.
+- **Barrierefreiheit**: 6 `<label>` ohne Control-Referenz durch `for`-Attribute bzw. `<fieldset>/<legend>` ersetzt (mcp.html, apikeys.html, wikis.html); Heading-Sprung h1→h3 im Reveal-Modal (`settings.html`) zu h2 korrigiert; `:focus-visible` in `tags.css` erhält sichtbaren Outline statt `outline: none`.
+- **CSS**: `.search-input` und `.animate-fade-in` (inkl. `@keyframes fade-in`) in `input.css` definiert und Tailwind-Build neu kompiliert; `graph.css` auf `clamp(420px, 62dvh, 640px)` bzw. `100dvh` im Fullscreen umgestellt; 4 Inline-Styles (`ingest.html`, `editor.html`) durch Tailwind-Klassen ersetzt; `.wiki-input-mono`-Regel in `wikis.css` ergänzt.
+
 ## [2.15.2] - 2026-07-31
 
 ### Fixed

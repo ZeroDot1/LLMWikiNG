@@ -40,12 +40,18 @@
   transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
-.tag-chip:hover,
+.tag-chip:hover {
+  background: var(--color-primary, #6366f1);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 .tag-chip:focus-visible {
   background: var(--color-primary, #6366f1);
   color: #fff;
   transform: translateY(-1px);
-  outline: none;
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
 }
 
 .tag-chip:active {

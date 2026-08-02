@@ -102,7 +102,7 @@
                                     onclick="openUserEditModalFromBtn(this)"
                                     class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('users.edit') }}</button>
                             {% if not current_user or user.id != current_user.id %}
-                            <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
+                            <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm({{ (_('users.delete') ~ '?')|tojson }});">
                                 <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('users.delete') }}</button>
                             </form>
                             {% endif %}

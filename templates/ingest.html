@@ -59,7 +59,7 @@
     </form>
 </div>
 
-<div id="text-tab" class="tab-content" style="display:none;">
+<div id="text-tab" class="tab-content hidden">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text">
         {% if wikis %}
@@ -92,7 +92,7 @@
     </form>
 </div>
 
-<div id="url-later-tab" class="tab-content" style="display:none;">
+<div id="url-later-tab" class="tab-content hidden">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="url_later">
         {% if wikis %}
@@ -117,7 +117,7 @@
     </form>
 </div>
 
-<div id="text-later-tab" class="tab-content" style="display:none;">
+<div id="text-later-tab" class="tab-content hidden">
     <form action="{{ base_path }}/ingest" method="post" class="space-y-4 max-w-2xl">
         <input type="hidden" name="type" value="text_later">
         {% if wikis %}

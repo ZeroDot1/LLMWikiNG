@@ -24,7 +24,7 @@
 <script>
 (async function checkSyncStatus() {
     try {
-        const res = await fetch('{{ base_path }}/admin/status?wiki={{ current_wiki|default("main") }}');
+        const res = await fetch('{{ base_path }}/admin/status?wiki={{ current_wiki|default("main")|urlencode }}');
         if (res.ok) {
             const data = await res.json();
             if (data.sync_needed) {

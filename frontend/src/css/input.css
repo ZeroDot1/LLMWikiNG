@@ -99,6 +99,20 @@
 #backToTop { opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
 #backToTop.visible { opacity: 1; visibility: visible; }
 
+/* Suchfeld in der Top-Bar (base.html) */
+.search-input {
+  min-width: 0;
+}
+
+/* Fade-In für Modals/Banner (animate-fade-in) */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

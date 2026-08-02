@@ -241,7 +241,7 @@ Antwort:
 ```json
 {
   "ok": true,
-  "local_version": "2.15.2",
+  "local_version": "2.15.3",
   "remote_version": "2.16.0",
   "update_available": true,
   "up_to_date": false
@@ -256,8 +256,8 @@ Antwort:
 ```json
 {
   "ok": true,
-  "old_version": "2.15.1",
-  "new_version": "2.15.2",
+  "old_version": "2.15.2",
+  "new_version": "2.15.3",
   "updated": true,
   "output": "... Update-Log ..."
 }

@@ -109,7 +109,7 @@ function copyApiKey() {
                     <td class="py-2">{{ _('apikeys.yes') if key.require_password else _('apikeys.no') }}</td>
                     <td class="py-2">{{ _('apikeys.active') if key.active else _('apikeys.inactive') }}</td>
                     <td class="py-2">
-                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
+                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm({{ (_('apikeys.delete') ~ '?')|tojson }});">
                             <button type="submit" class="text-error hover:underline text-xs">{{ _('apikeys.delete') }}</button>
                         </form>
                     </td>

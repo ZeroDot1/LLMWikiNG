@@ -86,7 +86,7 @@
                     <td class="py-3.5 px-2">
                         <div class="flex items-center gap-2">
                             <span id="key-display-{{ key.id }}" class="font-mono text-xs text-text-secondary select-all">••••••••••••••••</span>
-                            <button type="button" onclick="openRevealModal('{{ key.id }}', '{{ key.name | escape }}')" class="rounded-lg bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-text hover:text-primary text-xs font-semibold transition-colors" title="Schlüssel anzeigen">👁️ Anzeigen</button>
+                            <button type="button" onclick="openRevealModal({{ key.id|tojson }}, {{ key.name|tojson }})" class="rounded-lg bg-bg-sunken hover:bg-border border border-border px-2.5 py-1 text-text hover:text-primary text-xs font-semibold transition-colors" title="Schlüssel anzeigen">👁️ Anzeigen</button>
                         </div>
                     </td>
                     <td class="py-3.5 px-2 font-mono text-xs text-text-secondary">
@@ -109,7 +109,7 @@
                         </span>
                     </td>
                     <td class="py-3.5 px-2 text-right">
-                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('apikeys.delete') }}?');">
+                        <form action="{{ base_path }}/api-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm({{ (_('apikeys.delete') ~ '?')|tojson }});">
                             <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('apikeys.delete') }}</button>
                         </form>
                     </td>
@@ -134,7 +134,7 @@
     </p>
     <div class="flex flex-wrap gap-2 items-center">
         <code id="newMcpKey" class="rounded-lg bg-bg-sunken px-3 py-2 text-xs font-mono break-all border border-border select-all">{{ mcp_new_key }}</code>
-        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('newMcpKey').textContent).then(()=>{this.textContent='{{ _('mcpkeys.copied') }}';setTimeout(()=>this.textContent='{{ _('mcpkeys.copy') }}',1500)})" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold hover:bg-bg-sunken transition-colors">{{ _('mcpkeys.copy') }}</button>
+        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('newMcpKey').textContent).then(()=>{this.textContent={{ _('mcpkeys.copied')|tojson }};setTimeout(()=>this.textContent={{ _('mcpkeys.copy')|tojson }},1500)})" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold hover:bg-bg-sunken transition-colors">{{ _('mcpkeys.copy') }}</button>
     </div>
 </div>
 {% endif %}
@@ -160,8 +160,8 @@
             <input type="text" name="name" id="mcp_key_name" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle" placeholder="{{ _('mcpkeys.name_placeholder') }}">
         </div>
 
-        <div>
-            <label class="block text-xs font-semibold text-text-muted uppercase mb-2">{{ _('mcpkeys.allowed_tools') }}</label>
+        <fieldset class="block border-0 p-0 m-0 min-w-0">
+            <legend class="block text-xs font-semibold text-text-muted uppercase mb-2">{{ _('mcpkeys.allowed_tools') }}</legend>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none rounded-lg border border-border px-3 py-2 hover:bg-bg-sunken/30 transition-colors">
                     <input type="checkbox" name="allowed_tools" value="__all__" class="rounded border-border text-primary focus:ring-primary-subtle" onchange="document.querySelectorAll('.mcp-tool-group-check').forEach(c=>{c.checked=this.checked})">
@@ -175,7 +175,7 @@
                 </label>
                 {% endfor %}
             </div>
-        </div>
+        </fieldset>
 
         <div>
             <button type="submit" class="rounded-lg bg-primary hover:bg-primary-hover px-5 py-2 text-sm font-semibold text-white transition-colors shadow-sm">{{ _('mcpkeys.create') }}</button>
@@ -246,7 +246,7 @@
                                     data-active="{{ 'true' if key.active else 'false' }}"
                                     onclick="openMcpKeyEditModalFromBtn(this)" 
                                     class="text-primary hover:underline text-xs font-bold transition-colors">✏️ {{ _('mcpkeys.edit') }}</button>
-                            <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('mcpkeys.delete_confirm') }}');">
+                            <form action="{{ base_path }}/mcp-keys/{{ key.id }}/delete" method="post" class="inline" onsubmit="return confirm({{ _('mcpkeys.delete_confirm')|tojson }});">
                                 <button type="submit" class="text-error hover:text-error/80 text-xs font-bold transition-colors">🗑️ {{ _('mcpkeys.delete') }}</button>
                             </form>
                         </div>
@@ -291,8 +291,9 @@
             </label>
 
             <div>
-                <label class="block text-xs font-semibold text-text-muted uppercase mb-2">{{ _('mcpkeys.allowed_tools') }}</label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                <fieldset class="block border-0 p-0 m-0 min-w-0">
+                    <legend class="block text-xs font-semibold text-text-muted uppercase mb-2">{{ _('mcpkeys.allowed_tools') }}</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
                     <label class="flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none rounded-lg border border-border px-3 py-2 hover:bg-bg-sunken/30 transition-colors">
                         <input type="checkbox" name="all_tools" value="1" id="edit_mcp_key_all_tools" class="rounded border-border text-primary focus:ring-primary" onchange="document.querySelectorAll('.edit-mcp-group-check').forEach(c=>{c.checked=this.checked})">
                         <span class="font-semibold text-primary">{{ _('mcpkeys.all_tools') }}</span>
@@ -304,6 +305,7 @@
                     </label>
                     {% endfor %}
                 </div>
+                </fieldset>
             </div>
 
             <div class="flex justify-end gap-3 pt-3 border-t border-border">

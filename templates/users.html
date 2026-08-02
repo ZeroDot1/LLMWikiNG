@@ -64,7 +64,7 @@
                     <td class="py-2">{{ _('users.active') if user.active else _('users.inactive') }}</td>
                     <td class="py-2">
                         {% if user.id != current_user.id %}
-                        <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ _('users.delete') }}?');">
+                        <form action="{{ base_path }}/users/{{ user.id }}/delete" method="post" class="inline" onsubmit="return confirm({{ (_('users.delete') ~ '?')|tojson }});">
                             <button type="submit" class="text-error hover:underline text-xs">{{ _('users.delete') }}</button>
                         </form>
                         {% endif %}

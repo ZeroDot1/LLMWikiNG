@@ -160,6 +160,10 @@
   opacity: 0.5;
 }
 
+.wiki-form-group .wiki-input-mono {
+  font-family: monospace;
+}
+
 /* ── Erfolg / Fehler-Meldungen ── */
 .wiki-msg {
   font-size: 0.8rem;

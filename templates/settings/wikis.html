@@ -13,19 +13,19 @@
         <form id="createWikiForm">
             <div class="wiki-form-row">
                 <div class="wiki-form-group">
-                    <label>{{ _('settings.wiki_name') }}</label>
+                    <label for="wikiName">{{ _('settings.wiki_name') }}</label>
                     <input type="text" id="wikiName" required placeholder="{{ _('settings.wiki_name_placeholder') }}">
                 </div>
                 <div class="wiki-form-group">
-                    <label>{{ _('settings.wiki_slug') }}</label>
-                    <input type="text" id="wikiSlug" required placeholder="mein-wiki" style="font-family: monospace;">
+                    <label for="wikiSlug">{{ _('settings.wiki_slug') }}</label>
+                    <input type="text" id="wikiSlug" required placeholder="mein-wiki" class="wiki-input-mono">
                 </div>
                 <div class="wiki-form-group">
-                    <label>{{ _('settings.wiki_description') }}</label>
+                    <label for="wikiDescription">{{ _('settings.wiki_description') }}</label>
                     <input type="text" id="wikiDescription" placeholder="{{ _('settings.wiki_description_placeholder') }}">
                 </div>
-                <div style="flex: 0 0 auto;">
-                    <button type="submit" class="wiki-btn wiki-btn-primary" style="height: 2.25rem;">
+                <div class="flex-none">
+                    <button type="submit" class="wiki-btn wiki-btn-primary h-9">
                         {{ _('settings.wiki_create_btn') }}
                     </button>
                 </div>
@@ -39,7 +39,7 @@
     <div class="wiki-table-wrap" id="wikisTableWrap">
         <div class="wiki-loading" id="wikisLoading">
             <div class="wiki-spinner"></div>
-            <p style="margin-top: 0.5rem;">{{ _('settings.wiki_loading') }}</p>
+            <p class="mt-2">{{ _('settings.wiki_loading') }}</p>
         </div>
     </div>
 </div>
@@ -130,7 +130,7 @@
                     '<td class="py-3.5 px-3 font-mono text-text-secondary">' + formatBytes(wiki.size || 0) + '</td>' +
                     '<td class="py-3.5 px-3 text-text-muted text-xs">' + (wiki.last_modified ? escHtml(wiki.last_modified) : '—') + '</td>' +
                     '<td class="py-3.5 px-3 text-right whitespace-nowrap">' +
-                        '<button class="wiki-btn wiki-btn-primary" onclick="saveInlineEdit(\'' + escAttr(wiki.slug) + '\')" title="Speichern">&#10003; {{ _("settings.wiki_edit_save") }}</button> ' +
+                        '<button class="wiki-btn wiki-btn-primary" onclick="saveInlineEdit(this)" title="Speichern">&#10003; {{ _("settings.wiki_edit_save") }}</button> ' +
                         '<button class="wiki-btn wiki-btn-edit" onclick="cancelInlineEdit()" title="Abbrechen">&#10005; {{ _("settings.wiki_edit_cancel") }}</button>' +
                         '<span id="editError_' + escAttr(wiki.slug) + '" class="wiki-inline-error hidden"></span>' +
                     '</td></tr>';
@@ -147,12 +147,12 @@
                     '<td class="py-3.5 px-3 text-text-muted text-xs">' + (wiki.last_modified ? escHtml(wiki.last_modified) : '—') + '</td>' +
                     '<td class="py-3.5 px-3 text-right whitespace-nowrap">' +
                         '<a href="' + BASE + '/wiki/' + escAttr(wiki.slug) + '/" class="wiki-btn wiki-btn-primary" title="{{ _("settings.wiki_action_open") }}">{{ _("settings.wiki_action_open") }}</a> ' +
-                        '<button class="wiki-btn wiki-btn-edit" onclick="startInlineEdit(\'' + escAttr(wiki.slug) + '\')" title="{{ _("settings.wiki_action_edit") }}">{{ _("settings.wiki_action_edit") }}</button> ';
+                        '<button class="wiki-btn wiki-btn-edit" onclick="startInlineEdit(this)" title="{{ _("settings.wiki_action_edit") }}">{{ _("settings.wiki_action_edit") }}</button> ';
 
                 if (isMain) {
                     html += '<span class="wiki-btn wiki-btn-main-badge">{{ _("settings.wiki_default_badge") }}</span>';
                 } else {
-                    html += '<button class="wiki-btn wiki-btn-danger" onclick="deleteWiki(\'' + escAttr(wiki.slug) + '\')" title="{{ _("settings.wiki_action_delete") }}">{{ _("settings.wiki_action_delete") }}</button>';
+                    html += '<button class="wiki-btn wiki-btn-danger" onclick="deleteWiki(this)" title="{{ _("settings.wiki_action_delete") }}">{{ _("settings.wiki_action_delete") }}</button>';
                 }
 
                 html += '</td></tr>';
@@ -164,7 +164,7 @@
     }
 
     function loadWikis() {
-        tableWrap.innerHTML = '<div class="wiki-loading"><div class="wiki-spinner"></div><p style="margin-top: 0.5rem;">{{ _("settings.wiki_loading") }}</p></div>';
+        tableWrap.innerHTML = '<div class="wiki-loading"><div class="wiki-spinner"></div><p class="mt-2">{{ _("settings.wiki_loading") }}</p></div>';
 
         fetch(BASE + "/api/v1/wikis")
             .then(function(res) { return res.json(); })
@@ -213,7 +213,10 @@
     });
 
     /* ── Inline-Edit: Start ── */
-    window.startInlineEdit = function(slug) {
+    window.startInlineEdit = function(btn) {
+        var row = btn.closest("tr");
+        var slug = row ? row.getAttribute("data-slug") : null;
+        if (!slug) return;
         editingSlug = slug;
         renderTable(window._currentWikis || []);
         var nameInput = document.getElementById("editName_" + slug);
@@ -227,7 +230,10 @@
     };
 
     /* ── Inline-Edit: Speichern ── */
-    window.saveInlineEdit = function(oldSlug) {
+    window.saveInlineEdit = function(btn) {
+        var row = btn.closest("tr");
+        var oldSlug = row ? row.getAttribute("data-slug") : null;
+        if (!oldSlug) return;
         var nameInput = document.getElementById("editName_" + oldSlug);
         var slugInput = document.getElementById("editSlug_" + oldSlug);
         var errEl = document.getElementById("editError_" + oldSlug);
@@ -264,7 +270,10 @@
     };
 
     /* ── Löschen ── */
-    window.deleteWiki = function(slug) {
+    window.deleteWiki = function(btn) {
+        var row = btn.closest("tr");
+        var slug = row ? row.getAttribute("data-slug") : null;
+        if (!slug) return;
         if (!confirm("{{ _('settings.wiki_delete_confirm') }}")) return;
 
         fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(slug), { method: "DELETE" })

@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Sicherheit: Passwort-Hashing, Session-Signing, API-Key-Verwaltung.
 
 2026-Standard: Argon2id für Passwörter (OWASP-Empfehlung), signierte Session-Cookies

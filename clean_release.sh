@@ -1,4 +1,7 @@
 #!/bin/bash
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # clean_release.sh – Bereinigt die workspace-bezogenen Daten für einen sauberen Release auf GitHub.
 # Schützt die Codebasis, setzt aber Nutzerdaten, temporäre Dateien und Test-Wikis zurück.
 
@@ -66,13 +69,7 @@ echo "[]" > data/audit_logs.json
 rm -f data/tailscale.json 2>/dev/null || true
 rm -rf data/sync_status ts-data ts-config 2>/dev/null || true
 
-echo "  • Bereinige qmd-Suchindex..."
-if command -v qmd &>/dev/null; then
-    qmd collection remove my_wiki 2>/dev/null || true
-    qmd collection remove wiki_main 2>/dev/null || true
-    qmd collection remove wiki_test 2>/dev/null || true
-    qmd collection remove wiki_create_page 2>/dev/null || true
-    qmd collection remove wiki_fm_wiki 2>/dev/null || true
-fi
+echo "  • Bereinige Matrix-Suchindex (data/matrix/)..."
+rm -f data/matrix/*.db data/matrix/*.db-wal data/matrix/*.db-shm 2>/dev/null || true
 
 echo "=== 🎉 Bereinigung abgeschlossen! Bereit für den Push auf GitHub ==="

@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Audit-Logging Service (SQLite-basiert).
 
 Protokolliert alle sicherheitsrelevanten Aktionen (Logins, API-Zugriffe, Wiki-Änderungen, etc.)
@@ -14,7 +17,7 @@ from core.config import DATA_DIR, load_app_config
 
 AUDIT_DB = DATA_DIR / "audit_log.db"
 
-ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit", "mcp", "tailscale"])
+ALL_CATEGORIES = sorted(["auth", "users", "api_keys", "pages", "wikis", "search", "ingest", "system", "audit", "mcp", "matrix", "tailscale"])
 
 ACTION_CATEGORIES = {
     # auth
@@ -56,7 +59,16 @@ ACTION_CATEGORIES = {
     
     # search
     "search": "search",
-    
+
+    # matrix
+    "matrix_search": "search",
+    "matrix_ingest": "matrix",
+    "matrix_bulk_ingest": "matrix",
+    "matrix_document_delete": "matrix",
+    "matrix_rebuild": "matrix",
+    "matrix_prune": "matrix",
+    "matrix_sync": "matrix",
+
     # ingest
     "ingest": "ingest",
     "ingest_save_later": "ingest",
@@ -203,6 +215,11 @@ def log_action(
     except Exception as e:
         # Fehler beim Logging dürfen die Hauptanwendung nicht blockieren
         print(f"[AUDIT ERROR] {e}")
+        try:
+            from services.errorlog import append_error
+            append_error("audit", f"Audit-Eintrag fehlgeschlagen (action={action})", exc=e)
+        except Exception:
+            pass
 
 
 def get_logs(

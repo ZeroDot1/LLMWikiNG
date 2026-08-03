@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Zentrale Konfiguration, Pfade und Übersetzungssystem.
 
 Port von llmWiki.py auf FastAPI. Diese Module stellt projektweite Konstanten,
@@ -30,7 +33,11 @@ SCRATCH_DIR = PROJECT_ROOT / "scratch"
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 DATA_DIR = PROJECT_ROOT / "data"
 
-QMD_BIN = "qmd"
+# Projekt Matrix – persistente Volltextsuche (SQLite-Shards auf NAS)
+MATRIX_DATA_ROOT = Path(os.getenv("MATRIX_DATA_ROOT", str(DATA_DIR / "matrix")))
+MATRIX_SHARDS = int(os.getenv("MATRIX_SHARDS", "256"))
+MATRIX_MAX_CONCURRENT_READS = int(os.getenv("MATRIX_MAX_CONCURRENT_READS", "32"))
+
 APP_NAME = "LLMWikiNG"
 APP_EDITION = "by ZeroDot1"
 
@@ -296,7 +303,17 @@ def load_app_config() -> dict[str, Any]:
         "llmwiking_mcp_key": os.getenv("LLMWIKING_MCP_KEY", ""),
         "syntax_highlighting": True,
         "enable_watcher": False,
-        "qmd_embed_timeout": 180,
+        "enable_matrix": True,
+        "matrix": {
+
+            "shards": 256,
+            "max_concurrent_reads": 32,
+            "write_batch_size": 16,
+            "sqlite_journal_mode": "WAL",
+            "sqlite_synchronous": "FULL",
+            "sqlite_mmap_size": 0,
+            "sqlite_busy_timeout": 5000,
+        },
     }
     if CONFIG_FILE.exists():
         try:
@@ -416,6 +433,7 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
         "tools": [
             "okf_list_wikis", "okf_list_pages", "okf_read_concept",
             "okf_wiki_stats", "okf_graph", "okf_search", "okf_export_page",
+            "okf_matrix_search",
         ],
     },
     "wiki_write": {
@@ -424,7 +442,7 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
         "tools": [
             "okf_create_wiki", "okf_update_wiki", "okf_delete_wiki",
             "okf_write_concept", "okf_delete_page", "okf_ingest_text",
-            "okf_process_pending", "okf_list_pending",
+            "okf_process_pending", "okf_list_pending", "okf_matrix_ingest",
         ],
     },
     "raw_sources": {

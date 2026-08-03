@@ -24,5 +24,15 @@
   "enable_mcp_server": true,
   "llmwiking_mcp_key": "mcp_4tqkE3mAue_VfEA7LLlQBJBU5qXIGIqd",
   "syntax_highlighting": true,
-  "enable_watcher": false
+  "enable_watcher": false,
+  "enable_matrix": true,
+  "matrix": {
+    "shards": 256,
+    "max_concurrent_reads": 32,
+    "write_batch_size": 16,
+    "sqlite_journal_mode": "WAL",
+    "sqlite_synchronous": "FULL",
+    "sqlite_mmap_size": 0,
+    "sqlite_busy_timeout": 5000
+  }
 }

@@ -1,13 +1,16 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # .agy.yaml – Vollständige Konfiguration für das LLM Wiki
-# Arch Linux + qmd (Quick Markdown) – mit ollama/agy/opencode-Integration
+# Arch Linux + Projekt Matrix (SQLite FTS5 Shards) – mit ollama/agy/opencode-Integration
 # Basis: Karpathy LLM-Wiki-Pattern
 
 agent:
   name: "LLMWikiNG-Bot"
-  version: "1.6.0"
+  version: "3.0.0"
   description: >
     Vollständiger LLMWikiNG-Agent von ZeroDot1. Nutzt wiki.sh für Suche, Ingest, Export, Lint.
-    LLM-Backend: ollama (lokal). qmd für token-sparende Hybrid-Suche.
+    LLM-Backend: ollama (lokal). Projekt Matrix (SQLite FTS5) für token-sparende Hybrid-Suche.
 
   llm:
     model: "llama3.2:3b"       # Lokales Modell via ollama (keine API-Kosten)
@@ -20,12 +23,13 @@ agent:
 
   # Wiki-Struktur (Karpathy-Pattern: 3 Ebenen)
   wiki:
-    base_path: "./wiki/"         # 🧠 Das Wiki (LLM-geschrieben)
+    base_path: "./wikis/main/"   # 🧠 Das Wiki (LLM-geschrieben)
     raw: "./raw/"                # 📦 Rohquellen (immutable)
     export: "./output_docs/"     # 📄 Exportierte Dokumente
-    index: "./wiki/index.md"     # Inhaltsverzeichnis
-    log: "./wiki/log.md"         # Änderungslog
-    collection: "my_wiki"        # qmd-Collection-Name
+    index: "./wikis/main/index.md" # Inhaltsverzeichnis
+    log: "./wikis/main/log.md"   # Änderungslog
+    collection: "matrix_main"    # Matrix-Collection-Name
+
 
   # Ingest-Konventionen (OKF v0.1)
   conventions:

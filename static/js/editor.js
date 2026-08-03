@@ -1,3 +1,7 @@
+/* LLMWikiNG – Copyright (C) 2026 ZeroDot1
+ * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // editor.js – live markdown preview + form sync, save via /edit/save
 (function () {
   "use strict";

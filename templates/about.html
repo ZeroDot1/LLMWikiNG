@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}{{ _('about.page_title') }}{% endblock %}
 
 {% block content %}
@@ -46,7 +47,7 @@
         <tr><td>FastAPI (ASGI Framework)</td><td>{{ fastapi_version }}</td></tr>
         <tr><td>Uvicorn (ASGI Server)</td><td>{{ uvicorn_version }}</td></tr>
         <tr><td>Python-Markdown</td><td>{{ markdown_version }}</td></tr>
-        <tr><td>qmd</td><td>{{ qmd_version }}</td></tr>
+        <tr><td>Matrix-Index</td><td>{{ matrix_version }}</td></tr>
         <tr><td>Jinja2</td><td>{{ jinja_version }}</td></tr>
     </table>
 
@@ -115,13 +116,13 @@
     <h2>🛠️ CLI Commands &amp; Wiki Reset</h2>
     <table>
         <tr><th>Command</th><th>Description</th></tr>
-        <tr><td><code>./wiki.sh init</code></td><td>Initializes folders, qmd collection, index.md, and log.md</td></tr>
-        <tr><td><code>./wiki.sh search "Query"</code></td><td>Runs a BM25 &amp; Vector hybrid search via qmd</td></tr>
+        <tr><td><code>./wiki.sh init</code></td><td>Initializes folders, Matrix search index, index.md, and log.md</td></tr>
+        <tr><td><code>./wiki.sh search "Query"</code></td><td>Runs a full-text search (FTS5) via the Matrix index</td></tr>
         <tr><td><code>./wiki.sh ingest &lt;file&gt;</code></td><td>Ingests a new raw source into the wiki</td></tr>
         <tr><td><code>./wiki.sh export &lt;page&gt;</code></td><td>Exports a wiki page to <code>output_docs/</code></td></tr>
         <tr><td><code>./wiki.sh list</code></td><td>Lists all pages in the current wiki</td></tr>
         <tr><td><code>./wiki.sh lint</code></td><td>Performs a quick system health check</td></tr>
-        <tr><td><code>./wiki.sh sync</code></td><td>Updates vector embeddings via qmd</td></tr>
+        <tr><td><code>./wiki.sh sync</code></td><td>Updates the Matrix index and tag index</td></tr>
         <tr><td><code>./wiki.sh reindex</code></td><td>Rebuilds index.md and activity logs</td></tr>
         <tr><td><code>./wiki.sh status</code></td><td>Shows wiki statistics and system health state</td></tr>
         <tr><td><code>./wiki.sh config</code></td><td>Displays current configuration</td></tr>

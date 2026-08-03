@@ -1,4 +1,7 @@
-"""LLMWikiNG – Volltextsuche (qmd BM25 + lokaler Fallback).
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""LLMWikiNG – Volltextsuche (Matrix-Index FTS5 + lokaler Fallback).
 
 Portiert aus llmWiki.py.
 """
@@ -6,12 +9,16 @@ Portiert aus llmWiki.py.
 from __future__ import annotations
 
 import asyncio
-import json
 import re
-import subprocess
 from pathlib import Path
 
-from core.config import WIKI_DIR, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, QMD_BIN, BASE_PATH, wiki_path
+from core.config import (
+    WIKI_DIR,
+    RAW_DIR,
+    EXPORT_DIR,
+    BASE_PATH,
+    wiki_path,
+)
 from services.wiki import is_text_file
 
 TAG_SYNTAX_RE = re.compile(r'(?:^|\s)(?:tag:([\w-]+)|#([\w-]+))')
@@ -32,8 +39,9 @@ def parse_search_tags(query: str) -> tuple[str, list[str]]:
     return cleaned, extracted
 
 
-def local_search(query: str, wiki: str = "main") -> dict:
-    """Fallback Volltextsuche falls qmd nicht verfügbar ist. Unterstützt 'all' für Cross-Wiki-Suche und Tag-Suche."""
+def local_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
+
+    """Fallback Volltextsuche. Unterstützt 'all' für Cross-Wiki-Suche und Tag-Suche."""
     from services.tags import extract_tags, normalize_tag
 
     results: list[dict] = []
@@ -184,120 +192,100 @@ def local_search(query: str, wiki: str = "main") -> dict:
     return {"results": results, "error": None}
 
 
-def qmd_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
-    """Führt eine qmd BM25-Suche durch und filtert nach Wiki sowie ungültigen Ergebnissen."""
-    try:
-        result = subprocess.run(
-            [QMD_BIN, "search", query, "-n", str(num_results), "--json"],
-            capture_output=True, text=True, timeout=10,
-            cwd=str(PROJECT_ROOT),
-        )
-        if result.returncode != 0:
-            return local_search(query, wiki)
+async def matrix_search(query: str, wiki: str = "main", num_results: int = 30) -> dict:
+    """Projekt-Matrix-Suche: persistente SQLite-Shards (Hauptsuchsystem).
 
-        output = result.stdout.strip()
-        if not output:
-            return local_search(query, wiki)
-
-        try:
-            data = json.loads(output)
-        except json.JSONDecodeError:
-            data = []
-            for line in output.split("\n"):
-                line = line.strip()
-                if line:
-                    try:
-                        data.append(json.loads(line))
-                    except json.JSONDecodeError:
-                        pass
-
-        results: list[dict] = []
-        if isinstance(data, dict):
-            data = [data]
-        for item in data:
-            if isinstance(item, dict):
-                path = item.get("metadata", {}).get("path", "") or item.get("path", "")
-                content = item.get("content", "") or item.get("text", "") or item.get("snippet", "")
-                if not path:
-                    continue
-
-                path_obj = Path(path)
-                filename = path_obj.name
-                slug = path_obj.stem
-
-                item_wiki = "main"
-                if "wikis/" in path or "wikis" in path_obj.parts:
-                    match = re.search(r"wikis/([^/]+)/", path)
-                    if match:
-                        item_wiki = match.group(1)
-                elif "wiki/" in path or path_obj.parent.name == "wiki":
-                    item_wiki = "main"
-                elif "output_docs/" in path or path_obj.parent.name == "output_docs":
-                    if "__" in filename:
-                        item_wiki = filename.split("__")[0]
-                    else:
-                        item_wiki = "global"
-                elif "raw/" in path or path_obj.parent.name == "raw":
-                    item_wiki = "global"
-
-                if wiki != "all":
-                    if item_wiki not in (wiki, "global"):
-                        continue
-
-                if "wiki/" in path or "wikis/" in path or path_obj.parent.name in ("wiki", "wikis") or any(p in path_obj.parts for p in ("wiki", "wikis")):
-                    url = f"{BASE_PATH}/wiki/{item_wiki}/{slug}"
-                    title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
-                    title = title_match.group(1) if title_match else slug.replace("-", " ").title()
-                    display_path = f"wikis/{item_wiki}/{filename}"
-                elif "raw/" in path or path_obj.parent.name == "raw":
-                    url = f"/raw/{filename}"
-                    title = f"Rohquelle: {filename}"
-                    display_path = f"raw/{filename}"
-                elif "output_docs/" in path or path_obj.parent.name == "output_docs":
-                    url = f"/export/{filename}"
-                    title = f"Exportiert: {filename}"
-                    display_path = f"output_docs/{filename}"
-                else:
-                    continue
-
-                snippet = re.sub(r"<[^>]+>", "", content[:300]) if content else ""
-                results.append({
-                    "title": title,
-                    "slug": slug,
-                    "path": display_path,
-                    "wiki": item_wiki,
-                    "url": url,
-                    "snippet": snippet,
-                    "score": item.get("score", 0),
-                })
-
-        if not results:
-            return local_search(query, wiki)
-
-        return {"results": results, "error": None}
-
-    except (FileNotFoundError, subprocess.SubprocessError):
-        return local_search(query, wiki)
-    except subprocess.TimeoutExpired:
-        return local_search(query, wiki)
-    except Exception as e:
-        return {"error": str(e)}
-
-
-async def run_qmd_search_async(query: str, wiki: str = "main", num_results: int = 10) -> dict:
-    """Async-Variante von :func:`qmd_search`.
-
-    Der blockierende ``subprocess.run``-Aufruf wird ueber ``asyncio.to_thread``
-    in einen Worker-Thread ausgelagert, sodass die asyncio-Event-Loop während
-    der (potenziell langsamen) qmd-Suche frei bleibt und weitere Requests
-    bedienen kann.
-
-    Args:
-        query: Suchbegriff.
-        wiki: Wiki-Filter (``"main"``, ``"all"`` oder spezifischer Slug).
-        num_results: Maximale Anzahl an Ergebnissen.
-
-    Returns:
-        Gleiches Dict-Format wie :func:`qmd_search`.
+    Nutzt den ``MatrixSearcher``. Fällt bei Fehlern auf den lokalen Python-Index
+    zurück, sodass die Suche niemals ausfällt.
     """
-    return await asyncio.to_thread(qmd_search, query, wiki, num_results)
+    try:
+        from services.matrix_searcher import MatrixSearcher
+    except (ImportError, Exception):
+        return await asyncio.to_thread(local_search, query, wiki, num_results)
+
+    cleaned_query, search_tags = parse_search_tags(query)
+    effective_query = cleaned_query or query
+    if len(effective_query.strip()) < 2:
+        return {"results": [], "error": None}
+
+    try:
+        searcher = MatrixSearcher()
+        wiki_ids = ["all"] if wiki == "all" else [wiki]
+        data = await searcher.search(
+            wiki_ids=wiki_ids, query=effective_query, limit=num_results, tags=search_tags
+        )
+    except (ImportError, Exception) as exc:
+        log = __import__("logging").getLogger("llmwiking.matrix")
+        log.warning("matrix_search fällt auf lokale Suche zurück: %s", exc)
+        return await asyncio.to_thread(local_search, query, wiki, num_results)
+
+    results = []
+    for item in data.get("results", []):
+        md_path = item.get("path", "").replace("wikis/" + item.get("wiki", "") + "/", "")
+        results.append(
+            {
+                "title": item.get("title", ""),
+                "slug": item.get("slug", md_path.rstrip(".md")),
+                "path": f"wikis/{item.get('wiki', wiki)}/{md_path}",
+                "wiki": item.get("wiki", wiki),
+                "url": item.get("url", ""),
+                "snippet": item.get("snippet", ""),
+                "score": abs(item.get("score", 0)),
+                "tags": item.get("tags", []),
+                "source": "matrix",
+            }
+        )
+        results[-1]["search_time_ms"] = data.get("search_time_ms", 0)
+        results[-1]["shards_queried"] = data.get("shards_queried", 0)
+
+    if not results:
+        return await asyncio.to_thread(local_search, query, wiki, num_results)
+
+    return {
+        "results": results,
+        "error": None,
+        "search_time_ms": data.get("search_time_ms", 0),
+        "shards_queried": data.get("shards_queried", 0),
+        "source": "matrix",
+    }
+
+
+
+def search_wiki(query: str, wiki: str = "main", num_results: int = 10) -> dict:
+    """Pure-Matrix-Suche (synchron): Matrix vor lokalem Fallback.
+
+    Laeuft ohne externe Binary und ist der einzige Suchpfad.
+    """
+    try:
+        from services.matrix_searcher import MatrixSearcher
+
+        data = asyncio.run(
+            MatrixSearcher().search(
+                wiki_ids=["all"] if wiki == "all" else [wiki],
+                query=query,
+                limit=num_results,
+            )
+        )
+        if data.get("results"):
+            results = []
+            for item in data["results"]:
+                md_path = item.get("path", "").replace(
+                    "wikis/" + item.get("wiki", "") + "/", ""
+                )
+                results.append(
+                    {
+                        "title": item.get("title", ""),
+                        "slug": item.get("slug", ""),
+                        "path": f"wikis/{item.get('wiki', wiki)}/{md_path}",
+                        "wiki": item.get("wiki", wiki),
+                        "url": item.get("url", ""),
+                        "snippet": item.get("snippet", ""),
+                        "score": abs(item.get("score", 0)),
+                        "tags": item.get("tags", []),
+                        "source": "matrix",
+                    }
+                )
+            return {"results": results, "error": None}
+    except (ImportError, Exception):
+        pass
+    return local_search(query, wiki)

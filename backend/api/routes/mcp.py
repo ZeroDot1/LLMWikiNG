@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – MCP-Server (Model Context Protocol) mit OKF v0.1.
 
 Stellt einen SSE-basierten MCP-Server bereit, der KI-Agenten (AGY,
@@ -9,7 +12,7 @@ Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
 ``LLMWIKING_MCP_KEY`` geschuetzt (via Middleware in main.py).
 Per-User MCP-Keys mit Tool-Berechtigungen werden unterstuetzt.
 
-Verfuegbare MCP-Tools (47):
+Verfuegbare MCP-Tools (49):
   Wiki-Verwaltung:
     okf_list_wikis, okf_create_wiki, okf_update_wiki, okf_delete_wiki
 
@@ -18,7 +21,7 @@ Verfuegbare MCP-Tools (47):
     okf_export_page, okf_list_pending, okf_process_pending, okf_ingest_text
 
   Suche & Analyse:
-    okf_search, okf_wiki_stats, okf_graph, okf_lint, okf_list_tags
+    okf_search, okf_matrix_search, okf_matrix_ingest, okf_wiki_stats, okf_graph, okf_lint, okf_list_tags
 
   Rohquellen:
     okf_read_raw, okf_list_raw, okf_delete_raw
@@ -44,10 +47,10 @@ Verfuegbare MCP-Tools (47):
     okf_tailscale_status, okf_tailscale_save, okf_tailscale_setup
     okf_tailscale_apply, okf_tailscale_cert, okf_tailscale_reset
 
-Verfuegbare MCP-Prompts (46 Slash-Commands):
+Verfuegbare MCP-Prompts (48 Slash-Commands):
   Wiki-Verwaltung   : /wikis /wiki-create /wiki-update /wiki-delete
   Seiten-Verwaltung : /pages /read /write /page-delete /export /pending /ingest /ingest-text
-  Suche & Analyse   : /search /stats /graph /lint
+  Suche & Analyse   : /search /matrix-search /matrix-ingest /stats /graph /lint
   Rohquellen        : /raw-list /raw-read
   System            : /status /sync /audit /cache /cache-clear
   Benutzer          : /users /user-create /user-edit /user-delete
@@ -94,8 +97,8 @@ from services.wiki import (
     run_sync_async,
     suggest_tags_from_content,
 )
-from services.search import local_search
-from services.sync import do_sync, append_okf_log, request_sync_background
+from services.search import local_search, matrix_search
+from services.sync import do_sync, do_sync_async, append_okf_log, request_sync_background
 from services.lint import run_lint
 from services.graph import build_graph_data
 from services.tags import build_tag_index, list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
@@ -140,14 +143,33 @@ def _check_tool_permission(tool_name: str) -> str | None:
     )
 
 
+def _log_mcp_call(tool_name: str) -> None:
+    """Zeichnet jeden erfolgreichen MCP-Tool-Aufruf im Audit-Log auf."""
+    try:
+        from services.audit import log_action
+
+        user = mcp_user_ctx.get() or {}
+        log_action(
+            action="mcp_tool_call",
+            details=f"MCP-Tool '{tool_name}' aufgerufen",
+            username=user.get("username", "mcp-agent"),
+            user_id=user.get("id"),
+            request=None,
+        )
+    except Exception:
+        pass
+
+
 def _require_tool(tool_name: str):
-    """Dekorator fuer MCP-Tools: Prueft Tool-Berechtigung vor Ausfuehrung."""
+    """Dekorator fuer MCP-Tools: Prueft Tool-Berechtigung vor Ausfuehrung und
+    zeichnet jeden Aufruf im Audit-Log auf."""
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             err = _check_tool_permission(tool_name)
             if err:
                 return err
+            _log_mcp_call(tool_name)
             return func(*args, **kwargs)
 
         @functools.wraps(func)
@@ -155,6 +177,7 @@ def _require_tool(tool_name: str):
             err = _check_tool_permission(tool_name)
             if err:
                 return err
+            _log_mcp_call(tool_name)
             return await func(*args, **kwargs)
 
         if inspect.iscoroutinefunction(func):
@@ -903,6 +926,77 @@ Willkommen im Wiki **{name}**.
         return "\n".join(lines)
 
     @mcp_server.tool()
+    @_require_tool("okf_matrix_search")
+    async def okf_matrix_search(query: str, wikis: str = "main", limit: int = 30) -> str:
+        """Durchsucht den persistenten Matrix-Volltextindex (Projekt Matrix).
+
+        Args:
+            query: Suchbegriff.
+            wikis: Komma-getrennte Wiki-Slugs oder 'all' fuer Cross-Wiki-Suche.
+            limit: Maximale Anzahl an Ergebnissen.
+
+        Returns:
+            JSON mit Treffern inkl. Titel, Wiki, Snippet und Score.
+        """
+        if not query or not query.strip():
+            return "Bitte einen Suchbegriff angeben."
+        result = await matrix_search(query.strip(), wiki=wikis, num_results=limit)
+        return json.dumps(result, ensure_ascii=False, indent=2)
+
+    @mcp_server.tool()
+    @_require_tool("okf_matrix_ingest")
+    async def okf_matrix_ingest(
+        wiki_id: str = "main",
+        doc_id: str = "",
+        title: str = "",
+        content: str = "",
+        tags: str = "",
+        md_path: str = "",
+    ) -> str:
+
+
+        """Indexiert ein Dokument direkt in den Matrix-Index (Projekt Matrix).
+
+        Args:
+            wiki_id: Slug des Ziel-Wikis.
+            doc_id: Eindeutige Dokument-ID (z. B. Slug der Seite).
+            title: Titel des Dokuments.
+            content: Markdown-Inhalt.
+            tags: Komma-getrennte Tags.
+            md_path: Relativer Markdown-Pfad im Wiki (optional).
+
+        Returns:
+            Bestaetigung oder Fehlermeldung.
+        """
+        if not doc_id or not content:
+            return "doc_id und content sind erforderlich."
+        try:
+            from services.matrix_indexer import MatrixIndexer
+
+            indexer = MatrixIndexer()
+            await indexer.start()
+            try:
+                indexer.index_document(
+                    wiki_id=wiki_id,
+                    doc_id=doc_id,
+                    title=title,
+                    content=content,
+                    tags=tags,
+                    md_path=md_path,
+                )
+                await indexer._write_queue.join()
+            finally:
+                await indexer.stop()
+            return (
+
+
+                f"Dokument '{doc_id}' in Wiki '{wiki_id}' erfolgreich "
+                f"in den Matrix-Index eingereiht."
+            )
+        except Exception as e:
+            return f"Fehler beim Matrix-Ingest: {e}"
+
+    @mcp_server.tool()
     @_require_tool("okf_wiki_stats")
     def okf_wiki_stats(wiki: str = "main") -> str:
         """Zeigt Statistiken fuer ein Wiki (Seiten, Woerter, Dateien).
@@ -1188,7 +1282,7 @@ Willkommen im Wiki **{name}**.
     @mcp_server.tool()
     @_require_tool("okf_system_sync")
     def okf_system_sync(wiki: str = "") -> str:
-        """Synchronisiert ein Wiki oder alle Wikis (Embedding-Updates).
+        """Synchronisiert ein Wiki oder alle Wikis (Matrix-Index-Update).
 
         Args:
             wiki: Slug des Wikis (leer = alle Wikis synchronisieren).

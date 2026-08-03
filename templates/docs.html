@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}Documentation{% endblock %}
 
 {% block content %}
@@ -123,7 +124,7 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/stats?wiki=</code></td><td class="p-2">Get statistics</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/lint?wiki=</code></td><td class="p-2">Run system linter</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/status</code></td><td class="p-2">Get basic server status</td></tr>
-          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Full health check: per-wiki sync status, qmd &amp; git availability, cache stats</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Full health check: per-wiki sync status, Matrix &amp; git availability, cache stats</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System metrics &amp; traffic logs (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync all wiki indexes (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Retrieve audit logs – filterable by action, user, date range (Admin only)</td></tr>
@@ -355,7 +356,7 @@ LLMWIKING_MCP_KEY="your_secure_mcp_key_2026"</code></pre>
         </div>
         <div class="bg-bg-sunken p-2.5 rounded border border-border">
           <code class="text-primary font-bold">/sync [wiki]</code>
-          <span class="text-text-secondary block mt-0.5">Synchronize qmd embeddings</span>
+          <span class="text-text-secondary block mt-0.5">Synchronize Matrix index</span>
         </div>
       </div>
       <p class="text-xs text-text-muted mt-2">The <strong>MCP Tool Explorer</strong> under <em>Settings ➜ MCP</em> in the WebUI provides a categorized accordion view of all 47 tools with their descriptions, parameters, and ready-to-use prompts. The <strong>Interactive Client Configurator</strong> in the same panel lets you select a user and their keys to generate a ready-made config snippet for AGY, OpenCode, or Hermes with one click.</p>

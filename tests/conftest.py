@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Test-Fixtures und Test-Hilfen.
 
 Stellt gemeinsame Fixtures für alle Tests bereit, inkl.:
@@ -128,17 +131,14 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(wiki_svc, "WIKI_DIR", main_wiki)
     monkeypatch.setattr(wiki_svc, "RAW_DIR", raw_dir)
 
-    # services.search: PROJECT_ROOT, WIKI_DIR, RAW_DIR, EXPORT_DIR
+    # services.search: RAW_DIR, EXPORT_DIR (PROJECT_ROOT/WIKI_DIR entfallen, Wiki-Ordner laufen über wiki_path)
     import services.search as search_svc
-    monkeypatch.setattr(search_svc, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(search_svc, "WIKI_DIR", main_wiki)
     monkeypatch.setattr(search_svc, "RAW_DIR", raw_dir)
     monkeypatch.setattr(search_svc, "EXPORT_DIR", export_dir)
 
-    # services.sync: PROJECT_ROOT, WIKI_DIR (SYNC_STATUS_FILE bereits oben gepatcht)
+    # services.sync: DATA_DIR (SYNC_STATUS_FILE bereits oben gepatcht; PROJECT_ROOT/WIKI_DIR entfallen)
     import services.sync as sync_svc
-    monkeypatch.setattr(sync_svc, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(sync_svc, "WIKI_DIR", main_wiki)
+    monkeypatch.setattr(sync_svc, "DATA_DIR", data_dir)
 
     # services.backup: PROJECT_ROOT
     import services.backup as backup_svc

@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Öffentliche JSON-API (geschützt durch API-Keys).
 
 Alle Endpunkte erfordern einen gültigen API-Key (Header `X-API-Key` oder Query
@@ -17,7 +20,7 @@ import subprocess
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR
+from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR, load_app_config
 from api.deps import get_api_user, require_api_admin
 from core.storage import (
     list_users,
@@ -32,7 +35,8 @@ from core.storage import (
     delete_mcp_key,
 )
 from services.wiki import get_all_wiki_pages, get_wiki_stats, read_wiki_file, get_pending_files, slugify_german, run_ingest_async, run_sync_async
-from services.search import local_search, qmd_search, run_qmd_search_async
+from services.search import local_search, matrix_search
+
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
 from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
@@ -262,12 +266,25 @@ async def api_tags(wiki: str, tag: str = "", user: dict = Depends(get_api_user))
 
 
 @router.get("/search")
-async def api_search(q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
+async def api_search(request: Request, q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
     if not q:
         return {"query": q, "results": [], "local": []}
-    result = await run_qmd_search_async(q, wiki)
+    result = await matrix_search(q, wiki)
     local = local_search(q, wiki)
+    try:
+        from services.audit import log_action
+
+        log_action(
+            action="search",
+            details=f"API-Suche '{q}' in '{wiki}' – {len(result.get('results', []))} Treffer",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+    except Exception:
+        pass
     return {"query": q, "wiki": wiki, "results": result.get("results", []), "local": local.get("results", [])}
+
 
 
 @router.get("/status")
@@ -531,7 +548,7 @@ def api_system_status(user: dict = Depends(get_api_user)):
 
 
 @router.post("/system/sync")
-async def api_system_sync(user: dict = Depends(get_api_user)):
+async def api_system_sync(request: Request, user: dict = Depends(get_api_user)):
     results = {}
     for w in list_wikis():
         try:
@@ -539,6 +556,18 @@ async def api_system_sync(user: dict = Depends(get_api_user)):
             results[w["name"]] = "ok"
         except Exception as e:
             results[w["name"]] = f"fehler: {e}"
+    try:
+        from services.audit import log_action
+
+        log_action(
+            action="matrix_sync",
+            details=f"Sync aller Wikis: {results}",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+    except Exception:
+        pass
     return {"ok": True, "results": results}
 
 
@@ -619,7 +648,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
         "version": APP_VERSION,
         "wikis": wikis_data,
         "tools": {
-            "qmd": shutil.which("qmd") is not None,
+            "matrix": bool(load_app_config().get("enable_matrix", False)),
             "git": shutil.which("git") is not None,
         },
         "cache_entries": get_cache().stats().get("entries", 0),
@@ -772,8 +801,7 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
             if proc.returncode == 0 and proc.stdout.strip():
                 remote_version = proc.stdout.strip()
 
-        # HTTP-Fallback fuer VERSION
-        if not remote_version:
+        if not remote_version and ls_proc.returncode == 0:
             import urllib.request
             try:
                 raw_url = "https://raw.githubusercontent.com/ZeroDot1/LLMWikiNG/main/VERSION"
@@ -782,7 +810,8 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
                     if resp.status == 200:
                         remote_version = resp.read().decode("utf-8").strip()
             except Exception:
-                pass
+                remote_version = None
+
     except HTTPException:
         raise
     except Exception:
@@ -790,6 +819,9 @@ async def api_update_check(admin: dict = Depends(require_api_admin)):
 
     if not remote_version:
         raise HTTPException(status_code=502, detail="Konnte Version von GitHub nicht abrufen.")
+
+
+
 
     return {
         "ok": True,
@@ -1019,12 +1051,24 @@ async def api_direct_ingest(
 
 
 @wiki_api_router.post("/sync")
-async def api_direct_sync(wiki_name: str, user: dict = Depends(get_api_user)):
-    """Direktes Syncen (Embedding-Updates) für ein spezifisches Wiki."""
+async def api_direct_sync(request: Request, wiki_name: str, user: dict = Depends(get_api_user)):
+    """Direktes Syncen (Matrix-Index-Update) für ein spezifisches Wiki."""
     slug = slugify_wiki(wiki_name)
     _wiki_or_404(slug)
     try:
         await run_sync_async(slug, force=True)
+        try:
+            from services.audit import log_action
+
+            log_action(
+                action="matrix_sync",
+                details=f"Sync für Wiki '{slug}' abgeschlossen",
+                username=user.get("username"),
+                user_id=user.get("id"),
+                request=request,
+            )
+        except Exception:
+            pass
         return {"ok": True, "wiki": slug, "message": f"Sync für Wiki '{slug}' abgeschlossen."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sync fehlgeschlagen: {e}")

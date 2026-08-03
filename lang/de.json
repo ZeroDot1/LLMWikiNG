@@ -1,4 +1,11 @@
 {
+  "_license": {
+    "project": "LLMWikiNG",
+    "copyright": "Copyright (C) 2026 ZeroDot1",
+    "license": "AGPL-3.0-or-later",
+    "spdx": "AGPL-3.0-or-later"
+  },
+
   "_meta": {
     "language": "de",
     "language_en": "German",
@@ -44,7 +51,7 @@
     "button": "Suchen"
   },
   "footer": {
-    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + qmd ·",
+    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + Matrix ·",
     "imprint": "Impressum"
   },
   "index": {
@@ -68,7 +75,13 @@
     "wiki_overview_heading": "Wiki-Übersicht",
     "new_wiki": "Neues Wiki",
     "pages_short": "Seiten",
-    "no_wikis_yet": "Noch keine Wikis vorhanden."
+    "no_wikis_yet": "Noch keine Wikis vorhanden.",
+    "matrix_health_heading": "⚡ Matrix-Index-Status",
+    "stat_shards": "Aktive Shards",
+    "stat_matrix_size": "Index-Größe",
+    "stat_queue_pending": "Warteschlange",
+    "matrix_status_healthy": "Betriebsbereit",
+    "matrix_status_building": "Indexierung läuft..."
   },
   "page": {
     "success_prefix": "Erfolg:",
@@ -679,7 +692,32 @@
     "prompt_tailscale_setup_desc": "Tailscale One-Click-Setup ausführen (up + serve/funnel)",
     "prompt_tailscale_apply_desc": "Tailscale serve/funnel-Konfiguration anwenden",
     "prompt_tailscale_cert_desc": "HTTPS-Zertifikat via tailscale cert anfordern",
-    "prompt_tailscale_reset_desc": "Tailscale funnel & serve zurücksetzen"
+    "prompt_tailscale_reset_desc": "Tailscale funnel & serve zurücksetzen",
+    "tab_matrix": "⚡ Matrix",
+    "matrix_heading": "⚡ Matrix-Index (Persistente Volltextsuche)",
+    "matrix_subtitle": "SQLite-Shard-Index unter data/matrix für schnelle, persistente Volltextsuche über alle Wikis.",
+    "matrix_stat_shards": "Aktive Shards",
+    "matrix_stat_size": "Index-Größe",
+    "matrix_stat_indexed": "Indexierte Dokumente",
+    "matrix_stat_queue": "Warteschlange",
+    "matrix_stat_errors": "Fehler",
+    "matrix_btn_rebuild": "Index neu aufbauen",
+    "matrix_btn_refresh": "Aktualisieren",
+    "matrix_rebuild_label": "Fortschritt des Neuaufbaus",
+    "matrix_rebuild_idle": "Der Index ist aktuell.",
+    "matrix_rebuild_running": "Index wird neu aufgebaut...",
+    "matrix_config_heading": "Konfiguration",
+    "matrix_config_enabled": "Aktiviert",
+    "matrix_config_shards": "Shards",
+    "matrix_config_max_reads": "Max. parallele Lesevorgänge",
+    "matrix_config_batch": "Schreib-Batch-Größe",
+    "matrix_config_journal": "Journal-Modus",
+    "matrix_config_sync": "Synchron",
+    "matrix_config_busy_timeout": "Busy-Timeout (ms)",
+    "matrix_inactive": "Matrix-Indexierung ist deaktiviert. Aktiviere enable_matrix in config.json.",
+    "matrix_health_label": "Registry-Status",
+    "matrix_health_ok": "Betriebsbereit",
+    "matrix_health_error": "Nicht verfügbar"
   },
   "register": {
     "title": "Registrieren",
@@ -736,11 +774,6 @@
     "config_save_error": "Fehler beim Speichern der Konfiguration.",
     "email_sent": "E-Mail erfolgreich an {recipients} versendet!",
     "email_error": "Fehler beim E-Mail-Versand: {error}",
-    "qmd_embed_ok": "qmd-Embeddings aktualisiert",
-    "qmd_embed_fail": "qmd embed fehlgeschlagen",
-    "qmd_not_found": "qmd nicht installiert",
-    "qmd_timeout": "qmd embed Zeitüberschreitung (>60s)",
-    "qmd_version_not_found": "nicht gefunden",
     "index_regenerated": "index.md neu aufgebaut",
     "sync_success": "✅ Sync erfolgreich!",
     "sync_partial": "⚠ Sync teilweise fehlgeschlagen",
@@ -757,7 +790,6 @@
     "server_start_hint": "Drücke Strg+C zum Beenden"
   },
   "cli_tools": {
-    "qmd_search_error": "Kein Suchbegriff angegeben. Usage: qmd_search.sh \"Suchbegriff\"",
     "read_export_error": "Kein Dateipfad angegeben. Usage: read_and_export.sh <dateipfad>",
     "read_export_not_found": "Fehler: Datei '{path}' nicht gefunden.",
     "read_export_list_title": "Vorhandene Wiki-Dateien:",

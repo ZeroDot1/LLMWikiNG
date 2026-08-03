@@ -1,13 +1,16 @@
 #!/bin/bash
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # wiki.sh – Vollständiges All-in-One CLI für das LLM Wiki (Karpathy-Pattern)
-# Integration: qmd-Suche, Ingest, Export, Lint, Ollama/agy/opencode
+# Integration: Matrix-Suche, Ingest, Export, Lint, Ollama/agy/opencode
 #
 # Nutzung: ./wiki.sh [befehl] [parameter]
 #
 # Befehle:
-#   init                – Ordner anlegen + qmd-Collection initialisieren
-#   sync                – qmd-Embeddings aktualisieren
-#   search "text"       – Token-sparende Hybrid-Suche via qmd (JSON)
+#   init                – Ordner anlegen + Matrix-Suchindex initialisieren
+#   sync                – Matrix-Index aktualisieren
+#   search "text"       – Token-sparende Matrix-Volltextsuche (JSON)
 #   export <datei>      – Datei lesen + nach output_docs/ exportieren
 #   list                – Alle Wiki-Dokumente anzeigen
 #   ingest <quelldatei> – Neue Quelle einspielen (kopiert nach raw/, fasst zusammen, updatet Index + Log)
@@ -18,14 +21,14 @@
 
 set -euo pipefail
 
-VERSION="2.15.1"
+VERSION="3.0.0"
+
 
 WIKI_SLUG="${WIKI_SLUG:-main}"
 WIKIS_ROOT="${WIKIS_ROOT:-./wikis}"
 WIKI_DIR="${WIKIS_ROOT}/${WIKI_SLUG}"
 RAW_DIR="${RAW_DIR:-./raw}"
 EXPORT_DIR="${EXPORT_DIR:-./output_docs}"
-COLLECTION_NAME="wiki_${WIKI_SLUG}"
 
 # LLM-Backend (erkannt: ollama, agy, opencode)
 # Für Ingest-Zusammenfassungen / Lint-Analysen
@@ -50,7 +53,6 @@ while [[ $# -gt 0 ]]; do
     --wiki)
       WIKI_SLUG="$2"
       WIKI_DIR="${WIKIS_ROOT}/${WIKI_SLUG}"
-      COLLECTION_NAME="wiki_${WIKI_SLUG}"
       shift 2
       ;;
     *)
@@ -138,21 +140,22 @@ append_log() {
 show_help() {
     echo -e "${BLUE}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║      LLMWikiNG CLI – v${VERSION}                     ║${NC}"
-    echo -e "${BLUE}║      Karpathy-Pattern mit qmd                        ║${NC}"
+    echo -e "${BLUE}║      Karpathy-Pattern mit Matrix                      ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${CYAN}Verwendung:${NC} $0 [befehl] [parameter]"
     echo ""
     echo -e "${YELLOW}Kern-Befehle:${NC}"
-    echo "  search \"text\"         🔍  Hybrid-Suche (BM25+Vektor). JSON-Ausgabe (token-sparend!)"
+    echo "  search \"text\"         🔍  Matrix-Volltextsuche (FTS5). JSON-Ausgabe (token-sparend!)"
     echo "  export <datei>         📄  Datei lesen + nach $EXPORT_DIR exportieren"
     echo "  ingest <quelldatei>    📥  Neue Quelle einspielen (raw/ + wiki/ + index + log)"
     echo "  lint                   🏥  Wiki-Gesundheitscheck (orphane Seiten, Statistik)"
     echo ""
     echo -e "${YELLOW}Verwaltung:${NC}"
-    echo "  init                   🚀  Ordner anlegen + qmd-Collection initialisieren"
-    echo "  sync                   🔄  qmd-Embeddings aktualisieren"
+    echo "  init                   🚀  Ordner anlegen + Matrix-Suchindex initialisieren"
+    echo "  sync                   🔄  Matrix-Index aktualisieren"
     echo "  reindex                📑  index.md neu aufbauen (nach manuellen Änderungen)"
+    echo "  matrix-rebuild         ⚡  Matrix-Index neu aufbauen (persistente Volltextsuche)"
     echo "  list                   📋  Alle Wiki-Dokumente anzeigen"
     echo "  status                 📊  Wiki-Statistiken"
     echo "  config                 ⚙️   Konfiguration anzeigen"
@@ -211,17 +214,18 @@ okf_version: "0.1"
 # Wiki-Aktivitätslogbuch
 
 ## $(today)
-- **Init**: LLM-Wiki eingerichtet — Initiales Setup mit wiki.sh, qmd-Integration, raw/- und output_docs/-Ordnern
+- **Init**: LLM-Wiki eingerichtet — Initiales Setup mit wiki.sh, Matrix-Index, raw/- und output_docs/-Ordnern
 EOF
         echo -e "${GREEN}✓ log.md angelegt (OKF-konform)${NC}"
     fi
 
-    if qmd collection list 2>/dev/null | grep -q "$COLLECTION_NAME"; then
-        echo -e "${GREEN}✓ qmd-Collection '$COLLECTION_NAME' existiert bereits${NC}"
+    echo -e "${YELLOW}🔍 Prüfe Matrix-Suchindex...${NC}"
+    if [ -d "data/matrix" ] && ls data/matrix/*_shard_*.db &>/dev/null 2>&1; then
+        echo -e "${GREEN}✓ Matrix-Index bereits vorhanden${NC}"
     else
-        echo -e "${YELLOW}📦 Erstelle qmd-Collection '$COLLECTION_NAME'...${NC}"
-        qmd collection add "$WIKI_DIR" --name "$COLLECTION_NAME"
-        echo -e "${GREEN}✓ qmd-Collection angelegt${NC}"
+        echo -e "${YELLOW}📦 Erstelle Matrix-Suchindex...${NC}"
+        python3 scripts/bootstrap_matrix.py --wiki "$WIKI_SLUG" 2>/dev/null || \
+            echo -e "${YELLOW}⚠ Matrix-Index kann später via 'wiki.sh matrix-rebuild' aufgebaut werden${NC}"
     fi
 
     echo -e "${YELLOW}🔍 Prüfe LLM-Backend...${NC}"
@@ -255,15 +259,27 @@ EOF
 }
 
 sync_wiki() {
-    echo -e "${YELLOW}🔄 Aktualisiere qmd-Embeddings...${NC}"
-    if command -v qmd &>/dev/null; then
-        qmd embed 2>&1 | grep -v "WARNING: radv" || true
-        echo -e "${GREEN}✓ qmd-Embeddings aktualisiert${NC}"
-    else
-        echo -e "${RED}❌ qmd nicht installiert. 'sudo pacman -S qmd'${NC}"
-        exit 1
-    fi
+    local wiki_name=$(basename "$WIKI_DIR")
+    echo -e "${YELLOW}🔄 Aktualisiere Matrix-Index...${NC}"
+    python3 -c "
+import sys, asyncio
+sys.path.insert(0, './backend')
+from services.sync import do_matrix_sync_async
+from services.matrix_indexer import MatrixIndexer
+
+async def run():
+    indexer = MatrixIndexer()
+    await indexer.start()
+    try:
+        await do_matrix_sync_async('$wiki_name', force=False, matrix_indexer=indexer)
+    finally:
+        await indexer.stop()
+
+asyncio.run(run())
+" 2>/dev/null || true
+    echo -e "${GREEN}✓ Matrix-Index aktualisiert${NC}"
 }
+
 
 search_wiki() {
     local QUERY=$1
@@ -273,12 +289,16 @@ search_wiki() {
         exit 1
     fi
 
-    if command -v qmd &>/dev/null; then
-        qmd query "$QUERY" -n 3 --json 2>&1 | grep -v "WARNING: radv" || true
-    else
-        echo -e "${RED}❌ qmd nicht installiert${NC}"
+    python3 -c "
+import sys, json
+sys.path.insert(0, './backend')
+from services.search import search_wiki as sw
+res = sw('''$QUERY''', wiki='''$WIKI_SLUG''')
+print(json.dumps(res, ensure_ascii=False, indent=2))
+" 2>/dev/null || {
+        echo -e "${RED}❌ Suche fehlgeschlagen (Matrix-Index nicht verfügbar)${NC}"
         exit 1
-    fi
+    }
 }
 
 export_wiki() {
@@ -570,16 +590,13 @@ for m in sorted(missing): print(m)
     echo "   • Gefundene Probleme: $issues"
 
     echo ""
-    echo -e "${YELLOW}🔎 qmd-Integration:${NC}"
-    if command -v qmd &>/dev/null; then
-        if qmd collection list 2>/dev/null | grep -q "$COLLECTION_NAME"; then
-            echo -e "   ${GREEN}✓ Collection '$COLLECTION_NAME' verfügbar${NC}"
-        else
-            echo -e "   ${RED}⚠ Collection '$COLLECTION_NAME' nicht gefunden – 'qmd collection add ./wiki --name $COLLECTION_NAME'${NC}"
-            issues=$((issues + 1))
-        fi
+    echo -e "${YELLOW}⚡ Matrix-Index:${NC}"
+    local matrix_shards=$(ls "$SCRIPT_DIR/data/matrix/"*_shard_*.db 2>/dev/null | wc -l)
+    if [ "$matrix_shards" -gt 0 ]; then
+        echo -e "   ${GREEN}✓ Matrix-Index aktiv ($matrix_shards Shards)${NC}"
     else
-        echo -e "   ${YELLOW}⚠ qmd nicht installiert${NC}"
+        echo -e "   ${YELLOW}⚠ Matrix-Index nicht aufgebaut – 'wiki.sh matrix-rebuild'${NC}"
+        issues=$((issues + 1))
     fi
 
     echo ""
@@ -626,16 +643,16 @@ status_wiki() {
         fi
     fi
     echo ""
-    echo -e "${CYAN}🔎 qmd-Suche:${NC}"
-    if command -v qmd &>/dev/null; then
-        echo "   Collection: $COLLECTION_NAME"
-        qmd collection list 2>/dev/null | grep "$COLLECTION_NAME" || echo "   Status: nicht verbunden"
+    echo -e "${CYAN}⚡ Matrix-Suche:${NC}"
+    local matrix_shards=$(ls "$SCRIPT_DIR/data/matrix/"*_shard_*.db 2>/dev/null | wc -l)
+    if [ "$matrix_shards" -gt 0 ]; then
+        echo "   Status: aktiv ($matrix_shards Shards)"
     else
-        echo "   Status: nicht installiert"
+        echo "   Status: Index nicht aufgebaut (wiki.sh matrix-rebuild)"
     fi
     echo ""
     echo -e "${CYAN}🛠  Tools:${NC}"
-    for tool in qmd jq ollama agy opencode; do
+    for tool in jq ollama agy opencode; do
         if command -v "$tool" &>/dev/null; then
             echo "   ✅ $tool"
         else
@@ -691,10 +708,9 @@ okf_version: "0.1"
 - **Reset**: Wiki vollständig zurückgesetzt
 EOF
 
-    if command -v qmd &>/dev/null; then
-        echo -e "${YELLOW}🔄 Bereinige qmd-Suchindex...${NC}"
-        qmd collection remove "$COLLECTION_NAME" --yes 2>/dev/null || true
-        qmd collection add "$WIKI_DIR" --name "$COLLECTION_NAME" 2>/dev/null || true
+    if [ -d "data/matrix" ]; then
+        echo -e "${YELLOW}🔄 Bereinige Matrix-Suchindex...${NC}"
+        rm -f data/matrix/*.db data/matrix/*.db-wal data/matrix/*.db-shm 2>/dev/null || true
     fi
 
     update_index
@@ -713,8 +729,8 @@ show_config() {
     echo "   RAW_DIR:       $RAW_DIR"
     echo "   EXPORT_DIR:    $EXPORT_DIR"
     echo ""
-    echo -e "${CYAN}qmd:${NC}"
-    echo "   COLLECTION:    $COLLECTION_NAME"
+    echo -e "${CYAN}Matrix-Index:${NC}"
+    echo "   DATEN:       data/matrix/"
     echo ""
     echo -e "${CYAN}LLM-Backend:${NC}"
     echo "   LLM_BACKEND:   ${LLM_BACKEND:-ollama}"
@@ -736,6 +752,11 @@ case "${1:-help}" in
         update_index
         append_log "reindex" "Index neu generiert"
         echo -e "${GREEN}✅ Index neu aufgebaut.${NC}"
+        ;;
+    matrix-rebuild|matrix_rebuild)
+        echo -e "${YELLOW}⚡ Baue Matrix-Index (persistente Volltextsuche) auf...${NC}"
+        python3 scripts/bootstrap_matrix.py --wiki "$WIKI_SLUG"
+        echo -e "${GREEN}✅ Matrix-Index aktualisiert.${NC}"
         ;;
     search)
         search_wiki "${2:-}"

@@ -1,4 +1,7 @@
-FROM python:3-slim
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
+FROM python:slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -9,37 +12,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ripgrep \
     jq \
     sqlite3 \
-    xz-utils \
-    libgomp1 \
-    build-essential \
-    gcc \
-    libffi-dev \
-    clang \
-    libclang-dev \
-    cmake \
-    pkg-config \
-    libssl-dev \
     && curl -fsSL https://tailscale.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && . "$HOME/.cargo/env" \
-    && CARGO_BUILD_JOBS=2 cargo install qmd-cli \
-    && cp "$HOME/.cargo/bin/qmd" /usr/local/bin/qmd \
-    && rm -rf "$HOME/.cargo" "$HOME/.rustup"
-
 WORKDIR /app
+
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --upgrade pip setuptools cffi \
+RUN pip install --no-cache-dir --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt \
-    && apt-get purge -y --auto-remove build-essential gcc libffi-dev clang libclang-dev cmake pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
 
 COPY . .
 
-RUN mkdir -p data raw output_docs wikis/main /var/lib/tailscale /config/tailscale
+RUN mkdir -p data/matrix data raw output_docs wikis/main /var/lib/tailscale /config/tailscale
 
 RUN chmod +x run.py clean_release.sh start.sh wiki.sh update.sh docker/entrypoint.sh 2>/dev/null || true
 

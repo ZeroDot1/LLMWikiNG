@@ -1,3 +1,7 @@
+/* LLMWikiNG – Copyright (C) 2026 ZeroDot1
+ * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // settings.js – tab switching + SMTP preset helper for settings.html
 (function () {
   "use strict";
@@ -15,7 +19,8 @@
       "tab-backup": document.getElementById("tab-backup"),
       "tab-wikis": document.getElementById("tab-wikis"),
       "tab-audit": document.getElementById("tab-audit"),
-      "tab-mcp": document.getElementById("tab-mcp")
+      "tab-mcp": document.getElementById("tab-mcp"),
+      "tab-matrix": document.getElementById("tab-matrix")
     };
 
     function switchTab(id) {
@@ -49,7 +54,8 @@
       backup: "tab-backup",
       wikis: "tab-wikis",
       audit: "tab-audit",
-      mcp: "tab-mcp"
+      mcp: "tab-mcp",
+      matrix: "tab-matrix"
     };
     switchTab(map[params.get("tab")] || "tab-language");
   }

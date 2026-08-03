@@ -37,11 +37,11 @@ Use the shell wrapper to manage indexes, run lints, and perform bulk operations:
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **init** | `./wiki.sh init` | Creates dir structure, OKF templates, and qmd database collection. |
+| **init** | `./wiki.sh init` | Creates dir structure, OKF templates, and the Matrix search index. |
 | **ingest** | `./wiki.sh ingest <file> [--title "Titel"]` | Archives source in `raw/`, creates wiki Markdown, populates index/log, and syncs index. |
-| **search** | `./wiki.sh search "<query>"` | Hybrid search (BM25 + vector) via `qmd`. Outputs JSON with query matches. |
+| **search** | `./wiki.sh search "<query>"` | Matrix full-text search (FTS5). Outputs JSON with query matches. |
 | **lint** | `./wiki.sh lint` | Validates structural integrity (orphans, missing targets, raw references). |
-| **sync** | `./wiki.sh sync` | Synchronizes vector database and index files after manual changes. |
+| **sync** | `./wiki.sh sync` | Synchronizes the Matrix index and index files after manual changes. |
 | **export** | `./wiki.sh export <slug>` | Copies rendered page to `output_docs/`. |
 | **list** | `./wiki.sh list` | Lists all active wiki files. |
 | **status** | `./wiki.sh status` | Displays file stats and component status. |

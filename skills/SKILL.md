@@ -241,10 +241,10 @@ Antwort:
 ```json
 {
   "ok": true,
-  "local_version": "2.15.3",
-  "remote_version": "2.16.0",
-  "update_available": true,
-  "up_to_date": false
+  "local_version": "3.0.0",
+  "remote_version": "3.0.0",
+  "update_available": false,
+  "up_to_date": true
 }
 ```
 
@@ -256,8 +256,8 @@ Antwort:
 ```json
 {
   "ok": true,
-  "old_version": "2.15.2",
-  "new_version": "2.15.3",
+  "old_version": "2.15.3",
+  "new_version": "3.0.0",
   "updated": true,
   "output": "... Update-Log ..."
 }
@@ -384,7 +384,7 @@ MCP_KEY="dein_sicherer_mcp_key_2026"
 MCP_SSE_URL="http://localhost:8080/LLMWikiNG/mcp/sse"
 ```
 
-### MCP-Tools (47 Stück)
+### MCP-Tools (49 Stück)
 
 Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität zwischen API-Key und MCP-Agenten-Zugang.
 
@@ -406,6 +406,8 @@ Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität
 | `okf_ingest_text` | Ingest von reinem Text |
 | **Suche & Analyse** | |
 | `okf_search` | Volltextsuche |
+| `okf_matrix_search` | Persistente Volltextsuche über den Matrix-Index (FTS5, `enable_matrix` erforderlich) |
+| `okf_matrix_ingest` | Dokument direkt in den Matrix-Index einspielen (persistenter Index) |
 | `okf_wiki_stats` | Wiki-Statistiken |
 | `okf_graph` | Wissensgraph |
 | `okf_lint` | Gesundheitspruefung |
@@ -445,6 +447,32 @@ Das MCP-Interface kann alles, was auch die REST-API kann. Vollständige Parität
 | `okf_tailscale_apply` | serve/funnel-Konfiguration anwenden |
 | `okf_tailscale_cert` | HTTPS-Zertifikat via `tailscale cert` anfordern |
 | `okf_tailscale_reset` | Funnel & serve zuruecksetzen |
+
+### Matrix-Index (persistente Volltextsuche, ab v3.0.0)
+
+Seit v3.0.0 ist der **Projekt-Matrix-Index** die einzige Such- und Sync-Engine von LLMWikiNG (keine externe Such-Binary erforderlich). Er ist eine persistente FTS5-Suche über SQLite-Shards unter `data/matrix/` (NAS-sicher: WAL, `synchronous=FULL`, `busy_timeout`), gesteuert über das Feature-Flag `enable_matrix` in `config.json`.
+
+**REST-Endpunkte** (unter `${BASE}/api/v1/matrix`):
+
+| Methode | Pfad | Beschreibung |
+|---------|------|-------------|
+| GET / POST | `/search?q=...&wikis=main&limit=30` | FTS5-Suche mit `bm25`-Ranking und `snippet()`-Hervorhebung |
+| POST | `/ingest` | Dokument zur Indexierung einreihen (202) |
+| POST | `/ingest/bulk` | Mehrere Dokumente auf einmal einreihen |
+| DELETE | `/document/{wiki_id}/{doc_id}` | Dokument aus dem Index entfernen (Admin) |
+| GET | `/stats` | Shard-Anzahl, Index-Größe, Queue, Rebuild-Fortschritt |
+| GET | `/health` | Registry- und Shard-Lesbarkeitsprüfung |
+| POST | `/rebuild?wiki_id=all` | Vollständigen Neuaufbau im Hintergrund starten (Admin) |
+| POST | `/prune` | Verwaiste Registry-Einträge entfernen (Admin) |
+
+**Bootstrap / Neuaufbau:**
+
+```bash
+./wiki.sh matrix-rebuild
+python3 scripts/bootstrap_matrix.py [--wiki <slug>]
+```
+
+**MCP-Tools:** `okf_matrix_search` (Gruppe `wiki_read`) und `okf_matrix_ingest` (Gruppe `wiki_write`). Die Web-UI-Suche, der API-Endpunkt `/api/v1/search` und der Settings-Tab „⚡ Matrix" bedienen sich desselben Index; ohne aktiviertes Flag fallen alle Pfade auf die Legacy-Suche zurück.
 
 ### Client-Einbindung
 

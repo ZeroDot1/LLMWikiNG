@@ -40,7 +40,7 @@ LLMWikiNG speaks the **Open Knowledge Format (OKF v0.1)**: every wiki page is a 
 Once connected, your agent can:
 *   **Read** any wiki page, raw source, or the knowledge graph.
 *   **Write / update** pages in OKF format (with correct frontmatter).
-*   **Search** the wiki (full-text + semantic via `qmd`).
+*   **Search** the wiki (full-text via the Matrix index, FTS5).
 *   **Ingest** text, files, and URLs into the wiki.
 *   **Manage** wikis, users, API keys, and run system operations.
 

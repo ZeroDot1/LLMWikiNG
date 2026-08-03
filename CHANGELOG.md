@@ -8,11 +8,46 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Lizenz- & Autor-Hinweise in allen Quellcode-Dateien**: Alle Python-, JS-, CSS-, HTML-Template-, Shell-, YAML-, JSON-Dateien sowie `Dockerfile`, `.dockerignore` und `requirements.txt` enthalten jetzt einen einheitlichen AGPL-v3-Header (`Copyright (C) 2026 ZeroDot1`, `SPDX-License-Identifier: AGPL-3.0-or-later`). JSON-Dateien tragen einen `_license`-Block (bzw. `license`/`author`-Felder bei `package.json`). Wiki-Content (`wikis/`), Laufzeit-Daten, `node_modules` und generierte Dateien sind ausgenommen.
+- **Zentrales Fehler-Logging** (`backend/services/errorlog.py`): Erfasst jetzt **jeden** Fehler app-weit in `data/error.log` — bisher wurden nur unbehandelte HTTP-Exceptions geloggt. Neu abgedeckt: unbehandelte asyncio-Task-Ausnahmen (Event-Loop-Handler), uncaught Exceptions in Haupt- und Neben-Threads (`sys.excepthook`/`threading.excepthook`), alle `logging.error`/`logging.exception`-Aufrufe (Matrix-Indexer, Watcher, Rebuild, uvicorn/starlette) sowie explizit bisher **verschluckte** Fehler im Background-Sync (`_run_bg_sync_loop` in `backend/services/sync.py`), im Matrix-Indexer-Worker (`_write_worker`), im Audit-Logging (`log_action`) und bei der Index-Regeneration im Lifespan. Der HTTP-500-Handler in `backend/main.py` nutzt nun das zentrale Modul. Schreibzugriffe sind thread-sicher und werfen nie.
+
+### Fixed
+- **Storage**: Behoben: Reentrant File-Lock-Deadlock bei Speicher-Schreibvorgängen (`backend/core/storage.py`).
+
+
+
+## [3.0.0] - 2026-08-03
+
+
+### Added
+- **Projekt Matrix – Persistente Volltextsuche** (`backend/services/matrix_indexer.py`, `backend/services/matrix_searcher.py`, `backend/api/routes/matrix.py`):
+  - **SQLite-Shard-Architektur**: Dokumente werden über `MD5(wiki::doc_id) % 256` auf `<wiki>_shard_NNN.db`-Dateien unter `data/matrix/` verteilt, zentral registriert in `data/matrix/registry.db` (`doc_registry`). NAS-sichere Pragmas (WAL, `synchronous=FULL`, `busy_timeout=5000`) und ein sequentieller `asyncio`-Write-Worker verhindern Korruption auf Netzlaufwerken.
+  - **FTS5-Volltextindex** mit `snippet()`-Hervorhebung (`<mark>`) und `bm25()`-Ranking; Features über Feature-Flag `enable_matrix` (Default: aus).
+  - **Neue REST-Endpunkte** unter `${BASE}/api/v1/matrix`: `GET/POST /search`, `POST /ingest`, `POST /ingest/bulk`, `DELETE /document/{wiki_id}/{doc_id}`, `GET /stats`, `GET /health`, `POST /rebuild?wiki_id=all`, `POST /prune` (entfernt verwaiste Registry-Einträge).
+  - **Neue MCP-Tools**: `okf_matrix_search` (Wiki-Lesegruppe) und `okf_matrix_ingest` (Wiki-Schreibgruppe).
+  - **Watcher-Integration**: Änderungen an `.md`-Dateien werden direkt in den Matrix-Index überführt (`_index_changed_file`); Delta-Sync `do_matrix_sync_async()` in `services/sync.py` ist der einzige Sync-Pfad.
+  - **Frontend**: Settings-Tab „⚡ Matrix" (`templates/settings/matrix.html`) mit Stats, Rebuild-Progress und Health-Badge; `matrix-search-info`-Leiste und Source-Badge in `search.html`; Dashboard-Karte „Matrix-Index-Status" in `index.html`.
+  - **Bootstrapping**: `scripts/bootstrap_matrix.py` (via `./wiki.sh matrix-rebuild`) baut den Index vollständig auf.
 - **MCP-Server: Benutzer-Bearbeitung & Tailscale-Tools** (`backend/api/routes/mcp.py`, `backend/core/config.py`):
   - **Neues Tool `okf_update_user`** — bearbeitet Systembenutzer (Name, Passwort, Rolle, Aktivstatus) mit Schutz vor Selbst-Deaktivierung, Selbst-Degradierung und Entfernung des letzten Admins. Neuer Slash-Command `/user-edit`. Die Tools `okf_list_users`, `okf_create_user` und `okf_delete_user` wurden defensiv gehärtet (`.get()`-Zugriffe, ID-Ausgabe, `user_create`/`user_delete` Audit-Log).
-  - **Neue Tool-Gruppe „Tailscale & Funnel"** (`tailscale_admin` in `MCP_TOOL_GROUPS`) mit 6 neuen Tools + Slash-Commands: `okf_tailscale_status` (`/tailscale-status`), `okf_tailscale_save` (`/tailscale-save`), `okf_tailscale_setup` (`/tailscale-setup`), `okf_tailscale_apply` (`/tailscale-apply`), `okf_tailscale_cert` (`/tailscale-cert`), `okf_tailscale_reset` (`/tailscale-reset`). Jetzt insgesamt **47 MCP-Tools und 46 Slash-Commands**.
+  - **Neue Tool-Gruppe „Tailscale & Funnel"** (`tailscale_admin` in `MCP_TOOL_GROUPS`) mit 6 neuen Tools + Slash-Commands: `okf_tailscale_status` (`/tailscale-status`), `okf_tailscale_save` (`/tailscale-save`), `okf_tailscale_setup` (`/tailscale-setup`), `okf_tailscale_apply` (`/tailscale-apply`), `okf_tailscale_cert` (`/tailscale-cert`), `okf_tailscale_reset` (`/tailscale-reset`). Jetzt insgesamt **49 MCP-Tools und 46 Slash-Commands**.
   - **Dokumentation aktualisiert**: `skills/SKILL.md`, `README.md`, `templates/about.html`, `templates/about_de.html`, `templates/docs.html`, `templates/docs_de.html`, `wikis/main/mcp-server-integration.md`, `.opencode/command/*` (7 neue Slash-Command-Dateien: `user-edit`, `tailscale-status`, `tailscale-save`, `tailscale-setup`, `tailscale-apply`, `tailscale-cert`, `tailscale-reset`). MCP-URL in `opencode.json`/`update_remote_mcp.py` auf die Tailscale-Funnel-Domain umgestellt.
   - **i18n** (`lang/de.json`, `lang/en.json`): Neue Schlüssel `settings.mcp_group_tailscale`, `settings.prompt_user_edit_desc` sowie `settings.prompt_tailscale_{status,save,setup,apply,cert,reset}_desc`.
+
+### Changed
+- **qmd-CLI vollständig entfernt**: Die externe `qmd-cli` (Such- und Embedding-Binary) wurde aus dem gesamten Projekt entfernt — Dockerfile, `wiki.sh`, `tools/`, Health-Checks, Suche (`search.py`) und Sync (`sync.py`). Matrix (SQLite-FTS5-Shards) ist die einzige Such- und Sync-Engine; `local_search` dient als reiner Fallback. Die Deadlock-Fehlerquelle in `do_sync_async` (doppeltes Erwerben des Wiki-Locks) wurde beseitigt.
+- **Docker/Compose**: `FROM python:3.17-slim`, neue Env-Variablen (`MATRIX_DATA_ROOT`, `MATRIX_SHARDS`, `MATRIX_MAX_CONCURRENT_READS`, `SQLITE_JOURNAL_MODE`, `SQLITE_SYNCHRONOUS`), erhöhte `ulimits.nofile`, Verzeichnis `data/matrix`; qmd-Cargo-Build entfernt.
+- **`SyncStatus`**: Neues Feld `matrix`; `success` gilt bei `matrix UND index`.
+
+### Fixed
+- **Sync-System: `asyncio.TimeoutError`-Bug behoben** (`backend/services/sync.py`, `backend/services/tailscale.py`): Ersetzt das ungültige `asyncio.TimeoutExpired` Attribut durch `(asyncio.TimeoutError, TimeoutError)`, sodass Timeouts beim Prozess-Wait fehlerfrei abgefangen werden.
+- **Sync-Meldungen & Deduplizierung** (`backend/services/sync.py`, `backend/api/routes/pages.py`): `status.messages` wird vor jedem Sync-Lauf zurückgesetzt. Verdoppelte/akkumulierte historische Log-Meldungen werden in `admin_sync` gefiltert und dedupliziert.
+- **Dashboard-Matrix-Stats & Live-Anzeige** (`backend/api/routes/matrix.py`, `templates/index.html`): `GET /api/v1/matrix/stats` liefert nun explizit verschachtelte `indexer`- und `searcher`-Dictionaries zur direkten Live-Darstellung von Shard-Anzahl, Index-Größe und Queue-Länge im Haupt-Dashboard.
+- **ContextManager Generator Exception-Fix** (`backend/core/storage.py`): In `_locked_write` wurde das doppelte `yield` im `except`-Block entfernt, wodurch `RuntimeError: generator didn't stop after throw()` bei Exceptions in Python 3.14+ verhindert wird.
+
+### Dependencies
+- **`aiosqlite>=0.21.0`** (neue Abhängigkeit für den asynchronen SQLite-Zugriff).
+
 
 ## [2.15.3] - 2026-08-02
 

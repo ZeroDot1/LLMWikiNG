@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}{{ _('search.page_title') }}{% endblock %}
 
 {% block content %}
@@ -34,6 +35,13 @@
     <div class="mt-2 text-xs text-text-muted flex flex-wrap gap-x-4 gap-y-1">
         <span>{{ _('search.syntax_hint_tag') }}</span>
     </div>
+    {% if search_time_ms is defined and search_time_ms %}
+    <div id="search-time" class="matrix-search-info">
+        {{ results|length if results else 0 }} {{ _('search.hits') }} · {{ search_time_ms }} ms · {{ shards_queried|default(0) }} {{ _('index.stat_shards') }}
+    </div>
+    {% else %}
+    <div id="search-time" class="matrix-search-info hidden"></div>
+    {% endif %}
 </div>
 
 {% if sync_hint %}
@@ -72,6 +80,7 @@
             <div class="flex justify-between items-start gap-3 mb-1">
                 <div class="text-lg font-semibold"><a href="{{ result.url }}" class="text-primary no-underline">{{ result.title_html|safe }}</a></div>
                 <div class="flex items-center gap-1.5 shrink-0">
+                    {% if result.source %}<span class="search-result-source" data-source="{{ result.source }}">{{ result.source }}</span>{% endif %}
                     {% if result.wiki and result.wiki != 'global' %}
                         <span class="text-xs bg-bg-sunken border border-border text-text-secondary rounded-full px-2.5 py-0.5 font-mono">📁 {{ result.wiki }}</span>
                     {% endif %}

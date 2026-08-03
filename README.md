@@ -32,9 +32,9 @@ The project is built on three layers:
 
 The CLI script `wiki.sh` bundles all operations for managing the wiki:
 
-*   `./wiki.sh init` – Initializes the folder structure and creates `index.md` and `log.md`. Also creates a `qmd` search collection.
+*   `./wiki.sh init` – Initializes the folder structure, creates `index.md` and `log.md`, and builds the Matrix search index.
 *   `./wiki.sh ingest <source-file>` – Reads a new source, archives it in `raw/`, generates an AI summary, creates/updates the wiki page, links it in the index, and records it in the log.
-*   `./wiki.sh search "<search-term>"` – Performs a token-saving hybrid search (BM25 + vector) via `qmd` (JSON output for agents).
+*   `./wiki.sh search "<search-term>"` – Performs a token-saving Matrix full-text search (FTS5, JSON output for agents).
 *   `./wiki.sh lint` – Runs a health check (finds orphaned pages, missing links, incomplete pages).
 *   `./wiki.sh sync` – Updates the search embeddings for local search and rebuilds the index.
 *   `./wiki.sh export <page>` – Exports a page for sharing to `output_docs/`.
@@ -594,7 +594,7 @@ Hier beginnt der freie, menschenlesbare Markdown-Textkörper.
 ### 1. Install Prerequisites
 Make sure the following tools are installed on your system:
 *   `bash`, `ripgrep` (`rg`), `jq`
-*   [qmd](https://github.com/tobi/qmd) (for local hybrid search)
+*   Python 3.11+ with `aiosqlite` (Matrix full-text search, no external search binary required)
 *   [Ollama](https://ollama.com/) (for local summaries, by default with `llama3.2:3b`)
 
 ### 2. Initialize the Wiki
@@ -624,7 +624,7 @@ To reset the entire wiki to its shipped state and irreversibly delete all person
 ./start.sh --reset -y        # Performs the reset non-interactively (without prompt)
 ```
 
-The reset deletes all files in `wiki/`, `raw/`, and `output_docs/` and recreates `index.md` and `log.md` OKF-compliant. The qmd search collection is also reset.
+The reset deletes all files in `wiki/`, `raw/`, and `output_docs/` and recreates `index.md` and `log.md` OKF-compliant. The Matrix search index (`data/matrix/`) is also reset.
 
 ---
 
@@ -757,6 +757,60 @@ The update script (Git-based):
 - Automatically stashes local changes (if needed: `git stash pop`)
 - Protects **wiki pages (`wiki/`), raw sources (`raw/`), exports (`output_docs/`), SMTP configuration (`config.json`), and LLM settings (`.agy.yaml`)**
 - Shows the entire update history in the log
+
+---
+
+## ⚡ Projekt Matrix – Persistente Volltextsuche
+
+Since v3.0.0 LLMWikiNG ships a persistent full-text index built on **SQLite shards** (FTS5) as its primary search engine (no external search binary required). Documents are distributed over 256 shards (`<wiki>_shard_NNN.db`) under `data/matrix/`, tracked centrally in `data/matrix/registry.db`. All writes run sequentially through an `asyncio` worker with NAS-safe PRAGMAs (WAL, `synchronous=FULL`, `busy_timeout=5000`) so the index stays intact on network shares (e.g. a UGreen NAS).
+
+### Activation
+
+Add the feature flag to `config.json` (the `matrix` block is optional, values shown are the defaults):
+
+```json
+{
+  "enable_matrix": true,
+  "matrix": {
+    "shards": 256,
+    "max_concurrent_reads": 32,
+    "write_batch_size": 16,
+    "sqlite_journal_mode": "WAL",
+    "sqlite_synchronous": "FULL",
+    "sqlite_mmap_size": 0,
+    "sqlite_busy_timeout": 5000
+  }
+}
+```
+
+The index lives under `data/matrix/` and therefore persists across container recreations. Environment overrides: `MATRIX_DATA_ROOT`, `MATRIX_SHARDS`, `MATRIX_MAX_CONCURRENT_READS`.
+
+### Bootstrap
+
+Build the index for all wikis (or a single wiki):
+
+```bash
+./wiki.sh matrix-rebuild            # all wikis
+./wiki.sh --wiki main matrix-rebuild
+python3 scripts/bootstrap_matrix.py [--wiki <slug>]
+```
+
+Once enabled, file watchers index changes incrementally and `/search` (UI + API + MCP) serves results from the matrix index, falling back to the legacy local search.
+
+### API endpoints (under `${BASE}/api/v1/matrix`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET / POST | `/search?q=...&wikis=main&limit=30` | Full-text search with FTS5 ranking, optional tag filter |
+| POST | `/ingest` | Queue a document for indexing (202) |
+| POST | `/ingest/bulk` | Queue multiple documents |
+| DELETE | `/document/{wiki_id}/{doc_id}` | Remove a document (admin) |
+| GET | `/stats` | Shard count, index size, queue, rebuild progress |
+| GET | `/health` | Registry + shard readability probe |
+| POST | `/rebuild?wiki_id=all` | Full background re-index (admin) |
+| POST | `/prune` | Remove registry entries whose files are gone (admin) |
+
+MCP tools: `okf_matrix_search` (wiki_read) and `okf_matrix_ingest` (wiki_write).
 
 ---
 

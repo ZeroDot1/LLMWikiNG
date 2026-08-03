@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 OKF v0.1-Migrationstool für LLMWikiNG.
 Konvertiert alle Wiki-Markdown-Dateien in das OKF-Format:

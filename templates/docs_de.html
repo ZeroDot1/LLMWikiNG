@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}Dokumentation{% endblock %}
 
 {% block content %}
@@ -127,7 +128,7 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/stats?wiki=</code></td><td class="p-2">Statistik</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/lint?wiki=</code></td><td class="p-2">Linter</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/status</code></td><td class="p-2">Serverstatus</td></tr>
-          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Vollständiger Gesundheitscheck: Sync-Status je Wiki, qmd &amp; git, Cache-Stats</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Vollständiger Gesundheitscheck: Sync-Status je Wiki, Matrix &amp; git, Cache-Stats</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System &amp; Traffic (Admin)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync aller Wikis (Admin)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Audit-Logs abrufen – filterbar nach Aktion, Benutzer, Zeitraum (Admin)</td></tr>
@@ -341,7 +342,7 @@ LLMWIKING_MCP_KEY="dein_sicherer_mcp_key_2026"</code></pre>
         </div>
         <div class="bg-bg-sunken p-2.5 rounded border border-border">
           <code class="text-primary font-bold">/sync [wiki]</code>
-          <span class="text-text-secondary block mt-0.5">qmd-Embeddings synchronisieren</span>
+          <span class="text-text-secondary block mt-0.5">Matrix-Index synchronisieren</span>
         </div>
       </div>
       <p class="text-xs text-text-muted mt-2">Der <strong>MCP Tool Explorer</strong> unter <em>Einstellungen ➜ MCP</em> in der WebUI bietet eine kategorisierte Akkordeon-Ansicht aller 47 Tools mit Beschreibungen, Parametern und fertigen Prompts. Der <strong>Interaktive Client-Konfigurator</strong> im selben Panel erlaubt es, einen Benutzer und dessen Schlüssel auszuwählen, um mit einem Klick ein fertiges Konfigurations-Snippet für AGY, OpenCode oder Hermes zu generieren.</p>

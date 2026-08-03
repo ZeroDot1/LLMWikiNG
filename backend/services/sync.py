@@ -1,4 +1,7 @@
-"""LLMWikiNG – Sync-Logik (qmd embed, index.md, Logbuch).
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""LLMWikiNG – Sync-Logik (Matrix-Index, index.md, Logbuch).
 
 Portiert aus llmWiki.py.
 """
@@ -6,12 +9,12 @@ Portiert aus llmWiki.py.
 import asyncio
 import logging
 import re
-import subprocess
+import threading
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
-from core.config import WIKI_DIR, PROJECT_ROOT, QMD_BIN, wiki_path, DATA_DIR, load_app_config
+from core.config import wiki_path, DATA_DIR
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
@@ -22,20 +25,10 @@ SYNC_CACHE_FILENAME = ".sync_cache.json"
 SYSTEM_STEMS = {"index", "log", "ingestlater"}
 
 
-def get_qmd_timeout() -> int:
-    """Liefert den konfigurierbaren QMD Embed Timeout (Default: 180s)."""
-    cfg = load_app_config()
-    try:
-        val = int(cfg.get("qmd_embed_timeout", 180))
-        return val if val > 0 else 180
-    except (ValueError, TypeError):
-        return 180
-
-
 @dataclass
 class SyncStatus:
     wiki: str = ""
-    qmd: bool = False
+    matrix: bool = False
     index: bool = False
     messages: list[str] = field(default_factory=list)
     skipped: bool = False
@@ -48,16 +41,18 @@ class SyncStatus:
 
     @property
     def success(self) -> bool:
-        return self.qmd and self.index
+        return self.matrix and self.index
 
     @property
     def summary(self) -> str:
         if self.skipped:
             return "Sync not needed (no changes)"
         parts = []
-        parts.append(f"qmd: {'ok' if self.qmd else 'err'}")
+        if self.matrix:
+            parts.append(f"matrix: {'ok' if self.matrix else 'err'}")
         parts.append(f"index: {'ok' if self.index else 'err'}")
         return ", ".join(parts)
+
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -191,17 +186,19 @@ def _compute_file_fingerprints(wiki: str = "main") -> tuple[dict[str, str], dict
         except OSError:
             return fps, mtimes
         for f in files:
-            if f.stem in SYSTEM_STEMS:
+            rel = str(f.relative_to(root)).replace("\\", "/")
+            if rel.startswith(".") or f.stem in SYSTEM_STEMS:
                 continue
             try:
                 stat = f.stat()
-                mtimes[f.name] = f"{stat.st_mtime_ns}:{stat.st_size}"
+                mtimes[rel] = f"{stat.st_mtime_ns}:{stat.st_size}"
             except OSError:
                 pass
             fp = _compute_blake2b_fingerprint(f)
             if fp:
-                fps[f.name] = fp
+                fps[rel] = fp
     return fps, mtimes
+
 
 
 def _get_changed_files(wiki: str = "main") -> tuple[list[str], list[str], list[str]]:
@@ -302,72 +299,6 @@ def set_last_sync(value: datetime | None = None, wiki: str = "main") -> None:
 
     _save_sync_times(times)
 
-def run_qmd_embed(wiki: str = "main") -> tuple[bool, str]:
-    """Führt qmd embed aus. Gibt (success, message) zurück."""
-    timeout = get_qmd_timeout()
-    try:
-        import os
-        from core.config import wiki_path
-        env = os.environ.copy()
-        env["WIKI_DIR"] = str(wiki_path(wiki))
-        env["COLLECTION_NAME"] = f"wiki_{wiki}"
-        result = subprocess.run(
-            [QMD_BIN, "embed"],
-            capture_output=True, text=True, timeout=timeout,
-            cwd=str(PROJECT_ROOT), env=env
-        )
-        if result.returncode == 0:
-            return True, "qmd-Embeddings aktualisiert"
-        return False, result.stderr.strip() or "qmd embed fehlgeschlagen"
-    except FileNotFoundError:
-        return False, "qmd nicht installiert"
-    except subprocess.TimeoutExpired:
-        return False, f"qmd embed Zeitüberschreitung (>{timeout}s)"
-    except Exception as e:
-        return False, str(e)
-
-async def run_qmd_embed_async(wiki: str = "main") -> tuple[bool, str]:
-    """Async-Variante von :func:`run_qmd_embed`."""
-    timeout = get_qmd_timeout()
-    try:
-        import os
-        from core.config import wiki_path
-        env = os.environ.copy()
-        env["WIKI_DIR"] = str(wiki_path(wiki))
-        env["COLLECTION_NAME"] = f"wiki_{wiki}"
-        process = await asyncio.create_subprocess_exec(
-            QMD_BIN, "embed",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(PROJECT_ROOT),
-            env=env
-        )
-        
-        try:
-            stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                process.communicate(),
-                timeout=float(timeout)
-            )
-            returncode = process.returncode
-        except asyncio.TimeoutExpired:
-            try:
-                process.kill()
-                await process.wait()
-            except Exception:
-                pass
-            return False, f"qmd embed Zeitüberschreitung (>{timeout}s)"
-            
-        stdout = stdout_bytes.decode(encoding="utf-8", errors="replace").strip()
-        stderr = stderr_bytes.decode(encoding="utf-8", errors="replace").strip()
-        
-        if returncode == 0:
-            return True, "qmd-Embeddings aktualisiert"
-        return False, stderr or stdout or "qmd embed fehlgeschlagen"
-    except FileNotFoundError:
-        return False, "qmd nicht installiert"
-    except Exception as e:
-        return False, str(e)
-
 def regenerate_index(wiki: str = "main") -> bool:
     """Baut <wiki>/index.md aus allen vorhandenen Seiten neu auf."""
     from services.wiki import _get_all_wiki_pages_uncached
@@ -453,132 +384,146 @@ def _get_pages_count(wiki: str) -> int:
     return len([f for f in root.rglob("*.md") if f.stem not in SYSTEM_STEMS])
 
 def do_sync(wiki: str = "main", force: bool = False) -> dict:
-    """Vollständiger Sync: qmd embed + index.md regenerieren + timestamp setzen."""
+    """Vollständiger Sync: Matrix-Index + index.md regenerieren + timestamp setzen."""
+    return asyncio.run(do_sync_async(wiki, force=force))
+
+
+def _matrix_registry_rows(wiki: str, registry_path: Path) -> list[tuple[str, str]]:
+    """Liefert (doc_id, md_path) aller Registry-Einträge eines Wikis."""
+    import sqlite3
+
+    if not registry_path.exists():
+        return []
+    conn = sqlite3.connect(str(registry_path), timeout=10)
+    try:
+        cur = conn.execute(
+            "SELECT doc_id, md_path FROM doc_registry WHERE wiki_id = ?", (wiki,)
+        )
+        return cur.fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        conn.close()
+
+
+def _matrix_index_md_file(matrix_indexer, wiki: str, md_file: Path) -> bool:
+    """Extrahiert und indexiert eine Markdown-Datei in den Matrix-Index."""
+    try:
+        rel = md_file.relative_to(wiki_path(wiki))
+        if rel.parts and rel.parts[0].startswith("."):
+            return False
+        if md_file.suffix.lower() != ".md":
+            return False
+        if md_file.stem in SYSTEM_STEMS:
+            return False
+
+        content = md_file.read_text(encoding="utf-8", errors="replace")
+        body = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
+        title_match = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+        title = title_match.group(1).strip() if title_match else md_file.stem.title()
+
+        doc_id = str(rel.with_suffix("")).replace("\\", "/")
+        md_path = str(rel).replace("\\", "/")
+
+        fm = re.search(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+        tags = ""
+        if fm:
+            from services.tags import parse_tags_from_fm
+
+            tags = ",".join(parse_tags_from_fm(fm.group(1)))
+
+        matrix_indexer.index_document(
+            wiki_id=wiki,
+            doc_id=doc_id,
+            title=title,
+            content=content,
+            tags=tags,
+            md_path=md_path,
+        )
+        return True
+    except Exception as e:
+        log.warning("Matrix-Delta-Sync: Index für '%s' fehlgeschlagen: %s", md_file, e)
+        return False
+
+
+async def do_matrix_sync_async(
+    wiki: str = "main",
+    force: bool = False,
+    matrix_indexer=None,
+) -> dict:
+    """Matrix-basierter Delta-Sync.
+
+    Indexiert nur neue/geänderte Dateien in die persistenten SQLite-Shards,
+    entfernt gelöschte Dokumente über die Registry und aktualisiert danach
+    index.md, Tag-Index und Sync-Status.
+    """
     import time as _time
+
     _start = _time.monotonic()
     status = SyncStatus.load(wiki)
     status.wiki = wiki
+    status.messages = []
     status.last_attempt = datetime.now(timezone.utc).isoformat()
 
-    if not is_sync_needed(wiki) and not force:
-        status.qmd = True
-        status.index = True
-        status.skipped = True
-        status.messages.append("Sync not needed (no changes)")
-        status.duration_ms = int((_time.monotonic() - _start) * 1000)
-        status.pages_count = _get_pages_count(wiki)
-        status.save()
-        return {
-            "qmd": status.qmd,
-            "index": status.index,
-            "messages": status.messages,
-            "skipped": status.skipped,
-            "duration_ms": status.duration_ms,
-            "_status": status,
-        }
 
-    added, changed, removed = _get_changed_files(wiki)
-    if added:
-        status.messages.append(f"Neue Seiten: {', '.join(added)}")
-    if changed:
-        status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
-    if removed:
-        status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
-
-    qmd_ok, qmd_msg = run_qmd_embed(wiki)
-    status.qmd = qmd_ok
-    status.messages.append(qmd_msg)
-
-    try:
-        regenerate_index(wiki)
-        status.index = True
-        status.messages.append("index.md neu aufgebaut")
-    except Exception as e:
-        status.messages.append(f"index.md Fehler: {e}")
-
-    try:
-        updated_tags_count = sync_tags_for_wiki(wiki)
-        if updated_tags_count > 0:
-            status.messages.append(f"Tags für {updated_tags_count} Seite(n) automatisch generiert und indiziert")
-        else:
-            status.messages.append("Tag-Index in data/tags.json aktualisiert")
-    except Exception as e:
-        status.messages.append(f"Tag-Sync Fehler: {e}")
-
-    if qmd_ok and status.index:
-        _cache = get_cache()
-        _cache.invalidate_prefix(f"pages:{wiki}")
-        _cache.invalidate(f"graph:{wiki}")
-        _cache.invalidate_prefix(f"tags:{wiki}")
-
-    try:
-        append_okf_log("sync", "Webserver-Sync", f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}", wiki)
-    except Exception:
-        pass
-
-    set_last_sync(datetime.now(timezone.utc), wiki)
-
-    fps, mtimes = _compute_file_fingerprints(wiki)
-    _save_sync_cache({
-        "version": 1,
-        "fingerprints": fps,
-        "mtimes": mtimes,
-        "last_sync": datetime.now(timezone.utc).isoformat(),
-    }, wiki)
-
-    status.duration_ms = int((_time.monotonic() - _start) * 1000)
-    status.last_success = datetime.now(timezone.utc).isoformat()
-    status.pages_count = _get_pages_count(wiki)
-    status.save()
-
-    return {
-        "qmd": status.qmd,
-        "index": status.index,
-        "messages": status.messages,
-        "skipped": status.skipped,
-        "duration_ms": status.duration_ms,
-        "_status": status,
-    }
-
-async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
-    """Async-Variante von :func:`do_sync`."""
-    import time as _time
-    _start = _time.monotonic()
-    status = SyncStatus.load(wiki)
-    status.wiki = wiki
-    status.last_attempt = datetime.now(timezone.utc).isoformat()
-
-    lock = await get_wiki_lock(wiki)
+    lock = get_wiki_lock(wiki)
     async with lock:
-        needed = await is_sync_needed_async(wiki)
-        if not needed and not force:
-            status.qmd = True
-            status.index = True
-            status.skipped = True
-            status.messages.append("Sync not needed (no changes)")
+        if matrix_indexer is None:
+            status.matrix = False
+            status.index = False
+            status.error = "Matrix-Indexer nicht aktiv"
+            status.messages.append("Matrix-Indexer nicht aktiv")
             status.duration_ms = int((_time.monotonic() - _start) * 1000)
-            status.pages_count = await asyncio.to_thread(_get_pages_count, wiki)
             await asyncio.to_thread(status.save)
-            return {
-                "qmd": status.qmd,
-                "index": status.index,
-                "messages": status.messages,
-                "skipped": status.skipped,
-                "duration_ms": status.duration_ms,
-                "_status": status,
-            }
+            return {"matrix": False, "index": False, "messages": status.messages,
+                    "skipped": False, "duration_ms": status.duration_ms, "_status": status}
 
-        added, changed, removed = await asyncio.to_thread(_get_changed_files, wiki)
-        if added:
-            status.messages.append(f"Neue Seiten: {', '.join(added)}")
-        if changed:
-            status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
-        if removed:
-            status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
+        root = wiki_path(wiki, create=False)
 
-        qmd_ok, qmd_msg = await run_qmd_embed_async(wiki)
-        status.qmd = qmd_ok
-        status.messages.append(qmd_msg)
+        if force:
+            # Vollständiger Neuaufbau: alle Dateien indexieren,
+            # Registry-Einträge ohne Datei entfernen.
+            to_index = sorted(root.rglob("*.md")) if root.exists() else []
+            current_ids = set()
+            for md_file in to_index:
+                rel = md_file.relative_to(root)
+                if rel.parts and rel.parts[0].startswith("."):
+                    continue
+                if md_file.stem in SYSTEM_STEMS:
+                    continue
+                current_ids.add(str(rel.with_suffix("")).replace("\\", "/"))
+                _matrix_index_md_file(matrix_indexer, wiki, md_file)
+            registry = await asyncio.to_thread(_matrix_registry_rows, wiki, matrix_indexer._registry_path)
+            for doc_id, _md_path in registry:
+                if doc_id not in current_ids:
+                    matrix_indexer.remove_document(wiki, doc_id)
+        else:
+            added, changed, removed = await asyncio.to_thread(_get_changed_files, wiki)
+            if added:
+                status.messages.append(f"Neue Seiten: {', '.join(added)}")
+            if changed:
+                status.messages.append(f"Geänderte Seiten: {', '.join(changed)}")
+            if removed:
+                status.messages.append(f"Gelöschte Seiten: {', '.join(removed)}")
+
+            for rel_name in added + changed:
+                if Path(rel_name).stem in SYSTEM_STEMS:
+                    continue
+                if root.exists():
+                    target_file = root / rel_name
+                    if target_file.is_file():
+                        _matrix_index_md_file(matrix_indexer, wiki, target_file)
+
+            if removed and root.exists():
+                registry = await asyncio.to_thread(_matrix_registry_rows, wiki, matrix_indexer._registry_path)
+                for doc_id, md_path in registry:
+                    if md_path in removed or Path(md_path).name in removed:
+                        matrix_indexer.remove_document(wiki, doc_id)
+
+
+        await matrix_indexer._write_queue.join()
+        status.matrix = True
+        status.messages.append("Matrix-Index aktualisiert")
 
         try:
             await asyncio.to_thread(regenerate_index, wiki)
@@ -596,18 +541,18 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         except Exception as e:
             status.messages.append(f"Tag-Sync Fehler: {e}")
 
-        if qmd_ok and status.index:
+        if status.matrix and status.index:
             _cache = get_cache()
             _cache.invalidate_prefix(f"pages:{wiki}")
             _cache.invalidate(f"graph:{wiki}")
             _cache.invalidate_prefix(f"tags:{wiki}")
 
         try:
-            log_msg = f"qmd: {'ok' if qmd_ok else 'err'} | index: {'ok' if status.index else 'err'}"
+            log_msg = f"matrix: {'ok' if status.matrix else 'err'} | index: {'ok' if status.index else 'err'}"
             await asyncio.to_thread(
                 append_okf_log,
                 "sync",
-                "Webserver-Sync",
+                "Webserver-Sync (Matrix)",
                 log_msg,
                 wiki
             )
@@ -630,13 +575,50 @@ async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
         await asyncio.to_thread(status.save)
 
         return {
-            "qmd": status.qmd,
+            "matrix": status.matrix,
             "index": status.index,
             "messages": status.messages,
             "skipped": status.skipped,
             "duration_ms": status.duration_ms,
             "_status": status,
         }
+
+async def do_sync_async(wiki: str = "main", force: bool = False) -> dict:
+    """Async-Variante von :func:`do_sync`.
+
+    Delegiert die eigentliche Arbeit an :func:`do_matrix_sync_async`, das das
+    per-Wiki-``asyncio.Lock`` intern verwaltet (kein Doppel-Lock → kein Deadlock).
+    """
+    status = SyncStatus.load(wiki)
+    status.wiki = wiki
+    status.messages = []
+    status.last_attempt = datetime.now(timezone.utc).isoformat()
+
+    needed = await is_sync_needed_async(wiki)
+    if not needed and not force:
+        status.matrix = True
+        status.index = True
+        status.skipped = True
+        status.messages.append("Sync not needed (no changes)")
+        status.duration_ms = 0
+        status.pages_count = await asyncio.to_thread(_get_pages_count, wiki)
+        await asyncio.to_thread(status.save)
+        return {
+            "matrix": status.matrix,
+            "index": status.index,
+            "messages": status.messages,
+            "skipped": status.skipped,
+            "duration_ms": status.duration_ms,
+            "_status": status,
+        }
+
+    from services.matrix_indexer import MatrixIndexer
+    indexer = MatrixIndexer()
+    await indexer.start()
+    try:
+        return await do_matrix_sync_async(wiki, force=force, matrix_indexer=indexer)
+    finally:
+        await indexer.stop()
 
 def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main") -> None:
     """Schreibt einen OKF-konformen Logbucheintrag (## YYYY-MM-DD mit Bullets)."""
@@ -689,15 +671,25 @@ def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main
     log_path.write_text(new_content, encoding="utf-8")
 
 
-_wiki_locks: dict[str, asyncio.Lock] = {}
-_wiki_locks_lock = asyncio.Lock()
+_wiki_locks: dict[str, tuple[asyncio.AbstractEventLoop, asyncio.Lock]] = {}
+_wiki_locks_guard = threading.Lock()
 
-async def get_wiki_lock(wiki: str) -> asyncio.Lock:
-    """Liefert das asynchrone Lock für ein bestimmtes Wiki."""
-    async with _wiki_locks_lock:
-        if wiki not in _wiki_locks:
-            _wiki_locks[wiki] = asyncio.Lock()
-        return _wiki_locks[wiki]
+def get_wiki_lock(wiki: str) -> asyncio.Lock:
+    """Liefert das asynchrone Lock für ein bestimmtes Wiki.
+
+    asyncio.Lock ist an den ersten Event-Loop gebunden, in dem es verwendet wird.
+    Da ``do_sync`` via ``asyncio.run`` immer wieder neue Loops erzeugt (Threads,
+    MCP, Tests), wird das Lock pro Event-Loop gecacht und bei Loop-Wechsel neu
+    erstellt, sonst schlägt der zweite Aufruf mit „bound to a different event
+    loop" fehl.
+    """
+    loop = asyncio.get_running_loop()
+    with _wiki_locks_guard:
+        entry = _wiki_locks.get(wiki)
+        if entry is None or entry[0] is not loop:
+            entry = (loop, asyncio.Lock())
+            _wiki_locks[wiki] = entry
+        return entry[1]
 
 _active_syncs: set[str] = set()
 _pending_syncs: set[str] = set()
@@ -712,8 +704,9 @@ async def _run_bg_sync_loop(wiki: str) -> None:
             _pending_force.discard(wiki)
         try:
             await do_sync_async(wiki, force=force)
-        except Exception:
-            pass
+        except Exception as exc:
+            from services.errorlog import append_error
+            append_error("sync", f"Background-Sync für Wiki '{wiki}' fehlgeschlagen", exc=exc)
         
         async with _sync_state_lock:
             if wiki in _pending_syncs:

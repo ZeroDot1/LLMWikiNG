@@ -1,4 +1,7 @@
 #!/bin/bash
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # update.sh – LLMWikiNG Update-Skript (Git-basiert)
 # Holt die neueste Version via Git von GitHub und aktualisiert alle Programmdateien.
 # Benutzerdaten (wikis/, raw/, output_docs/, config.json, data/, .agy.yaml) bleiben erhalten.

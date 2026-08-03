@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Tests for Sync Bugfixes (S1 - S19)."""
 
 import pytest
@@ -23,7 +26,7 @@ def test_s1_do_sync_return_type_dict(tmp_path):
     """Test that do_sync and do_sync_async always return dict even when skipped."""
     res = do_sync("main", force=False)
     assert isinstance(res, dict)
-    assert "qmd" in res
+    assert "matrix" in res
     assert "index" in res
     assert "messages" in res
     assert "skipped" in res
@@ -33,7 +36,7 @@ def test_s1_do_sync_return_type_dict(tmp_path):
 async def test_s1_do_sync_async_return_type_dict():
     res = await do_sync_async("main", force=False)
     assert isinstance(res, dict)
-    assert "qmd" in res
+    assert "matrix" in res
     assert "index" in res
     assert "messages" in res
     assert "skipped" in res

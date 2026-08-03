@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}{{ _('index.page_title') }}{% endblock %}
 
 {% block content %}
@@ -59,6 +60,53 @@
         <span class="block text-text-secondary text-sm mt-1 uppercase tracking-wide">{{ _('index.stat_exported') }}</span>
     </div>
 </div>
+
+<div id="matrix-live-card" class="hidden rounded-xl border border-border bg-surface p-5 shadow-sm mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-primary">{{ _('index.matrix_health_heading') }}</h2>
+        <span id="matrix-status-badge" class="sync-badge sync-badge--pending">{{ _('index.matrix_status_building') }}</span>
+    </div>
+    <div class="grid grid-cols-3 gap-3">
+        <div class="matrix-stat">
+            <span id="dash-matrix-shards" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('index.stat_shards') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="dash-matrix-size" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('index.stat_matrix_size') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="dash-matrix-queue" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('index.stat_queue_pending') }}</span>
+        </div>
+    </div>
+</div>
+<script>
+(async function loadMatrixLive() {
+    var card = document.getElementById("matrix-live-card");
+    if (!card) return;
+    try {
+        var res = await fetch('{{ base_path }}/api/v1/matrix/stats');
+        if (!res.ok) { card.classList.add("hidden"); return; }
+        var data = await res.json();
+        if (!data.enabled) { card.classList.add("hidden"); return; }
+        card.classList.remove("hidden");
+        var s = data.searcher || {};
+        var i = data.indexer || {};
+        document.getElementById("dash-matrix-shards").textContent = s.shard_count != null ? s.shard_count : "–";
+        document.getElementById("dash-matrix-size").textContent = s.total_size_mb != null ? s.total_size_mb + " MB" : "–";
+        document.getElementById("dash-matrix-queue").textContent = i.queue_size != null ? i.queue_size : "0";
+        var badge = document.getElementById("matrix-status-badge");
+        if (i.queue_size > 0) {
+            badge.className = "sync-badge sync-badge--pending";
+            badge.textContent = '{{ _('index.matrix_status_building') }}';
+        } else {
+            badge.className = "sync-badge sync-badge--ok";
+            badge.textContent = '{{ _('index.matrix_status_healthy') }}';
+        }
+    } catch (e) { card.classList.add("hidden"); }
+})();
+</script>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
     <div class="lg:col-span-2 space-y-6">

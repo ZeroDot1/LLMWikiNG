@@ -1,6 +1,9 @@
 #!/bin/bash
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # start.sh – LLMWikiNG Webserver-Starter
-# by ZeroDot1 | Karpathy-Pattern | FastAPI + qmd
+# by ZeroDot1 | Karpathy-Pattern | FastAPI + Matrix
 #
 # Nutzung:
 #   ./start.sh                  → Automatisch freier Port ab 8080
@@ -159,12 +162,10 @@ okf_version: "0.1"
 - **Reset**: Wiki vollständig zurückgesetzt
 EOF
 
-    # qmd-Collection zurücksetzen falls installiert
-    if command -v qmd &>/dev/null; then
-        echo "🔄 Setze qmd-Suchindex zurück …"
-        qmd collection remove "my_wiki" --yes 2>/dev/null || true
-        qmd collection add "$SCRIPT_DIR/wiki" --name "my_wiki" 2>/dev/null || true
-    fi
+    # Matrix-Suchindex zurücksetzen
+    echo "🔄 Setze Matrix-Suchindex zurück …"
+    rm -rf "$SCRIPT_DIR/data/matrix"/*
+
 
     echo ""
     echo "✅ Server erfolgreich zurückgesetzt!"

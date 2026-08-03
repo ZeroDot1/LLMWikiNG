@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}{{ _('about.page_title') }}{% endblock %}
 
 {% block content %}
@@ -46,7 +47,7 @@
         <tr><td>FastAPI (ASGI Framework)</td><td>{{ fastapi_version }}</td></tr>
         <tr><td>Uvicorn (ASGI Server)</td><td>{{ uvicorn_version }}</td></tr>
         <tr><td>Python-Markdown</td><td>{{ markdown_version }}</td></tr>
-        <tr><td>qmd</td><td>{{ qmd_version }}</td></tr>
+        <tr><td>Matrix-Index</td><td>{{ matrix_version }}</td></tr>
         <tr><td>Jinja2</td><td>{{ jinja_version }}</td></tr>
     </table>
 
@@ -114,13 +115,13 @@
     <h2>🛠️ CLI-Befehle &amp; Wiki-Reset</h2>
     <table>
         <tr><th>Befehl</th><th>Beschreibung</th></tr>
-        <tr><td><code>./wiki.sh init</code></td><td>Initialisiert die Ordnerstruktur, qmd-Collection, index.md und log.md</td></tr>
-        <tr><td><code>./wiki.sh search "Text"</code></td><td>Führt eine BM25- und Vektor-Hybridsuche über qmd aus</td></tr>
+        <tr><td><code>./wiki.sh init</code></td><td>Initialisiert die Ordnerstruktur, den Matrix-Suchindex, index.md und log.md</td></tr>
+        <tr><td><code>./wiki.sh search "Text"</code></td><td>Führt eine Volltextsuche (FTS5) über den Matrix-Index aus</td></tr>
         <tr><td><code>./wiki.sh ingest &lt;datei&gt;</code></td><td>Spielt eine neue Quelle in das Wiki ein</td></tr>
         <tr><td><code>./wiki.sh export &lt;seite&gt;</code></td><td>Exportiert eine Wiki-Seite nach <code>output_docs/</code></td></tr>
         <tr><td><code>./wiki.sh list</code></td><td>Listet alle Wiki-Dokumente auf</td></tr>
         <tr><td><code>./wiki.sh lint</code></td><td>Führt einen Gesundheitscheck durch</td></tr>
-        <tr><td><code>./wiki.sh sync</code></td><td>Aktualisiert Vektor-Embeddings über qmd</td></tr>
+        <tr><td><code>./wiki.sh sync</code></td><td>Aktualisiert Matrix- und Tag-Index</td></tr>
         <tr><td><code>./wiki.sh reindex</code></td><td>Baut index.md und log.md neu auf</td></tr>
         <tr><td><code>./wiki.sh status</code></td><td>Zeigt Wiki-Statistiken und Systemzustand</td></tr>
         <tr><td><code>./wiki.sh config</code></td><td>Zeigt die aktuelle Konfiguration</td></tr>

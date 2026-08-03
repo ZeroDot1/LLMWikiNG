@@ -1,4 +1,7 @@
 {
+  "license": "AGPL-3.0-or-later",
+  "author": "ZeroDot1",
+
   "name": "llmwikig-frontend",
   "version": "3.0.0",
   "private": true,

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
 {% block title %}{{ _('settings.page_title') }}{% endblock %}
 
 {% block content %}
@@ -22,6 +23,7 @@
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-audit">🛡️ Audit</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-mcp">{{ _('settings.tab_mcp') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-tailscale">{{ _('settings.tab_tailscale') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-matrix">{{ _('settings.tab_matrix') }}</button>
     </div>
 
     <!-- Language Section -->
@@ -83,6 +85,11 @@
     <div id="tab-tailscale" class="settings-tab-content hidden">
         {% include "settings/tailscale.html" %}
     </div>
+
+    <!-- Matrix Index Settings Section -->
+    <div id="tab-matrix" class="settings-tab-content hidden">
+        {% include "settings/matrix.html" %}
+    </div>
 </div>
 
 <!-- Modal für Passwortabfrage zum Anzeigen von Schlüsseln -->
@@ -132,7 +139,8 @@
       "tab-wikis": document.getElementById("tab-wikis"),
       "tab-audit": document.getElementById("tab-audit"),
       "tab-mcp": document.getElementById("tab-mcp"),
-      "tab-tailscale": document.getElementById("tab-tailscale")
+      "tab-tailscale": document.getElementById("tab-tailscale"),
+      "tab-matrix": document.getElementById("tab-matrix")
     };
     var tabs = document.querySelectorAll(".settings-tab");
 
@@ -146,6 +154,9 @@
         panels[activeTabId].classList.remove("hidden");
         if (activeTabId === "tab-tailscale" && window.loadTailscaleData) {
           window.loadTailscaleData();
+        }
+        if (activeTabId === "tab-matrix" && window.loadMatrixStats) {
+          window.loadMatrixStats();
         }
       }
       // 3. Highlight tab button
@@ -181,7 +192,8 @@
       wikis: "tab-wikis",
       audit: "tab-audit",
       mcp: "tab-mcp",
-      tailscale: "tab-tailscale"
+      tailscale: "tab-tailscale",
+      matrix: "tab-matrix"
     };
     switchTab(map[params.get("tab")] || "tab-language");
   });

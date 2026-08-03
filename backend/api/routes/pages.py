@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Alle HTML-Routen, Form-POSTs und JSON-Endpoints.
 
 Multi-Wiki-fähig, unter BASE_PATH gemountet und durch require_login geschützt.
@@ -25,7 +28,6 @@ from core.config import (
     EXPORT_DIR,
     SCRATCH_DIR,
     APP_VERSION,
-    QMD_BIN,
     BASE_PATH,
     CONFIG_FILE,
     DATA_DIR,
@@ -56,7 +58,8 @@ from services.wiki import (
     run_sync_async,
 )
 from services.markdown import render_markdown, render_markdown_preview
-from services.search import qmd_search, local_search, run_qmd_search_async
+from services.search import matrix_search, local_search
+
 from services.sync import is_sync_needed, append_okf_log, request_sync_background
 from services.wiki import run_sync_async
 from services.graph import build_graph_data, build_graph_data_paginated, build_graph_data_all
@@ -1061,6 +1064,8 @@ async def search(request: Request):
     results = []
     error = None
     sync_hint = False
+    search_time_ms = None
+    shards_queried = None
 
     # Parse tag: and # syntax from query – mehrere Tags werden AND-verknüpft
     from services.search import parse_search_tags
@@ -1087,7 +1092,7 @@ async def search(request: Request):
         if page_count > 0 and sync_needed_flag:
             sync_hint = True
 
-        # Tag-Filter VOR dem qmd-Call anwenden (Performance: Plan § 6)
+        # Tag-Filter VOR dem Matrix-Call anwenden (Performance: Plan § 6)
         candidate_slugs: set[str] | None = None
         if active_tag_filters:
             from services.tags import get_pages_by_tag as _get_by_tag
@@ -1099,7 +1104,7 @@ async def search(request: Request):
                 else:
                     candidate_slugs &= _tag_slugs  # AND-Verknüpfung
             if candidate_slugs is not None and not candidate_slugs:
-                # Keine Treffer für Tag-Kombination → qmd überspringen
+                # Keine Treffer für Tag-Kombination → Matrix-Suche überspringen
                 results = []
                 raw_mentions_count = 0
                 slug_exists = False
@@ -1120,7 +1125,9 @@ async def search(request: Request):
                     available_tags=available_tags, tag_filter=_tag_filter,
                 )
 
-        search_result = await run_qmd_search_async(query, wiki)
+        search_result = await matrix_search(query, wiki, num_results=30)
+        search_time_ms = search_result.get("search_time_ms")
+        shards_queried = search_result.get("shards_queried")
         if search_result.get("error"):
             if "not found" in search_result.get("error", "").lower() or "timeout" in search_result.get("error", "").lower():
                 if wiki == "all":
@@ -1128,10 +1135,11 @@ async def search(request: Request):
                         await run_sync_async(w["name"])
                 else:
                     await run_sync_async(wiki)
-                search_result = await run_qmd_search_async(query, wiki)
+                search_result = await matrix_search(query, wiki, num_results=30)
                 sync_hint = False
             else:
                 error = search_result["error"]
+
 
         if not error:
             for r in search_result.get("results", []):
@@ -1196,6 +1204,7 @@ async def search(request: Request):
         raw_mentions_count=raw_mentions_count if query else 0,
         slug_exists=slug_exists if query else False,
         available_tags=available_tags, tag_filter=_tag_filter,
+        search_time_ms=search_time_ms, shards_queried=shards_queried,
     )
 
 
@@ -1242,15 +1251,14 @@ async def about(request: Request):
         request.cookies.get("llmwiki_lang"),
     )
     template = "about_de.html" if lang == "de" else "about.html"
+    matrix_ver = "Matrix 3.0.0"
     try:
-        proc = await asyncio.to_thread(
-            subprocess.run,
-            [QMD_BIN, "--version"],
-            capture_output=True, text=True, timeout=5,
-        )
-        qmd_ver = proc.stdout.strip()
+        from core.config import MATRIX_DATA_ROOT
+        if MATRIX_DATA_ROOT.exists():
+            shards = list(MATRIX_DATA_ROOT.glob("*_shard_*.db"))
+            matrix_ver = f"Matrix 3.0.0 · {len(shards)} Shards"
     except Exception:
-        qmd_ver = "nicht gefunden"
+        pass
 
     import sys
     from importlib.metadata import version as pkg_version
@@ -1274,7 +1282,7 @@ async def about(request: Request):
         fastapi_version=fastapi_ver,
         markdown_version=_pv("markdown"),
         jinja_version=_pv("jinja2"),
-        qmd_version=qmd_ver,
+        matrix_version=matrix_ver,
         uvicorn_version=_pv("uvicorn"),
     )
 
@@ -1301,14 +1309,22 @@ async def admin_sync(request: Request, admin: dict = Depends(require_admin)):
     fmt = request.query_params.get("format", "html")
     if fmt == "json":
         return JSONResponse({
-            "success": results["qmd"] and results["index"],
-            "qmd": results["qmd"],
-            "index": results["index"],
-            "messages": results["messages"],
+            "success": results.get("matrix", True) and results.get("index", True),
+            "matrix": results.get("matrix", True),
+            "index": results.get("index", True),
+            "messages": results.get("messages", []),
         })
-    status = "✅ Sync erfolgreich!" if (results["qmd"] and results["index"]) else "⚠ Sync teilweise fehlgeschlagen"
-    messages = "; ".join(results["messages"])
+    status = "✅ Sync erfolgreich!" if (results.get("matrix", True) and results.get("index", True)) else "⚠ Sync teilweise fehlgeschlagen"
+
+    # Deduplizieren und Säubern der Log-Nachrichten
+    raw_msgs = results.get("messages", [])
+    unique_msgs = []
+    for msg in raw_msgs:
+        if msg and msg not in unique_msgs:
+            unique_msgs.append(msg)
+    messages = "; ".join(unique_msgs) if unique_msgs else "Matrix-Index aktualisiert"
     return redirect(f"{BASE_PATH}/?sync_status={urlencode(status)}&sync_msg={urlencode(messages)}")
+
 
 
 @router.get("/admin/update")
@@ -1464,8 +1480,9 @@ def status_dashboard(request: Request):
     analytics = get_wiki_analytics(wiki)
 
     tools = {}
-    for tool in ("qmd", "jq", "ollama", "agy", "opencode"):
+    for tool in ("jq", "ollama", "agy", "opencode"):
         tools[tool] = shutil.which(tool) is not None
+    tools["matrix"] = bool(load_app_config().get("enable_matrix", False))
 
     config_data = {
         "backend": os.environ.get("LLM_BACKEND", "ollama"),
@@ -2077,11 +2094,6 @@ def edit_get(request: Request):
         except Exception:
             return "unbekannt"
 
-    try:
-        qmd_version = subprocess.run([QMD_BIN, "--version"], capture_output=True, text=True).stdout.strip()
-    except Exception:
-        qmd_version = "nicht installiert"
-
     return render(
         request, "editor.html",
         active_page="editor", wiki=wiki, wikis=list_wikis(),
@@ -2091,7 +2103,7 @@ def edit_get(request: Request):
         app_version=APP_VERSION,
         python_version=sys.version.split()[0],
         markdown_version=_pv("markdown"),
-        qmd_version=qmd_version,
+        matrix_version="Matrix 3.0.0",
         jinja_version=_pv("jinja2"),
         error_msg=error_msg,
     )

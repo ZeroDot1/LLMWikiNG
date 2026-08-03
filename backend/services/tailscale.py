@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Tailscale & Funnel Integration Service.
 
 Manages Tailscale authentication, serve (Tailnet-private proxy),
@@ -99,10 +102,11 @@ async def _run(cmd: list[str], timeout: float = 60.0, env: dict[str, str] | None
         )
         try:
             out_b, err_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-        except asyncio.TimeoutExpired:
+        except (asyncio.TimeoutError, TimeoutError):
             proc.kill()
             await proc.wait()
             return 124, "", "command timeout"
+
         return (
             proc.returncode or 0,
             out_b.decode("utf-8", errors="replace"),

@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – FastAPI-Anwendung und CLI-Entrypoint.
 
 Vollständiger Port von llmWiki.py (Flask) auf FastAPI. Die bestehenden
@@ -50,9 +53,19 @@ async def lifespan(app: FastAPI):
     damit der Index nach jedem Neustart garantiert mit der Realität auf der
     Platte übereinstimmt.
     """
+    # Zentrales Fehler-Logging aktivieren (data/error.log erfasst jeden Fehler)
+    try:
+        from services.errorlog import install_file_handler, install_global_hooks
+
+        install_file_handler()
+        install_global_hooks(loop=asyncio.get_running_loop())
+    except Exception:
+        pass
+
     try:
         from core.config import list_wikis, load_app_config
         from services.sync import regenerate_index
+        from services.errorlog import append_error as _append_error
 
         wikis = list_wikis() or [{"slug": "main"}]
         for w in wikis:
@@ -60,13 +73,28 @@ async def lifespan(app: FastAPI):
             try:
                 regenerate_index(slug)
             except Exception as e:  # ein fehlerhaftes Wiki darf den Start nicht blockieren
+                _append_error("lifespan", f"Index-Regeneration für '{slug}' fehlgeschlagen", exc=e)
                 print(f"[lifespan] WARN: Index-Regeneration für '{slug}' fehlgeschlagen: {e}", flush=True)
         print(f"[lifespan] Wiki-Indizes für {len(wikis)} Wiki(s) neu aufgebaut.", flush=True)
 
         cfg = load_app_config()
+        matrix_indexer = None
+        if cfg.get("enable_matrix", False):
+            try:
+                from services.matrix_indexer import MatrixIndexer
+
+                matrix_indexer = MatrixIndexer()
+                await matrix_indexer.start()
+                app.state.matrix_indexer = matrix_indexer
+                print("[lifespan] MatrixIndexer gestartet (Projekt Matrix).", flush=True)
+            except Exception as e:
+                print(f"[lifespan] WARN: MatrixIndexer-Start übersprungen: {e}", flush=True)
+
         if cfg.get("enable_watcher", False):
             from services.watcher import start_watchers
-            watchers = start_watchers(asyncio.get_running_loop())
+            watchers = start_watchers(
+                asyncio.get_running_loop(), matrix_indexer=matrix_indexer
+            )
             app.state.watchers = watchers
             print(f"[lifespan] File-Watcher für {len(watchers)} Wiki(s) gestartet.", flush=True)
     except Exception as e:
@@ -98,6 +126,13 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        matrix_indexer = getattr(app.state, "matrix_indexer", None)
+        if matrix_indexer is not None:
+            try:
+                await matrix_indexer.stop()
+                print("[lifespan] MatrixIndexer gestoppt.", flush=True)
+            except Exception as e:
+                print(f"[lifespan] WARN: MatrixIndexer-Stop: {e}", flush=True)
         if mcp_cm is not None:
             try:
                 await mcp_cm.__aexit__(None, None, None)
@@ -129,11 +164,13 @@ def create_app() -> FastAPI:
     from api.routes.auth import router as auth_router
     from api.routes.api import router as api_router, wiki_api_router
     from api.routes.register import router as register_router
+    from api.routes.matrix import router as matrix_router
 
     app.include_router(auth_router)
     app.include_router(register_router)
     app.include_router(api_router)
     app.include_router(wiki_api_router)
+    app.include_router(matrix_router, prefix=f"{BASE_PATH}/api/v1")
     app.include_router(pages_router)
 
     @app.get(f"{BASE_PATH}/status")
@@ -237,9 +274,10 @@ def create_app() -> FastAPI:
                                             user = self._get_user(api_key_obj["user_id"])
                                     allowed_tools = []
                                 else:
-                                    res = self._json_response({"detail": "Ungültiger MCP-Key"}, status_code=403)
+                                    res = self._json_response({"detail": "Ungültiger MCP-Key"}, status_code=401)
                                     await res(scope, receive, send)
                                     return
+
 
                             # 2. Prüfe Legacy Global MCP-Key
                             if not user and mcp_key and self._mcp_global_key:
@@ -426,14 +464,11 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def server_error_handler(request: Request, exc: Exception):
         import traceback
-        from pathlib import Path
         tb = traceback.format_exc()
         print(f"Exception caught in server_error_handler:\n{tb}", flush=True)
         try:
-            log_file = Path(__file__).resolve().parent.parent / "data" / "error.log"
-            with open(log_file, "a", encoding="utf-8") as f:
-                import datetime
-                f.write(f"=== {datetime.datetime.now()} ===\n{tb}\n")
+            from services.errorlog import append_error
+            append_error("http", f"{request.method} {request.url.path}", exc=exc, request=request)
         except Exception as log_ex:
             print(f"Failed to write to error.log: {log_ex}", flush=True)
 

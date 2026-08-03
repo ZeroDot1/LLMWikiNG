@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """LLMWikiNG – Wiki-Dateisystem-Operationen und Helfer (Multi-Wiki-fähig).
 
 Portiert aus llmWiki.py. Alle Funktionen akzeptieren einen optionalen `wiki`-Namen
@@ -247,12 +250,23 @@ async def run_ingest_async(
 async def run_sync_async(wiki: str, force: bool = False) -> dict:
     """Führt den Sync asynchron aus, ohne den Event-Loop zu blockieren.
 
-    Nutzt :func:`services.sync.do_sync_async`. Gibt das Ergebnis-Dict von
-    ``do_sync`` zurück (``{"qmd": bool, "index": bool, "messages": [...]}``).
+    Prüft ob enable_matrix aktiv ist und nutzt dann bevorzugt `do_matrix_sync_async`.
     """
-    from services.sync import do_sync_async
+    from core.config import load_app_config
+    from services.sync import do_matrix_sync_async, do_sync_async
+
+    cfg = load_app_config()
+    if cfg.get("enable_matrix", True):
+        try:
+            from services.matrix_indexer import MatrixIndexer
+            indexer = MatrixIndexer()
+            await indexer.start()
+            return await do_matrix_sync_async(wiki, force=force, matrix_indexer=indexer)
+        except Exception:
+            pass
 
     return await do_sync_async(wiki, force=force)
+
 
 
 def slugify_path(value: str) -> str:

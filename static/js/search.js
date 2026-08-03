@@ -1,6 +1,36 @@
+/* LLMWikiNG – Copyright (C) 2026 ZeroDot1
+ * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // search.js – Interaktivität auf der Suchseite (Keyboard-Navigation, Shortcuts, Tag-Autocomplete)
 (function () {
   "use strict";
+
+  // Matrix-Volltextsuche (SQLite-Shards) – asynchrone Suche über die REST-API.
+  // Die Standard-Suche wird serverseitig gerendert; dieser Helfer ermöglicht
+  // zusätzliche clientseitige Matrix-Suchen (z. B. Live-Nachschlagen).
+  window.performMatrixSearch = async function (query, wiki) {
+    var base = window.BASE_PATH || "/LLMWikiNG";
+    var wikis = (wiki && wiki !== "all") ? wiki : "all";
+    var searchTimeEl = document.getElementById("search-time");
+    try {
+      var url = base + "/api/v1/matrix/search?q=" + encodeURIComponent(query) +
+        "&wikis=" + encodeURIComponent(wikis) + "&limit=30";
+      var res = await fetch(url);
+      if (!res.ok) return null;
+      var data = await res.json();
+      if (searchTimeEl) {
+        searchTimeEl.classList.remove("hidden");
+        var n = (data.results || []).length;
+        var ms = data.search_time_ms || 0;
+        var shards = data.shards_queried || 0;
+        searchTimeEl.textContent = n + " Ergebnisse in " + ms + "ms (" + shards + " Shards)";
+      }
+      return data;
+    } catch (e) {
+      return null;
+    }
+  };
 
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.querySelector(".search-input");

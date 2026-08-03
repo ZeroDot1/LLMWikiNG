@@ -1,3 +1,6 @@
+# LLMWikiNG – Copyright (C) 2026 ZeroDot1
+# Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
+# SPDX-License-Identifier: AGPL-3.0-or-later
 services:
   llmwiking:
     build: .
@@ -13,6 +16,16 @@ services:
       - TS_SERVE_CONFIG=/config/tailscale/serve.json
       - TS_AUTHKEY=${TS_AUTHKEY:-}
       - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
+      # Projekt Matrix – persistente Volltextsuche
+      - MATRIX_DATA_ROOT=/app/data/matrix
+      - MATRIX_SHARDS=256
+      - MATRIX_MAX_CONCURRENT_READS=128
+      - SQLITE_JOURNAL_MODE=WAL
+      - SQLITE_SYNCHRONOUS=NORMAL
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
       - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/data:/app/data
       - ${DOCKER_VOLUME_BASE:-/volume1/docker/llmwiking}/wikis:/app/wikis

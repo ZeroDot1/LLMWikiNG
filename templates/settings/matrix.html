@@ -1,0 +1,196 @@
+<!-- LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later -->
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <div>
+            <h2 class="text-lg font-semibold mb-1 text-primary">{{ _('settings.matrix_heading') }}</h2>
+            <p class="text-text-secondary text-sm">{{ _('settings.matrix_subtitle') }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="rebuildMatrixIndex()" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors shadow-sm">{{ _('settings.matrix_btn_rebuild') }}</button>
+            <button onclick="loadMatrixStats()" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-text hover:bg-bg-sunken transition-colors shadow-sm">{{ _('settings.matrix_btn_refresh') }}</button>
+        </div>
+    </div>
+</div>
+
+<div id="matrix-inactive" class="rounded-lg border border-warning/40 bg-warning-subtle p-3.5 mt-4 text-sm hidden">
+    <strong class="text-warning">{{ _('settings.matrix_inactive') }}</strong>
+</div>
+
+<div class="matrix-stats-card mt-4">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
+        <h3 class="font-semibold text-text">{{ _('settings.matrix_stat_indexed') }}</h3>
+        <span id="matrix-health" class="sync-badge sync-badge--pending">{{ _('settings.matrix_health_label') }} …</span>
+    </div>
+    <div class="matrix-stats-grid">
+        <div class="matrix-stat">
+            <span id="matrix-shard-count" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('settings.matrix_stat_shards') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="matrix-total-size" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('settings.matrix_stat_size') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="matrix-indexed" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('settings.matrix_stat_indexed') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="matrix-queue" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('settings.matrix_stat_queue') }}</span>
+        </div>
+        <div class="matrix-stat">
+            <span id="matrix-errors" class="matrix-stat-value">–</span>
+            <span class="matrix-stat-label">{{ _('settings.matrix_stat_errors') }}</span>
+        </div>
+    </div>
+</div>
+
+<div id="matrix-rebuild-status" class="hidden mt-4">
+    <p class="text-sm text-text-secondary mb-1" id="matrix-rebuild-text">{{ _('settings.matrix_rebuild_running') }}</p>
+    <div class="matrix-rebuild-progress">
+        <div id="matrix-rebuild-progress-bar" class="matrix-rebuild-progress-bar" style="width: 0%"></div>
+    </div>
+    <p class="text-xs text-text-muted mt-1 font-mono" id="matrix-rebuild-current">–</p>
+</div>
+
+<div class="rounded-xl border border-border bg-surface p-5 shadow-sm mt-4">
+    <h3 class="font-semibold text-text mb-3 border-b border-border pb-2">{{ _('settings.matrix_config_heading') }}</h3>
+    <dl id="matrix-config-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_enabled') }}</dt>
+            <dd id="matrix-config-enabled" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_shards') }}</dt>
+            <dd id="matrix-config-shards" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_max_reads') }}</dt>
+            <dd id="matrix-config-max-reads" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_batch') }}</dt>
+            <dd id="matrix-config-batch" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_journal') }}</dt>
+            <dd id="matrix-config-journal" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_sync') }}</dt>
+            <dd id="matrix-config-sync" class="font-semibold text-text">–</dd>
+        </div>
+        <div>
+            <dt class="text-text-muted text-xs uppercase tracking-wide">{{ _('settings.matrix_config_busy_timeout') }}</dt>
+            <dd id="matrix-config-busy-timeout" class="font-semibold text-text">–</dd>
+        </div>
+    </dl>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var base = window.BASE_PATH || "/LLMWikiNG";
+  var pollTimer = null;
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value != null ? value : "–";
+  }
+
+  window.loadMatrixStats = function () {
+    fetch(base + "/api/v1/matrix/stats")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var inactive = document.getElementById("matrix-inactive");
+        if (inactive) inactive.classList.add("hidden");
+        if (!data.enabled) {
+          if (inactive) inactive.classList.remove("hidden");
+        }
+        setText("matrix-shard-count", data.searcher ? data.searcher.shard_count : "–");
+        setText("matrix-total-size", data.searcher ? data.searcher.total_size_mb : "–");
+        setText("matrix-indexed", data.indexer ? data.indexer.indexed : "–");
+        setText("matrix-queue", data.indexer ? data.indexer.queue_size : "–");
+        setText("matrix-errors", data.indexer ? data.indexer.errors : "–");
+        var health = document.getElementById("matrix-health");
+        if (health) {
+          if (data.healthy) {
+            health.className = "sync-badge sync-badge--ok";
+            health.textContent = "{{ _('settings.matrix_health_ok') }}";
+          } else {
+            health.className = "sync-badge sync-badge--error";
+            health.textContent = "{{ _('settings.matrix_health_error') }}";
+          }
+        }
+        var cfg = data.config || {};
+        setText("matrix-config-enabled", cfg.enable_matrix ? "✓" : "–");
+        setText("matrix-config-shards", cfg.shards);
+        setText("matrix-config-max-reads", cfg.max_concurrent_reads);
+        setText("matrix-config-batch", cfg.write_batch_size);
+        setText("matrix-config-journal", cfg.sqlite_journal_mode);
+        setText("matrix-config-sync", cfg.sqlite_synchronous);
+        setText("matrix-config-busy-timeout", cfg.sqlite_busy_timeout);
+        updateRebuild(data.rebuild || { state: "idle" });
+      })
+      .catch(function () {
+        var health = document.getElementById("matrix-health");
+        if (health) {
+          health.className = "sync-badge sync-badge--error";
+          health.textContent = "{{ _('settings.matrix_health_error') }}";
+        }
+      });
+  };
+
+  function updateRebuild(rebuild) {
+    var box = document.getElementById("matrix-rebuild-status");
+    var bar = document.getElementById("matrix-rebuild-progress-bar");
+    var current = document.getElementById("matrix-rebuild-current");
+    if (!box || !bar) return;
+    if (rebuild.state === "building") {
+      box.classList.remove("hidden");
+      var pct = rebuild.total > 0 ? Math.round((rebuild.done / rebuild.total) * 100) : 0;
+      bar.style.width = pct + "%";
+      if (current) current.textContent = "(" + rebuild.done + "/" + rebuild.total + ") " + (rebuild.current || "");
+      stopPolling();
+      pollTimer = setInterval(loadMatrixStats, 1500);
+    } else if (rebuild.state === "done" || rebuild.state === "error") {
+      stopPolling();
+      bar.style.width = rebuild.state === "error" ? "0%" : "100%";
+      if (current) current.textContent = rebuild.state;
+      setTimeout(function () { box.classList.add("hidden"); }, 3000);
+    } else {
+      box.classList.add("hidden");
+    }
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  window.rebuildMatrixIndex = function (wikiId) {
+    var wiki = wikiId || "all";
+    fetch(base + "/api/v1/matrix/rebuild?wiki_id=" + encodeURIComponent(wiki), { method: "POST" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        loadMatrixStats();
+      })
+      .catch(function (e) {
+        var current = document.getElementById("matrix-rebuild-current");
+        if (current) current.textContent = "Fehler: " + e.message;
+      });
+  };
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.dataset && e.target.dataset.tab === "tab-matrix") {
+      window.loadMatrixStats();
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    if (document.getElementById("matrix-shard-count")) {
+      window.loadMatrixStats();
+    }
+  });
+})();
+</script>

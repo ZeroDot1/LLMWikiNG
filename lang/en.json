@@ -1,4 +1,11 @@
 {
+  "_license": {
+    "project": "LLMWikiNG",
+    "copyright": "Copyright (C) 2026 ZeroDot1",
+    "license": "AGPL-3.0-or-later",
+    "spdx": "AGPL-3.0-or-later"
+  },
+
   "_meta": {
     "language": "en",
     "language_en": "English",
@@ -44,7 +51,7 @@
     "button": "Search"
   },
   "footer": {
-    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + qmd ·",
+    "text": "LLMWikiNG – by ZeroDot1 · Powered by FastAPI + Matrix ·",
     "imprint": "Imprint"
   },
   "index": {
@@ -68,7 +75,13 @@
     "wiki_overview_heading": "Wiki Overview",
     "new_wiki": "New Wiki",
     "pages_short": "Pages",
-    "no_wikis_yet": "No wikis available yet."
+    "no_wikis_yet": "No wikis available yet.",
+    "matrix_health_heading": "⚡ Matrix Index Status",
+    "stat_shards": "Active Shards",
+    "stat_matrix_size": "Index Size",
+    "stat_queue_pending": "Queue Pending",
+    "matrix_status_healthy": "Operational",
+    "matrix_status_building": "Indexing in progress..."
   },
   "page": {
     "success_prefix": "Success:",
@@ -679,7 +692,32 @@
     "prompt_tailscale_setup_desc": "Run Tailscale one-click setup (up + serve/funnel)",
     "prompt_tailscale_apply_desc": "Apply Tailscale serve/funnel configuration",
     "prompt_tailscale_cert_desc": "Request the HTTPS certificate via tailscale cert",
-    "prompt_tailscale_reset_desc": "Reset Tailscale funnel & serve"
+    "prompt_tailscale_reset_desc": "Reset Tailscale funnel & serve",
+    "tab_matrix": "⚡ Matrix",
+    "matrix_heading": "⚡ Matrix Index (Persistent Full-Text Search)",
+    "matrix_subtitle": "SQLite shard index stored under data/matrix for fast persistent full-text search across all wikis.",
+    "matrix_stat_shards": "Active Shards",
+    "matrix_stat_size": "Index Size",
+    "matrix_stat_indexed": "Indexed Documents",
+    "matrix_stat_queue": "Queue Pending",
+    "matrix_stat_errors": "Errors",
+    "matrix_btn_rebuild": "Rebuild Index",
+    "matrix_btn_refresh": "Refresh",
+    "matrix_rebuild_label": "Rebuild progress",
+    "matrix_rebuild_idle": "Index is up to date.",
+    "matrix_rebuild_running": "Rebuilding index...",
+    "matrix_config_heading": "Configuration",
+    "matrix_config_enabled": "Enabled",
+    "matrix_config_shards": "Shards",
+    "matrix_config_max_reads": "Max Concurrent Reads",
+    "matrix_config_batch": "Write Batch Size",
+    "matrix_config_journal": "Journal Mode",
+    "matrix_config_sync": "Synchronous",
+    "matrix_config_busy_timeout": "Busy Timeout (ms)",
+    "matrix_inactive": "Matrix indexing is disabled. Enable enable_matrix in config.json.",
+    "matrix_health_label": "Registry Health",
+    "matrix_health_ok": "Operational",
+    "matrix_health_error": "Unavailable"
   },
   "register": {
     "title": "Register",
@@ -736,11 +774,6 @@
     "config_save_error": "Error saving configuration.",
     "email_sent": "Email successfully sent to {recipients}!",
     "email_error": "Error sending email: {error}",
-    "qmd_embed_ok": "qmd embeddings updated",
-    "qmd_embed_fail": "qmd embed failed",
-    "qmd_not_found": "qmd not installed",
-    "qmd_timeout": "qmd embed timed out (>60s)",
-    "qmd_version_not_found": "not found",
     "index_regenerated": "index.md rebuilt",
     "sync_success": "✅ Sync successful!",
     "sync_partial": "⚠ Sync partially failed",
@@ -757,7 +790,6 @@
     "server_start_hint": "Press Ctrl+C to exit"
   },
   "cli_tools": {
-    "qmd_search_error": "No search term provided. Usage: qmd_search.sh \"search term\"",
     "read_export_error": "No file path provided. Usage: read_and_export.sh <filepath>",
     "read_export_not_found": "Error: File '{path}' not found.",
     "read_export_list_title": "Existing wiki files:",

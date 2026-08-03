@@ -65,6 +65,7 @@ audit/*
 # ─── Temporäre Wiki-Testverzeichnisse ──────────────────────
 wiki/
 wiki/*
+wikis/truly-nonexistent/
 
 # ─── Implementierungspläne (intern) ───────────────────────
 IMPLEMENTIERUNGSPLAN_MCP_KEYS.md

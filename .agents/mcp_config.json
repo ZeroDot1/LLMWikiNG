@@ -1,4 +1,11 @@
 {
+  "_license": {
+    "project": "LLMWikiNG",
+    "copyright": "Copyright (C) 2026 ZeroDot1",
+    "license": "AGPL-3.0-or-later",
+    "spdx": "AGPL-3.0-or-later"
+  },
+
   "mcpServers": {
     "llmwiking-okf": {
       "type": "http",

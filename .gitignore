@@ -20,8 +20,8 @@ venv/
 *~
 .DS_Store
 
-# ─── qmd (lokale Such-Indizes & Cache) ───────────────────────
-.qmd/
+# ─── Matrix (SQLite-FTS5-Such-Shards & Cache) ─────────────
+# data/matrix/ wird über data/* bereits ignoriert
 
 # ─── Rohquellen (archiviertes Material, nicht Teil des Wikis) ─
 raw/*

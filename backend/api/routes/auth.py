@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 import json
 import os
 
-from core.config import BASE_PATH, CONFIG_FILE, load_app_config, APP_VERSION, PROJECT_ROOT
+from core.config import BASE_PATH, CONFIG_FILE, load_app_config, APP_VERSION, PROJECT_ROOT, _atomic_write
 from web import render, redirect, urlencode
 from api.deps import require_login, require_admin
 from services.audit import log_action, ALL_CATEGORIES
@@ -533,7 +533,7 @@ async def theme_set(request: Request, user: dict = Depends(require_login)):
         value = "dark"
     data = load_app_config()
     data["theme"] = value
-    CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    _atomic_write(CONFIG_FILE, json.dumps(data, indent=2, ensure_ascii=False))
     log_action(action="theme_change", details=f"Theme auf '{value}' geändert", user_id=user["id"], username=user["username"], request=request)
     if request.method == "POST":
         return redirect(f"{BASE_PATH}/settings?tab=theme")

@@ -186,7 +186,8 @@ def create_app() -> FastAPI:
 
         if _MCP_AVAILABLE:
             mcp_sse_app = get_mcp_sse_app()
-            if mcp_sse_app is not None:
+            mcp_http_app = get_mcp_http_app()
+            if mcp_sse_app is not None or mcp_http_app is not None:
                 from starlette.responses import JSONResponse as StarletteJSON
 
                 class McpApiKeyMiddleware:
@@ -332,7 +333,44 @@ def create_app() -> FastAPI:
                         await self.app(scope, receive, send)
 
                 app.add_middleware(McpApiKeyMiddleware)
-                # MCP-Endpoints: Combined SSE (/mcp) + Streamable HTTP (/mcp/http)
+                # MCP-Endpoints: Streamable HTTP (/mcp/http) + SSE (/mcp)
+                # WICHTIG: Der Streamable-HTTP-Mount MUSS VOR dem SSE-Mount
+                # registriert werden. Starlette-Mounts matchen per Präfix in
+                # Registrierungsreihenfolge – ein zuerst registrierter
+                # /mcp-Mount würde sonst alle /mcp/http*-Pfade abfangen und
+                # diese mit 404 beantworten (Streamable HTTP unerreichbar).
+                mcp_http_app = get_mcp_http_app()
+                if mcp_http_app is not None:
+                    # Streamable-HTTP als ROUTE statt Mount registrieren.
+                    # Ein Starlette-Mount kompiliert path + "/{path:path}" und
+                    # verlangt damit einen Slash nach dem Mount-Pfad: "/mcp/http"
+                    # (ohne trailing slash) matcht den Mount NICHT, fällt in den
+                    # SSE-Mount und endet als 404. Der SDK-Client (mcp 1.29+)
+                    # ruft den Endpunkt aber exakt ohne trailing slash auf.
+                    # Die Route matcht den exakten Pfad (redirect_slashes sorgt
+                    # für "/mcp/http/" → 307 auf "/mcp/http"), der Wrapper setzt
+                    # scope["path"] auf "/" (streamable_http_path des SDKs).
+                    from starlette.routing import Route as _Route
+
+                    class _McpHttpPathNormalize:
+                        def __init__(self, _app):
+                            self._app = _app
+
+                        async def __call__(self, scope, receive, send):
+                            if scope["type"] == "http":
+                                p = scope.get("path", "")
+                                if p in (f"{BASE_PATH}/mcp/http", f"{BASE_PATH}/mcp/http/"):
+                                    scope = dict(scope)
+                                    scope["path"] = "/"
+                            await self._app(scope, receive, send)
+
+                    app.add_route(
+                        f"{BASE_PATH}/mcp/http",
+                        _McpHttpPathNormalize(mcp_http_app),
+                        methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"],
+                        name="mcp_http",
+                    )
+
                 mcp_sse_app = get_mcp_sse_app()
                 if mcp_sse_app is not None:
                     # Wrapper: Fange /mcp/ (root des Mounts) ab → /mcp/sse
@@ -356,10 +394,6 @@ def create_app() -> FastAPI:
 
                     mcp_sse_app = _McpRootRedirect(mcp_sse_app, f"{BASE_PATH}/mcp")
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
-
-                mcp_http_app = get_mcp_http_app()
-                if mcp_http_app is not None:
-                    app.mount(f"{BASE_PATH}/mcp/http", mcp_http_app, name="mcp_http")
         else:
             # MCP-Paket nicht installiert – stille Deaktivierung
             pass
@@ -418,11 +452,7 @@ def create_app() -> FastAPI:
                 nonlocal _response_started
                 if message.get("type") == "http.response.start":
                     if _response_started:
-                        print(
-                            "[ResponseGuard] Doppeltes http.response.start "
-                            f"fuer {scope.get('path', '?')} unterdrueckt.",
-                            flush=True,
-                        )
+                        # Suppression beibehalten, aber ohne Console-Lärm.
                         return
                     _response_started = True
                 await _original_send(message)

@@ -75,7 +75,13 @@ class MatrixSearcher:
             und ``shards_queried``.
         """
         start = time.perf_counter()
-        tag_filters = [t for t in (tags or []) if t]
+        # Tag-Filter normalisieren, damit Groß-/Kleinschreibung und
+        # Umlaute korrekt mit den indizierten (normalisierten) Tags matchen.
+        try:
+            from services.tags import normalize_tag
+            tag_filters = [normalize_tag(t) for t in (tags or []) if t]
+        except (ImportError, Exception):
+            tag_filters = [t.lower() for t in (tags or []) if t]
         wikis = self._resolve_wikis(wiki_ids)
         query_text = query.strip()
 
@@ -141,9 +147,8 @@ class MatrixSearcher:
                         _QUERY_SQL, (fts_query, _PER_SHARD_LIMIT)
                     ) as cur:
                         rows = await cur.fetchall()
-
-            except Exception as exc:
-                raise exc
+            except Exception:
+                raise
 
         out: list[dict] = []
         for row in rows:

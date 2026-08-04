@@ -255,17 +255,33 @@ def search_wiki(query: str, wiki: str = "main", num_results: int = 10) -> dict:
     """Pure-Matrix-Suche (synchron): Matrix vor lokalem Fallback.
 
     Laeuft ohne externe Binary und ist der einzige Suchpfad.
+    Nutzt einen separaten Thread, um asyncio.run() sicher aus einem
+    bereits laufenden Event-Loop (FastAPI) heraus aufzurufen.
     """
     try:
         from services.matrix_searcher import MatrixSearcher
+        import concurrent.futures
 
-        data = asyncio.run(
-            MatrixSearcher().search(
-                wiki_ids=["all"] if wiki == "all" else [wiki],
-                query=query,
-                limit=num_results,
+        def _run_search() -> dict:
+            return asyncio.run(
+                MatrixSearcher().search(
+                    wiki_ids=["all"] if wiki == "all" else [wiki],
+                    query=query,
+                    limit=num_results,
+                )
             )
-        )
+
+        # asyncio.run() scheitert in einem laufenden Loop; daher in
+        # einem separaten Thread ausfuehren, der einen eigenen Loop hat.
+        try:
+            asyncio.get_running_loop()
+            # Wir sind in einem laufenden Loop → Thread nutzen
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                data = pool.submit(_run_search).result(timeout=15)
+        except RuntimeError:
+            # Kein laufender Loop → asyncio.run() ist sicher
+            data = _run_search()
+
         if data.get("results"):
             results = []
             for item in data["results"]:

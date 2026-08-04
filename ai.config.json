@@ -1,0 +1,11 @@
+{
+  "ollama_host": "127.0.0.1",
+  "ollama_port": 11434,
+  "ollama_username": "",
+  "ollama_password": "",
+  "ollama_model": "llama3.2:3b",
+  "opencode_path": "/usr/bin/opencode",
+  "hermes_path": "/usr/bin/hermes",
+  "agy_path": "/usr/bin/agy",
+  "tools_available_in_docker": false
+}

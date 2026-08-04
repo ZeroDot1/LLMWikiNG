@@ -1,0 +1,66 @@
+/* LLMWikiNG – Copyright (C) 2026 ZeroDot1 | AGPL-3.0-or-later | SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Styles für den Settings-Tab "AI Integration" */
+
+.ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.ai-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ai-field input {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--bg-sunken, #f3f4f6);
+    padding: 0.5rem 0.75rem;
+    color: var(--text, #111827);
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ai-field input:focus {
+    outline: none;
+    border-color: var(--primary, #4f46e5);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.ai-tool-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ai-tool-status.ai-ok {
+    color: var(--success, #16a34a);
+}
+
+.ai-tool-status.ai-missing {
+    color: var(--error, #dc2626);
+}
+
+.ai-tool-status.ai-docker {
+    color: var(--warning, #d97706);
+}
+
+#ai-docker-note,
+#ai-msg {
+    display: none;
+}
+
+#ai-docker-note.visible,
+#ai-msg.visible {
+    display: block;
+}

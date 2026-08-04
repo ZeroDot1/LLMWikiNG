@@ -26,7 +26,7 @@ VERSION="3.0.0"
 
 WIKI_SLUG="${WIKI_SLUG:-main}"
 WIKIS_ROOT="${WIKIS_ROOT:-./wikis}"
-WIKI_DIR="${WIKIS_ROOT}/${WIKI_SLUG}"
+WIKI_DIR="${WIKI_DIR:-${WIKIS_ROOT}/${WIKI_SLUG}}"
 RAW_DIR="${RAW_DIR:-./raw}"
 EXPORT_DIR="${EXPORT_DIR:-./output_docs}"
 

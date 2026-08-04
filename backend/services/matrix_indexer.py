@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -106,7 +107,16 @@ class MatrixIndexer:
         if self._worker_task:
             try:
                 await asyncio.wait_for(self._worker_task, timeout=30)
-            except (asyncio.TimeoutError, Exception):
+            except asyncio.TimeoutError:
+                log.warning(
+                    "MatrixIndexer.stop: Worker-Timeout (30s) – Task wird abgebrochen"
+                )
+                self._worker_task.cancel()
+                try:
+                    await self._worker_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+            except Exception:
                 log.exception("MatrixIndexer.stop: Worker räumt nicht auf")
             self._worker_task = None
 
@@ -187,7 +197,12 @@ class MatrixIndexer:
     async def _write_worker(self) -> None:
         """Verarbeitet Index-/Lösch-Jobs strikt sequentiell."""
         while True:
-            job = await self._write_queue.get()
+            try:
+                job = await self._write_queue.get()
+            except asyncio.CancelledError:
+                # Bei Abbruch (stop-Timeout) kein task_done aufrufen,
+                # sonst würde der join()-Zähler negativ werden.
+                return
             try:
                 if job is None:
                     return

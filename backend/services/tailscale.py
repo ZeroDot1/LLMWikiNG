@@ -75,9 +75,10 @@ def load_config() -> dict[str, Any]:
 
 def save_config(cfg: dict[str, Any]) -> None:
     """Saves Tailscale configuration to data/tailscale.json securely."""
+    from core.config import _atomic_write
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     cfg["updated_at"] = datetime.now(timezone.utc).isoformat()
-    CONFIG_PATH.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    _atomic_write(CONFIG_PATH, json.dumps(cfg, indent=2, ensure_ascii=False))
     try:
         CONFIG_PATH.chmod(0o600)
     except Exception:
@@ -171,9 +172,10 @@ def build_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> d
 def write_serve_config(cfg: dict[str, Any], cert_domain: str | None = None) -> Path | None:
     """Writes serve.json configuration file if host directory is writable."""
     try:
+        from core.config import _atomic_write
         SERVE_CONFIG_HOST_DIR.mkdir(parents=True, exist_ok=True)
         data = build_serve_config(cfg, cert_domain)
-        SERVE_CONFIG_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        _atomic_write(SERVE_CONFIG_PATH, json.dumps(data, indent=2, ensure_ascii=False))
         return SERVE_CONFIG_PATH
     except Exception as e:
         log.warning("Could not write serve.json: %s", e)

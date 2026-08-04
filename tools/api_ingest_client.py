@@ -16,7 +16,7 @@ import urllib.parse
 from pathlib import Path
 
 # Konfigurations-Fallbacks
-DEFAULT_SERVER = "http://localhost:8081/LLMWikiNG"
+DEFAULT_SERVER = "http://localhost:8080/LLMWikiNG"
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 
 

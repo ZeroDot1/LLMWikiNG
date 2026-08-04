@@ -5,7 +5,6 @@
     "license": "AGPL-3.0-or-later",
     "spdx": "AGPL-3.0-or-later"
   },
-
   "_meta": {
     "language": "en",
     "language_en": "English",
@@ -717,7 +716,27 @@
     "matrix_inactive": "Matrix indexing is disabled. Enable enable_matrix in config.json.",
     "matrix_health_label": "Registry Health",
     "matrix_health_ok": "Operational",
-    "matrix_health_error": "Unavailable"
+    "matrix_health_error": "Unavailable",
+    "tab_ai": "🤖 AI Integration",
+    "ai_heading": "🤖 AI Integration",
+    "ai_subtitle": "Configure Ollama and local agent tools (opencode, hermes, agy).",
+    "ai_ollama_heading": "Ollama Server",
+    "ai_ollama_host": "Host",
+    "ai_ollama_port": "Port",
+    "ai_ollama_model": "Model",
+    "ai_ollama_username": "Username",
+    "ai_ollama_password": "Password",
+    "ai_tools_heading": "Local Agent Tools",
+    "ai_tools_subtitle": "Paths to opencode, hermes and agy. In Docker mode these tools are usually not available.",
+    "ai_opencode_path": "opencode path",
+    "ai_hermes_path": "hermes path",
+    "ai_agy_path": "agy path",
+    "ai_save": "Save",
+    "ai_saving": "Saving …",
+    "ai_ok": "Available",
+    "ai_missing": "Not found",
+    "ai_docker_badge": "Docker",
+    "ai_docker_note": "Docker mode: agent tools (opencode, hermes, agy) are usually not available inside the container."
   },
   "register": {
     "title": "Register",

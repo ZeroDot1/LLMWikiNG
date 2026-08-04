@@ -24,6 +24,7 @@
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-mcp">{{ _('settings.tab_mcp') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-tailscale">{{ _('settings.tab_tailscale') }}</button>
         <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-matrix">{{ _('settings.tab_matrix') }}</button>
+        <button class="settings-tab px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-text hover:border-border transition-all" data-tab="tab-ai">{{ _('settings.tab_ai') }}</button>
     </div>
 
     <!-- Language Section -->
@@ -90,6 +91,11 @@
     <div id="tab-matrix" class="settings-tab-content hidden">
         {% include "settings/matrix.html" %}
     </div>
+
+    <!-- AI Integration Settings Section -->
+    <div id="tab-ai" class="settings-tab-content hidden">
+        {% include "settings/ai.html" %}
+    </div>
 </div>
 
 <!-- Modal für Passwortabfrage zum Anzeigen von Schlüsseln -->
@@ -140,7 +146,8 @@
       "tab-audit": document.getElementById("tab-audit"),
       "tab-mcp": document.getElementById("tab-mcp"),
       "tab-tailscale": document.getElementById("tab-tailscale"),
-      "tab-matrix": document.getElementById("tab-matrix")
+      "tab-matrix": document.getElementById("tab-matrix"),
+      "tab-ai": document.getElementById("tab-ai")
     };
     var tabs = document.querySelectorAll(".settings-tab");
 
@@ -193,7 +200,8 @@
       audit: "tab-audit",
       mcp: "tab-mcp",
       tailscale: "tab-tailscale",
-      matrix: "tab-matrix"
+      matrix: "tab-matrix",
+      ai: "tab-ai"
     };
     switchTab(map[params.get("tab")] || "tab-language");
   });

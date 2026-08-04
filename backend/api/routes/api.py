@@ -20,7 +20,7 @@ import subprocess
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR, load_app_config
+from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR, load_app_config, _atomic_write
 from api.deps import get_api_user, require_api_admin
 from core.storage import (
     list_users,
@@ -128,14 +128,14 @@ async def api_update_wiki(wiki: str, request: Request, admin: dict = Depends(req
                         "description": description,
                         "created_at": datetime.now(timezone.utc).isoformat(),
                     })
-                    wikis_file.write_text(json.dumps(wikis_data, indent=2, ensure_ascii=False), encoding="utf-8")
+                    _atomic_write(wikis_file, json.dumps(wikis_data, indent=2, ensure_ascii=False))
                 except Exception:
                     pass
             meta = new_d / "wiki.json"
             try:
-                meta.write_text(
+                _atomic_write(
+                    meta,
                     json.dumps({"name": name, "description": description}, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
                 )
             except Exception:
                 pass
@@ -284,6 +284,57 @@ async def api_search(request: Request, q: str = "", wiki: str = "main", user: di
     except Exception:
         pass
     return {"query": q, "wiki": wiki, "results": result.get("results", []), "local": local.get("results", [])}
+
+
+@router.get("/wikis/{wiki}/search")
+async def api_wiki_search(
+    request: Request,
+    wiki: str,
+    q: str = "",
+    user: dict = Depends(get_api_user),
+):
+    """Wiki-spezifische Suche (Alias für GET /search?wiki=…)."""
+    _wiki_or_404(wiki)
+    if not q:
+        return {"query": q, "wiki": wiki, "results": [], "local": []}
+    result = await matrix_search(q, wiki)
+    local = local_search(q, wiki)
+    try:
+        from services.audit import log_action
+
+        log_action(
+            action="search",
+            details=f"API-Suche '{q}' in '{wiki}' – {len(result.get('results', []))} Treffer",
+            username=user.get("username"),
+            user_id=user.get("id"),
+            request=request,
+        )
+    except Exception:
+        pass
+    return {"query": q, "wiki": wiki, "results": result.get("results", []), "local": local.get("results", [])}
+
+
+@router.post("/wikis/{wiki}/sync")
+async def api_wiki_sync(request: Request, wiki: str, user: dict = Depends(get_api_user)):
+    """Wiki-Sync (Matrix-Index-Update) – Alias für POST /wiki/{wiki}/api/sync."""
+    _wiki_or_404(wiki)
+    try:
+        await run_sync_async(wiki, force=True)
+        try:
+            from services.audit import log_action
+
+            log_action(
+                action="matrix_sync",
+                details=f"Sync für Wiki '{wiki}' abgeschlossen",
+                username=user.get("username"),
+                user_id=user.get("id"),
+                request=request,
+            )
+        except Exception:
+            pass
+        return {"ok": True, "wiki": wiki, "message": f"Sync für Wiki '{wiki}' abgeschlossen."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sync fehlgeschlagen: {e}")
 
 
 

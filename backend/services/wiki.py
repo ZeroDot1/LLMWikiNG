@@ -261,7 +261,13 @@ async def run_sync_async(wiki: str, force: bool = False) -> dict:
             from services.matrix_indexer import MatrixIndexer
             indexer = MatrixIndexer()
             await indexer.start()
-            return await do_matrix_sync_async(wiki, force=force, matrix_indexer=indexer)
+            try:
+                return await do_matrix_sync_async(wiki, force=force, matrix_indexer=indexer)
+            finally:
+                # Indexer IMMER stoppen: Ein nicht gestoppter Worker-Task
+                # verbleibt pending und wird beim GC zerstört
+                # ('Task was destroyed but it is pending!').
+                await indexer.stop()
         except Exception:
             pass
 

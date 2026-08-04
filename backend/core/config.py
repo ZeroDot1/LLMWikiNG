@@ -18,6 +18,13 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
+def _atomic_write(p: Path, content: str) -> None:
+    """Atomares Schreiben: erst Temp-Datei, dann rename — verhindert partielle Reads."""
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(content, encoding="utf-8")
+    os.replace(tmp, p)
+
 # Basis-Pfad: example.com/LLMWikiNG/wiki/<Name>/
 BASE_PATH = os.getenv("LLMWIKI_BASE_PATH", "/LLMWikiNG").rstrip("/")  # -> "/LLMWikiNG"
 
@@ -228,15 +235,15 @@ def save_wiki_meta(name: str, display_name: str, description: str = "") -> None:
         w.pop("last_modified", None)
         w.pop("status", None)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+    _atomic_write(wikis_file, json.dumps(wikis, indent=2, ensure_ascii=False))
     
     # Also save to old wiki.json for backwards compatibility if needed
     meta = wiki_path(name) / "wiki.json"
     try:
         meta.parent.mkdir(parents=True, exist_ok=True)
-        meta.write_text(
+        _atomic_write(
+            meta,
             json.dumps({"name": display_name, "description": description}, indent=2, ensure_ascii=False),
-            encoding="utf-8",
         )
     except Exception:
         pass
@@ -265,7 +272,7 @@ def delete_wiki(slug: str) -> bool:
             if len(wikis) < initial_count:
                 in_json = True
             DATA_DIR.mkdir(parents=True, exist_ok=True)
-            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+            _atomic_write(wikis_file, json.dumps(wikis, indent=2, ensure_ascii=False))
         except Exception:
             pass
     return existed or in_json
@@ -331,10 +338,7 @@ def save_app_config(config_dict: dict[str, Any]) -> bool:
     try:
         current = load_app_config()
         current.update(config_dict)
-        CONFIG_FILE.write_text(
-            json.dumps(current, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        _atomic_write(CONFIG_FILE, json.dumps(current, indent=2, ensure_ascii=False))
         try:
             CONFIG_FILE.chmod(0o600)
         except OSError:

@@ -48,8 +48,7 @@ class SyncStatus:
         if self.skipped:
             return "Sync not needed (no changes)"
         parts = []
-        if self.matrix:
-            parts.append(f"matrix: {'ok' if self.matrix else 'err'}")
+        parts.append(f"matrix: {'ok' if self.matrix else 'err'}")
         parts.append(f"index: {'ok' if self.index else 'err'}")
         return ", ".join(parts)
 
@@ -94,8 +93,9 @@ def _load_sync_times() -> dict[str, str]:
 def _save_sync_times(times: dict[str, str]) -> None:
     try:
         import json
+        from core.config import _atomic_write
         SYNC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        SYNC_STATUS_FILE.write_text(json.dumps(times, indent=2), encoding="utf-8")
+        _atomic_write(SYNC_STATUS_FILE, json.dumps(times, indent=2, ensure_ascii=False))
     except Exception as e:
         log.warning("Konnte sync_status.json nicht schreiben: %s", e)
 

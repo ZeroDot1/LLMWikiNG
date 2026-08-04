@@ -211,9 +211,11 @@ def _load_tag_store() -> dict[str, dict[str, list[dict]]]:
 def _save_tag_store(store: dict[str, dict[str, list[dict]]]) -> None:
     """Speichert den persistenten Tag-Speicher in data/tags.json."""
     try:
+        from core.config import _atomic_write
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        TAGS_STORE_FILE.write_text(
-            json.dumps(store, indent=2, ensure_ascii=False), encoding="utf-8"
+        _atomic_write(
+            TAGS_STORE_FILE,
+            json.dumps(store, indent=2, ensure_ascii=False),
         )
     except Exception as e:
         log.warning("Konnte data/tags.json nicht schreiben: %s", e)

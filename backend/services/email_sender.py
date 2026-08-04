@@ -45,6 +45,7 @@ def load_smtp_config() -> dict:
 
 def save_smtp_config(config_dict: dict) -> bool:
     try:
+        from core.config import _atomic_write
         current = {}
         if CONFIG_FILE.exists():
             try:
@@ -53,8 +54,7 @@ def save_smtp_config(config_dict: dict) -> bool:
             except Exception:
                 pass
         current.update(config_dict)
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(current, f, indent=2, ensure_ascii=False)
+        _atomic_write(CONFIG_FILE, json.dumps(current, indent=2, ensure_ascii=False))
         return True
     except Exception:
         return False

@@ -31,6 +31,11 @@ if [ -d "backend/scratch" ]; then
     find backend/scratch/ -type f -delete
 fi
 
+echo "  • Leere backups/ Ordner..."
+if [ -d "backups" ]; then
+    find backups/ -type f ! -name ".gitkeep" -delete
+fi
+
 echo "  • Setze Multi-Wiki-Struktur zurück..."
 if [ -d "wikis" ]; then
     find wikis/ -maxdepth 1 -mindepth 1 -type d ! -name "main" -exec rm -rf {} +
@@ -66,8 +71,26 @@ echo "[]" > data/users.json
 echo "[]" > data/api_keys.json
 echo "[]" > data/mcp_keys.json
 echo "[]" > data/audit_logs.json
+cat > data/wikis.json <<EOF
+[
+  {
+    "slug": "main",
+    "name": "main",
+    "description": "",
+    "created_at": "$(date +%Y-%m-%dT%H:%M:%S.000000)"
+  }
+]
+EOF
 rm -f data/tailscale.json 2>/dev/null || true
 rm -rf data/sync_status ts-data ts-config 2>/dev/null || true
+
+echo "  • Entferne Sync-Status, Tag-Index und Server-Logs..."
+rm -f data/sync_status.json data/tags.json 2>/dev/null || true
+rm -f data/server.out data/error.log 2>/dev/null || true
+
+echo "  • Entferne SQLite-Audit-Log und temporäre Dateien..."
+rm -f data/audit_log.db data/audit_log.db-wal data/audit_log.db-shm 2>/dev/null || true
+rm -f data/*.lock data/*.tmp 2>/dev/null || true
 
 echo "  • Bereinige Matrix-Suchindex (data/matrix/)..."
 rm -f data/matrix/*.db data/matrix/*.db-wal data/matrix/*.db-shm 2>/dev/null || true

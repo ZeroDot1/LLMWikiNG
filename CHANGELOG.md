@@ -8,11 +8,39 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Settings-Tab „AI-Integration"**: Konfiguration des Ollama-Endpunkts (Host, Port, Modell, Benutzername, Passwort) sowie der Pfade zu `opencode`, `hermes` und `agy` direkt in den Einstellungen (`templates/settings/ai.html`, `static/css/ai.css`, `static/js/ai.js` als getrennte Dateien). Persistenz in `ai.config.json` am Projekt-Root; im Docker-Betrieb liegt die Datei in `data/` und ist jederzeit vom Admin über den Tab änderbar. Neues Backend-Modul `backend/services/ai_config.py` (Erkennung des Docker-Betriebs, `shutil.which`-Fallbacks mit `/usr/bin/*`-Defaults, Verschmelzen fehlender Schlüssel mit Defaults) sowie die Routen `GET /settings/ai-config/json` (inkl. Verfügbarkeits-Check der Tools) und `POST /settings/ai-config`.
+- **API-Alias-Routen**: `GET /api/v1/wikis/{wiki}/search` (Matrix- und Fallback-Suche mit Wiki-Prüfung) und `POST /api/v1/wikis/{wiki}/sync` (Sync mit Neustart des Matrix-Indexers) ergänzt.
+
+### Fixed
+- **MCP Streamable-HTTP-Transport nicht erreichbar** (`backend/main.py`): Der Endpunkt `/mcp/http` wurde durch den vorgelagerten SSE-Mount abgefangen und lieferte 404. Der Mount ist jetzt eine reguläre Route mit Pfadnormalisierung (`_McpHttpPathNormalize`), sodass `POST /mcp/http` ohne abschließenden Slash korrekt die MCP-App erreicht. Zusätzlich wird die unterdrückte Double-Response-Meldung des `ResponseGuard` nicht mehr in der Konsole ausgegeben.
+- **Paralleles Lesen/Schreiben von JSON-Dateien** (`backend/core/storage.py`, `backend/core/config.py` sowie alle Aufrufer in `api/routes/{api,auth,pages}.py`, `services/{sync,tags,ai_config,email_sender,tailscale}.py`): Schreibvorgänge laufen jetzt atomar über eine temporäre Datei mit anschließendem `os.replace()`. Dadurch kann ein gleichzeitiger Lesevorgang keinen unvollständigen JSON-Inhalt mehr sehen (die `update_key_last_used`-Task schrieb `api_keys.json` nach jeder Anfrage neu; ein parallel lesender Request konnte einen leeren Inhalt verarbeiten und den Key als ungültig ablehnen).
+- **Matrix-Indexer: verwaiste Worker-Tasks bei Sync/Ingest** (`backend/services/wiki.py`, `backend/services/matrix_indexer.py`): Der Indexer wird nach `do_matrix_sync_async` jetzt in `finally` gestoppt; `stop()` bricht den Worker bei Timeout explizit ab und `_write_worker` beendet sich sauber bei Abbruch, sodass keine hängenden Tasks mehr zurückbleiben.
+- **Ingest in falsches Wiki** (`wiki.sh`): Das gesetzte `WIKI_DIR` wurde von einem Fallback überschrieben; jetzt gilt die gesetzte Variable, andernfalls wird aus dem Slug abgeleitet.
+- **Tailscale-Konfiguration** (`backend/services/tailscale.py`): `serve.json` wird ebenfalls atomar geschrieben.
+
+### Changed
+- **`clean_release.sh`**: Die AI-Konfiguration `ai.config.json` bleibt als Repository-Bestandteil erhalten und wird beim Release-Cleanup nicht mehr entfernt.
+
+## [3.0.1] - 2026-08-04
+
+### Added
 - **Lizenz- & Autor-Hinweise in allen Quellcode-Dateien**: Alle Python-, JS-, CSS-, HTML-Template-, Shell-, YAML-, JSON-Dateien sowie `Dockerfile`, `.dockerignore` und `requirements.txt` enthalten jetzt einen einheitlichen AGPL-v3-Header (`Copyright (C) 2026 ZeroDot1`, `SPDX-License-Identifier: AGPL-3.0-or-later`). JSON-Dateien tragen einen `_license`-Block (bzw. `license`/`author`-Felder bei `package.json`). Wiki-Content (`wikis/`), Laufzeit-Daten, `node_modules` und generierte Dateien sind ausgenommen.
 - **Zentrales Fehler-Logging** (`backend/services/errorlog.py`): Erfasst jetzt **jeden** Fehler app-weit in `data/error.log` — bisher wurden nur unbehandelte HTTP-Exceptions geloggt. Neu abgedeckt: unbehandelte asyncio-Task-Ausnahmen (Event-Loop-Handler), uncaught Exceptions in Haupt- und Neben-Threads (`sys.excepthook`/`threading.excepthook`), alle `logging.error`/`logging.exception`-Aufrufe (Matrix-Indexer, Watcher, Rebuild, uvicorn/starlette) sowie explizit bisher **verschluckte** Fehler im Background-Sync (`_run_bg_sync_loop` in `backend/services/sync.py`), im Matrix-Indexer-Worker (`_write_worker`), im Audit-Logging (`log_action`) und bei der Index-Regeneration im Lifespan. Der HTTP-500-Handler in `backend/main.py` nutzt nun das zentrale Modul. Schreibzugriffe sind thread-sicher und werfen nie.
 
 ### Fixed
+- **Matrix-Indexer: fehlender `sys`-Import** (`backend/services/matrix_indexer.py`): `sys.exc_info()[1]` im `_write_worker`-Fehlerhandler erzeugte bei jedem fehlgeschlagenen Index-/Delete-Job einen `NameError`, weil `sys` nicht importiert war. Der eigentliche Fehler wurde dadurch still verschluckt und durch eine Sekundär-Exception ersetzt.
+- **MatrixSearcher: Tag-Suche case-sensitiv** (`backend/services/matrix_searcher.py`): Tags aus der Suchanfrage (z. B. `#MyTag`, `tag:Österreich`) wurden nicht normalisiert, bevor sie mit den normalisierten Index-Tags (`mytag`, `oesterreich`) verglichen wurden. Tag-Filter-Suchen über die Matrix-Engine lieferten dadurch keine Treffer. Jetzt wird `normalize_tag()` auf Suchfilter angewendet.
+- **SyncStatus.summary: Matrix-Fehler nie sichtbar** (`backend/services/sync.py`): Die `summary`-Property filterte die Matrix-Statuszeile mit `if self.matrix:`, sodass `matrix: err` nie angezeigt wurde – bei `self.matrix == False` fehlte die Zeile komplett, bei `True` war der Ternär-Ausdruck redundant.
+- **search_wiki: `asyncio.run()` RuntimeError** (`backend/services/search.py`): Die synchrone Suchfunktion `search_wiki()` rief `asyncio.run()` direkt auf, was in FastAPI's bereits laufendem Event-Loop mit `RuntimeError: asyncio.run() cannot be called from a running event loop` scheiterte. Nutzt jetzt sicher einen separaten Thread mit eigenem Loop.
+- **MatrixSearcher: redundanter Exception-Handler** (`backend/services/matrix_searcher.py`): `except Exception as exc: raise exc` in `_query_shard` entfernt – verursachte unnötige Stack-Tiefe in Tracebacks ohne funktionalen Mehrwert.
+- **API Ingest Client: Port-Inkonsistenz** (`tools/api_ingest_client.py`): `DEFAULT_SERVER` nutzte Port 8081, obwohl die App auf Port 8080 läuft (in `run.py`, `Dockerfile`, `docker-compose.yml`). Korrigiert auf 8080.
 - **Storage**: Behoben: Reentrant File-Lock-Deadlock bei Speicher-Schreibvorgängen (`backend/core/storage.py`).
+
+### Changed
+- **QMD-Reste vollständig bereinigt**: Alle verbliebenen Referenzen auf die in v3.0.0 entfernte `qmd-cli` wurden aus dem Projekt entfernt:
+  - `.gitignore`: `# qmd (lokale Such-Indizes & Cache)` / `.qmd/` → Matrix-Kommentar.
+  - `wiki/log.md`: Init-Eintrag „qmd-Integration" → „Matrix-Integration".
+  - `wikis/main/log.md`: Historische `qmd: ok`-Sync-Einträge durch `matrix: ok` ersetzt und dedupliziert.
 
 
 

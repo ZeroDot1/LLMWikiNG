@@ -216,20 +216,20 @@ async def settings_wikis_update(slug: str, request: Request):
         import shutil
         shutil.move(str(old_root), str(new_root))
         # Alten slug aus wikis.json entfernen + neuen eintragen
-        from core.config import DATA_DIR
+        from core.config import DATA_DIR, _atomic_write
         wikis_file = DATA_DIR / "wikis.json"
         if wikis_file.exists():
             wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
             wikis = [w for w in wikis if w.get("slug") != slug]
             wikis.append({"slug": new_slug, "name": new_name, "description": description})
-            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+            _atomic_write(wikis_file, json.dumps(wikis, indent=2, ensure_ascii=False))
         else:
             save_wiki_meta({"slug": new_slug, "name": new_name, "description": description})
         log_action(action="wiki_rename", details=f"Wiki '{slug}' → '{new_slug}' umbenannt",
                    username=user.get("username"), user_id=user.get("id"), request=request)
     else:
         # Nur Name/Description aktualisieren
-        from core.config import DATA_DIR
+        from core.config import DATA_DIR, _atomic_write
         wikis_file = DATA_DIR / "wikis.json"
         if wikis_file.exists():
             wikis = json.loads(wikis_file.read_text(encoding="utf-8"))
@@ -238,7 +238,7 @@ async def settings_wikis_update(slug: str, request: Request):
                     w["name"] = new_name
                     w["description"] = description
                     break
-            wikis_file.write_text(json.dumps(wikis, indent=2, ensure_ascii=False), encoding="utf-8")
+            _atomic_write(wikis_file, json.dumps(wikis, indent=2, ensure_ascii=False))
         log_action(action="wiki_update", details=f"Wiki '{slug}' aktualisiert",
                    username=user.get("username"), user_id=user.get("id"), request=request)
 
@@ -1220,9 +1220,10 @@ def switch_language(code: str, request: Request):
     response.set_cookie("llmwiki_lang", code, max_age=365 * 24 * 3600)
     # Sprache dauerhaft in config.json sichern (einzige Einstellungsquelle)
     try:
+        from core.config import _atomic_write
         data = load_app_config()
         data["language"] = code
-        CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        _atomic_write(CONFIG_FILE, json.dumps(data, indent=2, ensure_ascii=False))
     except Exception:
         pass
     return response
@@ -1618,6 +1619,7 @@ def settings_get(request: Request):
 
     from core.config import load_app_config
     from services.backup import list_server_backups
+    from services.ai_config import load_ai_config
     cfg = load_app_config()
     return render(
         request, "settings.html",
@@ -1627,6 +1629,7 @@ def settings_get(request: Request):
         env_pass_exists=env_pass_exists,
         audit_config=cfg,
         mcp_config=cfg,
+        ai_config=load_ai_config(),
         syntax_highlighting=cfg.get("syntax_highlighting", True),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,
@@ -1666,6 +1669,52 @@ async def settings_syntax_highlighting_set(request: Request):
     if not ok:
         msg = "Fehler beim Speichern der Einstellung."
     return redirect(f"{BASE_PATH}/settings?syntax_msg={urlencode(msg)}")
+
+
+@router.get("/settings/ai-config/json")
+def settings_ai_config_json(request: Request):
+    """Gibt die AI-Konfiguration samt Verfügbarkeit der Tools als JSON zurück."""
+    require_login(request)
+    from services.ai_config import load_ai_config, in_docker
+
+    cfg = load_ai_config()
+    availability = {}
+    for key in ("opencode_path", "hermes_path", "agy_path"):
+        path = cfg.get(key, "")
+        availability[key] = bool(path) and os.path.isfile(path)
+    cfg["docker"] = in_docker()
+    cfg["availability"] = availability
+    return JSONResponse(cfg)
+
+
+@router.post("/settings/ai-config")
+async def settings_ai_config_post(request: Request):
+    """Speichert die AI-Integrations-Konfiguration in ai.config.json."""
+    require_login(request)
+    from services.ai_config import save_ai_config
+
+    form = await request.form()
+
+    def _int(name: str, fallback: int) -> int:
+        raw = (form.get(name) or "").strip()
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return fallback
+
+    updates = {
+        "ollama_host": (form.get("ollama_host") or "127.0.0.1").strip(),
+        "ollama_port": _int("ollama_port", 11434),
+        "ollama_username": (form.get("ollama_username") or "").strip(),
+        "ollama_password": (form.get("ollama_password") or "").strip(),
+        "ollama_model": (form.get("ollama_model") or "").strip(),
+        "opencode_path": (form.get("opencode_path") or "").strip(),
+        "hermes_path": (form.get("hermes_path") or "").strip(),
+        "agy_path": (form.get("agy_path") or "").strip(),
+    }
+    ok = save_ai_config(updates)
+    msg = "AI-Integration gespeichert." if ok else "Fehler beim Speichern der AI-Integration."
+    return redirect(f"{BASE_PATH}/settings?tab=ai&ai_msg={urlencode(msg)}")
 
 
 def _trigger_server_restart() -> None:

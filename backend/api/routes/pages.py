@@ -1082,8 +1082,8 @@ async def search(request: Request):
     tag_filter = active_tag_filters[0] if active_tag_filters else ""
 
     if wiki == "all":
-        page_count = sum(len(get_all_wiki_pages(w["name"])) for w in list_wikis())
-        sync_needed_flag = any(is_sync_needed(w["name"]) for w in list_wikis())
+        page_count = sum(len(get_all_wiki_pages(w["slug"])) for w in list_wikis())
+        sync_needed_flag = any(is_sync_needed(w["slug"]) for w in list_wikis())
     else:
         page_count = len(get_all_wiki_pages(wiki))
         sync_needed_flag = is_sync_needed(wiki)
@@ -1132,7 +1132,7 @@ async def search(request: Request):
             if "not found" in search_result.get("error", "").lower() or "timeout" in search_result.get("error", "").lower():
                 if wiki == "all":
                     for w in list_wikis():
-                        await run_sync_async(w["name"])
+                        await run_sync_async(w["slug"])
                 else:
                     await run_sync_async(wiki)
                 search_result = await matrix_search(query, wiki, num_results=30)
@@ -1252,12 +1252,12 @@ async def about(request: Request):
         request.cookies.get("llmwiki_lang"),
     )
     template = "about_de.html" if lang == "de" else "about.html"
-    matrix_ver = "Matrix 3.0.0"
+    matrix_ver = "Matrix 3.1.0"
     try:
         from core.config import MATRIX_DATA_ROOT
         if MATRIX_DATA_ROOT.exists():
             shards = list(MATRIX_DATA_ROOT.glob("*_shard_*.db"))
-            matrix_ver = f"Matrix 3.0.0 · {len(shards)} Shards"
+            matrix_ver = f"Matrix 3.1.0 · {len(shards)} Shards"
     except Exception:
         pass
 
@@ -2152,7 +2152,7 @@ def edit_get(request: Request):
         app_version=APP_VERSION,
         python_version=sys.version.split()[0],
         markdown_version=_pv("markdown"),
-        matrix_version="Matrix 3.0.0",
+        matrix_version="Matrix 3.1.0",
         jinja_version=_pv("jinja2"),
         error_msg=error_msg,
     )

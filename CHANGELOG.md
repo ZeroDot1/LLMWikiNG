@@ -8,6 +8,11 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- *(keine Änderungen bisher)*
+
+## [3.1.0] - 2026-08-04
+
+### Added
 - **Settings-Tab „AI-Integration"**: Konfiguration des Ollama-Endpunkts (Host, Port, Modell, Benutzername, Passwort) sowie der Pfade zu `opencode`, `hermes` und `agy` direkt in den Einstellungen (`templates/settings/ai.html`, `static/css/ai.css`, `static/js/ai.js` als getrennte Dateien). Persistenz in `ai.config.json` am Projekt-Root; im Docker-Betrieb liegt die Datei in `data/` und ist jederzeit vom Admin über den Tab änderbar. Neues Backend-Modul `backend/services/ai_config.py` (Erkennung des Docker-Betriebs, `shutil.which`-Fallbacks mit `/usr/bin/*`-Defaults, Verschmelzen fehlender Schlüssel mit Defaults) sowie die Routen `GET /settings/ai-config/json` (inkl. Verfügbarkeits-Check der Tools) und `POST /settings/ai-config`.
 - **API-Alias-Routen**: `GET /api/v1/wikis/{wiki}/search` (Matrix- und Fallback-Suche mit Wiki-Prüfung) und `POST /api/v1/wikis/{wiki}/sync` (Sync mit Neustart des Matrix-Indexers) ergänzt.
 
@@ -17,6 +22,8 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Matrix-Indexer: verwaiste Worker-Tasks bei Sync/Ingest** (`backend/services/wiki.py`, `backend/services/matrix_indexer.py`): Der Indexer wird nach `do_matrix_sync_async` jetzt in `finally` gestoppt; `stop()` bricht den Worker bei Timeout explizit ab und `_write_worker` beendet sich sauber bei Abbruch, sodass keine hängenden Tasks mehr zurückbleiben.
 - **Ingest in falsches Wiki** (`wiki.sh`): Das gesetzte `WIKI_DIR` wurde von einem Fallback überschrieben; jetzt gilt die gesetzte Variable, andernfalls wird aus dem Slug abgeleitet.
 - **Tailscale-Konfiguration** (`backend/services/tailscale.py`): `serve.json` wird ebenfalls atomar geschrieben.
+- **Matrix-Index: inkonsistente Wiki-Bezeichner** (`backend/services/sync.py`, `backend/api/routes/api.py`, `backend/api/routes/pages.py`): `run_sync_async` normalisiert den Wiki-Namen jetzt über `slugify_wiki`, und `POST /api/v1/system/sync` sowie die Such- und Sync-Pfade verwenden durchgängig die Slug-Werte statt der Anzeigenamen. Dadurch landeten Dokumente nicht mehr unter Index-IDs wie `Wissen`/`Technik`/`Natur`, während die Suche nur Slugs auflöste – Matrix-Suchen über alle Wikis lieferten sonst keine Treffer (Shard-IDs nicht gefunden).
+- **Backup-Wiederherstellung: selbst-löschendes Temp-Verzeichnis** (`backend/services/backup.py`): `restore_backup_xz` legt das Entpack-Verzeichnis jetzt explizit außerhalb von `PROJECT_ROOT` an. Zeigte `TMPDIR` auf `data/` (z. B. Docker), wurde das Temp-Verzeichnis beim Löschen des Datenverzeichnisses während des Restores selbst mit entfernt. Der zuvor übersprungene Test `test_restore_backup` ist wieder aktiv.
 
 ### Changed
 - **`clean_release.sh`**: Die AI-Konfiguration `ai.config.json` bleibt als Repository-Bestandteil erhalten und wird beim Release-Cleanup nicht mehr entfernt.

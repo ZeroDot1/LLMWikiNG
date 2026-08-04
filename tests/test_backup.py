@@ -53,11 +53,6 @@ class TestBackupRestore:
             names = tar.getnames()
             assert any("raw" in n for n in names)
 
-    @pytest.mark.skip(
-        reason="BUG in restore_backup_xz: Temp-Verzeichnis liegt INNERHALB von "
-               "PROJECT_ROOT/data, das beim Restore gelöscht wird → "
-               "self-deleting Temp-Dir."
-    )
     def test_restore_backup(self, tmp_project):
         from services.backup import create_backup_xz, restore_backup_xz
         # Create a wiki page

@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from core.config import wiki_path, DATA_DIR
+from core.config import slugify_wiki
 from services.wiki import get_all_wiki_pages
 from services.cache import get_cache
 
@@ -459,6 +460,7 @@ async def do_matrix_sync_async(
     """
     import time as _time
 
+    wiki = slugify_wiki(wiki)
     _start = _time.monotonic()
     status = SyncStatus.load(wiki)
     status.wiki = wiki

@@ -1,20 +1,6 @@
 ---
 okf_version: "0.1"
 ---
-# Wiki-Index
+# LLMWikiNG (OKF Edition)
 
-> Automatisch gepflegtes Inhaltsverzeichnis.
-> Aktualisiert am 2026-08-03
-
-## Inhaltsverzeichnis
-
-### Reference
-
-* [LLMWikiNG MCP Server — Integration & Tool Reference](./mcp-server-integration.md) - Complete guide to embedding the LLMWikiNG MCP (Model Context Protocol) server into Antigravity agy, Claude Desktop, Cursor, OpenCode, and other agents, plus a per-tool reference with copy-paste prompts. Replace the example host/keys with your own.
-
-
-## Statistik
-
-- **Seiten gesamt:** 1
-- **Letzte Aktualisierung:** 2026-08-03
-
+> Willkommen in deinem neuen Wiki! Dieses Wiki wurde nach dem Open Knowledge Format (OKF) v0.1 initialisiert.

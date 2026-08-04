@@ -603,10 +603,10 @@ async def api_system_sync(request: Request, user: dict = Depends(get_api_user)):
     results = {}
     for w in list_wikis():
         try:
-            await run_sync_async(w["name"], force=True)
-            results[w["name"]] = "ok"
+            await run_sync_async(w["slug"], force=True)
+            results[w["slug"]] = "ok"
         except Exception as e:
-            results[w["name"]] = f"fehler: {e}"
+            results[w["slug"]] = f"fehler: {e}"
     try:
         from services.audit import log_action
 

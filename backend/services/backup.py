@@ -48,7 +48,14 @@ def create_backup_xz(output_path: Path | None = None) -> Path:
 def restore_backup_xz(archive_path: Path) -> None:
     """Entpackt ein tar.xz-Archiv und überschreibt die bestehenden Daten."""
     import tempfile
-    with tempfile.TemporaryDirectory(prefix="llmwiki_restore_") as tmp:
+    # Das Temp-Verzeichnis muss außerhalb von PROJECT_ROOT liegen, da der
+    # Restore data/ rekursiv löscht – sonst würde sich das Temp-Dir selbst
+    # entfernen (z.B. wenn TMPDIR auf data/ zeigt).
+    temp_root = Path(tempfile.gettempdir())
+    if temp_root.resolve().is_relative_to(PROJECT_ROOT.resolve()):
+        temp_root = PROJECT_ROOT.parent
+    temp_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="llmwiki_restore_", dir=temp_root) as tmp:
         temp_dir = Path(tmp)
         with tarfile.open(archive_path, "r:xz") as tar:
             tar.extractall(path=temp_dir)

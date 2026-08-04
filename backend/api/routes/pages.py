@@ -1934,6 +1934,7 @@ async def settings_post(request: Request):
     env_pass_exists = bool(os.environ.get("GMAIL_APP_PASSWORD"))
 
     from core.config import load_app_config
+    from services.ai_config import load_ai_config
     cfg_post = load_app_config()
     return render(
         request, "settings.html",
@@ -1943,6 +1944,8 @@ async def settings_post(request: Request):
         env_pass_exists=env_pass_exists,
         audit_config=cfg_post,
         mcp_config=cfg_post,
+        ai_config=load_ai_config(),
+        syntax_highlighting=cfg_post.get("syntax_highlighting", True),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=config_success_msg,
         config_error_msg=config_error_msg,

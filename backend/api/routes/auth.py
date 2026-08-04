@@ -228,6 +228,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
     log_action(action="api_key_create", details=f"API-Key '{name}' für Benutzer-ID '{target_user_id}' erzeugt", user_id=admin["id"], username=admin["username"], request=request)
     from core.config import MCP_TOOL_GROUPS
     from core.storage import list_mcp_keys
+    from services.ai_config import load_ai_config
     smtp_config = load_smtp_config()
     cfg = load_app_config()
     health = run_lint() if cfg.get("health_run_check", False) else {"orphans": [], "missing": [], "stale": [], "missing_raw": [], "issue_count": 0}
@@ -239,6 +240,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         env_pass_exists=bool(os.environ.get("GMAIL_APP_PASSWORD")),
         audit_config=cfg,
         mcp_config=cfg,
+        ai_config=load_ai_config(),
         syntax_highlighting=cfg.get("syntax_highlighting", True),
         all_audit_categories=ALL_CATEGORIES,
         config_success_msg=None,

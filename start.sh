@@ -199,6 +199,11 @@ if ! python3 -c "import markdown" 2>/dev/null; then
     exit 1
 fi
 
+if ! python3 -c "import mcp" 2>/dev/null; then
+    echo "⚠ MCP-Paket nicht installiert. Der MCP-Server bleibt deaktiviert."
+    echo "  Bitte installieren: pip install -r requirements.txt"
+fi
+
 if [ ! -d "$SCRIPT_DIR/wiki" ]; then
     echo "⚠ Wiki-Verzeichnis nicht gefunden. Starte init..."
     if [ -f "$SCRIPT_DIR/wiki.sh" ]; then

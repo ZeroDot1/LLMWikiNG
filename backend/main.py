@@ -395,8 +395,25 @@ def create_app() -> FastAPI:
                     mcp_sse_app = _McpRootRedirect(mcp_sse_app, f"{BASE_PATH}/mcp")
                     app.mount(f"{BASE_PATH}/mcp", mcp_sse_app, name="mcp")
         else:
-            # MCP-Paket nicht installiert – stille Deaktivierung
-            pass
+            # MCP-Paket nicht installiert – Deaktivierung laut protokollieren,
+            # damit fehlende Abhaengigkeiten (pip install -r requirements.txt)
+            # auf dem Server nicht stillschweigend uebersehen werden.
+            try:
+                from services.errorlog import append_error
+                append_error(
+                    "mcp",
+                    "MCP-Server deaktiviert: Python-Paket 'mcp' ist nicht installiert. "
+                    "Bitte 'pip install -r requirements.txt' ausfuehren.",
+                    request=None,
+                    extra=f"ENABLE_MCP_SERVER={ENABLE_MCP_SERVER}",
+                )
+            except Exception:
+                print(
+                    "[LLMWikiNG] Warnung: MCP-Server deaktiviert – "
+                    "Python-Paket 'mcp' nicht installiert. "
+                    "Bitte 'pip install -r requirements.txt' ausfuehren.",
+                    flush=True,
+                )
 
     # Komfort: Root auf BASE_PATH umleiten (App liegt unter /LLMWikiNG)
     @app.get("/")

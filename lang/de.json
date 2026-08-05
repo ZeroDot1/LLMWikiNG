@@ -347,11 +347,12 @@
     "local_label": "Lokal:",
     "github_label": "GitHub:",
     "error_prefix": "Fehler:",
-    "docker_rebuild_warning": "⚠️ HINWEIS ZUM CONTAINER-UPDATE: Wenn sich Abhängigkeiten (Dockerfile, requirements.txt, Python-Bibliotheken) geändert haben, kann das Update im laufenden Betrieb Fehler verursachen. In diesem Fall muss der Docker-Container neu gebaut werden (z. B. docker compose build --no-cache && docker compose up -d).",
+    "docker_rebuild_warning": "ℹ️ CONTAINER-UPDATE: Fehlende Python-Pakete (requirements.txt) werden im Container automatisch nachinstalliert, bevor der Server neu gestartet wird. Ein Neubau des Images ist nur noetig, wenn sich SYSTEM-Abhaengigkeiten im Dockerfile aendern (z. B. docker compose build && docker compose up -d).",
     "restart_auto_heading": "Der Server-Neustart wurde automatisch initiiert!",
     "restart_auto_text": "Die WebUI verbindet sich automatisch neu, sobald der Server hochgefahren ist",
     "restart_confirm": "Möchtest du den Webserver jetzt neu starten? Im Container-Modus wird er automatisch wieder hochgefahren.",
-    "restart_button": "Server manuell neu starten"
+    "restart_button": "Server manuell neu starten",
+    "log_preserved_hint": "Die Logdatei wird nicht geloescht: data/update.log (fruehere Laeufe als update-<zeitstempel>.log) – so bleiben Fehler nach einem Update nachvollziehbar."
   },
   "graph": {
     "page_title": "Wissensgraph",

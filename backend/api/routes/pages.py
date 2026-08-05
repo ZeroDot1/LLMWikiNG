@@ -1591,17 +1591,18 @@ def settings_get(request: Request):
     app_version_text = _read_version()
     update_available_flag = (PROJECT_ROOT / "update.sh").exists()
     update_log_output = request.query_params.get("update_log")
-    # Bei reloaded=1 (nach Countdown-Refresh) das update.log NICHT mehr laden,
-    # sonst entsteht ein Endlosschleifen-Refresh (Log -> Countdown -> Refresh -> Log -> ...).
+    # WICHTIG: update.log wird bewusst NIE geloescht, damit Fehler eines
+    # fehlgeschlagenen Updates auch nachtraeglich nachvollziehbar bleiben.
+    # reloaded=1 steuert nur noch, ob der Auto-Reload-Countdown laufen darf
+    # (Log -> Countdown -> Refresh -> Log -> ... Endlosschleife vermeiden).
     reloaded = request.query_params.get("reloaded") == "1"
-    if reloaded:
-        _log_file = DATA_DIR / "update.log"
-        if _log_file.exists():
-            _log_file.unlink()
-    if not update_log_output and not reloaded:
+    if not update_log_output:
         update_log_file = DATA_DIR / "update.log"
         if update_log_file.exists():
-            update_log_output = update_log_file.read_text(encoding="utf-8").strip() or None
+            _raw_log = update_log_file.read_text(encoding="utf-8").strip()
+            if _raw_log:
+                # ANSI-Farbcodes entfernen (falls update.sh das Log selbst geschrieben hat)
+                update_log_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", _raw_log)
 
     health_run_check = request.query_params.get("run") == "1"
     if health_run_check:
@@ -1643,6 +1644,7 @@ def settings_get(request: Request):
         app_version=app_version_text,
         update_available=update_available_flag,
         update_log=update_log_output,
+        update_show_countdown=not reloaded,
         users=list_users(),
         keys=list_keys(),
         new_key=None,
@@ -1765,6 +1767,7 @@ async def settings_post(request: Request):
     config_error_msg = None
     new_generated_mcp_key = None
     new_generated_api_key = None
+    update_restart_ok = False
 
     if action == "run_update":
         update_script = PROJECT_ROOT / "update.sh"
@@ -1776,6 +1779,9 @@ async def settings_post(request: Request):
 
         log_file = DATA_DIR / "update.log"
         DATA_DIR.mkdir(parents=True, exist_ok=True)
+        # Vorheriges Log als Historie erhalten (update.log wird nie geloescht).
+        from core.config import rotate_update_log
+        rotate_update_log(log_file, DATA_DIR)
         if not update_script.exists():
             update_log_output = "FEHLER: update.sh nicht gefunden."
             log_file.write_text(update_log_output + "\n", encoding="utf-8")
@@ -1795,15 +1801,23 @@ async def settings_post(request: Request):
                     env=env,
                 )
                 # ANSI-Farbcodes aus Output entfernen (fuer saubere HTML-Anzeige)
-                import re as _re
                 raw_output = proc.stdout + proc.stderr
-                update_log_output = _re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
+                update_log_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", raw_output)
+
+                # Neustart NUR wenn update.sh erfolgreich war (Exit-Code 0).
+                # Bei Fehlern (z. B. fehlende Python-Pakete) hat update.sh selbst
+                # keinen Neustart ausgeloest; der alte Server bleibt erreichbar.
+                if proc.returncode == 0:
+                    update_restart_ok = True
+                    _trigger_server_restart()
+                else:
+                    update_log_output += (
+                        "\n\n[FEHLER] Update fehlgeschlagen – der Server wurde NICHT neu gestartet. "
+                        "Bitte Log pruefen und fehlende Python-Abhaengigkeiten nachinstallieren: "
+                        "pip install -r requirements.txt"
+                    )
 
                 log_file.write_text(update_log_output, encoding="utf-8")
-
-                # Automatischen Server-Neustart nach erfolgreichem Update auslösen,
-                # damit direkt der neue Code im Speicher aktiv wird.
-                _trigger_server_restart()
             except subprocess.TimeoutExpired:
                 update_log_output = "FEHLER: Update-Skript hat 300 Sekunden ueberschritten."
                 log_file.write_text(update_log_output + "\n", encoding="utf-8")
@@ -1958,6 +1972,7 @@ async def settings_post(request: Request):
         app_version=app_version_text,
         update_available=update_available_flag,
         update_log=update_log_output,
+        update_show_countdown=update_restart_ok,
         users=list_users(),
         keys=list_keys(),
         new_key=None,

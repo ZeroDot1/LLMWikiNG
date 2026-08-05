@@ -347,11 +347,12 @@
     "local_label": "Local:",
     "github_label": "GitHub:",
     "error_prefix": "Error:",
-    "docker_rebuild_warning": "⚠️ NOTE ON CONTAINER UPDATES: If dependencies (Dockerfile, requirements.txt, Python packages) have changed, performing an update on a running instance may cause errors. In this case, the Docker container must be rebuilt (e.g. docker compose build --no-cache && docker compose up -d).",
+    "docker_rebuild_warning": "ℹ️ CONTAINER UPDATE: Missing Python packages (requirements.txt) are installed automatically inside the container before the server is restarted. A rebuild of the image is only required when SYSTEM dependencies in the Dockerfile change (e.g. docker compose build && docker compose up -d).",
     "restart_auto_heading": "Server restart was automatically initiated!",
     "restart_auto_text": "The WebUI will reconnect automatically once the server is back up",
-    "restart_confirm": "Do you want to restart the web server now? In container mode it will restart automatically.",
-    "restart_button": "Restart server manually"
+    "restart_confirm": "Do you want to restart the webserver now? In container mode it will come back up automatically.",
+    "restart_button": "Restart server manually",
+    "log_preserved_hint": "The log file is never deleted: data/update.log (previous runs as update-<timestamp>.log) – so errors after an update stay traceable."
   },
   "graph": {
     "page_title": "Knowledge Graph",

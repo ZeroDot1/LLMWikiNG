@@ -31,9 +31,84 @@ strip_ansi() {
     sed -E 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 }
 
+# Prueft, ob alle in requirements.txt gelisteten Python-Pakete importierbar sind.
+# Liefert 0, wenn alles vorhanden ist, sonst 1 und listet die fehlenden Module.
+verify_python_deps() {
+    local req_file="$1"
+    local py_cmd=""
+    if command -v python3 &>/dev/null; then
+        py_cmd="python3"
+    elif command -v python &>/dev/null; then
+        py_cmd="python"
+    fi
+    [ -z "$py_cmd" ] && return 1
+
+    local mods="" missing="" pkg mod
+    while IFS= read -r line; do
+        line="${line%%#*}"                       # Inline-Kommentar entfernen
+        line="$(echo "$line" | tr -d '[:space:]')"
+        [ -z "$line" ] && continue
+        case "$line" in
+            -*) continue ;;                      # z. B. "-e git+..."
+            git+*) continue ;;
+            http*) continue ;;
+        esac
+        pkg="${line%%[<>=~!;]*}"                 # Versionsangaben/Env-Marker entfernen
+        pkg="${pkg%%\[*}"                        # Extras entfernen (uvicorn[standard])
+        pkg="$(echo "$pkg" | tr '[:upper:]' '[:lower:]' | tr '-' '_')"
+        [ -z "$pkg" ] && continue
+        case "$pkg" in
+            pyyaml) mod="yaml" ;;
+            python_multipart) mod="multipart" ;;
+            argon2_cffi) mod="argon2" ;;
+            python_frontmatter) mod="frontmatter" ;;
+            *) mod="$pkg" ;;
+        esac
+        [ -z "$mod" ] && continue
+        if [ -z "$mods" ]; then
+            mods="$mod"
+        else
+            mods="$mods,$mod"
+        fi
+    done < "$req_file"
+
+    [ -z "$mods" ] && return 0
+
+    if "$py_cmd" -c "import $mods" >/dev/null 2>&1; then
+        return 0
+    fi
+    local oldifs="$IFS"
+    IFS=','
+    local m
+    for m in $mods; do
+        if ! "$py_cmd" -c "import $m" >/dev/null 2>&1; then
+            missing="$missing $m"
+        fi
+    done
+    IFS="$oldifs"
+    echo -e "    ${RED}Fehlende Python-Module:${NC}${missing}"
+    return 1
+}
+
 # Projektverzeichnis ermitteln (dort, wo update.sh liegt)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
+
+# Persistente Update-Logdatei. data/ wird in Docker-Containern als Volume
+# gemountet und existiert bei allen (auch bestehenden) Installationen.
+# Die Logdatei wird NIE geloescht, damit Fehler nach einem Update nachvollziehbar bleiben.
+LOG_FILE="$PROJECT_DIR/data/update.log"
+mkdir -p "$PROJECT_DIR/data"
+# Gesamten Output (stdout+stderr) parallel in die Logdatei schreiben.
+exec > >(tee "$LOG_FILE") 2>&1
+
+# Container-Erkennung (fuer die korrekte pip-Installation im Docker-Container)
+IN_CONTAINER=0
+if [ -f "/.dockerenv" ] || [ -f "/run/.containerenv" ]; then
+    IN_CONTAINER=1
+elif grep -qE '/(docker|lxc|containerd)/' /proc/1/cgroup 2>/dev/null; then
+    IN_CONTAINER=1
+fi
 
 CURRENT_VERSION="unbekannt"
 if [ -f "VERSION" ]; then
@@ -136,23 +211,55 @@ git reset --hard origin/main
 echo ""
 echo -e "  Pruefe Python-Abhaengigkeiten..."
 
-PIP_OK=0
+PIP_CMD=""
 if command -v pip3 &>/dev/null; then
-    if [ -f "requirements.txt" ]; then
-        echo -e "  Installiere Python-Abhaengigkeiten aus requirements.txt..."
-        pip3 install --user -r requirements.txt 2>&1 | tail -3 && PIP_OK=1 || PIP_OK=0
-    fi
+    PIP_CMD="pip3"
 elif command -v pip &>/dev/null; then
-    if [ -f "requirements.txt" ]; then
-        echo -e "  Installiere Python-Abhaengigkeiten aus requirements.txt..."
-        pip install --user -r requirements.txt 2>&1 | tail -3 && PIP_OK=1 || PIP_OK=0
-    fi
+    PIP_CMD="pip"
 fi
 
-if [ "$PIP_OK" -eq 1 ]; then
-    echo -e "${GREEN}Abhaengigkeiten aktualisiert${NC}"
+MISSING_DEP=0
+if [ -f "requirements.txt" ]; then
+    if [ -n "$PIP_CMD" ]; then
+        if [ "$IN_CONTAINER" -eq 1 ]; then
+            # Docker-Container: fehlende Pakete systemweit installieren. Der
+            # Container laeuft als root, damit landen Pakete in den Site-Packages
+            # und sind sofort importierbar. Bereits installierte Pakete werden
+            # von pip uebersprungen – funktioniert dadurch auch fuer bestehende
+            # Installationen (neue Pakete in requirements.txt werden nachgezogen).
+            echo -e "  Docker-Container erkannt – installiere fehlende Pakete systemweit (${CYAN}$PIP_CMD install -r requirements.txt${NC})..."
+            "$PIP_CMD" install --no-cache-dir --upgrade pip setuptools 2>&1 | tail -3 || true
+            if "$PIP_CMD" install --no-cache-dir -r requirements.txt 2>&1; then
+                echo -e "${GREEN}Abhaengigkeiten aktualisiert${NC}"
+            else
+                echo -e "${RED}FEHLER: pip install -r requirements.txt fehlgeschlagen.${NC}"
+                MISSING_DEP=1
+            fi
+        else
+            echo -e "  Installiere Python-Abhaengigkeiten aus requirements.txt..."
+            if "$PIP_CMD" install --user -r requirements.txt 2>&1 | tail -3; then
+                echo -e "${GREEN}Abhaengigkeiten aktualisiert${NC}"
+            else
+                echo -e "${YELLOW}pip install fehlgeschlagen – bitte manuell: pip install -r requirements.txt${NC}"
+                MISSING_DEP=1
+            fi
+        fi
+    else
+        echo -e "${YELLOW}pip nicht gefunden – pruefe Installation direkt...${NC}"
+    fi
+
+    # Verifikation: alle benoetigten Pakete wirklich importierbar?
+    if [ "$MISSING_DEP" -eq 0 ]; then
+        if verify_python_deps "requirements.txt"; then
+            echo -e "${GREEN}Alle Python-Abhaengigkeiten sind installiert.${NC}"
+        else
+            echo -e "${RED}FEHLER: Fehlende Python-Pakete erkannt.${NC}"
+            MISSING_DEP=1
+        fi
+    fi
 else
-    echo -e "${YELLOW}pip nicht gefunden oder requirements.txt fehlt – bitte manuell installieren: pip install -r requirements.txt${NC}"
+    echo -e "${YELLOW}requirements.txt fehlt – bitte manuell installieren: pip install -r requirements.txt${NC}"
+    MISSING_DEP=1
 fi
 
 if [ -d "$BACKUP_DIR/data" ]; then
@@ -195,6 +302,23 @@ if [ "$STASHED" -eq 1 ]; then
 fi
 
 chmod +x wiki.sh start.sh tools/*.sh update.sh clean_release.sh 2>/dev/null || true
+
+# Falls Python-Abhaengigkeiten fehlen, wird KEIN Neustart ausgeloest: sonst
+# startet der Server mit dem neuen Code und stuerzt beim Import ab. Der alte
+# (laufende) Prozess bleibt erreichbar und der Fehler ist in der Logdatei
+# nachvollziehbar.
+if [ "$MISSING_DEP" -eq 1 ]; then
+    echo ""
+    echo -e "${RED}===========================================================${NC}"
+    echo -e "${RED}Update abgebrochen: Python-Abhaengigkeiten fehlen.${NC}"
+    echo -e "${RED}Der Webserver wurde NICHT neu gestartet.${NC}"
+    echo ""
+    echo -e "${RED}  Logdatei:        ${LOG_FILE}${NC}"
+    echo -e "${RED}  Manuell install: pip install -r requirements.txt${NC}"
+    echo -e "${RED}  Danach starten:  ./start.sh (bzw. docker restart llmwiking_app)${NC}"
+    echo -e "${RED}===========================================================${NC}"
+    exit 1
+fi
 
 # WICHTIG: Nach git reset --hard liegt der NEUE Code auf der Platte, aber der
 # laufende uvicorn-Prozess hat den ALTEN Code noch im Speicher. Ohne Neustart

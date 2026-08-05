@@ -2132,10 +2132,13 @@ Willkommen im Wiki **{name}**.
         old_version = version_file.read_text(encoding="utf-8").strip() if version_file.exists() else "unbekannt"
 
         from core.config import DATA_DIR
+        from core.config import rotate_update_log
         log_file = DATA_DIR / "update.log"
 
         try:
             DATA_DIR.mkdir(parents=True, exist_ok=True)
+            # Vorheriges Log als Historie erhalten (update.log wird nie geloescht).
+            rotate_update_log(log_file, DATA_DIR)
             log_file.write_text("", encoding="utf-8")
 
             proc = subprocess.run(
@@ -2160,6 +2163,7 @@ Willkommen im Wiki **{name}**.
             lines = ["# Update-Ergebnis\n"]
             lines.append(f"- **Alte Version:** {old_version}")
             lines.append(f"- **Neue Version:** {new_version}")
+            lines.append(f"- **Erfolgreich:** {'Ja' if proc.returncode == 0 else 'NEIN – Logdatei pruefen: data/update.log'}")
             lines.append(f"- **Update ausgefuehrt:** {'Ja' if old_version != new_version else 'Keine Aenderung'}")
             if clean_output.strip():
                 lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")
@@ -2183,9 +2187,12 @@ Willkommen im Wiki **{name}**.
             return "FEHLER: update.sh nicht im Projekt-Stammverzeichnis gefunden."
 
         from core.config import DATA_DIR as _DATA_DIR
+        from core.config import rotate_update_log
         version_file_stream = PROJECT_ROOT / "VERSION"
         old_version = version_file_stream.read_text(encoding="utf-8").strip() if version_file_stream.exists() else "unbekannt"
         log_file = _DATA_DIR / "update.log"
+        # Vorheriges Log als Historie erhalten (update.log wird nie geloescht).
+        rotate_update_log(log_file, _DATA_DIR)
         log_file.write_text("Starte Update via MCP Stream...\n", encoding="utf-8")
 
         try:
@@ -2221,6 +2228,7 @@ Willkommen im Wiki **{name}**.
             lines = ["# Update-Ergebnis (Streamed)\n"]
             lines.append(f"- **Alte Version:** {old_version}")
             lines.append(f"- **Neue Version:** {new_version}")
+            lines.append(f"- **Erfolgreich:** {'Ja' if process.returncode == 0 else 'NEIN – Logdatei pruefen: data/update.log'}")
             lines.append(f"- **Update ausgefuehrt:** {'Ja' if old_version != new_version else 'Keine Aenderung'}")
             if clean_output.strip():
                 lines.append(f"\n## Output\n\n```\n{clean_output[:5000]}\n```")

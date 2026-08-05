@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +40,35 @@ LANG_DIR = PROJECT_ROOT / "lang"
 SCRATCH_DIR = PROJECT_ROOT / "scratch"
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 DATA_DIR = PROJECT_ROOT / "data"
+
+
+def rotate_update_log(log_file: Path, data_dir: Path | None = None) -> None:
+    """Sichert eine bestehende update.log als datierte Historie statt sie zu löschen.
+
+    Die Logdatei eines fehlgeschlagenen Updates bleibt so nachvollziehbar.
+    Es werden die letzten 10 Verlaufsdateien behalten, ältere entfernt.
+    """
+    data_dir = data_dir or DATA_DIR
+    try:
+        if log_file.exists() and log_file.stat().st_size > 0:
+            stamp = time.strftime("%Y%m%d-%H%M%S")
+            hist = log_file.with_name(f"update-{stamp}.log")
+            # Kollisionsschutz: mehrere Updates in derselben Sekunde
+            # bekommen einen Zaehler-Suffix (update-...-2.log, -3.log, ...).
+            n = 1
+            while hist.exists():
+                n += 1
+                hist = log_file.with_name(f"update-{stamp}-{n}.log")
+            log_file.rename(hist)
+        history = sorted(data_dir.glob("update-*.log"))
+        for old in history[:-10]:
+            try:
+                old.unlink()
+            except OSError:
+                pass
+    except OSError:
+        pass
+
 
 # Projekt Matrix – persistente Volltextsuche (SQLite-Shards auf NAS)
 MATRIX_DATA_ROOT = Path(os.getenv("MATRIX_DATA_ROOT", str(DATA_DIR / "matrix")))

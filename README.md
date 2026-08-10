@@ -1,3 +1,5 @@
+
+
 # LLMWikiNG (OKF Edition)
 
 A complete pattern for building and maintaining a personal knowledge base (wiki) following the standardized [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) (developed by Google Cloud), using local LLMs and agents. Inspired by Andrej Karpathy's LLM-Wiki pattern.
@@ -45,6 +47,7 @@ The CLI script `wiki.sh` bundles all operations for managing the wiki:
 *   `./wiki.sh watcher` – Starts the background file watcher (watchdog) for auto-sync on file changes.
 *   `./wiki.sh history <page>` – Shows the version history of a wiki page (date-based, no Git required).
 *   `./wiki.sh update` – Performs a self-update via GitHub (`git fetch origin && git reset --hard origin/main`).
+*   `./wiki.sh reset [--yes]` – Resets the entire wiki to factory state, deleting all pages, raw data, and exports. Use `--yes` for non-interactive execution.
 *   `./wiki.sh reindex` – Rebuilds the BM25 search index.
 *   `./wiki.sh --wiki <slug>` – Run any command against a specific wiki slug.
 *   `./wiki.sh help` – Shows the help page with all commands.
@@ -717,7 +720,7 @@ The settings of the LLM backend can be controlled via environment variables or s
 
 ```bash
 # Example: use a different model or backend
-LLM_BACKEND=ollama OLLAMA_MODEL=llama3:8b ./wiki.sh ingest file.md
+LLM_BACKEND=ollama OLLAMA_MODEL=llama3.2:3b ./wiki.sh ingest file.md
 ```
 
 *   `LLM_BACKEND`: `ollama`, `agy`, or `opencode` (default: `ollama`)

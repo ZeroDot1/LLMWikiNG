@@ -4,6 +4,8 @@
 
 A complete pattern for building and maintaining a personal knowledge base (wiki) following the standardized [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) (developed by Google Cloud), using local LLMs and agents. Inspired by Andrej Karpathy's LLM-Wiki pattern.
 
+[![OKF BundleDex](https://bundledex.net/static-badge.svg)](https://bundledex.net)
+
 **Author:** ZeroDot1
 
 *A big thank you to [tevsa](https://github.com/tevsa) for the great idea and support!*

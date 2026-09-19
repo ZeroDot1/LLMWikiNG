@@ -5,6 +5,17 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3] - 2026-09-19
+
+### Fixed
+- Wiki creation through the WebUI settings endpoint now validates without creating a directory and correctly persists wiki metadata.
+- REST API and MCP-created wikis now include an immediately usable OKF v0.2 `index.md` and `log.md` scaffold.
+- Requests targeting unknown wikis through the REST API or MCP no longer create empty wiki directories.
+- About-page metadata now consistently reports OKF v0.2 and the current MCP tool count.
+
+### Changed
+- Added regression coverage for WebUI, API, and MCP wiki-creation flows.
+
 ## [3.1.2] - 2026-09-19
 
 ### Added

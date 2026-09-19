@@ -2,7 +2,7 @@
 
 # LLMWikiNG (OKF Edition)
 
-**Current release: 3.1.2**
+**Current release: 3.1.3**
 
 The current release supports OKF v0.2 ingestion through the WebUI, REST API, and MCP, including EPUB and PDF source files.
 

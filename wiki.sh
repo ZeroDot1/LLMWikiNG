@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-VERSION="3.1.2"
+VERSION="3.1.3"
 
 
 WIKI_SLUG="${WIKI_SLUG:-main}"

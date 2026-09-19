@@ -307,14 +307,22 @@ if _MCP_AVAILABLE:
             root.mkdir(parents=True, exist_ok=True)
             save_wiki_meta(slug, name, description)
             index_content = f"""---
-type: System
-title: "Index"
+okf_version: "0.2"
 ---
 # {name}
 
 Willkommen im Wiki **{name}**.
 """
             (root / "index.md").write_text(index_content, encoding="utf-8")
+            log_content = f"""---
+okf_version: "0.2"
+---
+# Wiki-Aktivitätslogbuch
+
+## {datetime.datetime.now(datetime.timezone.utc).date().isoformat()}
+- **Create**: Wiki '{name}' via MCP angelegt
+"""
+            (root / "log.md").write_text(log_content, encoding="utf-8")
             try:
                 from services.audit import log_action
                 log_action(

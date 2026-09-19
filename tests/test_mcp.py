@@ -171,7 +171,11 @@ class TestMcpToolsOkfCreateWiki:
         # wiki_path() auto-creates dirs, daher kann "existiert bereits" kommen
         assert "erfolgreich erstellt" in result or "existiert bereits" in result
         # In jedem Fall sollte das Verzeichnis existieren
-        assert (mcp_wiki / "wikis" / "mein-test").exists()
+        wiki_dir = mcp_wiki / "wikis" / "mein-test"
+        assert (wiki_dir / "index.md").exists()
+        assert (wiki_dir / "log.md").exists()
+        assert 'okf_version: "0.2"' in (wiki_dir / "index.md").read_text(encoding="utf-8")
+        assert 'okf_version: "0.2"' in (wiki_dir / "log.md").read_text(encoding="utf-8")
 
     def test_rejects_duplicate_slug(self, mcp_wiki: Path):
         """Sollte doppelten Slug ablehnen."""

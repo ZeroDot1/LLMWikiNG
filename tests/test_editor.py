@@ -31,6 +31,15 @@ class TestEnsureOwfFrontmatter:
         assert "updated_by:" in result
         assert result.rstrip().endswith("Content")
 
+    def test_generates_tags_for_existing_okf_without_tags(self):
+        from services.editor import ensure_okf_frontmatter
+        content = "---\ntype: Reference\ntitle: Matrix Search\n---\n\nSQLite Matrix search and OKF indexing."
+        result = ensure_okf_frontmatter(content)
+        assert "tags:" in result
+        assert "matrix" in result
+        assert "status: stable" in result
+        assert "generated:" in result
+
     def test_adds_type_to_existing_frontmatter_without_type(self):
         from services.editor import ensure_okf_frontmatter
         content = "---\ntitle: \"No Type\"\n---\n\nContent"

@@ -63,6 +63,18 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
         try:
             fm_data = yaml.safe_load(fm_text)
             if isinstance(fm_data, dict) and "type" in fm_data:
+                # User-authored OKF is valid even without tags, but every
+                # write path must apply the same automatic tag policy.
+                if not fm_data.get("tags"):
+                    from services.tags import extract_tags, auto_generate_tags_for_content
+                    detected = extract_tags(content)
+                    if not detected:
+                        detected = auto_generate_tags_for_content(
+                            content, title=title or fm_data.get("title", "")
+                        )
+                    fm_data["tags"] = detected
+                    new_fm = yaml.dump(fm_data, sort_keys=False, allow_unicode=True)
+                    content = f"---\n{new_fm}---\n{content[fm_match.end():]}"
                 return update_content_hash(content, updated_by=updated_by)
         except yaml.YAMLError:
             pass

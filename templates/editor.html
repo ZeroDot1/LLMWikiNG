@@ -11,7 +11,8 @@
 {% endif %}
 
 <form id="editor-form" action="{{ base_path }}/edit/save" method="POST" class="space-y-4">
-    <input type="hidden" name="folder" value="{{ folder }}">
+    <input type="hidden" name="folder" value="{{ editor_folder }}">
+    <input type="hidden" name="wiki" value="{{ editor_wiki }}">
     <div>
         <label for="filename-input" class="block font-bold mb-1 text-text">{{ _('editor.filename_label') }}</label>
         <input type="text" id="filename-input" name="filename" value="{{ filename }}" placeholder="{{ _('editor.filename_placeholder') }}" required

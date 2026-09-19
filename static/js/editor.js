@@ -140,11 +140,14 @@
       const folderInput = form.querySelector("[name=folder]");
       const wikiInput = form.querySelector("[name=wiki]");
       const clientHashInput = form.querySelector("[name=client_hash]");
+      const selectedWiki = new URLSearchParams(window.location.search).get("wiki");
 
       const payload = {
         filename: filenameInput ? filenameInput.value : "",
         folder: folderInput ? folderInput.value : "wiki",
-        wiki: wikiInput ? wikiInput.value : "",
+        // A query-string fallback keeps saves scoped correctly if a cached
+        // editor form predates the hidden wiki field.
+        wiki: (wikiInput && wikiInput.value) || selectedWiki || "",
         content: edM.value,
         client_hash: clientHashInput ? clientHashInput.value : null,
       };

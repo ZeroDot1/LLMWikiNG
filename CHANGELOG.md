@@ -5,6 +5,11 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-09-19
+
+### Fixed
+- The browser editor now retains the selected wiki when saving a page, preventing multi-wiki edits from being written to the default wiki.
+
 ## [3.2.0] - 2026-09-19
 
 ### Added

@@ -2180,6 +2180,8 @@ def edit_get(request: Request):
         filename=filename,
         content=content,
         folder=folder,
+        editor_folder=folder,
+        editor_wiki=wiki,
         app_version=APP_VERSION,
         python_version=sys.version.split()[0],
         markdown_version=_pv("markdown"),

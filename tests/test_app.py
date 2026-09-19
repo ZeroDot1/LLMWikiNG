@@ -173,6 +173,17 @@ class TestWikiSettingsApi:
         assert 'okf_version: "0.2"' in (wiki_dir / "index.md").read_text(encoding="utf-8")
         assert 'okf_version: "0.2"' in (wiki_dir / "log.md").read_text(encoding="utf-8")
 
+    def test_editor_preserves_selected_wiki(self, auth_cookie):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
+        response = client.get("/LLMWikiNG/edit?wiki=other-wiki")
+        assert response.status_code == 200
+        assert 'name="wiki" value="other-wiki"' in response.text
+        assert 'name="folder" value="wiki"' in response.text
+
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient
         from main import create_app

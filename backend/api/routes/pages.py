@@ -1066,6 +1066,7 @@ async def search(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     query = request.query_params.get("q", "").strip()
     tag_filter = request.query_params.get("tag", "").strip()
+    include_raw = request.query_params.get("raw") == "1"
     results = []
     error = None
     sync_hint = False
@@ -1166,15 +1167,20 @@ async def search(request: Request):
             sync_hint = True
 
         raw_mentions_count = 0
-        if RAW_DIR.exists():
-            for f in RAW_DIR.iterdir():
+        if include_raw and RAW_DIR.exists():
+            scanned_bytes = 0
+            for f in sorted(RAW_DIR.iterdir())[:100]:
                 if f.is_file() and f.suffix in (".md", ".txt"):
                     try:
+                        size = f.stat().st_size
+                        if scanned_bytes + size > 2_000_000:
+                            break
                         content = f.read_text(encoding="utf-8", errors="replace").lower()
+                        scanned_bytes += size
                         if query.lower() in content:
                             raw_mentions_count += 1
-                    except Exception:
-                        pass
+                    except OSError:
+                        continue
 
         target_slug = slugify_german(query)
         if wiki == "all":
@@ -1209,6 +1215,7 @@ async def search(request: Request):
         raw_mentions_count=raw_mentions_count if query else 0,
         slug_exists=slug_exists if query else False,
         available_tags=available_tags, tag_filter=_tag_filter,
+        include_raw=include_raw,
         search_time_ms=search_time_ms, shards_queried=shards_queried,
     )
 

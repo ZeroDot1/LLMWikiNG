@@ -29,6 +29,10 @@
                 {% endfor %}
             </select>
             {% endif %}
+            <label class="flex items-center gap-1.5 px-1 text-xs text-text-secondary whitespace-nowrap">
+                <input type="checkbox" name="raw" value="1" {% if include_raw %}checked{% endif %}>
+                {{ _('search.include_raw_sources') }}
+            </label>
             <button type="submit" class="rounded-lg bg-primary px-5 py-2.5 text-white hover:bg-primary-hover whitespace-nowrap">{{ _('search.button') }}</button>
         </div>
     </form>

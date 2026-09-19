@@ -26,8 +26,8 @@ class TestWikiCache:
         cache = WikiCache()
         assert cache.get("nonexistent", tmp_path) is None
 
-    def test_cache_invalidated_by_file_change(self, tmp_path):
-        """Cache-Eintrag sollte ungültig werden, wenn sich Dateien ändern."""
+    def test_cache_invalidated_explicitly_after_file_change(self, tmp_path):
+        """Mutations invalidate the affected cache key without a directory scan."""
         cache = WikiCache(max_age_seconds=300)
         (tmp_path / "test.md").write_text("original")
         cache.set("key1", [1, 2, 3], tmp_path)
@@ -35,17 +35,19 @@ class TestWikiCache:
         # Noch gültig
         assert cache.get("key1", tmp_path) == [1, 2, 3]
 
-        # Datei ändern → Cache ungültig
+        # A writer changes the file and invalidates its affected cache key.
         (tmp_path / "test.md").write_text("modified")
+        cache.invalidate("key1")
         assert cache.get("key1", tmp_path) is None
 
-    def test_cache_invalidated_by_new_file(self, tmp_path):
+    def test_cache_invalidated_explicitly_after_new_file(self, tmp_path):
         cache = WikiCache(max_age_seconds=300)
         cache.set("key1", "value", tmp_path)
         assert cache.get("key1", tmp_path) == "value"
 
-        # Neue Datei hinzufügen
+        # A writer adds a file and invalidates its affected cache prefix.
         (tmp_path / "new.md").write_text("new")
+        cache.invalidate_prefix("key")
         assert cache.get("key1", tmp_path) is None
 
     def test_cache_expires_by_time(self, tmp_path):
@@ -87,11 +89,11 @@ class TestWikiCache:
         assert stats["entries"] == 2
         assert set(stats["keys"]) == {"a", "b"}
 
-    def test_empty_directory_fingerprint(self):
+    def test_cache_get_does_not_walk_directory(self, tmp_path, monkeypatch):
         cache = WikiCache()
-        # Non-existent directory
-        fp = cache._dir_fingerprint(Path("/nonexistent/path"))
-        assert fp == "empty"
+        cache.set("key", "value", tmp_path)
+        monkeypatch.setattr(Path, "rglob", lambda *_: (_ for _ in ()).throw(AssertionError()))
+        assert cache.get("key", tmp_path) == "value"
 
     def test_cache_none_value(self, tmp_path):
         """None-Werte sollten korrekt gespeichert/abgerufen werden."""

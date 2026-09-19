@@ -1,15 +1,10 @@
 # LLMWikiNG – Copyright (C) 2026 ZeroDot1
 # Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""LLMWikiNG – Zentrales In-Memory-Cache-System.
-
-Verwendet dateibasierte Invalidierung via mtime-Prüfung.
-Kein externer Cache-Server nötig – läuft direkt im FastAPI-Prozess.
-"""
+"""LLMWikiNG – central in-memory cache with explicit invalidation and TTL."""
 
 from __future__ import annotations
 
-import hashlib
 import threading
 import time
 from pathlib import Path
@@ -17,66 +12,39 @@ from typing import Any, Callable, Optional
 
 
 class WikiCache:
-    """Thread-sicherer In-Memory-Cache mit mtime-basierter Invalidierung.
+    """Thread-safe cache whose hot path performs no filesystem traversal.
 
-    Jeder Cache-Eintrag wird gegen den aktuellen mtime-Fingerabdruck des
-    Wiki-Verzeichnisses validiert. Ändert sich eine Datei, wird der gesamte
-    Wiki-Cache für diesen Key automatisch invalidiert.
+    Mutating services explicitly invalidate affected prefixes.  The TTL is a
+    safety net for direct filesystem edits and separate processes.
     """
 
     def __init__(self, max_age_seconds: int = 300) -> None:
         """Erstellt einen neuen Cache.
 
         Args:
-            max_age_seconds: Maximales Alter eines Cache-Eintrags in Sekunden
-                             (Fallback, falls mtime-Check nicht möglich).
+            max_age_seconds: Maximum age of an entry as a direct-edit fallback.
         """
-        self._store: dict[str, dict[str, Any]] = {}  # key -> {value, ts, fingerprint}
+        self._store: dict[str, dict[str, Any]] = {}  # key -> {value, ts}
         self._lock = threading.RLock()
         self._max_age = max_age_seconds
 
-    def _dir_fingerprint(self, directory: Path) -> str:
-        """Berechnet einen Fingerabdruck eines Verzeichnisses basierend auf
-        den mtime-Werten aller .md-Dateien. O(n) aber sehr schnell (nur stat()).
-        """
-        if not directory.exists():
-            return "empty"
-        try:
-            parts = []
-            for f in sorted(directory.rglob("*.md")):
-                try:
-                    parts.append(f"{f.name}:{f.stat().st_mtime_ns}")
-                except OSError:
-                    pass
-            raw = "|".join(parts)
-            return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()[:16]
-        except Exception:
-            return str(time.time())
-
     def get(self, key: str, directory: Path) -> Optional[Any]:
-        """Gibt den Cache-Wert zurück oder None falls abgelaufen/ungültig."""
+        """Return a value unless it is expired; ``directory`` is API-compatible."""
         with self._lock:
             entry = self._store.get(key)
             if entry is None:
                 return None
-            # Zeitbasierter Fallback-Check
             if time.monotonic() - entry["ts"] > self._max_age:
-                del self._store[key]
-                return None
-            # mtime-Fingerprint-Check (präziser als Zeit-TTL)
-            current_fp = self._dir_fingerprint(directory)
-            if current_fp != entry["fingerprint"]:
                 del self._store[key]
                 return None
             return entry["value"]
 
     def set(self, key: str, value: Any, directory: Path) -> None:
-        """Speichert einen Wert mit aktuellem Fingerabdruck."""
+        """Store a value; callers invalidate affected keys after mutations."""
         with self._lock:
             self._store[key] = {
                 "value": value,
                 "ts": time.monotonic(),
-                "fingerprint": self._dir_fingerprint(directory),
             }
 
     def invalidate(self, key: str) -> None:

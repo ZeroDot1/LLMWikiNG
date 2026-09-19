@@ -27,6 +27,10 @@
 
   function htmlToMarkdown(html) {
     let md = html;
+    // The Markdown renderer adds these accessibility/permalink anchors to
+    // headings. They are presentation-only and must not be saved as content.
+    md = md.replace(/<a[^>]+href="# [^"]*"[^>]*>¶<\/a>/gi, "");
+    md = md.replace(/<a[^>]+href="#[^"]*"[^>]*>¶<\/a>/gi, "");
     md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, function (m, c) {
       return "\n" + c.trim().split(/<br\s*\/?>|\n/gi).map(function (l) { return "> " + l.replace(/<[^>]+>/g, "").trim(); }).join("\n") + "\n\n";
     });

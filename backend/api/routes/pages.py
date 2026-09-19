@@ -2192,6 +2192,8 @@ async def edit_save(request: Request):
 
     filename = str(payload.get("filename") or "").strip()
     content = str(payload.get("content") or "")
+    # Heading permalink anchors are renderer output, not authored Markdown.
+    content = re.sub(r"\[¶\]\(#[^)]+\)", "", content)
     folder = str(payload.get("folder") or "wiki")
     wiki = str(request.query_params.get("wiki") or payload.get("wiki") or _default_wiki())
     force = bool(payload.get("force"))

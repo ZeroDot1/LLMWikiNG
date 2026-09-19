@@ -41,7 +41,12 @@ function hideLoader() {
 
 function showLoaderError(msg) {
   const el = document.getElementById("network-loader");
-  if (el) el.innerHTML = `<p style="color:#f56c6c;font-size:13px">⚠️ ${msg}</p>`;
+  if (!el) return;
+  const message = document.createElement("p");
+  message.style.color = "#f56c6c";
+  message.style.fontSize = "13px";
+  message.textContent = `⚠️ ${String(msg || "Unknown error")}`;
+  el.replaceChildren(message);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

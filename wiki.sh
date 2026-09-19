@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-VERSION="3.1.0"
+VERSION="3.1.1"
 
 
 WIKI_SLUG="${WIKI_SLUG:-main}"
@@ -360,8 +360,8 @@ ingest_wiki() {
 
     if [ -z "$SOURCE_FILE" ]; then
         echo -e "${RED}❌ Fehler: Keine Quelldatei angegeben.${NC}"
-        echo "Usage: $0 ingest /pfad/zur/quelldatei.md"
-        echo "       $0 ingest /pfad/zur/quelldatei.md --title \"Mein Titel\""
+        echo "Usage: $0 ingest /pfad/zur/quelldatei.(md|txt|pdf|epub)"
+        echo "       $0 ingest /pfad/zur/quelldatei.epub --title \"Mein Titel\""
         exit 1
     fi
 
@@ -392,12 +392,61 @@ ingest_wiki() {
     echo -e "${GREEN}✓ Quelle archiviert: $RAW_PATH${NC}"
 
     local SOURCE_TEXT
-    SOURCE_TEXT=$(cat "$SOURCE_FILE")
+    # EPUB/PDF are binary formats and must be converted before cleaning,
+    # chunking, tagging, and LLM summarisation. Plain text remains lossless.
+    SOURCE_TEXT=$(python3 - "$SOURCE_FILE" <<'PY'
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+suffix = path.suffix.lower()
+
+if suffix == ".pdf":
+    try:
+        result = subprocess.run(
+            ["pdftotext", "-layout", str(path), "-"],
+            check=True, capture_output=True, text=True,
+        )
+        text = result.stdout
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise SystemExit(f"PDF extraction failed: {exc}")
+elif suffix == ".epub":
+    try:
+        from ebooklib import epub, ITEM_DOCUMENT
+        from html import unescape
+        book = epub.read_epub(str(path))
+        parts = []
+        for item in book.get_items_of_type(ITEM_DOCUMENT):
+            html = item.get_content().decode("utf-8", errors="replace")
+            html = re.sub(r"<(script|style)\\b[^>]*>.*?</\\1>", " ", html, flags=re.I | re.S)
+            html = re.sub(r"<br\\s*/?>", "\\n", html, flags=re.I)
+            html = re.sub(r"</(p|div|h[1-6]|li|section|article|blockquote)>", "\\n\\n", html, flags=re.I)
+            plain = re.sub(r"<[^>]+>", " ", html)
+            plain = unescape(plain)
+            plain = re.sub(r"[ \\t]+", " ", plain)
+            plain = re.sub(r"\\n{3,}", "\\n\\n", plain).strip()
+            if plain:
+                parts.append(plain)
+        text = "\\n\\n".join(parts)
+    except Exception as exc:
+        raise SystemExit(f"EPUB extraction failed: {exc}")
+else:
+    text = path.read_text(encoding="utf-8", errors="replace")
+
+print(text)
+PY
+    )
 
     local PAGE_TITLE="$CUSTOM_TITLE"
     if [ -z "$PAGE_TITLE" ]; then
-        # Erste Überschrift aus der Datei verwenden
-        PAGE_TITLE=$(head -1 "$SOURCE_FILE" | sed 's/^#\+\s*//; s/^# //' || echo "$SOURCE_BASENAME")
+        # Erste Markdown-Überschrift, danach erste sinnvolle Textzeile.
+        PAGE_TITLE=$(printf '%s\n' "$SOURCE_TEXT" | sed -n -E 's/^#[[:space:]]+//p' | head -1)
+        if [ -z "$PAGE_TITLE" ]; then
+            PAGE_TITLE=$(printf '%s\n' "$SOURCE_TEXT" | sed '/^[[:space:]]*$/d' | head -1 | cut -c1-200)
+        fi
+        PAGE_TITLE="${PAGE_TITLE:-$SOURCE_BASENAME}"
     fi
 
     # Entfernt Navigation/Menü-Reste und repariert durch Zeilenumbrüche
@@ -407,9 +456,9 @@ ingest_wiki() {
 import sys, json
 sys.path.insert(0, '$PROJECT_ROOT/backend')
 from services.wiki import clean_ingest_content
-text = open('$SOURCE_FILE', encoding='utf-8').read()
+text = sys.stdin.read()
 print(clean_ingest_content(text, '''$PAGE_TITLE'''))
-" 2>/dev/null)
+" <<< "$SOURCE_TEXT" 2>/dev/null)
 
     if [ -n "$CLEANED_TEXT" ]; then
         SOURCE_TEXT="$CLEANED_TEXT"

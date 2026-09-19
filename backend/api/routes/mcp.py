@@ -69,7 +69,9 @@ import functools
 import inspect
 import json
 import os
+from pathlib import Path
 import re
+import shutil
 import subprocess
 import yaml
 
@@ -938,6 +940,44 @@ Willkommen im Wiki **{name}**.
                 return f"Fehler beim Ingest: {result.stderr.strip()}"
         except Exception as e:
             return f"Fehler beim Ingest: {e}"
+
+    @mcp_server.tool()
+    @_require_tool("okf_ingest_file")
+    def okf_ingest_file(filepath: str, wiki: str = "main", title: str = "") -> str:
+        """Ingest a local Markdown, text, PDF, or EPUB file into a wiki."""
+        slug = slugify_wiki(wiki)
+        root = wiki_path(slug)
+        if not root.exists():
+            return f"Wiki '{wiki}' nicht gefunden."
+        source = Path(os.path.abspath(os.path.expanduser(filepath)))
+        if not source.is_file():
+            return f"Quelldatei nicht gefunden: {filepath}"
+        if source.suffix.lower() not in {".md", ".markdown", ".txt", ".pdf", ".epub"}:
+            return "Nicht unterstütztes Format. Erlaubt sind Markdown, TXT, PDF und EPUB."
+
+        upload_dir = RAW_DIR / ".mcp-upload"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", source.name)
+        temp_path = upload_dir / safe_name
+        shutil.copy2(source, temp_path)
+        env = os.environ.copy()
+        env.update({"WIKI_DIR": str(root), "RAW_DIR": str(RAW_DIR), "PROJECT_ROOT": str(PROJECT_ROOT)})
+        try:
+            cmd = ["./wiki.sh", "ingest", str(temp_path)]
+            if title:
+                cmd += ["--title", re.sub(r"[\x00-\x1f\x7f]", "", title)[:200]]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, cwd=str(PROJECT_ROOT), env=env)
+            if result.returncode != 0:
+                return f"Fehler beim Datei-Ingest: {result.stderr.strip() or result.stdout.strip()}"
+            request_sync_background(slug)
+            return (f"Datei erfolgreich ingesti: {source.name}\nWiki: {wiki}\n"
+                    f"OKF: v0.2; automatische Tags und Synchronisierung gestartet.")
+        except subprocess.TimeoutExpired:
+            return "Fehler beim Datei-Ingest: Timeout nach 600 Sekunden."
+        except Exception as exc:
+            return f"Fehler beim Datei-Ingest: {exc}"
+        finally:
+            temp_path.unlink(missing_ok=True)
 
     @mcp_server.tool()
     @_require_tool("okf_search")

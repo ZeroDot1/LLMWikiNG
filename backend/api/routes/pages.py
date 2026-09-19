@@ -1180,7 +1180,7 @@ async def search(request: Request):
         if wiki == "all":
             all_slugs = set()
             for w in list_wikis():
-                all_slugs.update(p["slug"] for p in get_all_wiki_pages(w["name"]))
+                all_slugs.update(p["slug"] for p in get_all_wiki_pages(w["slug"]))
             slug_exists = target_slug in all_slugs
         else:
             slug_exists = target_slug in {p["slug"] for p in get_all_wiki_pages(wiki)}

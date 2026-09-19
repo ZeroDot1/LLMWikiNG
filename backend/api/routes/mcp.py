@@ -223,7 +223,7 @@ except ImportError:
 def _ensure_wiki_exists(wiki: str) -> str | None:
     """Prueft ob ein Wiki existiert. Gibt Fehlermeldung zurueck oder None."""
     slug = slugify_wiki(wiki)
-    root = wiki_path(slug)
+    root = wiki_path(slug, create=False)
     if not root.exists():
         return f"Wiki '{wiki}' nicht gefunden."
     return None
@@ -289,7 +289,7 @@ if _MCP_AVAILABLE:
 
         root = WIKIS_ROOT / slug
         existed = root.exists()
-        root = wiki_path(slug)
+        root = wiki_path(slug, create=False)
 
         if existed:
             try:
@@ -352,7 +352,7 @@ Willkommen im Wiki **{name}**.
             Bestaetigung der Aenderung.
         """
         slug = slugify_wiki(wiki)
-        root = wiki_path(slug)
+        root = wiki_path(slug, create=False)
         if not root.exists():
             return f"Wiki '{wiki}' nicht gefunden."
 
@@ -443,7 +443,7 @@ Willkommen im Wiki **{name}**.
             Eine geordnete Liste aller Seiten mit Titel, Typ und Slug.
         """
         slug = slugify_wiki(wiki)
-        root = wiki_path(slug)
+        root = wiki_path(slug, create=False)
         if not root.exists():
             return f"Wiki '{wiki}' nicht gefunden."
         pages = get_all_wiki_pages(slug)
@@ -574,7 +574,7 @@ Willkommen im Wiki **{name}**.
             Bestaetigung mit Pfad zur geschriebenen Datei.
         """
         wiki_slug = slugify_wiki(wiki)
-        root = wiki_path(wiki_slug)
+        root = wiki_path(wiki_slug, create=False)
         if not root.exists():
             return f"Wiki '{wiki}' not found."
 
@@ -893,7 +893,7 @@ Willkommen im Wiki **{name}**.
             Bestaetigung mit neuem Slug.
         """
         slug = slugify_wiki(wiki)
-        root = wiki_path(slug)
+        root = wiki_path(slug, create=False)
         if not root.exists():
             return f"Wiki '{wiki}' nicht gefunden."
 
@@ -946,7 +946,7 @@ Willkommen im Wiki **{name}**.
     def okf_ingest_file(filepath: str, wiki: str = "main", title: str = "") -> str:
         """Ingest a local Markdown, text, PDF, or EPUB file into a wiki."""
         slug = slugify_wiki(wiki)
-        root = wiki_path(slug)
+        root = wiki_path(slug, create=False)
         if not root.exists():
             return f"Wiki '{wiki}' nicht gefunden."
         source = Path(os.path.abspath(os.path.expanduser(filepath)))

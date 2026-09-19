@@ -419,8 +419,8 @@ class TestMcpToolsOkfWriteConcept:
             content="Test",
             wiki="truly-nonexistent",
         )
-        # wiki_path() erstellt dirs automatisch → Seite wird erstellt
-        assert "nicht gefunden" in result or "erfolgreich erstellt" in result
+        assert "not found" in result
+        assert not nonexistent.exists()
 
 
 class TestMcpToolsOkfDeletePage:

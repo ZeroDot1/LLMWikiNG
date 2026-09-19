@@ -154,7 +154,7 @@
     "tab_text": "📝 Text importieren",
     "tab_url_later": "🔗 URL für später merken",
     "tab_text_later": "✍️ Text für später merken",
-    "file_label": "Datei auswählen (Markdown, Text, etc.):",
+    "file_label": "Datei auswählen (Markdown, Text, PDF oder EPUB):",
     "title_optional": "Titel (optional, wird sonst aus Datei ermittelt):",
     "title_placeholder": "z. B. Arch Linux Installation",
     "backend_label": "LLM Backend:",

@@ -42,7 +42,7 @@
         {% endif %}
         <div>
             <label for="file" class="block font-medium mb-1">{{ _('ingest.file_label') }}</label>
-            <input type="file" id="file" name="file" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
+            <input type="file" id="file" name="file" accept=".md,.markdown,.txt,.pdf,.epub,text/markdown,text/plain,application/pdf,application/epub+zip" required class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
         </div>
         <div>
             <label for="file_title" class="block font-medium mb-1">{{ _('ingest.title_optional') }}</label>

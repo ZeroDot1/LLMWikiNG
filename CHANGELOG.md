@@ -48,8 +48,17 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-- *(keine Änderungen)*
+### Fixed
+- Broken relative Markdown links are reported by lint checks, and cross-wiki search consistently resolves wiki slugs instead of display names.
+- Matrix shard searches finalize outstanding SQLite tasks before event-loop shutdown.
+- Recoverable failures in linting, analytics, Matrix statistics, and synchronization are handled narrowly or logged instead of being silently discarded.
+
+### Changed
+- The status dashboard reuses a short-lived per-wiki snapshot for expensive health data.
+- Lint backlinks are calculated in linear time and markdown is loaded only once per lint run.
+- Cache hits no longer recursively scan wiki files; writers invalidate affected entries and TTL remains a direct-edit safety net.
+- Wiki analytics are cached and invalidated after synchronization.
+- Raw-source checks in the browser search are explicit and bounded to protect normal search latency.
 
 ## [3.1.1] - 2026-09-19
 

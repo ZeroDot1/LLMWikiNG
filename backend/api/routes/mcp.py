@@ -102,6 +102,7 @@ from services.sync import do_sync, do_sync_async, append_okf_log, request_sync_b
 from services.lint import run_lint
 from services.graph import build_graph_data
 from services.tags import build_tag_index, list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
+from services.okf import OKF_VERSION, validate_concept
 
 import frontmatter
 
@@ -535,8 +536,18 @@ Willkommen im Wiki **{name}**.
         concept_type: str = "Concept",
         agent_name: str = "MCP-Agent",
         force: bool = False,
+        sources: list[dict] | None = None,
+        generated_by: str = "",
+        status: str = "stable",
+        verified: list[dict] | dict | None = None,
+        stale_after: str = "",
+        runtime: str = "",
+        parameters: list[dict] | None = None,
+        computation: str = "",
+        executor: dict | None = None,
+        attester: dict | None = None,
     ) -> str:
-        """Erstellt oder aktualisiert eine Wiki-Seite nach OKF v0.1 Standard.
+        """Erstellt oder aktualisiert eine Wiki-Seite nach OKF v0.2 Standard.
 
         Die Seite erhaelt automatisch ein gueltiges YAML-Frontmatter mit
         dem Pflichtfeld 'type' gemaess Open Knowledge Format.
@@ -590,20 +601,48 @@ Willkommen im Wiki **{name}**.
                     f"Use force=True to overwrite."
                 )
 
-        post = frontmatter.Post(
-            content=content_body,
+        if status not in {"draft", "stable", "deprecated"}:
+            return "ERROR: status must be draft, stable, or deprecated."
+        if concept_type == "Attested Computation" and not runtime:
+            return "ERROR: Attested Computation requires runtime."
+
+        metadata = dict(
             type=concept_type,
             title=title,
             description=description,
             tags=tags or [],
+            generated={"by": generated_by or f"llmwiking/{APP_VERSION}", "at": now_iso},
+            status=status,
+        )
+        if sources:
+            metadata["sources"] = sources
+        if verified:
+            metadata["verified"] = verified
+        if stale_after:
+            metadata["stale_after"] = stale_after
+        if runtime:
+            metadata["runtime"] = runtime
+        if parameters:
+            metadata["parameters"] = parameters
+        if computation:
+            metadata["computation"] = computation
+        if executor:
+            metadata["executor"] = executor
+        if attester:
+            metadata["attester"] = attester
+        post = frontmatter.Post(
+            content=content_body,
+            **metadata,
             timestamp=now_iso,
             updated=now_iso,
             updated_by="mcp",
             content_hash=_content_hash,
             author=f"Agent ({agent_name})",
-            status="AI-Generated",
         )
         okf_content = frontmatter.dumps(post)
+        validation_errors = validate_concept(okf_content)
+        if validation_errors:
+            return "ERROR: invalid OKF v0.2 document: " + "; ".join(validation_errors)
 
         if existed:
             try:
@@ -646,7 +685,7 @@ Willkommen im Wiki **{name}**.
             f"OKF-Concept '{title}' erfolgreich {status}.\n"
             f"Pfad: wikis/{wiki_slug}/{raw_slug}.md\n"
             f"Typ: {concept_type}\n"
-            f"OKF v0.1 konform: Ja"
+            f"OKF v{OKF_VERSION} conformant: Yes"
         )
 
     @mcp_server.tool()
@@ -2758,4 +2797,3 @@ def get_mcp_combined_app():
         return None
 
     return mcp_server.sse_app()
-

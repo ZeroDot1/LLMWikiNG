@@ -343,7 +343,7 @@ class TestMcpToolsOkfWriteConcept:
             agent_name="TestAgent",
         )
         assert "erfolgreich erstellt" in result
-        assert "OKF v0.1 konform: Ja" in result
+        assert "OKF v0.2 conformant: Yes" in result
 
         # Datei existiert
         page_file = mcp_wiki / "wikis" / "main" / "neues-konzept.md"
@@ -354,7 +354,7 @@ class TestMcpToolsOkfWriteConcept:
         assert "type: Concept" in content
         assert "title: Neues Konzept" in content
         assert "Agent (TestAgent)" in content
-        assert "status: AI-Generated" in content
+        assert "status: stable" in content
 
     def test_updates_existing_page(self, mcp_wiki: Path):
         """Sollte eine vorhandene Seite aktualisieren."""
@@ -396,7 +396,9 @@ class TestMcpToolsOkfWriteConcept:
 
         assert post.get("type") == "Playbook"
         assert post.get("title") == "FM Test"
-        assert post.get("status") == "AI-Generated"
+        assert post.get("status") == "stable"
+        assert post.get("generated", {}).get("by")
+        assert post.get("generated", {}).get("at")
         assert "timestamp" in post.metadata
 
     def test_writes_to_nonexistent_wiki(self, mcp_wiki: Path):
@@ -1012,11 +1014,11 @@ class TestMcpApiKeyMiddleware:
             assert result.get("status") != 401
 
 
-# K. OKF v0.1-konforme Ausgabe
+# K. OKF v0.2-konforme Ausgabe
 
 
 class TestOkfCompliance:
-    """Tests fuer OKF v0.1 Konformitaet der MCP-Ausgabe."""
+    """Tests fuer OKF v0.2 Konformitaet der MCP-Ausgabe."""
 
     def test_write_produces_valid_okf(self, mcp_wiki: Path):
         """Geschriebene Seiten sollten OKF-konform sein."""
@@ -1042,7 +1044,9 @@ class TestOkfCompliance:
         assert post.get("type") == "Reference"
         assert post.get("title") == "OKF Test Seite"
         assert post.get("description") == "OKF Test"
-        assert post.get("status") == "AI-Generated"
+        assert post.get("status") == "stable"
+        assert post.get("generated", {}).get("by")
+        assert post.get("generated", {}).get("at")
         assert "timestamp" in post.metadata
 
         assert "# OKF Test Seite" in post.content

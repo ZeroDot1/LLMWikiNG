@@ -304,7 +304,7 @@ Once Funnel is active, configure your AI agent with your public Tailscale URL:
 
 ## 🤖 Model Context Protocol (MCP) & Open Knowledge Format (OKF)
 
-LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.1)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
+LLMWikiNG natively implements the **Open Knowledge Format (OKF v0.2)** for AI-assisted knowledge allocation. All pages are saved as open, portable Markdown files with standardized YAML frontmatter. This ensures complete human readability and prevents proprietary vendor lock-in.
 
 > 📘 **Full MCP integration guide:** See the in-wiki page **[LLMWikiNG MCP Server — Integration & Tool Reference](wikis/main/mcp-server-integration.md)** for a complete per-tool reference (47 tools) and copy-paste client setups for Cursor, OpenCode, Claude Desktop, and Antigravity `agy`.
 
@@ -563,7 +563,7 @@ MCP Prompts enable **slash-command autocomplete** in supporting clients (AGY, Op
 | `/update`, `/update-lwk`, `/updatelwk` | — | `okf_check_update()` + `okf_run_update()` |
 
 
-### 📄 OKF v0.1 Document Format
+### 📄 OKF v0.2 Document Format
 
 Every wiki page follows the Open Knowledge Format:
 

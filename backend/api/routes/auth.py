@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 import json
 import os
@@ -88,8 +88,6 @@ async def login_post(request: Request):
 
 
 def _set_session_and_redirect(user: dict, request: Request | None = None) -> RedirectResponse:
-    from fastapi.responses import RedirectResponse
-
     is_https = request.url.scheme == "https" if request else False
     resp = RedirectResponse(f"{BASE_PATH}/", status_code=303)
     resp.set_cookie(

@@ -8,7 +8,13 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- *(keine Änderungen bisher)*
+- *(keine Änderungen)*
+
+## [3.1.1] - 2026-09-19
+
+### Changed
+- **Per-user language preferences**: Authenticated users now store their language in their profile instead of relying on a shared global setting or browser cookies.
+- **Dokumentation**: README and language documentation now describe profile-based language preferences.
 
 ## [3.1.0] - 2026-08-04
 

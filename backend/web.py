@@ -56,12 +56,17 @@ def base_context(request: Request, wiki: str = "main") -> dict:
     """Globaler Template-Context (Sprache, App-Infos, Wiki-Liste, Sync-Status)."""
     from core.config import wiki_path
 
-    lang = resolve_lang(
-        request.query_params.get("lang"),
-        request.cookies.get("llmwiki_lang"),
-    )
-    _t = Translator(lang)
     current_user = get_current_user(request)
+    # Authenticated users always use their profile language. Cookies and the
+    # global default are only fallbacks for anonymous pages.
+    if current_user and current_user.get("language"):
+        lang = current_user["language"]
+    else:
+        lang = resolve_lang(
+            request.query_params.get("lang"),
+            request.cookies.get("llmwiki_lang"),
+        )
+    _t = Translator(lang)
     csrf_token = ""
     if current_user and current_user.get("id"):
         from core.security import create_csrf_token

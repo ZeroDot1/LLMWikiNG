@@ -261,7 +261,7 @@ async def api_key_create(request: Request, admin: dict = Depends(require_admin))
         server_backups=[],
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
-        lang=request.cookies.get("llmwiki_lang", "de"),
+        lang=admin.get("language", "de"),
     )
 
 

@@ -532,7 +532,7 @@ MCP_TOOL_GROUPS: dict[str, dict] = {
 
 
 def resolve_lang(request_lang: str | None = None, cookie_lang: str | None = None) -> str:
-    """Ermittelt die aktive Sprache (Query > Cookie > config.json > DEFAULT)."""
+    """Ermittelt die Fallback-Sprache für anonyme Requests."""
     cfg = load_app_config()
     if request_lang and request_lang in get_available_languages():
         return request_lang

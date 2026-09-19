@@ -83,7 +83,7 @@ def get_user_by_name(username: str) -> dict | None:
     return next((u for u in list_users() if u.get("username", "").lower() == username.lower()), None)
 
 
-def create_user(username: str, password: str, role: str = "admin") -> dict:
+def create_user(username: str, password: str, role: str = "admin", language: str = "de") -> dict:
     with _locked_write(USERS_FILE):
         users = list_users()
         if any(u.get("username", "").lower() == username.lower() for u in users):
@@ -93,6 +93,7 @@ def create_user(username: str, password: str, role: str = "admin") -> dict:
             "username": username,
             "password_hash": hash_password(password),
             "role": role,
+            "language": language,
             "active": True,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }

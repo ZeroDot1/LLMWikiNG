@@ -109,7 +109,7 @@ All parameters can also be passed directly to `run.py`:
 python3 run.py --port 9090 --lang en -d
 ```
 
-The default language is stored in `config.json` under the key `"language"`:
+Each authenticated user has an independent language preference stored in the user profile. The global `config.json` language remains only the fallback for anonymous requests and startup:
 ```json
 {
   "language": "de"

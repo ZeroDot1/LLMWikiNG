@@ -1208,22 +1208,19 @@ async def search(request: Request):
 
 @router.get("/lang/{code}")
 def switch_language(code: str, request: Request):
-    from core.config import get_available_languages, load_app_config
+    from core.config import get_available_languages
+    from core.storage import update_user
 
     available = get_available_languages()
     if code not in available:
         code = "en"
     referrer = request.headers.get("referer") or f"{BASE_PATH}/"
     response = redirect(referrer)
-    response.set_cookie("llmwiki_lang", code, max_age=365 * 24 * 3600)
-    # Sprache dauerhaft in config.json sichern (einzige Einstellungsquelle)
-    try:
-        from core.config import _atomic_write
-        data = load_app_config()
-        data["language"] = code
-        _atomic_write(CONFIG_FILE, json.dumps(data, indent=2, ensure_ascii=False))
-    except Exception:
-        pass
+    user = get_current_user(request)
+    if user and user.get("id"):
+        update_user(user["id"], language=code)
+    else:
+        response.set_cookie("llmwiki_lang", code, max_age=365 * 24 * 3600)
     return response
 
 
@@ -1653,7 +1650,7 @@ def settings_get(request: Request):
         server_backups=list_server_backups(),
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
-        lang=request.cookies.get("llmwiki_lang", "de"),
+        lang=get_current_user(request).get("language", "de"),
     )
 
 
@@ -1979,7 +1976,7 @@ async def settings_post(request: Request):
         registration_enabled=cfg_post.get("registration_enabled", True),
         mcp_keys=list_mcp_keys(),
         mcp_tool_groups=MCP_TOOL_GROUPS,
-        lang=request.cookies.get("llmwiki_lang", "de"),
+        lang=get_current_user(request).get("language", "de"),
     )
 
 

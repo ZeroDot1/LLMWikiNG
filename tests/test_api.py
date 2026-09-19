@@ -159,8 +159,11 @@ class TestWikiManagement:
         data = resp.json()
         assert data["ok"] is True
         assert data["slug"] == "neues-wiki"
-        # Verzeichnis muss existieren
-        assert (tmp_path / "wikis" / "neues-wiki").exists()
+        wiki_dir = tmp_path / "wikis" / "neues-wiki"
+        assert (wiki_dir / "index.md").exists()
+        assert (wiki_dir / "log.md").exists()
+        assert 'okf_version: "0.2"' in (wiki_dir / "index.md").read_text(encoding="utf-8")
+        assert 'okf_version: "0.2"' in (wiki_dir / "log.md").read_text(encoding="utf-8")
 
     def test_create_wiki_duplicate_returns_409(self, api_env):
         tmp_path, admin_key, _, client = api_env

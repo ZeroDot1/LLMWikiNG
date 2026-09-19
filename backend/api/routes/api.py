@@ -79,6 +79,15 @@ async def api_create_wiki(request: Request, admin: dict = Depends(require_api_ad
     if d.exists():
         raise HTTPException(status_code=409, detail="Wiki existiert bereits")
     d.mkdir(parents=True)
+    (d / "index.md").write_text(
+        f'---\nokf_version: "0.2"\n---\n# {name}\n\n> Wiki index for **{name}**.\n',
+        encoding="utf-8",
+    )
+    (d / "log.md").write_text(
+        f'---\nokf_version: "0.2"\n---\n# Wiki activity log\n\n## {datetime.now(timezone.utc).date().isoformat()}\n'
+        f"- **Create**: Wiki '{name}' created via API\n",
+        encoding="utf-8",
+    )
     save_wiki_meta(slug, name, description)
     return {"ok": True, "slug": slug}
 

@@ -163,7 +163,7 @@ async def settings_wikis_create(request: Request):
         return JSONResponse(status_code=400, content={"ok": False, "detail": "Name und Slug sind erforderlich"})
 
     slug = slugify_wiki(slug)
-    root = wiki_path(slug)
+    root = wiki_path(slug, create=False)
     if root.exists():
         return JSONResponse(status_code=409, content={"ok": False, "detail": f"Wiki '{slug}' existiert bereits"})
 
@@ -178,7 +178,7 @@ async def settings_wikis_create(request: Request):
         encoding="utf-8",
     )
 
-    save_wiki_meta({"slug": slug, "name": name, "description": description})
+    save_wiki_meta(slug, name, description)
     log_action(action="wiki_create", details=f"Wiki '{name}' ({slug}) erstellt",
                username=user.get("username"), user_id=user.get("id"), request=request)
     return JSONResponse(status_code=201, content={"ok": True, "slug": slug})
@@ -222,7 +222,7 @@ async def settings_wikis_update(slug: str, request: Request):
             wikis.append({"slug": new_slug, "name": new_name, "description": description})
             _atomic_write(wikis_file, json.dumps(wikis, indent=2, ensure_ascii=False))
         else:
-            save_wiki_meta({"slug": new_slug, "name": new_name, "description": description})
+            save_wiki_meta(new_slug, new_name, description)
         log_action(action="wiki_rename", details=f"Wiki '{slug}' → '{new_slug}' umbenannt",
                    username=user.get("username"), user_id=user.get("id"), request=request)
     else:

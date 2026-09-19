@@ -128,6 +128,31 @@ class TestLoginLogout:
         assert resp.status_code in (302, 303, 307)
         assert "error" in resp.headers.get("location", "")
 
+
+class TestWikiSettingsApi:
+    """Session-authenticated wiki management used by the WebUI."""
+
+    def test_settings_json_creates_okf_wiki(self, sample_users, tmp_project):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        login = client.post(
+            "/LLMWikiNG/login",
+            data={"username": "admin", "password": "Admin123!@#"},
+            follow_redirects=False,
+        )
+        assert login.status_code in (302, 303, 307)
+
+        response = client.post(
+            "/LLMWikiNG/settings/wikis/json",
+            json={"name": "WebUI Wiki", "slug": "webui-wiki", "description": "Browser test"},
+        )
+        assert response.status_code == 201
+        assert response.json() == {"ok": True, "slug": "webui-wiki"}
+        index = tmp_project / "wikis" / "webui-wiki" / "index.md"
+        assert 'okf_version: "0.2"' in index.read_text(encoding="utf-8")
+
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient
         from main import create_app

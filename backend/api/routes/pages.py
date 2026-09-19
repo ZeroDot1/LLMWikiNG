@@ -19,7 +19,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile as FastAPIUploadFile
 from starlette.datastructures import UploadFile as StarletteUploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from core.config import (
     PROJECT_ROOT,
@@ -2179,7 +2179,11 @@ def edit_get(request: Request):
 @router.post("/edit/preview")
 async def edit_preview(request: Request):
     form = await request.form()
-    text @router.post("/edit/save")
+    text = str(form.get("content") or "")
+    return HTMLResponse(render_markdown_preview(text))
+
+
+@router.post("/edit/save")
 async def edit_save(request: Request):
     user = require_login(request)
     is_json = request.headers.get("content-type", "").startswith("application/json")
@@ -2549,4 +2553,3 @@ async def wiki_page_version(wiki_name: str, page_name: str, version_id: str, req
     if content is None:
         raise HTTPException(status_code=404, detail="Version nicht gefunden")
     return JSONResponse(content={"wiki": wiki_name, "slug": page_name, "version_id": version_id, "content": content})
-

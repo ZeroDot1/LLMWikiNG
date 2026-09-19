@@ -51,16 +51,21 @@ def run_lint(wiki: str = "main") -> dict:
 
     pages = get_all_wiki_pages(wiki)
     all_slugs = {p["slug"] for p in pages}
+    contents: dict[str, str] = {}
+    for page in pages:
+        try:
+            contents[page["slug"]] = (root / f"{page['slug']}.md").read_text(
+                encoding="utf-8", errors="replace"
+            )
+        except OSError:
+            continue
 
     # 1. Orphans (keine Rückverweise).  Build the backlink set once instead
     # of rescanning every page for every candidate orphan.
     backlinks: set[str] = set()
     for source in pages:
-        source_file = root / f"{source['slug']}.md"
         try:
-            for target in extract_links_from_content(
-                source_file.read_text(encoding="utf-8", errors="replace")
-            ):
+            for target in extract_links_from_content(contents.get(source["slug"], "")):
                 if target != source["slug"]:
                     backlinks.add(target)
         except OSError:
@@ -76,9 +81,8 @@ def run_lint(wiki: str = "main") -> dict:
     # 2. Fehlende verlinkte Seiten
     missing_map: dict[str, dict] = {}
     for p in pages:
-        file_path = root / f"{p['slug']}.md"
         try:
-            content = file_path.read_text(encoding="utf-8", errors="replace")
+            content = contents[p["slug"]]
             refs = extract_links_from_content(content)
             for target_slug in refs:
                 if target_slug and target_slug not in all_slugs and target_slug not in SYSTEM_PAGES:
@@ -124,9 +128,8 @@ def run_lint(wiki: str = "main") -> dict:
 
     # 4. Fehlende Rohquellen
     for p in pages:
-        file_path = root / f"{p['slug']}.md"
         try:
-            content = file_path.read_text(encoding="utf-8", errors="replace")
+            content = contents[p["slug"]]
             raw_matches = re.findall(r"\*\*Quelle:\*\*\s*`([^`]+)`", content)
             for raw_file in raw_matches:
                 raw_file = raw_file.strip()
@@ -144,9 +147,8 @@ def run_lint(wiki: str = "main") -> dict:
     # 4b. Quellen, die nach dem Ingest verändert wurden
     from services.quality import stale_sources
     for p in pages:
-        file_path = root / f"{p['slug']}.md"
         try:
-            for source in stale_sources(file_path.read_text(encoding="utf-8", errors="replace")):
+            for source in stale_sources(contents[p["slug"]]):
                 changed_raw_sources.append({"page_title": p["title"], "page_slug": p["slug"], **source})
                 issue_count += 1
         except OSError:
@@ -156,9 +158,8 @@ def run_lint(wiki: str = "main") -> dict:
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
             continue
-        file_path = root / f"{p['slug']}.md"
         try:
-            content = file_path.read_text(encoding="utf-8", errors="replace")
+            content = contents[p["slug"]]
             fm_match = re.search(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
             has_type = False
             has_tags = False
@@ -183,9 +184,8 @@ def run_lint(wiki: str = "main") -> dict:
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
             continue
-        file_path = root / f"{p['slug']}.md"
         try:
-            content = file_path.read_text(encoding="utf-8", errors="replace")
+            content = contents[p["slug"]]
             body = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
             
             # Wortanzahl
@@ -220,9 +220,8 @@ def run_lint(wiki: str = "main") -> dict:
         for p in pages:
             if p["slug"] == o["slug"] or p["slug"] in SYSTEM_PAGES:
                 continue
-            p_file = root / f"{p['slug']}.md"
             try:
-                p_content = p_file.read_text(encoding="utf-8", errors="replace").lower()
+                p_content = contents[p["slug"]].lower()
                 p_body = re.sub(r"^---.*?---\s*", "", p_content, flags=re.DOTALL)
                 if o_title_lower in p_body:
                     link_suggestions.append({

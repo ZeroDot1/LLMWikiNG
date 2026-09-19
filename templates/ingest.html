@@ -5,15 +5,15 @@
 {% block content %}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <h1 class="text-2xl font-bold">{{ _('ingest.heading') }}</h1>
-    <a href="{{ base_path }}/wiki/{{ wiki }}/ingestlater" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('ingest.show_ingestlater') }}</a>
+    <a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-bg-sunken">{{ _('ingest.show_ingestlater') }}</a>
 </div>
 <p class="text-text-secondary mb-6">{{ _('ingest.subtitle') }}</p>
 
 {% if success_msg %}
 <div class="rounded-lg border border-success/40 bg-success-subtle p-3 mb-4 text-sm">
     <strong>{{ success_msg }}</strong>
-    {% if new_slug %}<br><a href="{{ base_path }}/wiki/{{ wiki }}/{{ new_slug }}" class="font-semibold text-primary">{{ _('ingest.go_to_new_page') }}</a>
-    {% elif is_later %}<br><a href="{{ base_path }}/wiki/{{ wiki }}/ingestlater" class="font-semibold text-primary">{{ _('ingest.go_to_ingestlater') }}</a>{% endif %}
+    {% if new_slug %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ new_slug }}" class="font-semibold text-primary">{{ _('ingest.go_to_new_page') }}</a>
+    {% elif is_later %}<br><a href="{{ base_path }}/wiki/{{ current_wiki }}/ingestlater" class="font-semibold text-primary">{{ _('ingest.go_to_ingestlater') }}</a>{% endif %}
 </div>
 {% endif %}
 {% if error_msg %}

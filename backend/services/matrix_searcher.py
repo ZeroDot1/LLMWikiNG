@@ -29,6 +29,7 @@ except ImportError:  # pragma: no cover
 # Pro-Shard-Limit: nur die besten Treffer je Shard holen und global sortieren.
 _PER_SHARD_LIMIT = 10
 _QUERY_TIMEOUT = 10.0
+_SHARD_PATH_CACHE: dict[Path, tuple[int, list[Path]]] = {}
 
 _QUERY_SQL = """
 SELECT
@@ -85,7 +86,7 @@ class MatrixSearcher:
         wikis = self._resolve_wikis(wiki_ids)
         query_text = query.strip()
 
-        shard_paths = sorted(self.data_root.glob("*_shard_*.db"))
+        shard_paths = self._shard_paths()
         tasks = [
             self._query_shard(path, query_text, tag_filters, wikis)
             for path in shard_paths
@@ -116,6 +117,19 @@ class MatrixSearcher:
             "search_time_ms": elapsed_ms,
             "shards_queried": shards_queried,
         }
+
+    def _shard_paths(self) -> list[Path]:
+        """Liefert Shards gecacht; neue Shards ändern die Verzeichnis-mtime."""
+        try:
+            directory_mtime = self.data_root.stat().st_mtime_ns
+        except OSError:
+            return []
+        cached = _SHARD_PATH_CACHE.get(self.data_root)
+        if cached and cached[0] == directory_mtime:
+            return cached[1]
+        paths = sorted(self.data_root.glob("*_shard_*.db"))
+        _SHARD_PATH_CACHE[self.data_root] = (directory_mtime, paths)
+        return paths
 
     def _resolve_wikis(self, wiki_ids: list[str]) -> list[str]:
         from core.config import list_wikis

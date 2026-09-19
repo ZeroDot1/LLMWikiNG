@@ -85,6 +85,7 @@ def local_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
                     clean_content = re.sub(
                         r"^---.*?---\s*", "", content, flags=re.DOTALL
                     )
+                    clean_content_lower = clean_content.lower()
                     title_match = re.search(
                         r"^#\s+(.+)$", clean_content, re.MULTILINE
                     )
@@ -114,8 +115,8 @@ def local_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
                     if query_lower:
                         if query_lower in title.lower():
                             score += 10
-                        if query_lower in clean_content.lower():
-                            score += clean_content.lower().count(query_lower)
+                        if query_lower in clean_content_lower:
+                            score += clean_content_lower.count(query_lower)
 
                     if score > 0:
                         results.append(
@@ -189,7 +190,7 @@ def local_search(query: str, wiki: str = "main", num_results: int = 10) -> dict:
                     pass
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    return {"results": results, "error": None}
+    return {"results": results[:max(0, num_results)], "error": None}
 
 
 async def matrix_search(query: str, wiki: str = "main", num_results: int = 30) -> dict:

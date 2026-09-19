@@ -5,6 +5,16 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-09-19
+
+### Added
+- EPUB- und PDF-Ingest über WebUI, REST API und MCP (`okf_ingest_file`).
+
+### Fixed
+- Ingest-Pipeline extrahiert Buchinhalte vor Bereinigung, Chunking, Tags und OKF-Seitenerzeugung.
+- XSS-Risiken in dynamischen Frontend-Ausgaben für Tag-Autocomplete und Graph-Fehler behoben.
+- Versionsangaben in Frontend-Metadaten und Startskript vereinheitlicht.
+
 ## [Unreleased]
 
 ### Added

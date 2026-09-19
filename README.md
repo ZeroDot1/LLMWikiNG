@@ -2,7 +2,11 @@
 
 # LLMWikiNG (OKF Edition)
 
-A complete pattern for building and maintaining a personal knowledge base (wiki) following the standardized [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) (developed by Google Cloud), using local LLMs and agents. Inspired by Andrej Karpathy's LLM-Wiki pattern.
+**Current release: 3.1.2**
+
+The current release supports OKF v0.2 ingestion through the WebUI, REST API, and MCP, including EPUB and PDF source files.
+
+A complete pattern for building and maintaining a personal knowledge base (wiki) following the standardized [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) (developed by Google Cloud), using local LLMs and agents. Inspired by Andrej Karpathy's LLM-Wiki pattern.
 
 **Author:** ZeroDot1
 

@@ -23,7 +23,7 @@
         <ul class="space-y-2 mb-4">
             {% for page in week_pages %}
             <li class="rounded-lg border border-border bg-bg-sunken p-3">
-                <a href="{{ base_path }}/wiki/{{ page.slug }}" class="font-semibold text-primary no-underline">📄 {{ page.title }}</a>
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="font-semibold text-primary no-underline">📄 {{ page.title }}</a>
                 <div class="text-sm text-text-secondary mt-1">{{ page.desc }}</div>
             </li>
             {% endfor %}

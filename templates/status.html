@@ -64,7 +64,7 @@
         <ul class="space-y-1">
             {% for hub in analytics.hubs %}
             <li class="flex justify-between items-center py-1 border-b border-border">
-                <a href="{{ base_path }}/wiki/{{ hub.slug }}" class="font-medium text-primary no-underline">{{ hub.title }}</a>
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ hub.slug }}" class="font-medium text-primary no-underline">{{ hub.title }}</a>
                 <span class="text-xs bg-primary-subtle text-primary rounded-full px-2 py-0.5">{{ hub.links }} {{ _('status.hubs_links') }}</span>
             </li>
             {% endfor %}
@@ -90,7 +90,7 @@
             {% for bridge in analytics.bridges %}
             <li class="py-2 border-b border-border">
                 <div class="flex justify-between items-center gap-2">
-                    <a href="{{ base_path }}/wiki/{{ bridge.slug }}" class="font-medium text-primary no-underline">{{ bridge.title }}</a>
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ bridge.slug }}" class="font-medium text-primary no-underline">{{ bridge.title }}</a>
                     <span class="text-xs bg-success-subtle text-success rounded-full px-2 py-0.5">{{ bridge.tags_count }} {{ _('status.bridges_tag_areas') }}</span>
                 </div>
                 <div class="text-xs text-text-secondary mt-1">{{ _('status.bridges_connects') }} {% for tag in bridge.connected_tags %}<span class="text-warning mr-1">#{{ tag }}</span>{% endfor %}</div>
@@ -105,7 +105,7 @@
         {% if analytics.dead_ends %}
         <ul class="space-y-1">
             {% for page in analytics.dead_ends %}
-            <li class="py-1 border-b border-border"><a href="{{ base_path }}/wiki/{{ page.slug }}" class="text-text-secondary no-underline">{{ page.title }}</a></li>
+            <li class="py-1 border-b border-border"><a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ page.slug }}" class="text-text-secondary no-underline">{{ page.title }}</a></li>
             {% endfor %}
         </ul>
         {% else %}<p class="text-text-muted text-sm">{{ _('status.dead_ends_empty') }}</p>{% endif %}

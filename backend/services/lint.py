@@ -52,24 +52,24 @@ def run_lint(wiki: str = "main") -> dict:
     pages = get_all_wiki_pages(wiki)
     all_slugs = {p["slug"] for p in pages}
 
-    # 1. Orphans (keine Rückverweise)
+    # 1. Orphans (keine Rückverweise).  Build the backlink set once instead
+    # of rescanning every page for every candidate orphan.
+    backlinks: set[str] = set()
+    for source in pages:
+        source_file = root / f"{source['slug']}.md"
+        try:
+            for target in extract_links_from_content(
+                source_file.read_text(encoding="utf-8", errors="replace")
+            ):
+                if target != source["slug"]:
+                    backlinks.add(target)
+        except OSError:
+            continue
+
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
             continue
-        has_backlink = False
-        for other in pages:
-            if other["slug"] == p["slug"]:
-                continue
-            other_file = root / f"{other['slug']}.md"
-            try:
-                other_content = other_file.read_text(encoding="utf-8", errors="replace")
-                other_links = extract_links_from_content(other_content)
-                if p["slug"] in other_links:
-                    has_backlink = True
-                    break
-            except Exception:
-                pass
-        if not has_backlink:
+        if p["slug"] not in backlinks:
             orphans.append(p)
             issue_count += 1
 

@@ -145,9 +145,9 @@ class TestLoginLogout:
         from main import create_app
         app = create_app()
         client = TestClient(app, raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
         resp = client.get(
             "/LLMWikiNG/logout",
-            cookies=auth_cookie,
             follow_redirects=False,
         )
         assert resp.status_code in (302, 303, 307)
@@ -166,9 +166,9 @@ class TestProtectedPages:
         from main import create_app
         app = create_app()
         client = TestClient(app, raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
         resp = client.get(
             "/LLMWikiNG/",
-            cookies=auth_cookie,
             follow_redirects=False,
         )
         assert resp.status_code == 200
@@ -178,9 +178,9 @@ class TestProtectedPages:
         from main import create_app
         app = create_app()
         client = TestClient(app, raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
         resp = client.get(
             "/LLMWikiNG/search",
-            cookies=auth_cookie,
         )
         assert resp.status_code == 200
 

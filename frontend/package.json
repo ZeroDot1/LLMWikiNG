@@ -7,7 +7,7 @@
   "private": true,
   "description": "Frontend-Build-Pipeline für LLMWikiNG (Tailwind CSS v4, Mobile First, Dark Mode).",
   "scripts": {
-    "build": "npx @tailwindcss/cli -i ./src/css/input.css -o ../static/css/tailwind-build.css --minify",
+    "build": "node ./scripts/build-css.mjs",
     "watch": "npx @tailwindcss/cli -i ./src/css/input.css -o ../static/css/tailwind-build.css --watch"
   },
   "devDependencies": {

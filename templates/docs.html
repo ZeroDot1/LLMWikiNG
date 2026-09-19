@@ -125,7 +125,8 @@
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/stats?wiki=</code></td><td class="p-2">Get statistics</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/lint?wiki=</code></td><td class="p-2">Run system linter</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/status</code></td><td class="p-2">Get basic server status</td></tr>
-          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Full health check: per-wiki sync status, Matrix &amp; git availability, cache stats</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/health</code></td><td class="p-2">Full readiness check: sync state, source freshness, quality issues, tools, cache, and aggregate usage</td></tr>
+          <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/wikis/&lt;wiki&gt;/usage</code></td><td class="p-2">Local aggregate page-read statistics without query or content logging</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/status</code></td><td class="p-2">System metrics &amp; traffic logs (Admin only)</td></tr>
           <tr><td class="p-2"><code>POST</code></td><td class="p-2"><code>/api/v1/system/sync</code></td><td class="p-2">Sync all wiki indexes (Admin only)</td></tr>
           <tr><td class="p-2"><code>GET</code></td><td class="p-2"><code>/api/v1/system/audit</code></td><td class="p-2">Retrieve audit logs – filterable by action, user, date range (Admin only)</td></tr>

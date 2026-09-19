@@ -88,6 +88,20 @@
         {% else %}<p class="text-sm text-success">{{ _('lint.raw_refs_empty') }}</p>{% endif %}
     </div>
     <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">{{ _('lint.changed_sources_heading') }}</h2>
+        <p class="text-xs text-text-muted mb-3">{{ _('lint.changed_sources_desc') }}</p>
+        {% if changed_sources %}
+        <ul class="space-y-2">
+            {% for source in changed_sources %}
+            <li class="rounded-lg border border-warning/20 p-2.5 bg-bg-sunken flex justify-between items-center gap-2">
+                <a href="{{ base_path }}/wiki/{{ current_wiki }}/{{ source.page_slug }}" class="text-primary no-underline border-b border-dotted border-primary">{{ source.page_title }}</a>
+                <code class="text-xs font-mono text-warning bg-warning-subtle px-1.5 py-0.5 rounded">{{ source.source }}</code>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="text-sm text-success">{{ _('lint.changed_sources_empty') }}</p>{% endif %}
+    </div>
+    <div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
         <h2 class="text-lg font-semibold mb-1 border-b border-border pb-2 text-warning">🏷️ {{ _('lint.no_tags_heading')|default('Seiten ohne Tags') }}</h2>
         <p class="text-xs text-text-muted mb-3">Seiten, die keine Tags im YAML-Frontmatter deklariert haben.</p>
         {% if no_tags %}

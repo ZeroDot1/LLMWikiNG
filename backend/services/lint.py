@@ -25,6 +25,7 @@ def run_lint(wiki: str = "main") -> dict:
     missing_pages: list[dict] = []
     stale_pages: list[dict] = []
     missing_raw_files: list[dict] = []
+    changed_raw_sources: list[dict] = []
     missing_type: list[dict] = []
     broken_links: list[dict] = []
     no_tags: list[dict] = []
@@ -39,6 +40,7 @@ def run_lint(wiki: str = "main") -> dict:
             "missing": missing_pages,
             "stale": stale_pages,
             "missing_raw": missing_raw_files,
+            "changed_sources": changed_raw_sources,
             "missing_type": missing_type,
             "broken_links": broken_links,
             "no_tags": no_tags,
@@ -139,6 +141,17 @@ def run_lint(wiki: str = "main") -> dict:
         except Exception:
             pass
 
+    # 4b. Quellen, die nach dem Ingest verändert wurden
+    from services.quality import stale_sources
+    for p in pages:
+        file_path = root / f"{p['slug']}.md"
+        try:
+            for source in stale_sources(file_path.read_text(encoding="utf-8", errors="replace")):
+                changed_raw_sources.append({"page_title": p["title"], "page_slug": p["slug"], **source})
+                issue_count += 1
+        except OSError:
+            pass
+
     # 5. OKF-Pflichtfeld `type` und `tags`
     for p in pages:
         if p["slug"] in SYSTEM_PAGES:
@@ -225,6 +238,7 @@ def run_lint(wiki: str = "main") -> dict:
         "missing": missing_pages,
         "stale": stale_pages,
         "missing_raw": missing_raw_files,
+        "changed_sources": changed_raw_sources,
         "missing_type": missing_type,
         "broken_links": broken_links,
         "no_tags": no_tags,

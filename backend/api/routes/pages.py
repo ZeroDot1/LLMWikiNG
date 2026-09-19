@@ -324,6 +324,10 @@ async def _render_page(wiki_name: str, page_name: str, request: Request):
         else:
             abort(404, f"Seite '{page_name}' nicht im Wiki '{wiki_name}' gefunden.")
 
+    # Keep only aggregate, local readership data; never persist request content.
+    from services.quality import record_usage
+    record_usage(wiki_name, page_name, "web")
+
     all_page_slugs = {p["slug"] for p in get_all_wiki_pages(wiki_name)}
     wikilinks_slugs = set(extract_links_from_content(data["content"]))
     missing_links = sorted(wikilinks_slugs - all_page_slugs)
@@ -1474,6 +1478,18 @@ def status_dashboard(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     stats = get_wiki_stats(wiki)
     analytics = get_wiki_analytics(wiki)
+    readiness_lint = run_lint(wiki)
+    from services.quality import usage_summary
+    try:
+        sync_needed = is_sync_needed(wiki)
+    except Exception:
+        sync_needed = True
+    readiness = {
+        "ready": not sync_needed and readiness_lint.get("issue_count", 0) == 0,
+        "issues": readiness_lint.get("issue_count", 0),
+        "changed_sources": len(readiness_lint.get("changed_sources", [])),
+        "usage": usage_summary(wiki),
+    }
 
     tools = {}
     for tool in ("jq", "ollama", "agy", "opencode"):
@@ -1498,6 +1514,8 @@ def status_dashboard(request: Request):
         tools=tools,
         config=config_data,
         analytics=analytics,
+        readiness=readiness,
+        sync_needed=sync_needed,
         app_version=app_version_text,
         update_available=update_available,
     )
@@ -1512,7 +1530,7 @@ def lint_dashboard(request: Request):
     else:
         res = {
             "orphans": [], "missing": [], "stale": [], "missing_raw": [],
-            "missing_type": [], "broken_links": [], "no_tags": [], "short_pages": [], "link_suggestions": [], "issue_count": 0,
+            "changed_sources": [], "missing_type": [], "broken_links": [], "no_tags": [], "short_pages": [], "link_suggestions": [], "issue_count": 0,
         }
     return render(
         request, "lint.html",
@@ -1522,6 +1540,7 @@ def lint_dashboard(request: Request):
         missing=res.get("missing", []),
         stale=res.get("stale", []),
         missing_raw=res.get("missing_raw", []),
+        changed_sources=res.get("changed_sources", []),
         missing_type=res.get("missing_type", []),
         broken_links=res.get("broken_links", []),
         no_tags=res.get("no_tags", []),
@@ -2221,6 +2240,17 @@ async def edit_save(request: Request):
         if folder == "wiki":
             page_title = filename[:-3]
             content = ensure_okf_frontmatter(content, title=page_title)
+            if not filepath.exists() and not force:
+                from services.quality import find_similar_pages
+                similar = find_similar_pages(wiki, page_title, content, exclude_slug=page_title)
+                if similar:
+                    detail = "Ähnliche Seiten existieren bereits. Prüfe die Treffer oder speichere bewusst mit force=true."
+                    if is_json:
+                        return JSONResponse(status_code=409, content={"detail": detail, "duplicates": similar})
+                    return redirect(
+                        f"{BASE_PATH}/edit?wiki={urlencode(wiki)}&filename={urlencode(filename)}"
+                        f"&folder={urlencode(folder)}&error_msg={urlencode(detail)}"
+                    )
 
         # Conflict-Detection: Prüfe ob Seite seit dem letzten Laden geändert wurde
         if folder == "wiki" and filepath.exists() and not force:

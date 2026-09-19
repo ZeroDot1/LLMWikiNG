@@ -285,6 +285,22 @@ class TestPageManagement:
         # Datei muss existieren
         assert (tmp_path / "wikis" / slug / "neue-seite.md").exists()
 
+    def test_create_page_rejects_close_duplicate(self, api_env):
+        tmp_path, admin_key, _, client = api_env
+        slug = _create_test_wiki(client, tmp_path, "duplicate-page")
+        wiki_dir = tmp_path / "wikis" / slug
+        (wiki_dir / "existing.md").write_text(
+            "---\ntype: Concept\ntitle: Search Index\n---\n# Search Index\n\nMatrix search index stores documents.",
+            encoding="utf-8",
+        )
+        response = client.post(
+            f"/LLMWikiNG/api/v1/wikis/{slug}/pages",
+            headers={"X-API-Key": admin_key, "Content-Type": "application/json"},
+            json={"slug": "copy", "content": "# Search Index\n\nMatrix search index stores documents."},
+        )
+        assert response.status_code == 409
+        assert response.json()["detail"]["matches"][0]["slug"] == "existing"
+
     def test_create_page_gets_frontmatter(self, api_env):
         tmp_path, admin_key, _, client = api_env
         slug = _create_test_wiki(client, tmp_path, "fm-wiki")
@@ -314,6 +330,13 @@ class TestPageManagement:
         data = resp.json()
         assert "content" in data
         assert "Lese mich" in data["content"]
+
+        usage = client.get(
+            f"/LLMWikiNG/api/v1/wikis/{slug}/usage",
+            headers={"X-API-Key": admin_key},
+        )
+        assert usage.status_code == 200
+        assert usage.json()["total_reads"] >= 1
 
     def test_read_nonexistent_page_returns_404(self, api_env):
         tmp_path, admin_key, _, client = api_env

@@ -43,6 +43,7 @@ from services.tags import list_all_tags, get_pages_by_tag, get_all_tags_aggregat
 from services.editor import ensure_okf_frontmatter
 from services.sync import append_okf_log, request_sync_background
 from services.audit import log_action
+from services.quality import find_similar_pages, record_usage, usage_summary
 
 router = APIRouter(prefix=f"{BASE_PATH}/api/v1")
 
@@ -171,6 +172,7 @@ def api_get_page(wiki: str, slug: str, user: dict = Depends(get_api_user)):
     data = read_wiki_file(f"{slug}.md", wiki)
     if not data:
         raise HTTPException(status_code=404, detail="Seite nicht gefunden")
+    record_usage(wiki, slug, "api")
     return {"wiki": wiki, "slug": slug, "content": data["content"], "frontmatter": data.get("frontmatter", {})}
 
 
@@ -181,6 +183,7 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
     slug = (body.get("slug") or "").strip()
     content = body.get("content", "")
     tags = body.get("tags")
+    allow_duplicate = bool(body.get("allow_duplicate", False))
     if not slug:
         raise HTTPException(status_code=400, detail="slug erforderlich")
     slug = re.sub(r"\.md$", "", slug)
@@ -191,6 +194,13 @@ async def api_create_page(wiki: str, request: Request, user: dict = Depends(get_
         filepath = safe_page_path(wiki, slug)
     except UnsafePathError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    if not filepath.exists() and not allow_duplicate:
+        similar = find_similar_pages(wiki, slug, content, exclude_slug=slug)
+        if similar:
+            raise HTTPException(
+                status_code=409,
+                detail={"message": "Potential duplicate page detected", "matches": similar, "resolution": "Use allow_duplicate=true to create it anyway."},
+            )
     if filepath.exists():
         try:
             from services.history import save_version
@@ -610,6 +620,12 @@ def api_system_status(user: dict = Depends(get_api_user)):
     }
 
 
+@router.get("/wikis/{wiki}/usage")
+def api_wiki_usage(wiki: str, user: dict = Depends(get_api_user)):
+    _wiki_or_404(wiki)
+    return {"wiki": wiki, **usage_summary(wiki)}
+
+
 @router.post("/system/sync")
 async def api_system_sync(request: Request, user: dict = Depends(get_api_user)):
     results = {}
@@ -702,6 +718,15 @@ def api_system_health(user: dict = Depends(get_api_user)):
             except Exception:
                 wiki_info["sync_needed"] = True
             wiki_info["status"] = "ok" if not wiki_info["sync_needed"] else "sync_pending"
+            lint = run_lint(w_slug)
+            wiki_info["readiness"] = {
+                "okf_issues": len(lint.get("missing_type", [])) + len(lint.get("no_tags", [])),
+                "changed_sources": len(lint.get("changed_sources", [])),
+                "broken_references": len(lint.get("missing", [])) + len(lint.get("broken_links", [])),
+                "ready": not wiki_info["sync_needed"] and lint.get("issue_count", 0) == 0,
+            }
+            if not wiki_info["readiness"]["ready"]:
+                all_ok = False
         wikis_data.append(wiki_info)
         if wiki_info["status"] != "ok":
             all_ok = False
@@ -715,6 +740,7 @@ def api_system_health(user: dict = Depends(get_api_user)):
             "git": shutil.which("git") is not None,
         },
         "cache_entries": get_cache().stats().get("entries", 0),
+        "usage": usage_summary(),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 

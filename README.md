@@ -2,7 +2,7 @@
 
 # LLMWikiNG (OKF Edition)
 
-**Current release: 3.1.3**
+**Current release: 3.2.0**
 
 The current release supports OKF v0.2 ingestion through the WebUI, REST API, and MCP, including EPUB and PDF source files.
 
@@ -150,7 +150,8 @@ is automatically moved to `wikis/main/` on first start.
 *   `/lang/<code>` – Language switch (cookie).
 *   `/about` – About page.
 *   `/admin/status`, `/admin/sync`, `/admin/update`, `/admin/clear-log` – Admin tools (sync now with persistent per-wiki SyncStatus JSON).
-*   `/api/v1/system/health` – System health endpoint with SyncStatus data per wiki.
+*   `/api/v1/system/health` – System health endpoint with readiness, source freshness, SyncStatus, and local aggregate usage data.
+*   `/api/v1/wikis/{wiki}/usage` – Local aggregate page-read statistics without storing queries or page contents.
 *   `/status`, `/lint`, `/config`, `/settings`, `/briefings` – Statistics, linter, SMTP, settings, weekly reports.
 *   `/edit`, `/edit/preview`, `/edit/save` – ✍️ Universal editor (WYSIWYG & Markdown).
 

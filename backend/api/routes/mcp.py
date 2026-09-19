@@ -106,6 +106,7 @@ from services.lint import run_lint
 from services.graph import build_graph_data
 from services.tags import build_tag_index, list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
 from services.okf import OKF_VERSION, validate_concept
+from services.quality import find_similar_pages, record_usage, stamp_source_fingerprints
 
 import frontmatter
 
@@ -515,6 +516,7 @@ okf_version: "0.2"
                     lines.append(f"- ... und {len(all_pages) - 10} weitere Seiten.")
             return "\n".join(lines)
         content = data.get("content", "")
+        record_usage(wiki_slug, raw_slug, "mcp")
         post = frontmatter.loads(content)
         lines = [f"# OKF-Concept: {raw_slug}\n"]
         lines.append("## Metadaten (YAML-Frontmatter)\n")
@@ -651,10 +653,19 @@ okf_version: "0.2"
             content_hash=_content_hash,
             author=f"Agent ({agent_name})",
         )
-        okf_content = frontmatter.dumps(post)
+        okf_content = stamp_source_fingerprints(frontmatter.dumps(post))
         validation_errors = validate_concept(okf_content)
         if validation_errors:
             return "ERROR: invalid OKF v0.2 document: " + "; ".join(validation_errors)
+
+        if not existed and not force:
+            similar = find_similar_pages(wiki_slug, title, content_body, exclude_slug=raw_slug)
+            if similar:
+                return (
+                    "DUPLICATE: Similar pages already exist. "
+                    + json.dumps(similar, ensure_ascii=False)
+                    + " Use force=True only after reviewing the matches."
+                )
 
         if existed:
             try:
@@ -1003,6 +1014,8 @@ okf_version: "0.2"
             return "Bitte einen Suchbegriff angeben."
         result = local_search(query.strip(), wiki)
         results = result.get("results", [])
+        for match in results[:20]:
+            record_usage(match.get("wiki", wiki), match["slug"], "mcp-search")
         if not results:
             return f"Keine Ergebnisse fuer '{query}' in Wiki '{wiki}'."
         lines = [f"# Suchergebnisse fuer '{query}' (Wiki: {wiki})\n"]

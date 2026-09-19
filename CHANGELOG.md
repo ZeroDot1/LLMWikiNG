@@ -5,6 +5,14 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-09-19
+
+### Added
+- Source freshness tracking records a local SHA-256 fingerprint for ingested raw sources and reports changed sources in the lint view and system health endpoint.
+- Duplicate safeguards identify highly similar pages before a WebUI, REST API, or MCP write creates a new page; clients can explicitly override after review.
+- Privacy-preserving local usage statistics aggregate page reads by channel without storing queries or page content. They are available in the WebUI status view and REST API.
+- Readiness checks now combine synchronization state, lint results, changed sources, OKF issues, and broken references across all wikis.
+
 ## [3.1.3] - 2026-09-19
 
 ### Fixed

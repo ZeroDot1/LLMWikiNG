@@ -214,6 +214,13 @@
     "link_karpathy": "Original Karpathy LLM-Wiki Gist"
   },
   "status": {
+    "readiness_heading": "✅ Wissensbereitschaft",
+    "readiness_state": "Zustand",
+    "readiness_ready": "Bereit",
+    "readiness_attention": "Prüfung erforderlich",
+    "readiness_issues": "Qualitätsprobleme",
+    "readiness_usage": "Erfasste Seitenzugriffe",
+    "readiness_changed_sources": "geänderte Rohquelle(n) müssen geprüft werden.",
     "page_title": "Systemstatus & Statistik",
     "heading": "📊 Systemstatus & Statistik",
     "subtitle": "Übersicht über den Zustand deiner LLM-Wiki-Instanz, der verknüpften Tools und der Datenbankstatistiken.",
@@ -278,6 +285,9 @@
     "raw_refs_desc": "Diese Wiki-Seiten verweisen auf eine Rohdatei im Ordner raw/, die physisch nicht existiert.",
     "raw_refs_refers_to": "verweist auf:",
     "raw_refs_empty": "✅ Alle referenzierten Rohdateien existieren in raw/.",
+    "changed_sources_heading": "🔄 Geänderte Rohquellen",
+    "changed_sources_desc": "Diese Rohquellen wurden nach dem Ingest verändert. Prüfe sie und ingestiere sie erneut, um abgeleitete Seiten zu aktualisieren.",
+    "changed_sources_empty": "✅ Keine geänderten ingestierten Rohquellen erkannt.",
     "okf_type_heading": "🔴 Fehlendes OKF-Pflichtfeld `type`",
     "okf_type_desc": "Jede OKF-konforme Wiki-Seite muss ein `type`-Feld im YAML-Frontmatter besitzen (z. B. Concept, Article, Reference, Playbook).",
     "okf_type_empty": "✅ Alle Seiten besitzen ein `type`-Feld.",

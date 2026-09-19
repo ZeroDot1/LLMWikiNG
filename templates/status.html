@@ -27,6 +27,18 @@
     </div>
 </div>
 
+<div class="rounded-xl border border-border bg-surface p-6 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.readiness_heading') }}</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <div><span class="text-text-secondary">{{ _('status.readiness_state') }}</span><br>
+            {% if readiness.ready %}<strong class="text-success">✅ {{ _('status.readiness_ready') }}</strong>{% else %}<strong class="text-warning">⚠️ {{ _('status.readiness_attention') }}</strong>{% endif %}
+        </div>
+        <div><span class="text-text-secondary">{{ _('status.readiness_issues') }}</span><br><strong>{{ readiness.issues }}</strong></div>
+        <div><span class="text-text-secondary">{{ _('status.readiness_usage') }}</span><br><strong>{{ readiness.usage.total_reads }}</strong></div>
+    </div>
+    {% if readiness.changed_sources %}<p class="mt-3 text-sm text-warning">{{ readiness.changed_sources }} {{ _('status.readiness_changed_sources') }}</p>{% endif %}
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
     <div class="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 class="text-lg font-semibold mb-3 border-b border-border pb-2">{{ _('status.config_heading') }}</h2>

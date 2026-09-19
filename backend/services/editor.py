@@ -52,7 +52,8 @@ def update_content_hash(content: str, updated_by: str = "web") -> str:
 
     new_fm = yaml.dump(fm_data, sort_keys=False, allow_unicode=True)
     body = content[fm_match.end():]
-    return f"---\n{new_fm}---\n{body}"
+    from services.quality import stamp_source_fingerprints
+    return stamp_source_fingerprints(f"---\n{new_fm}---\n{body}")
 
 
 def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[str] | None = None, updated_by: str = "web") -> str:

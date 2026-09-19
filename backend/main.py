@@ -599,7 +599,7 @@ def main() -> None:
     print(f"  {APP_EDITION}")
     print(f"  Version {APP_VERSION}")
     print(f"{'='*60}")
-    print(f"  Wiki-Verzeichnis:  {PROJECT_ROOT / 'wiki'}")
+    print(f"  Wiki directory:    {PROJECT_ROOT / 'wikis'}")
     print(f"  Rohquellen:        {PROJECT_ROOT / 'raw'}")
     print(f"  Startsprache:      {lang} ({available.get(lang, lang)})")
     print(f"  Betriebsmodus:     {'Entwicklung (Auto-Reload)' if args.debug else 'Produktion (uvicorn)'}")

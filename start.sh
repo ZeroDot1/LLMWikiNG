@@ -204,13 +204,13 @@ if ! python3 -c "import mcp" 2>/dev/null; then
     echo "  Bitte installieren: pip install -r requirements.txt"
 fi
 
-if [ ! -d "$SCRIPT_DIR/wiki" ]; then
+if [ ! -d "$SCRIPT_DIR/wikis/main" ]; then
     echo "⚠ Wiki-Verzeichnis nicht gefunden. Starte init..."
     if [ -f "$SCRIPT_DIR/wiki.sh" ]; then
         bash "$SCRIPT_DIR/wiki.sh" init
     else
-        mkdir -p "$SCRIPT_DIR/wiki" "$SCRIPT_DIR/raw" "$SCRIPT_DIR/output_docs"
-        echo "📁 Leeres Wiki angelegt."
+        mkdir -p "$SCRIPT_DIR/wikis/main" "$SCRIPT_DIR/raw" "$SCRIPT_DIR/output_docs"
+        echo "📁 Empty main wiki created."
     fi
 fi
 

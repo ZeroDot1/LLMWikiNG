@@ -39,7 +39,7 @@ from core.config import (
     MCP_TOOL_GROUPS,
 )
 from web import render, abort, redirect, urlencode
-from api.deps import require_login, require_admin, get_current_user
+from api.deps import require_login, require_admin, get_current_user, verify_request_csrf
 from services.audit import log_action, get_recent_audit_logs, ALL_CATEGORIES
 from core.storage import list_users, list_keys, list_mcp_keys
 from services.wiki import (
@@ -149,7 +149,8 @@ def settings_wikis_list(request: Request):
 @router.post("/settings/wikis/json")
 async def settings_wikis_create(request: Request):
     """JSON-Endpoint für Wiki-Erstellung (session-geschützt)."""
-    user = require_login(request)
+    user = require_admin(request)
+    verify_request_csrf(request, user)
     try:
         data = await request.json()
     except Exception:
@@ -187,7 +188,8 @@ async def settings_wikis_create(request: Request):
 @router.put("/settings/wikis/json/{slug}")
 async def settings_wikis_update(slug: str, request: Request):
     """JSON-Endpoint für Wiki-Bearbeitung (session-geschützt)."""
-    user = require_login(request)
+    user = require_admin(request)
+    verify_request_csrf(request, user)
     try:
         data = await request.json()
     except Exception:
@@ -246,7 +248,8 @@ async def settings_wikis_update(slug: str, request: Request):
 @router.delete("/settings/wikis/json/{slug}")
 async def settings_wikis_delete(slug: str, request: Request):
     """JSON-Endpoint für Wiki-Löschung (session-geschützt)."""
-    user = require_login(request)
+    user = require_admin(request)
+    verify_request_csrf(request, user)
 
     if slug == "main":
         return JSONResponse(status_code=400, content={"ok": False, "detail": "Das Hauptwiki kann nicht gelöscht werden"})

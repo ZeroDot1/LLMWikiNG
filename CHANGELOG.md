@@ -5,6 +5,13 @@ Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2026-09-19
+
+### Fixed
+- Wiki management in the WebUI now sends the session CSRF token for create, edit, and delete operations.
+- Legacy session endpoints for wiki management now require administrator privileges and CSRF validation.
+- REST API wiki deletions are recorded in the audit log.
+
 ## [3.2.1] - 2026-09-19
 
 ### Fixed

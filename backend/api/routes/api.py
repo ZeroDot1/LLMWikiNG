@@ -101,6 +101,12 @@ def api_delete_wiki(wiki: str, admin: dict = Depends(require_api_admin)):
     if not d.exists():
         raise HTTPException(status_code=404, detail="Wiki nicht gefunden")
     delete_wiki(wiki)
+    log_action(
+        action="wiki_delete",
+        details=f"Wiki '{wiki}' deleted via REST API",
+        user_id=admin.get("id"),
+        username=admin.get("username"),
+    )
     return {"ok": True}
 
 

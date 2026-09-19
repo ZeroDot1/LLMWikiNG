@@ -135,6 +135,8 @@ class TestWikiSettingsApi:
     def test_settings_json_creates_okf_wiki(self, sample_users, tmp_project):
         from fastapi.testclient import TestClient
         from main import create_app
+        from core.security import create_csrf_token
+        from core.storage import list_users
 
         client = TestClient(create_app(), raise_server_exceptions=False)
         login = client.post(
@@ -143,9 +145,11 @@ class TestWikiSettingsApi:
             follow_redirects=False,
         )
         assert login.status_code in (302, 303, 307)
+        admin = next(user for user in list_users() if user["role"] == "admin")
 
         response = client.post(
             "/LLMWikiNG/settings/wikis/json",
+            headers={"X-CSRF-Token": create_csrf_token(admin["id"])},
             json={"name": "WebUI Wiki", "slug": "webui-wiki", "description": "Browser test"},
         )
         assert response.status_code == 201
@@ -183,6 +187,28 @@ class TestWikiSettingsApi:
         assert response.status_code == 200
         assert 'name="wiki" value="other-wiki"' in response.text
         assert 'name="folder" value="wiki"' in response.text
+
+    def test_session_admin_can_delete_wiki_with_csrf(self, auth_cookie, tmp_project):
+        from fastapi.testclient import TestClient
+        from main import create_app
+        from core.security import create_csrf_token
+        from core.storage import list_users
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
+        admin = next(user for user in list_users() if user["role"] == "admin")
+        headers = {"X-CSRF-Token": create_csrf_token(admin["id"])}
+
+        created = client.post(
+            "/LLMWikiNG/api/v1/wikis",
+            headers={**headers, "Content-Type": "application/json"},
+            json={"name": "Session Delete", "slug": "session-delete"},
+        )
+        assert created.status_code == 200
+
+        deleted = client.delete("/LLMWikiNG/api/v1/wikis/session-delete", headers=headers)
+        assert deleted.status_code == 200
+        assert not (tmp_project / "wikis" / "session-delete").exists()
 
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient

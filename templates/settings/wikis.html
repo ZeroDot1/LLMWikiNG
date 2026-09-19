@@ -50,6 +50,7 @@
     "use strict";
 
     var BASE = "{{ base_path }}";
+    var CSRF_TOKEN = window.CSRF_TOKEN || "";
     var tableWrap = document.getElementById("wikisTableWrap");
     var summary = document.getElementById("wikisSummary");
     var createForm = document.getElementById("createWikiForm");
@@ -196,7 +197,7 @@
 
         fetch(BASE + "/api/v1/wikis", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
             body: JSON.stringify({ name: name, slug: slug, description: description })
         })
         .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
@@ -253,7 +254,7 @@
 
         fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(oldSlug), {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
             body: JSON.stringify({ name: newName, slug: newSlug, description: "" })
         })
         .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
@@ -277,7 +278,10 @@
         if (!slug) return;
         if (!confirm("{{ _('settings.wiki_delete_confirm') }}")) return;
 
-        fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(slug), { method: "DELETE" })
+        fetch(BASE + "/api/v1/wikis/" + encodeURIComponent(slug), {
+            method: "DELETE",
+            headers: { "X-CSRF-Token": CSRF_TOKEN }
+        })
             .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
             .then(function(r) {
                 if (!r.ok) throw new Error(r.data.detail || "{{ _('settings.wiki_delete_error') }}");

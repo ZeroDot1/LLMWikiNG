@@ -578,7 +578,7 @@ updated: 2026-07-29T12:40:00Z
 updated_by: web
 content_hash: a3f2c1d4e5b6f789
 author: Agent (Cursor-Dev)
-status: AI-Generated
+status: stable
 ---
 
 # MCP Architecture 2026
@@ -667,7 +667,7 @@ backend/
 │       ├── pages.py        # ALL HTML routes (under BASE_PATH)
 │       ├── auth.py         # /login, /logout, /users, /api-keys
 │       ├── api.py          # /api/v1/* (JSON, key-protected)
-│       └── mcp.py          # MCP-Server (OKF v0.1, SSE-Transport, 47 Tools)
+│       └── mcp.py          # MCP-Server (OKF v0.2, SSE-Transport, 47 Tools)
 └── services/               # wiki, markdown, search, sync, graph, lint,
                             #   analytics, editor, email_sender (all multi-wiki capable)
 templates/                  # Jinja2 templates (Tailwind v4, responsive, dark mode)

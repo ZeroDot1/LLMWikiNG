@@ -169,11 +169,11 @@ async def settings_wikis_create(request: Request):
 
     root.mkdir(parents=True, exist_ok=True)
     (root / "index.md").write_text(
-        f"---\nokf_version: \"0.1\"\n---\n# {name}\n\n> Wiki-Index von **{name}**.\n",
+        f"---\nokf_version: \"0.2\"\n---\n# {name}\n\n> Wiki-Index von **{name}**.\n",
         encoding="utf-8",
     )
     (root / "log.md").write_text(
-        f"---\nokf_version: \"0.1\"\n---\n# Wiki-Aktivitätslogbuch\n\n## {date.today().isoformat()}\n"
+        f"---\nokf_version: \"0.2\"\n---\n# Wiki-Aktivitätslogbuch\n\n## {date.today().isoformat()}\n"
         f"- **Create**: Wiki '{name}' angelegt\n",
         encoding="utf-8",
     )
@@ -288,11 +288,11 @@ async def wiki_new_create(request: Request):
     root = wiki_path(safe)
     if not (root / "index.md").exists():
         (root / "index.md").write_text(
-            f"---\nokf_version: \"0.1\"\n---\n# {name}\n\n> Wiki-Index von **{name}**.\n",
+            f"---\nokf_version: \"0.2\"\n---\n# {name}\n\n> Wiki-Index von **{name}**.\n",
             encoding="utf-8",
         )
         (root / "log.md").write_text(
-            f"---\nokf_version: \"0.1\"\n---\n# Wiki-Aktivitätslogbuch\n\n## {date.today().isoformat()}\n"
+            f"---\nokf_version: \"0.2\"\n---\n# Wiki-Aktivitätslogbuch\n\n## {date.today().isoformat()}\n"
             f"- **Create**: Wiki '{name}' angelegt\n",
             encoding="utf-8",
         )
@@ -2278,7 +2278,7 @@ def clear_log(request: Request, admin: dict = Depends(require_admin)):
     try:
         template = (
             f"---\n"
-            f'okf_version: "0.1"\n'
+            f'okf_version: "0.2"\n'
             f"---\n"
             f"# Wiki-Aktivitätslogbuch\n\n"
             f"## {today}\n"

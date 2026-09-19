@@ -42,6 +42,13 @@ def update_content_hash(content: str, updated_by: str = "web") -> str:
     fm_data["content_hash"] = _compute_content_hash(content)
     fm_data["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     fm_data["updated_by"] = updated_by
+    # OKF v0.2 lifecycle/trust defaults. Preserve all producer extensions.
+    if fm_data.get("status") not in {"draft", "stable", "deprecated"}:
+        fm_data["status"] = "stable"
+    fm_data.setdefault("generated", {
+        "by": f"llmwiking/{updated_by}",
+        "at": fm_data.get("updated"),
+    })
 
     new_fm = yaml.dump(fm_data, sort_keys=False, allow_unicode=True)
     body = content[fm_match.end():]
@@ -86,6 +93,10 @@ def ensure_okf_frontmatter(content: str, title: str | None = None, tags: list[st
         f"timestamp: {today}T00:00:00Z\n"
         f"updated: {now_iso}\n"
         f"updated_by: {updated_by}\n"
+        f"generated:\n"
+        f"  by: llmwiking/{updated_by}\n"
+        f"  at: {now_iso}\n"
+        f"status: stable\n"
         f"---\n\n"
     )
     return new_fm + body.lstrip("\n")

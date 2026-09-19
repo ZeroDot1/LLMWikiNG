@@ -191,7 +191,7 @@ init_wiki() {
     if [ ! -f "$WIKI_DIR/index.md" ]; then
         cat > "$WIKI_DIR/index.md" <<-EOF
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 # Wiki-Index
 
@@ -209,7 +209,7 @@ EOF
     if [ ! -f "$WIKI_DIR/log.md" ]; then
         cat > "$WIKI_DIR/log.md" <<-EOF
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 # Wiki-Aktivitätslogbuch
 
@@ -464,6 +464,12 @@ description: "Ingested source from $RAW_NAME"
 resource: "file://raw/$RAW_NAME"
 $TAGS_LINE
 timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+generated:
+  by: llmwiking/ingest
+  at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+status: stable
+sources:
+  - resource: /raw/$RAW_NAME
 ---
 
 # $PAGE_TITLE
@@ -691,7 +697,7 @@ reset_wiki() {
     
     cat > "$WIKI_DIR/index.md" <<-EOF
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 # Wiki-Index
 
@@ -700,7 +706,7 @@ EOF
 
     cat > "$WIKI_DIR/log.md" <<-EOF
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 # Wiki-Aktivitätslogbuch
 

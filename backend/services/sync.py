@@ -309,7 +309,7 @@ def regenerate_index(wiki: str = "main") -> bool:
 
     lines = [
         "---",
-        'okf_version: "0.1"',
+        'okf_version: "0.2"',
         "---",
         "# Wiki-Index",
         "",
@@ -640,7 +640,7 @@ def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main
     if not log_path.exists():
         log_path.write_text(
             f"---\n"
-            f'okf_version: "0.1"\n'
+            f'okf_version: "0.2"\n'
             f"---\n"
             f"# Wiki-Aktivitätslogbuch\n\n"
             f"## {today_str}\n"
@@ -654,7 +654,7 @@ def append_okf_log(action: str, title: str, details: str = "", wiki: str = "main
     if not content.startswith("---"):
         content = (
             f"---\n"
-            f'okf_version: "0.1"\n'
+            f'okf_version: "0.2"\n'
             f"---\n"
             f"# Wiki-Aktivitätslogbuch\n\n"
             f"{content.strip()}\n"
@@ -747,4 +747,3 @@ async def _trigger_bg_sync(wiki: str, force: bool = False) -> None:
             _pending_force.add(wiki)
     
     await _run_bg_sync_loop(wiki)
-

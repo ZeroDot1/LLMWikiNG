@@ -1,11 +1,11 @@
 # LLMWikiNG – Copyright (C) 2026 ZeroDot1
 # Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""LLMWikiNG – MCP-Server (Model Context Protocol) mit OKF v0.1.
+"""LLMWikiNG – MCP-Server (Model Context Protocol) mit OKF v0.2.
 
 Stellt einen SSE-basierten MCP-Server bereit, der KI-Agenten (AGY,
 Cursor, Windsurf, Claude Code, OpenCode etc.) erlaubt, das Wiki im
-Open Knowledge Format (OKF v0.1) zu lesen, zu schreiben und zu
+Open Knowledge Format (OKF v0.2) zu lesen, zu schreiben und zu
 durchsuchen – sowie Server-Wartungsaufgaben remote durchzufuehren.
 
 Sicherheit: Alle MCP-Endpunkte werden ueber den konfigurierbaren
@@ -71,6 +71,7 @@ import json
 import os
 import re
 import subprocess
+import yaml
 
 from core.config import (
     BASE_PATH,
@@ -202,7 +203,7 @@ try:
     mcp_server = FastMCP(
         "LLMWikiNG-OKF",
         instructions=(
-            "LLMWikiNG MCP-Server - Open Knowledge Format (OKF v0.1). "
+            "LLMWikiNG MCP-Server - Open Knowledge Format (OKF v0.2). "
             "Lies und schreibe Wiki-Konzepte als standardisiertes Markdown "
             "mit YAML-Frontmatter. Alle Dokumente sind menschenlesbar und "
             "maschineninterpretierbar."
@@ -468,7 +469,7 @@ Willkommen im Wiki **{name}**.
     @mcp_server.tool()
     @_require_tool("okf_read_concept")
     def okf_read_concept(slug: str, wiki: str = "main") -> str:
-        """Liest eine Wiki-Seite im Open Knowledge Format (OKF v0.1).
+        """Liest eine Wiki-Seite im Open Knowledge Format (OKF v0.2).
 
         Liefert das vollstaendige YAML-Frontmatter (Metadaten) und den
         menschenlesbaren Markdown-Inhalt.
@@ -507,13 +508,14 @@ Willkommen im Wiki **{name}**.
         post = frontmatter.loads(content)
         lines = [f"# OKF-Concept: {raw_slug}\n"]
         lines.append("## Metadaten (YAML-Frontmatter)\n")
-        for key in [
-            "type", "title", "description", "tags",
-            "timestamp", "author", "status",
-        ]:
-            val = post.get(key)
-            if val is not None:
-                lines.append(f"- **{key}:** `{val}`")
+        # Return the complete frontmatter so MCP consumers can use every OKF
+        # v0.2 field (including provenance, trust, lifecycle, and attestations).
+        metadata = yaml.safe_dump(
+            dict(post.metadata), sort_keys=False, allow_unicode=True,
+        ).rstrip()
+        lines.append("```yaml")
+        lines.append(metadata)
+        lines.append("```")
         lines.append("")
         lines.append("## Inhalt (Markdown)\n")
         lines.append(post.content.strip())

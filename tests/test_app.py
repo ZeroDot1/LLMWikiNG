@@ -321,10 +321,7 @@ class TestAPIEndpoints:
             "/LLMWikiNG/api/v1/wikis/nonexistent/pages",
             headers={"X-API-Key": data["raw_key"]},
         )
-        # wiki_path() auto-creates directories → 200 with empty pages list
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["pages"] == []
+        assert resp.status_code == 404
 
     def test_api_create_page(self, wiki_with_pages, sample_api_keys):
         from fastapi.testclient import TestClient

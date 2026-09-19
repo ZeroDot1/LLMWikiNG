@@ -349,13 +349,13 @@ class TestPageManagement:
         assert resp.status_code == 400
 
     def test_pages_in_nonexistent_wiki_returns_404(self, api_env):
-        _, admin_key, _, client = api_env
+        tmp_path, admin_key, _, client = api_env
         resp = client.get(
             "/LLMWikiNG/api/v1/wikis/niemals/pages",
             headers={"X-API-Key": admin_key},
         )
-        # wiki_path auto-creates dirs → might return 200 with empty list
-        assert resp.status_code in (200, 404)
+        assert resp.status_code == 404
+        assert not (tmp_path / "wikis" / "niemals").exists()
 
 
 # D. DIRECT INGEST API (Wiki-spezifisch)

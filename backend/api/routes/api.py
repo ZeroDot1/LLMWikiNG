@@ -48,7 +48,10 @@ router = APIRouter(prefix=f"{BASE_PATH}/api/v1")
 
 
 def _wiki_or_404(wiki: str):
-    root = wiki_path(wiki)
+    # Do not create directories while validating a read-only API target.
+    # ``wiki_path`` defaults to create=True, which previously made requests
+    # for unknown wiki slugs silently create empty wikis and return 200.
+    root = wiki_path(wiki, create=False)
     if not root.exists():
         raise HTTPException(status_code=404, detail=f"Wiki '{wiki}' nicht gefunden")
     return root

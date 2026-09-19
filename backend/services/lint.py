@@ -198,8 +198,10 @@ def run_lint(wiki: str = "main") -> dict:
                 })
                 issue_count += 1
 
-            for target in re.findall(r"\[.*?\]\(((\.|/).*?\.md)\)", body):
+            for match in re.finditer(r"\[.*?\]\(((?:\.|/)[^)]*?\.md)\)", body):
+                target = match.group(1)
                 clean = target.lstrip("/")
+                clean = re.sub(r"^\./", "", clean)
                 clean = re.sub(r"\.md$", "", clean).lower()
                 clean = clean.replace(" ", "-").replace("_", "-")
                 if clean not in all_slugs and clean not in SYSTEM_PAGES:

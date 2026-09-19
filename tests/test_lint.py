@@ -48,3 +48,13 @@ class TestRunLint:
         result = run_lint("main")
         slugs = [p["slug"] for p in result["missing_type"]]
         assert "no-type" in slugs
+
+    def test_detects_broken_relative_markdown_link(self, tmp_project):
+        wiki_root = tmp_project / "wikis" / "main"
+        (wiki_root / "source.md").write_text(
+            "---\ntype: Concept\ntitle: Source\ntags: [test]\n---\n# Source\n[Missing](./missing.md)",
+            encoding="utf-8",
+        )
+        from services.lint import run_lint
+        result = run_lint("main")
+        assert result["broken_links"] == [{"page_title": "Source", "page_slug": "source", "target": "./missing.md"}]

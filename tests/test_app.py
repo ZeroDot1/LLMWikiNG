@@ -153,6 +153,26 @@ class TestWikiSettingsApi:
         index = tmp_project / "wikis" / "webui-wiki" / "index.md"
         assert 'okf_version: "0.2"' in index.read_text(encoding="utf-8")
 
+    def test_new_wiki_form_creates_okf_wiki(self, sample_users, tmp_project):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.post(
+            "/LLMWikiNG/login",
+            data={"username": "admin", "password": "Admin123!@#"},
+            follow_redirects=False,
+        )
+        response = client.post(
+            "/LLMWikiNG/wikis/new",
+            data={"name": "Form Wiki", "description": "Form test"},
+            follow_redirects=False,
+        )
+        assert response.status_code in (302, 303, 307)
+        wiki_dir = tmp_project / "wikis" / "form-wiki"
+        assert 'okf_version: "0.2"' in (wiki_dir / "index.md").read_text(encoding="utf-8")
+        assert 'okf_version: "0.2"' in (wiki_dir / "log.md").read_text(encoding="utf-8")
+
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient
         from main import create_app

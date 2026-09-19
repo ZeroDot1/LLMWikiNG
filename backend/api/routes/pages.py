@@ -2216,7 +2216,7 @@ async def edit_save(request: Request):
     target_dir = wiki_path(wiki) if folder == "wiki" else RAW_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
     filepath = (target_dir / filename).resolve()
-    if not str(filepath).startswith(str(target_dir.resolve())):
+    if not filepath.is_relative_to(target_dir.resolve()):
         if is_json:
             return JSONResponse(status_code=400, content={"detail": "Path-Traversal blockiert"})
         return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")

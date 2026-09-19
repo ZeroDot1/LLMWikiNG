@@ -1197,7 +1197,7 @@ Willkommen im Wiki **{name}**.
         if not RAW_DIR.exists():
             return "Rohquellen-Verzeichnis (raw/) nicht vorhanden."
         filepath = (RAW_DIR / filename).resolve()
-        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+        if not filepath.is_relative_to(RAW_DIR.resolve()):
             return "Fehler: Ungueltiger Dateipfad (keine Pfad-Traversale erlaubt)."
         if not filepath.exists() or not filepath.is_file():
             return f"Rohquelle '{filename}' nicht gefunden."
@@ -1246,7 +1246,7 @@ Willkommen im Wiki **{name}**.
         if not RAW_DIR.exists():
             return "Rohquellen-Verzeichnis (raw/) nicht vorhanden."
         filepath = (RAW_DIR / filename).resolve()
-        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+        if not filepath.is_relative_to(RAW_DIR.resolve()):
             return "Fehler: Ungueltiger Dateipfad (keine Pfad-Traversale erlaubt)."
         if not filepath.exists() or not filepath.is_file():
             return f"Rohquelle '{filename}' nicht gefunden."
@@ -2758,6 +2758,4 @@ def get_mcp_combined_app():
         return None
 
     return mcp_server.sse_app()
-
-
 

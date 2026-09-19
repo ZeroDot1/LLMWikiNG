@@ -24,7 +24,7 @@ def safe_wiki_root(wiki: str) -> Path:
     from core.config import WIKIS_ROOT, wiki_path
     root = wiki_path(wiki).resolve()
     base = WIKIS_ROOT.resolve()
-    if not str(root).startswith(str(base)):
+    if not root.is_relative_to(base):
         raise UnsafePathError(f"Ungültiger Wiki-Pfad: {wiki}")
     root.mkdir(parents=True, exist_ok=True)
     return root
@@ -42,7 +42,7 @@ def safe_page_path(wiki: str, slug: str) -> Path:
     if len(safe_name) > 120:
         raise UnsafePathError(f"Seiten-Slug zu lang (max. 120 Zeichen): {slug}")
     path = (root / f"{safe_name}.md").resolve()
-    if not str(path).startswith(str(root)):
+    if not path.is_relative_to(root):
         raise UnsafePathError(f"Path-Traversal blockiert: {slug}")
     path.parent.mkdir(parents=True, exist_ok=True)
     return path

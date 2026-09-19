@@ -1129,7 +1129,7 @@ async def api_direct_sync(request: Request, wiki_name: str, user: dict = Depends
 def api_delete_raw(filename: str, admin: dict = Depends(require_api_admin)):
     """Loescht eine Rohquellen-Datei aus dem raw/-Verzeichnis (Admin only)."""
     filepath = (RAW_DIR / filename).resolve()
-    if not str(filepath).startswith(str(RAW_DIR.resolve())):
+    if not filepath.is_relative_to(RAW_DIR.resolve()):
         raise HTTPException(status_code=400, detail="Pfad-Traversale nicht erlaubt")
     if not filepath.exists() or not filepath.is_file():
         raise HTTPException(status_code=404, detail="Rohquelle nicht gefunden")
@@ -1150,7 +1150,7 @@ def api_delete_raw_batch(body: dict, admin: dict = Depends(require_api_admin)):
     errors = []
     for filename in filenames:
         filepath = (RAW_DIR / filename).resolve()
-        if not str(filepath).startswith(str(RAW_DIR.resolve())):
+        if not filepath.is_relative_to(RAW_DIR.resolve()):
             errors.append(f"{filename}: Ungueltiger Pfad")
         elif not filepath.exists() or not filepath.is_file():
             errors.append(f"{filename}: Nicht gefunden")
@@ -1366,4 +1366,3 @@ async def api_tailscale_reveal(request: Request, admin: dict = Depends(require_a
 
     log_action("tailscale_reveal", details="Tailscale Auth-Key entschlüsselt und angezeigt", user_id=admin.get("id"), username=admin.get("username"), request=request)
     return {"raw_key": raw_key}
-

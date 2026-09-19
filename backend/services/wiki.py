@@ -428,11 +428,12 @@ def read_wiki_file(filename: str, wiki: str = "main") -> dict | None:
     if not root.exists():
         return None
     filepath = (root / filename).resolve()
-    if not str(filepath).startswith(str(root.resolve())):
+    resolved_root = root.resolve()
+    if not filepath.is_relative_to(resolved_root):
         return None
     if not filepath.exists():
         filepath_md = (root / f"{filename}.md").resolve()
-        if filepath_md.exists() and str(filepath_md).startswith(str(root.resolve())):
+        if filepath_md.exists() and filepath_md.is_relative_to(resolved_root):
             filepath = filepath_md
         else:
             return None

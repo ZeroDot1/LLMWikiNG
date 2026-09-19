@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{{ base_path }}/static/css/tags.css?v={{ app_version }}">
     <link rel="stylesheet" href="{{ base_path }}/static/css/tailscale.css?v={{ app_version }}">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>📖</text></svg>">
-    <meta name="description" content="LLMWikiNG – Dein lokales LLM-Wiki by ZeroDot1">
+    <meta name="description" content="{{ _('global.meta_description') }}">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script>window.BASE_PATH = "{{ base_path }}";</script>
     <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
@@ -20,7 +20,7 @@
 
 <!-- Mobile top bar -->
 <header class="md:hidden sticky top-0 z-30 flex items-center gap-3 bg-surface border-b border-border px-4 h-14">
-    <button type="button" data-menu-toggle aria-label="Menü" class="p-2 -ml-2 rounded-lg hover:bg-bg-sunken text-text">
+    <button type="button" data-menu-toggle aria-label="{{ _('global.menu') }}" class="p-2 -ml-2 rounded-lg hover:bg-bg-sunken text-text">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
     <a href="{{ base_path }}/" class="font-bold text-lg flex-1">LLMWikiNG</a>
@@ -46,7 +46,7 @@
             <option value="{{ w.slug }}" {% if w.slug == current_wiki or w.name == current_wiki %}selected{% endif %}>{{ w.name }}</option>
             {% endfor %}
         </select>
-        <a href="{{ base_path }}/wikis/new" class="mt-2 inline-block text-xs font-medium text-primary hover:underline">+ Neues Wiki</a>
+        <a href="{{ base_path }}/wikis/new" class="mt-2 inline-block text-xs font-medium text-primary hover:underline">+ {{ _('sidebar.new_wiki') }}</a>
     </div>
 
     <nav class="flex-1 px-3 py-3 space-y-1 text-sm">

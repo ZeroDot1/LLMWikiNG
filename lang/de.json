@@ -14,6 +14,8 @@
   "global": {
     "app_name": "LLMWikiNG",
     "app_edition": "by ZeroDot1",
+    "meta_description": "LLMWikiNG – Dein lokales LLM-Wiki von ZeroDot1",
+    "menu": "Menü",
     "back_to_top": "↑",
     "keyboard_search": "Tastaturkürzel: Strg+/ = Fokus Suche"
   },
@@ -28,6 +30,7 @@
     "exported": "📤 Exportiertes",
     "knowledge_graph": "🕸️ Wissensgraph",
     "ingest": "📥 Quelle einspielen",
+    "new_wiki": "Neues Wiki",
     "system_tools": "System & Tools",
     "tags": "Tags",
     "search": "🔍 Suche",
@@ -142,6 +145,7 @@
     "page_title": "Quelle einspielen / merken",
     "heading": "📥 Quellen verwalten",
     "show_ingestlater": "📝 Merkzettel (Ingest Later) anzeigen",
+    "target_wiki": "Ziel-Wiki:",
     "subtitle": "Importiere neue Quellen direkt in dein Wiki oder merke dir URLs und Texte für eine spätere Bearbeitung.",
     "go_to_new_page": "Zur neu erstellten Wiki-Seite →",
     "go_to_ingestlater": "Zur Ingest-Later Liste →",
@@ -1020,5 +1024,10 @@
     "tagged_pages": "Markierte Seiten",
     "filtered_by": "Gefiltert nach Tag:",
     "clear_filter": "Filter zurücksetzen"
+    ,"all_tags": "Alle Tags"
+    ,"show_all": "Alle Tags anzeigen"
+    ,"pages_with_tag": "Seiten mit Tag"
+    ,"results": "Treffer"
+    ,"no_pages_with_tag": "Keine Seiten mit dem Tag gefunden"
   }
 }

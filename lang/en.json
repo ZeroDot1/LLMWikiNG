@@ -14,6 +14,8 @@
   "global": {
     "app_name": "LLMWikiNG",
     "app_edition": "by ZeroDot1",
+    "meta_description": "LLMWikiNG – Your local LLM knowledge wiki by ZeroDot1",
+    "menu": "Menu",
     "back_to_top": "↑",
     "keyboard_search": "Keyboard shortcut: Ctrl+/ = Focus search"
   },
@@ -28,6 +30,7 @@
     "exported": "📤 Exported",
     "knowledge_graph": "🕸️ Knowledge Graph",
     "ingest": "📥 Ingest Source",
+    "new_wiki": "New Wiki",
     "system_tools": "System & Tools",
     "search": "🔍 Search",
     "tags": "Tags",
@@ -142,6 +145,7 @@
     "page_title": "Ingest / Save for Later",
     "heading": "📥 Manage Sources",
     "show_ingestlater": "📝 Show Ingest Later List",
+    "target_wiki": "Target wiki:",
     "subtitle": "Import new sources directly into your wiki or save URLs and texts for later processing.",
     "go_to_new_page": "Go to newly created wiki page →",
     "go_to_ingestlater": "Go to Ingest Later list →",
@@ -1020,5 +1024,10 @@
     "tagged_pages": "Tagged Pages",
     "filtered_by": "Filtered by tag:",
     "clear_filter": "Clear filter"
+    ,"all_tags": "All tags"
+    ,"show_all": "Show all tags"
+    ,"pages_with_tag": "Pages with tag"
+    ,"results": "results"
+    ,"no_pages_with_tag": "No pages found with tag"
   }
 }

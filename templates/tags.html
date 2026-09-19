@@ -11,9 +11,9 @@
 {% if tag_cloud %}
 <div class="rounded-xl border border-border bg-surface p-4 mb-6 shadow-sm">
     <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center justify-between">
-        <span>🏷️ Alle Tags ({{ tag_cloud|length }})</span>
+        <span>🏷️ {{ _('tags.all_tags') }} ({{ tag_cloud|length }})</span>
         {% if tag_filter %}
-        <a href="{{ base_path }}/tags?wiki={{ current_wiki }}" class="text-xs text-primary font-normal hover:underline">← Alle Tags anzeigen</a>
+        <a href="{{ base_path }}/tags?wiki={{ current_wiki }}" class="text-xs text-primary font-normal hover:underline">← {{ _('tags.show_all') }}</a>
         {% endif %}
     </h2>
     <div class="tag-cloud tag-cloud--large flex flex-wrap gap-2">
@@ -36,9 +36,9 @@
 {% if tag_filter %}
 <div class="mb-6">
     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-        <span>Seiten mit Tag</span>
+        <span>{{ _('tags.pages_with_tag') }}</span>
         <span class="inline-flex items-center rounded-full bg-primary text-white text-xs px-3 py-1 font-mono">#{{ tag_filter }}</span>
-        <span class="text-xs text-text-muted font-normal">({{ tagged_pages|length }} Treffer)</span>
+        <span class="text-xs text-text-muted font-normal">({{ tagged_pages|length }} {{ _('tags.results') }})</span>
     </h2>
 
     {% if tagged_pages %}
@@ -58,7 +58,7 @@
     </div>
     {% else %}
     <div class="rounded-xl border border-border bg-surface p-6 text-center text-text-muted">
-        Keine Seiten mit dem Tag #{{ tag_filter }} gefunden.
+        {{ _('tags.no_pages_with_tag') }} #{{ tag_filter }}.
     </div>
     {% endif %}
 </div>
@@ -66,15 +66,15 @@
 
 {% if tag_stats %}
 <div class="mt-8 rounded-xl border border-border bg-surface p-6 shadow-sm">
-    <h2 class="text-lg font-semibold mb-3">📊 Tag-Statistiken</h2>
+    <h2 class="text-lg font-semibold mb-3">📊 {{ _('tags.statistics') }}</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
         <div class="rounded-lg bg-bg-sunken p-4 border border-border/60">
             <div class="text-3xl font-bold text-primary">{{ tag_stats.total_tags }}</div>
-            <div class="text-text-muted text-xs mt-1">Eindeutige Tags</div>
+            <div class="text-text-muted text-xs mt-1">{{ _('tags.unique_tags') }}</div>
         </div>
         <div class="rounded-lg bg-bg-sunken p-4 border border-border/60">
             <div class="text-3xl font-bold text-primary">{{ tag_stats.tagged_pages }}</div>
-            <div class="text-text-muted text-xs mt-1">Verschlagwortete Seiten</div>
+            <div class="text-text-muted text-xs mt-1">{{ _('tags.tagged_pages') }}</div>
         </div>
     </div>
 </div>

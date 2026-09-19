@@ -10,6 +10,8 @@ inklusive IPv4/IPv6-Adressen und Metadaten.
 from __future__ import annotations
 
 import sqlite3
+import ipaddress
+import os
 from datetime import datetime
 from pathlib import Path
 from starlette.requests import Request
@@ -106,6 +108,10 @@ ACTION_CATEGORIES = {
     "tailscale_reveal": "tailscale",
 }
 
+# Diese Kategorien dürfen nicht per normaler UI-Konfiguration abgeschaltet
+# werden, weil sie für Nachvollziehbarkeit und Incident Response wesentlich sind.
+MANDATORY_CATEGORIES = {"auth", "api_keys", "audit", "mcp"}
+
 _db_initialized: bool = False
 
 
@@ -113,16 +119,54 @@ def is_audit_enabled(action: str) -> bool:
     """Prüft, ob Logging generell und für die spezifische Kategorie aktiviert ist."""
     config = load_app_config()
     
+    category = ACTION_CATEGORIES.get(action, "system")
+    if category in MANDATORY_CATEGORIES:
+        return True
     if not config.get("audit_enabled", True):
         return False
-        
-    category = ACTION_CATEGORIES.get(action, "system")
-    disabled_categories = config.get("audit_disabled_categories", [])
+    disabled_categories = set(config.get("audit_disabled_categories", [])) - MANDATORY_CATEGORIES
     
     if category in disabled_categories:
         return False
         
     return True
+
+
+def _trusted_proxy_networks() -> list[ipaddress._BaseNetwork]:
+    """Liest explizit erlaubte Reverse-Proxies aus TRUSTED_PROXY_IPS.
+
+    Komma-getrennte IPs/CIDRs werden unterstützt. Ohne Konfiguration werden
+    Forwarded-Header niemals als Client-IP akzeptiert.
+    """
+    configured = os.getenv("LLMWIKI_TRUSTED_PROXY_IPS", "")
+    networks = []
+    for value in configured.split(","):
+        value = value.strip()
+        if not value:
+            continue
+        try:
+            networks.append(ipaddress.ip_network(value, strict=False))
+        except ValueError:
+            continue
+    return networks
+
+
+def _request_ip(request: Request | None) -> tuple[str, str | None]:
+    if not request:
+        return "unknown", None
+    direct_ip = request.client.host if request.client else "unknown"
+    ip_address = direct_ip
+    try:
+        direct = ipaddress.ip_address(direct_ip)
+        if any(direct in network for network in _trusted_proxy_networks()):
+            forwarded = request.headers.get("x-forwarded-for")
+            if forwarded:
+                ip_address = forwarded.split(",")[0].strip()
+            else:
+                ip_address = request.headers.get("x-real-ip", direct_ip)
+    except ValueError:
+        pass
+    return ip_address, request.headers.get("user-agent")
 
 def init_db():
     """Initialisiert die SQLite-Datenbank für Audit-Logs und führt ggf. Migrationen durch."""
@@ -175,19 +219,7 @@ def log_action(
     try:
         init_db()  # Sicherstellen, dass DB existiert
         
-        ip_address = "unknown"
-        user_agent = None
-        if request:
-            forwarded = request.headers.get("x-forwarded-for")
-            if forwarded:
-                ip_address = forwarded.split(",")[0].strip()
-            else:
-                real_ip = request.headers.get("x-real-ip")
-                if real_ip:
-                    ip_address = real_ip
-                elif request.client:
-                    ip_address = request.client.host
-            user_agent = request.headers.get("user-agent")
+        ip_address, user_agent = _request_ip(request)
 
         conn = sqlite3.connect(AUDIT_DB)
         conn.execute("PRAGMA journal_mode=WAL;")

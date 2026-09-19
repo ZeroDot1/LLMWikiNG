@@ -10,8 +10,6 @@
   "registration_enabled": false,
   "audit_enabled": true,
   "audit_disabled_categories": [
-    "api_keys",
-    "audit",
     "ingest",
     "pages",
     "system",

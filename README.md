@@ -371,7 +371,7 @@ opencode mcp add
 For **`/` autocomplete** in OpenCode's chat, copy the `.opencode/command/` directory from this project into your project:
 
 ```bash
-# In deinem Projekt mit OpenCode:
+# In your OpenCode project:
 cp -r pfad/zu/LLMWikiNG/.opencode/command/ .opencode/command/
 ```
 
@@ -379,15 +379,15 @@ After restarting OpenCode, type `/` in chat to see all 44 LLMWikiNG commands:
 
 | Command | Description |
 |---------|-------------|
-| `/wikis` | Alle Wikis auflisten |
-| `/read` | Wiki-Seite lesen |
-| `/write` | Wiki-Seite erstellen |
-| `/search` | Volltextsuche |
-| `/status` | Systemstatus anzeigen |
-| `/update` / `/update-lwk` | System-Update ausführen |
-| `/user-edit` | Benutzer bearbeiten |
-| `/tailscale-status` | Tailscale-Status anzeigen |
-| … | … und 35 weitere |
+| `/wikis` | List all wikis |
+| `/read` | Read a wiki page |
+| `/write` | Create a wiki page |
+| `/search` | Full-text search |
+| `/status` | Show system status |
+| `/update` / `/update-lwk` | Run a system update |
+| `/user-edit` | Edit a user |
+| `/tailscale-status` | Show Tailscale status |
+| … | … and 35 more |
 
 > **Note:** OpenCode loads MCP Prompts (via `list_prompts`) as AI hints, but does **not** show them in the `/` chat autocomplete by default. Use the `.opencode/command/` files above for native `/`-support.
 
@@ -581,9 +581,9 @@ author: Agent (Cursor-Dev)
 status: AI-Generated
 ---
 
-# MCP Architektur 2026
+# MCP Architecture 2026
 
-Hier beginnt der freie, menschenlesbare Markdown-Textkörper.
+This is where the free-form, human-readable Markdown body begins.
 ```
 
 > **`content_hash`** – SHA-256 of the page body (first 16 hex chars), updated on every save by all write paths (Web Editor, MCP `okf_write_concept`, API). Enables **conflict detection**: if the stored hash differs from the incoming content, the write is rejected with an error prompt.
@@ -740,7 +740,7 @@ To view or rotate this secret, log in as an administrator, navigate to **Setting
 
 #### 📋 Steps to follow after changing the secret:
 1. **Re-Login**: All active sessions are immediately invalidated. You will be redirected to the login page. Log back in with your username and password.
-2. **Recreate API Keys**: Go to **Settings** -> **API-Keys**. Your old keys will show decryption errors since they were encrypted with the old secret. Click **"🗑️ Alle API-Keys löschen"** or **"🗑️ Alle MCP-Schlüssel löschen"** (confirming with your password) and create new ones.
+2. **Recreate API Keys**: Go to **Settings** -> **API Keys**. Your old keys will show decryption errors since they were encrypted with the old secret. Click **"🗑️ Delete all API keys"** or **"🗑️ Delete all MCP keys"** (confirming with your password) and create new ones.
 3. **Update Client Scripts**: Update any scripts, cron jobs, or curl integrations that query the API with the newly generated API keys.
 4. **Restore Existing Installations**: If you updated a running installation that used a different secret in `docker-compose.yml`, copy the old secret string and paste it into `config.json` under `"secret_key"` (or reveal the new secret in the WebUI and recreate your API keys).
 
@@ -822,3 +822,10 @@ MCP tools: `okf_matrix_search` (wiki_read) and `okf_matrix_ingest` (wiki_write).
 This project was created by **ZeroDot1** and is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. You may copy, modify, and distribute the code, but must ensure that when provided over a network (Software as a Service), the modified source code is made available to users free of charge.
 
 Special thanks to [tevsa](https://github.com/tevsa) for the great idea and support in realizing this project. See the [LICENSE](LICENSE) file for more details.
+### Audit Logging and Reverse-Proxy IPs
+
+Audit categories for authentication, API keys, auditing, and MCP always remain
+enabled. Other categories can still be disabled through
+`audit_disabled_categories`. For the correct client IP behind a reverse proxy,
+set `LLMWIKI_TRUSTED_PROXY_IPS` to a comma-separated list of IPs or CIDRs.
+Without this variable, `X-Forwarded-For` and `X-Real-IP` are not trusted.

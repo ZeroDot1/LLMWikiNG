@@ -24,13 +24,13 @@ class TestIsAuditEnabled:
         from core.config import save_app_config
         from services.audit import is_audit_enabled
         save_app_config({"audit_enabled": False})
-        assert is_audit_enabled("login_success") is False
+        assert is_audit_enabled("page_save") is False
 
     def test_disabled_by_category(self, tmp_project):
         from core.config import save_app_config
         from services.audit import is_audit_enabled
-        save_app_config({"audit_enabled": True, "audit_disabled_categories": ["auth"]})
-        assert is_audit_enabled("login_success") is False
+        save_app_config({"audit_enabled": True, "audit_disabled_categories": ["pages"]})
+        assert is_audit_enabled("page_save") is False
 
     def test_other_categories_still_enabled(self, tmp_project):
         from core.config import save_app_config
@@ -50,7 +50,7 @@ class TestIsAuditEnabled:
         from core.config import save_app_config
         from services.audit import is_audit_enabled
         save_app_config({"audit_enabled": True, "audit_disabled_categories": ["mcp"]})
-        assert is_audit_enabled("mcp_tool_call") is False
+        assert is_audit_enabled("mcp_tool_call") is True
         assert is_audit_enabled("page_save") is True
 
 
@@ -140,7 +140,7 @@ class TestLogAction:
         from services.audit import init_db, log_action, get_logs
         init_db()
         save_app_config({"audit_enabled": False})
-        log_action("login_success")
+        log_action("page_save")
         _, total = get_logs()
         assert total == 0
 
@@ -161,7 +161,7 @@ class TestLogAction:
         assert logs[0]["ip_address"] == "192.168.1.1"
         assert logs[0]["user_agent"] == "TestAgent/1.0"
 
-    def test_x_forwarded_for_ip(self, tmp_project):
+    def test_x_forwarded_for_ip(self, tmp_project, monkeypatch):
         from services.audit import init_db, log_action, get_logs
         init_db()
 
@@ -172,11 +172,12 @@ class TestLogAction:
             headers = {"x-forwarded-for": "10.0.0.1, 10.0.0.2", "user-agent": "Test"}
             client = MockClient()
 
+        monkeypatch.setenv("LLMWIKI_TRUSTED_PROXY_IPS", "127.0.0.1/32")
         log_action("login_success", request=MockRequest())
         logs, _ = get_logs()
         assert logs[0]["ip_address"] == "10.0.0.1"
 
-    def test_x_real_ip(self, tmp_project):
+    def test_x_real_ip(self, tmp_project, monkeypatch):
         """Testet x-real-ip Header als Fallback."""
         from services.audit import init_db, log_action, get_logs
         init_db()
@@ -188,6 +189,7 @@ class TestLogAction:
             headers = {"x-real-ip": "172.16.0.1", "user-agent": "Test"}
             client = MockClient()
 
+        monkeypatch.setenv("LLMWIKI_TRUSTED_PROXY_IPS", "127.0.0.1/32")
         log_action("login_success", request=MockRequest())
         logs, _ = get_logs()
         assert logs[0]["ip_address"] == "172.16.0.1"

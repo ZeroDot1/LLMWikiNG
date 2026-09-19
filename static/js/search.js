@@ -77,14 +77,20 @@
                 return;
               }
               autocompleteFocus = -1;
-              var html = "";
+              autocompleteBox.replaceChildren();
               data.tags.forEach(function (t, idx) {
-                html += '<div class="px-3 py-2 cursor-pointer hover:bg-primary-subtle/20 text-sm border-b border-border last:border-b-0" data-index="' + idx + '">';
-                html += '<span class="text-primary font-mono">#' + t.tag + '</span>';
-                html += ' <span class="text-text-muted text-xs">(' + t.count + ')</span>';
-                html += "</div>";
+                var item = document.createElement("div");
+                item.className = "px-3 py-2 cursor-pointer hover:bg-primary-subtle/20 text-sm border-b border-border last:border-b-0";
+                item.dataset.index = idx;
+                var tag = document.createElement("span");
+                tag.className = "text-primary font-mono";
+                tag.textContent = "#" + String(t.tag || "");
+                var count = document.createElement("span");
+                count.className = "text-text-muted text-xs";
+                count.textContent = " (" + String(Number(t.count) || 0) + ")";
+                item.append(tag, count);
+                autocompleteBox.appendChild(item);
               });
-              autocompleteBox.innerHTML = html;
               autocompleteBox.classList.remove("hidden");
 
               // Klick auf Autocomplete-Eintrag

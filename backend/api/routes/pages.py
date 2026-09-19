@@ -62,7 +62,7 @@ from services.search import matrix_search
 from services.sync import is_sync_needed, append_okf_log, request_sync_background
 from services.graph import build_graph_data, build_graph_data_paginated, build_graph_data_all
 from services.lint import run_lint
-from services.analytics import get_wiki_analytics
+from services.status import get_status_snapshot
 from services.editor import ensure_okf_frontmatter, detect_conflict
 from services.email_sender import load_smtp_config, save_smtp_config, send_real_email
 
@@ -1479,20 +1479,7 @@ async def admin_update_check(request: Request):
 @router.get("/status")
 def status_dashboard(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
-    stats = get_wiki_stats(wiki)
-    analytics = get_wiki_analytics(wiki)
-    readiness_lint = run_lint(wiki)
-    from services.quality import usage_summary
-    try:
-        sync_needed = is_sync_needed(wiki)
-    except Exception:
-        sync_needed = True
-    readiness = {
-        "ready": not sync_needed and readiness_lint.get("issue_count", 0) == 0,
-        "issues": readiness_lint.get("issue_count", 0),
-        "changed_sources": len(readiness_lint.get("changed_sources", [])),
-        "usage": usage_summary(wiki),
-    }
+    snapshot = get_status_snapshot(wiki)
 
     tools = {}
     for tool in ("jq", "ollama", "agy", "opencode"):
@@ -1513,12 +1500,12 @@ def status_dashboard(request: Request):
     return render(
         request, "status.html",
         active_page="status", wiki=wiki, wikis=list_wikis(),
-        stats=stats,
+        stats=snapshot["stats"],
         tools=tools,
         config=config_data,
-        analytics=analytics,
-        readiness=readiness,
-        sync_needed=sync_needed,
+        analytics=snapshot["analytics"],
+        readiness=snapshot["readiness"],
+        sync_needed=snapshot["sync_needed"],
         app_version=app_version_text,
         update_available=update_available,
     )

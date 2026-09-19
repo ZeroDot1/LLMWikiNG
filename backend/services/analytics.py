@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 
 from core.config import WIKI_DIR, wiki_path
+from services.cache import get_cache
 from services.wiki import get_all_wiki_pages, extract_links_from_content, SYSTEM_PAGES
 
 
@@ -23,6 +24,11 @@ def _parse_tags(line: str) -> list[str]:
 def get_wiki_analytics(wiki: str = "main") -> dict:
     wiki_pages = get_all_wiki_pages(wiki)
     root = wiki_path(wiki)
+    cache = get_cache()
+    cache_key = f"analytics:{wiki}"
+    cached = cache.get(cache_key, root)
+    if cached is not None:
+        return cached
 
     inbound_links = {page["slug"]: 0 for page in wiki_pages}
     outbound_count = {page["slug"]: 0 for page in wiki_pages}
@@ -100,9 +106,11 @@ def get_wiki_analytics(wiki: str = "main") -> dict:
                 pass
     bridges.sort(key=lambda x: x["tags_count"], reverse=True)
 
-    return {
+    result = {
         "hubs": hubs[:8],
         "dead_ends": dead_ends[:8],
         "top_tags": top_tags,
         "bridges": bridges[:5],
     }
+    cache.set(cache_key, result, root)
+    return result

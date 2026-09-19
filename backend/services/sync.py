@@ -548,6 +548,7 @@ async def do_matrix_sync_async(
             _cache.invalidate_prefix(f"pages:{wiki}")
             _cache.invalidate(f"graph:{wiki}")
             _cache.invalidate_prefix(f"tags:{wiki}")
+            _cache.invalidate(f"analytics:{wiki}")
 
         try:
             log_msg = f"matrix: {'ok' if status.matrix else 'err'} | index: {'ok' if status.index else 'err'}"

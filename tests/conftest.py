@@ -205,6 +205,10 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     _real_static_dir = Path(__file__).resolve().parent.parent / "static"
     monkeypatch.setattr(main_mod, "STATIC_DIR", _real_static_dir)
 
+    # Process-global caches must not leak data between isolated project roots.
+    from services.cache import get_cache
+    get_cache().clear()
+
     return tmp_path
 
 

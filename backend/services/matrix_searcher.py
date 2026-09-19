@@ -87,25 +87,36 @@ class MatrixSearcher:
         query_text = query.strip()
 
         shard_paths = self._shard_paths()
+        # Keep concrete Task objects so cancellation can be completed before
+        # the request loop shuts down.  Leaving aiosqlite work behind here can
+        # otherwise make its worker thread try to notify an already closed
+        # event loop.
         tasks = [
-            self._query_shard(path, query_text, tag_filters, wikis)
+            asyncio.create_task(self._query_shard(path, query_text, tag_filters, wikis))
             for path in shard_paths
         ]
         shards_queried = 0
         results: list[dict] = []
 
         chunk_size = max(self.max_concurrent // 2, 8)
-        for i in range(0, len(tasks), chunk_size):
-            chunk = tasks[i : i + chunk_size]
-            batch = await asyncio.gather(*chunk, return_exceptions=True)
-            for outcome in batch:
-                if isinstance(outcome, Exception):
-                    log.warning("MatrixSearcher: Shard-Fehler übersprungen: %s", outcome)
-                    continue
-                if not outcome:
-                    continue
-                shards_queried += 1
-                results.extend(outcome)
+        try:
+            for i in range(0, len(tasks), chunk_size):
+                chunk = tasks[i : i + chunk_size]
+                batch = await asyncio.gather(*chunk, return_exceptions=True)
+                for outcome in batch:
+                    if isinstance(outcome, Exception):
+                        log.warning("MatrixSearcher: Shard-Fehler übersprungen: %s", outcome)
+                        continue
+                    if not outcome:
+                        continue
+                    shards_queried += 1
+                    results.extend(outcome)
+        finally:
+            pending = [task for task in tasks if not task.done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
 
         results.sort(key=lambda r: r.get("score", 0), reverse=True)
         results = results[:limit]

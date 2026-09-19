@@ -529,7 +529,6 @@ def create_app() -> FastAPI:
             )
 
         if request.url.path.startswith(f"{BASE_PATH}/api/v1"):
-            from fastapi.responses import JSONResponse
             return JSONResponse(status_code=500, content={"detail": "Interner Server-Fehler"})
 
         from core.config import resolve_lang, Translator

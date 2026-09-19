@@ -52,8 +52,8 @@ def get_wiki_analytics(wiki: str = "main") -> dict:
                     if t_slug in inbound_links:
                         inbound_links[t_slug] += 1
                         outbound_count[slug] += 1
-            except Exception:
-                pass
+            except OSError:
+                continue
 
     hubs = []
     for page in wiki_pages:
@@ -80,8 +80,8 @@ def get_wiki_analytics(wiki: str = "main") -> dict:
                     for line in fm_match.group(1).split("\n"):
                         if line.startswith("tags:"):
                             slug_tags[slug] = set(_parse_tags(line))
-            except Exception:
-                pass
+            except OSError:
+                continue
 
     bridges = []
     for page in wiki_pages:
@@ -102,8 +102,8 @@ def get_wiki_analytics(wiki: str = "main") -> dict:
                         "tags_count": len(seen_tags),
                         "connected_tags": sorted(list(seen_tags)),
                     })
-            except Exception:
-                pass
+            except OSError:
+                continue
     bridges.sort(key=lambda x: x["tags_count"], reverse=True)
 
     result = {

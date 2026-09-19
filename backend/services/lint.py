@@ -92,8 +92,8 @@ def run_lint(wiki: str = "main") -> dict:
                             "sources": set(),
                         }
                     missing_map[target_slug]["sources"].add((p["title"], p["slug"]))
-        except Exception:
-            pass
+        except KeyError:
+            continue
 
     for ref_slug, info in missing_map.items():
         sources_list = sorted(list(info["sources"]))
@@ -121,8 +121,8 @@ def run_lint(wiki: str = "main") -> dict:
                     "mtime_formatted": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime("%Y-%m-%d"),
                     "mtime": stat.st_mtime,
                 })
-            except Exception:
-                pass
+            except OSError:
+                continue
     stale_pages.sort(key=lambda x: x["mtime"])
     stale_pages = stale_pages[:5]
 
@@ -141,8 +141,8 @@ def run_lint(wiki: str = "main") -> dict:
                         "raw_file": raw_file,
                     })
                     issue_count += 1
-        except Exception:
-            pass
+        except KeyError:
+            continue
 
     # 4b. Quellen, die nach dem Ingest verändert wurden
     from services.quality import stale_sources
@@ -177,8 +177,8 @@ def run_lint(wiki: str = "main") -> dict:
             if not has_tags:
                 no_tags.append(p)
                 issue_count += 1
-        except Exception:
-            pass
+        except KeyError:
+            continue
 
     # 6. Defekte absolute/relative Markdown-Links und Wortanzahl-Check
     for p in pages:
@@ -211,8 +211,8 @@ def run_lint(wiki: str = "main") -> dict:
                         "target": target,
                     })
                     issue_count += 1
-        except Exception:
-            pass
+        except KeyError:
+            continue
 
     # 7. Querverlinkungen vorschlagen (für verwaiste Seiten)
     for o in orphans:
@@ -231,8 +231,8 @@ def run_lint(wiki: str = "main") -> dict:
                         "to_slug": o["slug"],
                         "keyword": o["title"]
                     })
-            except Exception:
-                pass
+            except KeyError:
+                continue
 
     return {
         "orphans": orphans,

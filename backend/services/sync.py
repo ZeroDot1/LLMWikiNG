@@ -70,8 +70,8 @@ class SyncStatus:
                 known_fields = {field.name for field in dataclasses.fields(cls)}
                 filtered = {k: v for k, v in data.items() if k in known_fields}
                 return cls(**filtered)
-            except Exception:
-                pass
+            except (OSError, ValueError) as exc:
+                log.warning("Could not load sync status for %s: %s", wiki, exc)
         return cls(wiki=wiki)
 
     def save(self) -> None:
@@ -109,8 +109,8 @@ def _load_wiki_sync_hash(wiki: str = "main") -> str | None:
     try:
         if p.exists():
             return p.read_text(encoding="utf-8").strip()
-    except Exception:
-        pass
+    except OSError as exc:
+        log.warning("Could not read sync hash for %s: %s", wiki, exc)
     return None
 
 def _save_wiki_sync_hash(wiki: str = "main", value: str = "") -> None:
@@ -152,8 +152,8 @@ def _load_sync_cache(wiki: str = "main", default: dict | None = None) -> dict:
         try:
             import json
             return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except (OSError, ValueError) as exc:
+            log.warning("Could not load sync cache for %s: %s", wiki, exc)
     return default or {"version": 1, "fingerprints": {}, "mtimes": {}, "last_sync": None}
 
 
@@ -559,8 +559,8 @@ async def do_matrix_sync_async(
                 log_msg,
                 wiki
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Could not append sync audit entry for %s: %s", wiki, exc)
 
         await asyncio.to_thread(set_last_sync, datetime.now(timezone.utc), wiki)
 

@@ -212,8 +212,8 @@ class MatrixSearcher:
                     total_size += f.stat().st_size
                 except OSError:
                     pass
-        except Exception:
-            pass
+        except OSError as exc:
+            log.warning("Could not inspect Matrix shards: %s", exc)
         return {
             "shard_count": shard_count,
             "total_size_bytes": total_size,

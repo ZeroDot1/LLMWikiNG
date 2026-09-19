@@ -9,10 +9,8 @@ via itsdangerous, gehashte API-Keys (SHA-256, roher Key nur einmal sichtbar).
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
-import os
 import secrets
 
 import argon2
@@ -108,7 +106,6 @@ def verify_api_key(raw: str, stored_hash: str) -> bool:
 
 
 import base64
-from cryptography.fernet import Fernet
 
 _key_cipher = URLSafeTimedSerializer(SECRET, salt="llmwikingapikey")
 _key_cipher_mcp = URLSafeTimedSerializer(SECRET, salt="llmwikingmcpkey")
@@ -195,5 +192,4 @@ def decrypt_tailscale_key(encrypted_key: str) -> str | None:
             return _key_cipher_tailscale.loads(encrypted_key, max_age=None)
         except Exception:
             return None
-
 

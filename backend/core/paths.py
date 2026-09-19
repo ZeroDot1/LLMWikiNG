@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from core.config import WIKIS_ROOT, slugify_wiki
+from core.config import slugify_wiki
 
 
 class UnsafePathError(ValueError):

@@ -52,7 +52,7 @@ def require_admin(request: Request) -> dict:
     return user
 
 
-from core.security import read_session, verify_password, create_csrf_token, verify_csrf_token
+from core.security import verify_csrf_token
 
 
 def verify_request_csrf(request: Request, user: dict) -> None:

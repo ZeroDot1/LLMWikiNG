@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from core.config import BASE_PATH, wiki_path, list_wikis, RAW_DIR, EXPORT_DIR, PROJECT_ROOT, APP_VERSION, Path, DATA_DIR, WIKIS_ROOT, save_wiki_meta, slugify_wiki, delete_wiki, SCRATCH_DIR, load_app_config, _atomic_write
@@ -39,7 +39,7 @@ from services.search import local_search, matrix_search
 
 from services.graph import build_graph_data, build_graph_data_paginated
 from services.lint import run_lint
-from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
+from services.tags import list_all_tags, get_pages_by_tag, get_all_tags_aggregated
 from services.editor import ensure_okf_frontmatter
 from services.sync import append_okf_log, request_sync_background
 from services.audit import log_action
@@ -958,8 +958,6 @@ async def api_system_restart(admin: dict = Depends(require_api_admin)):
     _threading.Thread(target=_kill, daemon=True).start()
     return {"ok": True, "message": "Server-Neustart eingeleitet. Bitte in 5 Sekunden neu laden."}
 
-
-from core.config import slugify_wiki
 
 wiki_api_router = APIRouter(prefix=f"{BASE_PATH}/wiki/{{wiki_name}}/api")
 

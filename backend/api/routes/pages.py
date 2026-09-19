@@ -23,7 +23,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from core.config import (
     PROJECT_ROOT,
-    WIKI_DIR,
     RAW_DIR,
     EXPORT_DIR,
     SCRATCH_DIR,
@@ -39,7 +38,7 @@ from core.config import (
     delete_wiki,
     MCP_TOOL_GROUPS,
 )
-from web import templates, render, abort, redirect, urlencode
+from web import render, abort, redirect, urlencode
 from api.deps import require_login, require_admin, get_current_user
 from services.audit import log_action, get_recent_audit_logs, ALL_CATEGORIES
 from core.storage import list_users, list_keys, list_mcp_keys
@@ -58,10 +57,9 @@ from services.wiki import (
     run_sync_async,
 )
 from services.markdown import render_markdown, render_markdown_preview
-from services.search import matrix_search, local_search
+from services.search import matrix_search
 
 from services.sync import is_sync_needed, append_okf_log, request_sync_background
-from services.wiki import run_sync_async
 from services.graph import build_graph_data, build_graph_data_paginated, build_graph_data_all
 from services.lint import run_lint
 from services.analytics import get_wiki_analytics
@@ -798,7 +796,7 @@ def export_view(filename: str, request: Request):
 def tags_page(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
     tag_filter = request.query_params.get("tag", "").strip()
-    from services.tags import list_all_tags, get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
+    from services.tags import get_tag_cloud, get_pages_by_tag, get_all_tags_aggregated
     tag_cloud = get_tag_cloud(wiki)
     max_count = max((t["count"] for t in tag_cloud), default=1)
     tag_stats = get_all_tags_aggregated(wiki)
@@ -1210,7 +1208,7 @@ async def search(request: Request):
 
 @router.get("/lang/{code}")
 def switch_language(code: str, request: Request):
-    from core.config import get_available_languages, load_app_config, CONFIG_FILE
+    from core.config import get_available_languages, load_app_config
 
     available = get_available_languages()
     if code not in available:
@@ -2152,7 +2150,6 @@ def edit_get(request: Request):
                 pass
 
     import sys
-    import markdown as _md
     from importlib.metadata import version as _pkg_version
 
     def _pv(pkg):

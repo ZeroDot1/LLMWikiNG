@@ -76,8 +76,8 @@ async def _index_markdown_file(indexer: MatrixIndexer, wiki_id: str, md_file: Pa
     from services.tags import extract_tags, normalize_tag
 
     try:
-        content = md_file.read_text(encoding="utf-8", errors="replace")
-    except Exception:
+        content = await asyncio.to_thread(md_file.read_text, encoding="utf-8", errors="replace")
+    except OSError:
         return
     import re
 
@@ -113,20 +113,22 @@ async def _rebuild_index_async(wiki_id: str, app_state) -> None:
         app_state.matrix_rebuild = rebuild
 
         wikis = [wiki_id] if wiki_id != "all" else _wiki_slugs()
-        total = 0
-        files: list[tuple[str, Path]] = []
-        for slug in wikis:
-            root = WIKIS_ROOT / slug
-            if not root.exists():
-                continue
-            for f in sorted(root.rglob("*.md")):
-                rel = f.relative_to(root)
-                if any(p.startswith(".") for p in rel.parts):
+        def collect_files() -> list[tuple[str, Path]]:
+            files: list[tuple[str, Path]] = []
+            for slug in wikis:
+                root = WIKIS_ROOT / slug
+                if not root.exists():
                     continue
-                if f.stem in SYSTEM_STEMS:
-                    continue
-                files.append((slug, f))
-        rebuild["total"] = total = len(files)
+                for file_path in sorted(root.rglob("*.md")):
+                    rel = file_path.relative_to(root)
+                    if any(part.startswith(".") for part in rel.parts):
+                        continue
+                    if file_path.stem not in SYSTEM_STEMS:
+                        files.append((slug, file_path))
+            return files
+
+        files = await asyncio.to_thread(collect_files)
+        rebuild["total"] = len(files)
         rebuild["wiki_id"] = wiki_id
 
         for done, (slug, f) in enumerate(files, start=1):

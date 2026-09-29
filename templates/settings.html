@@ -283,9 +283,9 @@ function submitRevealKey(event) {
 
   errorEl.classList.add("hidden");
 
-  fetch("/LLMWikiNG/api-keys/reveal", {
+  fetch(window.BASE_PATH + "/api-keys/reveal", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": window.CSRF_TOKEN },
     body: JSON.stringify({ key_id: keyId, password: password })
   })
   .then(function(res) {
@@ -363,9 +363,9 @@ function revealSystemSecret() {
     return;
   }
 
-  fetch("/LLMWikiNG/system-secret/reveal", {
+  fetch(window.BASE_PATH + "/system-secret/reveal", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": window.CSRF_TOKEN },
     body: JSON.stringify({ password: password })
   })
   .then(function(res) {
@@ -407,9 +407,9 @@ function regenerateSystemSecret() {
     return;
   }
 
-  fetch("/LLMWikiNG/system-secret/regenerate", {
+  fetch(window.BASE_PATH + "/system-secret/regenerate", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": window.CSRF_TOKEN },
     body: JSON.stringify({ password: password })
   })
   .then(function(res) {

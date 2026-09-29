@@ -245,6 +245,17 @@ class TestWikiSettingsApi:
         )
         assert accepted.status_code in (302, 303)
 
+    def test_sensitive_settings_actions_require_csrf(self, auth_cookie):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
+        response = client.post(
+            "/LLMWikiNG/system-secret/reveal", json={"password": "Admin123!@#"}
+        )
+        assert response.status_code == 403
+
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient
         from main import create_app

@@ -13,7 +13,7 @@ import os
 
 from core.config import BASE_PATH, CONFIG_FILE, load_app_config, APP_VERSION, PROJECT_ROOT, _atomic_write
 from web import render, redirect, urlencode
-from api.deps import require_login, require_admin
+from api.deps import require_login, require_admin, verify_request_csrf
 from services.audit import log_action, ALL_CATEGORIES
 from core.security import verify_password, create_session
 from core.storage import (
@@ -294,6 +294,7 @@ async def api_keys_delete_all(request: Request, admin: dict = Depends(require_ad
 
 async def api_key_reveal(request: Request, admin: dict = Depends(require_admin)):
     """Verifiziert das Admin-Passwort und gibt den entschlüsselten API-Schlüssel zurück."""
+    verify_request_csrf(request, admin)
     try:
         data = await request.json()
         key_id = data.get("key_id")
@@ -332,6 +333,7 @@ async def api_key_reveal(request: Request, admin: dict = Depends(require_admin))
 @router.post("/system-secret/reveal")
 async def system_secret_reveal(request: Request, admin: dict = Depends(require_admin)):
     """Verifiziert das Admin-Passwort und gibt das kryptografische System-Secret zurück."""
+    verify_request_csrf(request, admin)
     try:
         data = await request.json()
         password = data.get("password")
@@ -352,6 +354,7 @@ async def system_secret_reveal(request: Request, admin: dict = Depends(require_a
 @router.post("/system-secret/regenerate")
 async def system_secret_regenerate(request: Request, admin: dict = Depends(require_admin)):
     """Verifiziert das Admin-Passwort, generiert ein neues kryptografisches Secret und speichert es."""
+    verify_request_csrf(request, admin)
     try:
         data = await request.json()
         password = data.get("password")

@@ -1107,6 +1107,9 @@ class TestServerBackupApi:
         resp_restore = client.post(f"/LLMWikiNG/api/v1/system/backups/{filename}/restore", headers=headers)
         assert resp_restore.status_code == 200
         assert resp_restore.json()["ok"] is True
+        import core.storage as storage
+        restored_admin = next(user for user in storage.list_users() if user["username"] == "admin")
+        assert restored_admin.get("password_hash")
 
         # 5. Backup löschen
         resp_del = client.delete(f"/LLMWikiNG/api/v1/system/backups/{filename}", headers=headers)

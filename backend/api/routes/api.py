@@ -782,7 +782,7 @@ async def api_restore_backup(filename: str, request: Request, admin: dict = Depe
 
     current_uid = admin.get("id")
     current_username = admin.get("username")
-    current_hash = admin.get("password")
+    current_hash = admin.get("password_hash")
     current_role = admin.get("role", "admin")
 
     try:
@@ -796,7 +796,7 @@ async def api_restore_backup(filename: str, request: Request, admin: dict = Depe
                     u["id"] = current_uid
                     break
             if not user_exists:
-                users.append({"id": current_uid, "username": current_username, "password": current_hash, "role": current_role, "active": True})
+                users.append({"id": current_uid, "username": current_username, "password_hash": current_hash, "role": current_role, "active": True})
             save_users(users)
 
         log_action(action="api_backup_restore", details=f"Backup via API wiederhergestellt: {b_path.name}", user_id=current_uid, username=current_username, request=request)

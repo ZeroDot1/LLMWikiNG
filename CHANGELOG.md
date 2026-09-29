@@ -52,6 +52,10 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Broken relative Markdown links are reported by lint checks, and cross-wiki search consistently resolves wiki slugs instead of display names.
 - Matrix shard searches finalize outstanding SQLite tasks before event-loop shutdown.
 - Recoverable failures in linting, analytics, Matrix statistics, and synchronization are handled narrowly or logged instead of being silently discarded.
+- WebUI backup creation, restore, deletion, and downloads now require administrator authorization; mutating backup actions also require CSRF protection.
+- WebUI and REST backup restores preserve the current administrator password hash.
+- The browser editor and ingest screen reject unknown wiki slugs instead of creating directories implicitly.
+- Sensitive settings requests use CSRF protection and respect a configured base path.
 
 ### Changed
 - The status dashboard reuses a short-lived per-wiki snapshot for expensive health data.
@@ -59,6 +63,7 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Cache hits no longer recursively scan wiki files; writers invalidate affected entries and TTL remains a direct-edit safety net.
 - Wiki analytics are cached and invalidated after synchronization.
 - Raw-source checks in the browser search are explicit and bounded to protect normal search latency.
+- Matrix rebuild file discovery and reads run outside the server event loop.
 
 ## [3.1.1] - 2026-09-19
 

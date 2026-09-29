@@ -17,7 +17,7 @@ import subprocess
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile as FastAPIUploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile as FastAPIUploadFile
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -2322,7 +2322,7 @@ from fastapi.responses import FileResponse
 from fastapi import UploadFile, File
 
 @router.get("/settings/backup")
-def settings_backup(request: Request):
+def settings_backup(request: Request, admin: dict = Depends(require_admin)):
     from services.backup import create_backup_xz
     from datetime import datetime
     
@@ -2333,16 +2333,22 @@ def settings_backup(request: Request):
     return FileResponse(path=backup_path, filename=backup_filename, media_type="application/x-xz")
 
 @router.post("/settings/restore")
-async def settings_restore(request: Request, backup_file: UploadFile = File(...)):
+async def settings_restore(
+    request: Request,
+    backup_file: UploadFile = File(...),
+    csrf_token: str = Form(""),
+    admin: dict = Depends(require_admin),
+):
     from services.backup import restore_backup_xz
     from core.storage import list_users, save_users
     from api.deps import get_current_user
     from services.audit import log_action
     
-    current_user = get_current_user(request)
+    verify_request_csrf(request, admin, csrf_token)
+    current_user = admin
     current_uid = current_user.get("id") if current_user else None
     current_username = current_user.get("username") if current_user else None
-    current_hash = current_user.get("password") if current_user else None
+    current_hash = current_user.get("password_hash") if current_user else None
     current_role = current_user.get("role", "admin") if current_user else "admin"
 
     temp_archive = PROJECT_ROOT / "data" / "temp_restore.tar.xz"
@@ -2362,7 +2368,7 @@ async def settings_restore(request: Request, backup_file: UploadFile = File(...)
                     u["id"] = current_uid
                     break
             if not user_exists:
-                users.append({"id": current_uid, "username": current_username, "password": current_hash, "role": current_role, "active": True})
+                users.append({"id": current_uid, "username": current_username, "password_hash": current_hash, "role": current_role, "active": True})
             save_users(users)
             
         if temp_archive.exists():
@@ -2379,20 +2385,21 @@ async def settings_restore(request: Request, backup_file: UploadFile = File(...)
         return redirect(f"{BASE_PATH}/settings?tab=backup&config_error_msg={urlencode(f'Restore fehlgeschlagen: {e}')}")
 
 @router.post("/settings/backup/create")
-async def settings_backup_create(request: Request):
+async def settings_backup_create(
+    request: Request, csrf_token: str = Form(""), admin: dict = Depends(require_admin)
+):
     """Erstellt ein neues Backup auf dem Server."""
-    user = require_login(request)
+    verify_request_csrf(request, admin, csrf_token)
     from services.backup import create_backup_xz
     from services.audit import log_action
     
     b_path = create_backup_xz()
-    log_action(action="backup_create", details=f"Server-Backup erstellt: {b_path.name}", username=user.get("username"), user_id=user.get("id"), request=request)
+    log_action(action="backup_create", details=f"Server-Backup erstellt: {b_path.name}", username=admin.get("username"), user_id=admin.get("id"), request=request)
     return redirect(f"{BASE_PATH}/settings?tab=backup&config_success_msg={urlencode(f'Server-Backup {b_path.name} erfolgreich erstellt!')}")
 
 @router.get("/settings/backup/download/{filename}")
-def settings_backup_download(filename: str, request: Request):
+def settings_backup_download(filename: str, request: Request, admin: dict = Depends(require_admin)):
     """Lädt ein bestimmtes Server-Backup herunter."""
-    require_login(request)
     from services.backup import get_backup_filepath
     b_path = get_backup_filepath(filename)
     if not b_path:
@@ -2400,7 +2407,9 @@ def settings_backup_download(filename: str, request: Request):
     return FileResponse(path=b_path, filename=b_path.name, media_type="application/x-xz")
 
 @router.post("/settings/backup/restore/{filename}")
-async def settings_backup_restore_server(filename: str, request: Request):
+async def settings_backup_restore_server(
+    filename: str, request: Request, csrf_token: str = Form(""), admin: dict = Depends(require_admin)
+):
     """Stellt ein auf dem Server gespeichertes Backup wieder her."""
     from services.backup import get_backup_filepath, restore_backup_xz
     from core.storage import list_users, save_users
@@ -2411,10 +2420,11 @@ async def settings_backup_restore_server(filename: str, request: Request):
     if not b_path:
         return redirect(f"{BASE_PATH}/settings?tab=backup&config_error_msg={urlencode('Backup-Datei nicht gefunden')}")
 
-    current_user = get_current_user(request)
+    verify_request_csrf(request, admin, csrf_token)
+    current_user = admin
     current_uid = current_user.get("id") if current_user else None
     current_username = current_user.get("username") if current_user else None
-    current_hash = current_user.get("password") if current_user else None
+    current_hash = current_user.get("password_hash") if current_user else None
     current_role = current_user.get("role", "admin") if current_user else "admin"
 
     try:
@@ -2428,7 +2438,7 @@ async def settings_backup_restore_server(filename: str, request: Request):
                     u["id"] = current_uid
                     break
             if not user_exists:
-                users.append({"id": current_uid, "username": current_username, "password": current_hash, "role": current_role, "active": True})
+                users.append({"id": current_uid, "username": current_username, "password_hash": current_hash, "role": current_role, "active": True})
             save_users(users)
         
         log_action(action="backup_restore", details=f"Server-Backup wiederhergestellt: {b_path.name}", username=current_username, user_id=current_uid, request=request)
@@ -2439,14 +2449,16 @@ async def settings_backup_restore_server(filename: str, request: Request):
         return redirect(f"{BASE_PATH}/settings?tab=backup&config_error_msg={urlencode(f'Restore fehlgeschlagen: {e}')}")
 
 @router.post("/settings/backup/delete/{filename}")
-async def settings_backup_delete(filename: str, request: Request):
+async def settings_backup_delete(
+    filename: str, request: Request, csrf_token: str = Form(""), admin: dict = Depends(require_admin)
+):
     """Löscht eine Server-Backup-Datei."""
-    user = require_login(request)
+    verify_request_csrf(request, admin, csrf_token)
     from services.backup import delete_server_backup
     from services.audit import log_action
     ok = delete_server_backup(filename)
     if ok:
-        log_action(action="backup_delete", details=f"Server-Backup gelöscht: {filename}", username=user.get("username"), user_id=user.get("id"), request=request)
+        log_action(action="backup_delete", details=f"Server-Backup gelöscht: {filename}", username=admin.get("username"), user_id=admin.get("id"), request=request)
         return redirect(f"{BASE_PATH}/settings?tab=backup&config_success_msg={urlencode(f'Backup {filename} gelöscht.')}")
     return redirect(f"{BASE_PATH}/settings?tab=backup&config_error_msg={urlencode('Fehler beim Löschen des Backups.')}")
 

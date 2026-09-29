@@ -55,11 +55,11 @@ def require_admin(request: Request) -> dict:
 from core.security import verify_csrf_token
 
 
-def verify_request_csrf(request: Request, user: dict) -> None:
+def verify_request_csrf(request: Request, user: dict, token: str | None = None) -> None:
     """Prüft den CSRF-Token bei zustandsverändernden Requests, die über Session-Cookies kommen."""
     if request.headers.get("X-API-Key"):
         return
-    token = request.headers.get("X-CSRF-Token") or request.headers.get("X-CSRFToken") or request.query_params.get("csrf_token")
+    token = token or request.headers.get("X-CSRF-Token") or request.headers.get("X-CSRFToken") or request.query_params.get("csrf_token")
     if not token or not verify_csrf_token(token, user["id"]):
         raise HTTPException(status_code=403, detail="CSRF-Token ungültig oder fehlt")
 

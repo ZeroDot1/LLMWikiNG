@@ -10,6 +10,7 @@
             </div>
             <div class="flex flex-wrap gap-2 pt-2">
                 <form action="{{ base_path }}/settings/backup/create" method="post" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-sm cursor-pointer">
                         {{ _('settings.backup_create_btn') }}
                     </button>
@@ -26,6 +27,7 @@
             <p class="text-text-secondary text-sm mb-3">{{ _('settings.restore_desc') }}</p>
             
             <form action="{{ base_path }}/settings/restore" method="post" enctype="multipart/form-data" class="space-y-3" onsubmit="return confirm({{ _('settings.restore_confirm')|tojson }});">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div>
                     <input type="file" name="backup_file" id="backup_file" required accept=".tar.xz" class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-text focus:border-border-focus focus:ring-2 focus:ring-primary-subtle">
                 </div>
@@ -79,6 +81,7 @@
                             
                             <!-- Restore -->
                             <form action="{{ base_path }}/settings/backup/restore/{{ b.filename }}" method="post" class="inline" onsubmit="return confirm({{ _('settings.restore_server_confirm')|tojson }});">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="rounded-lg bg-warning/20 border border-warning/40 text-warning-text hover:bg-warning/30 px-2.5 py-1 text-xs font-sans font-medium transition-colors cursor-pointer">
                                     🔄 {{ _('settings.backup_action_restore') }}
                                 </button>
@@ -86,6 +89,7 @@
 
                             <!-- Delete -->
                             <form action="{{ base_path }}/settings/backup/delete/{{ b.filename }}" method="post" class="inline" onsubmit="return confirm({{ _('settings.delete_backup_confirm')|tojson }});">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="rounded-lg bg-error/15 border border-error/30 text-error hover:bg-error/25 px-2.5 py-1 text-xs font-sans font-medium transition-colors cursor-pointer">
                                     🗑️ {{ _('settings.backup_action_delete') }}
                                 </button>

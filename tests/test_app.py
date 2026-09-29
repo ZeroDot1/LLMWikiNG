@@ -210,6 +210,41 @@ class TestWikiSettingsApi:
         assert deleted.status_code == 200
         assert not (tmp_project / "wikis" / "session-delete").exists()
 
+    def test_backup_creation_requires_admin_and_csrf(self, sample_users):
+        """Backup operations must not be available to editors or forged forms."""
+        from fastapi.testclient import TestClient
+        from main import create_app
+        from core.security import create_csrf_token
+        from core.storage import list_users
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        editor_login = client.post(
+            "/LLMWikiNG/login",
+            data={"username": "editor", "password": "Editor123!@#"},
+            follow_redirects=False,
+        )
+        assert editor_login.status_code == 303
+        denied = client.post("/LLMWikiNG/settings/backup/create", follow_redirects=False)
+        assert denied.status_code == 403
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        admin_login = client.post(
+            "/LLMWikiNG/login",
+            data={"username": "admin", "password": "Admin123!@#"},
+            follow_redirects=False,
+        )
+        assert admin_login.status_code == 303
+        rejected = client.post("/LLMWikiNG/settings/backup/create", follow_redirects=False)
+        assert rejected.status_code == 403
+
+        admin = next(user for user in list_users() if user["role"] == "admin")
+        accepted = client.post(
+            "/LLMWikiNG/settings/backup/create",
+            data={"csrf_token": create_csrf_token(admin["id"])},
+            follow_redirects=False,
+        )
+        assert accepted.status_code in (302, 303)
+
     def test_login_nonexistent_user(self, sample_users):
         from fastapi.testclient import TestClient
         from main import create_app

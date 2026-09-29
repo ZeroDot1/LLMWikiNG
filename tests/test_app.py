@@ -183,10 +183,24 @@ class TestWikiSettingsApi:
 
         client = TestClient(create_app(), raise_server_exceptions=False)
         client.cookies.update(auth_cookie)
+        from core.config import save_wiki_meta
+        save_wiki_meta("other-wiki", "Other Wiki", "")
         response = client.get("/LLMWikiNG/edit?wiki=other-wiki")
         assert response.status_code == 200
         assert 'name="wiki" value="other-wiki"' in response.text
         assert 'name="folder" value="wiki"' in response.text
+
+    def test_editor_and_ingest_reject_unknown_wikis(self, auth_cookie, tmp_project):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
+        editor = client.get("/LLMWikiNG/edit?wiki=does-not-exist")
+        ingest = client.get("/LLMWikiNG/ingest?wiki=does-not-exist")
+        assert editor.status_code == 404
+        assert ingest.status_code == 404
+        assert not (tmp_project / "wikis" / "does-not-exist").exists()
 
     def test_session_admin_can_delete_wiki_with_csrf(self, auth_cookie, tmp_project):
         from fastapi.testclient import TestClient

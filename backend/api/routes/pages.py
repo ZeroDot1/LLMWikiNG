@@ -101,6 +101,14 @@ def _default_wiki() -> str:
     return slugs[0] if slugs else "main"
 
 
+def _wiki_root_or_404(wiki: str) -> Path:
+    """Resolve an existing wiki without creating directories for bad input."""
+    root = wiki_path(wiki, create=False)
+    if not root.exists() or not root.is_dir():
+        raise HTTPException(status_code=404, detail=f"Wiki '{wiki}' not found")
+    return root
+
+
 @router.get("/")
 def dashboard(request: Request):
     query = request.query_params.get("q", "").strip()
@@ -871,6 +879,7 @@ async def graph_data_paginated(request: Request):
 @router.get("/ingest")
 def ingest_get(request: Request):
     wiki = request.query_params.get("wiki") or _default_wiki()
+    _wiki_root_or_404(wiki)
     return render(
         request, "ingest.html",
         active_page="ingest", wiki=wiki,
@@ -889,6 +898,7 @@ async def ingest_post(request: Request):
     form = await request.form()
     user = require_login(request)
     wiki = (form.get("wiki") or request.query_params.get("wiki") or _default_wiki())
+    wiki_root = _wiki_root_or_404(wiki)
     ingest_type = form.get("type")
     backend = form.get("backend", "ollama")
 
@@ -954,7 +964,7 @@ async def ingest_post(request: Request):
             env["LLM_BACKEND"] = backend
             env["OLLAMA_HOST"] = cfg.get("ollama_host", "http://localhost:11434")
             env["OLLAMA_MODEL"] = cfg.get("ollama_model", "llama3.2:3b")
-            env["WIKI_DIR"] = str(wiki_path(wiki))
+            env["WIKI_DIR"] = str(wiki_root)
             env["COLLECTION_NAME"] = f"wiki_{wiki}"
 
             raw_text = filepath.read_text(encoding="utf-8", errors="replace")
@@ -2147,7 +2157,7 @@ def edit_get(request: Request):
     folder = request.query_params.get("folder", "wiki")
     content = ""
 
-    target_dir = wiki_path(wiki) if folder == "wiki" else RAW_DIR
+    target_dir = _wiki_root_or_404(wiki) if folder == "wiki" else RAW_DIR
     error_msg = request.query_params.get("error_msg")
 
     if filename:
@@ -2227,7 +2237,7 @@ async def edit_save(request: Request):
             return JSONResponse(status_code=400, content={"detail": "Path-Traversal blockiert"})
         return redirect(f"{BASE_PATH}/edit?folder={urlencode(folder)}&error_msg={urlencode('Path-Traversal blockiert')}")
 
-    target_dir = wiki_path(wiki) if folder == "wiki" else RAW_DIR
+    target_dir = _wiki_root_or_404(wiki) if folder == "wiki" else RAW_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
     filepath = (target_dir / filename).resolve()
     if not filepath.is_relative_to(target_dir.resolve()):

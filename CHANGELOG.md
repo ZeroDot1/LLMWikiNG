@@ -49,6 +49,9 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- Matrix search applies wiki and tag filters before limiting results and honors requested limits above ten matches per shard.
+- Matrix registry identities include the wiki ID, so equal page IDs in separate wikis cannot overwrite or delete one another; legacy registries migrate without dropping existing rows.
+- Wiki existence checks reject unknown targets without creating directories, and the REST search fallback runs outside the event loop.
 - Storage locks preserve the original I/O exception instead of attempting to enter a failed write operation twice.
 
 ### Tests

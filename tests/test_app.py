@@ -202,6 +202,19 @@ class TestWikiSettingsApi:
         assert ingest.status_code == 404
         assert not (tmp_project / "wikis" / "does-not-exist").exists()
 
+    def test_editor_cannot_read_outside_wiki_root(self, auth_cookie, tmp_project):
+        from fastapi.testclient import TestClient
+        from main import create_app
+
+        (tmp_project / "private.md").write_text("Sensitive outside content", encoding="utf-8")
+        client = TestClient(create_app(), raise_server_exceptions=False)
+        client.cookies.update(auth_cookie)
+        response = client.get(
+            "/LLMWikiNG/edit", params={"wiki": "main", "filename": "../../private.md"}
+        )
+        assert response.status_code == 400
+        assert "Sensitive outside content" not in response.text
+
     def test_session_admin_can_delete_wiki_with_csrf(self, auth_cookie, tmp_project):
         from fastapi.testclient import TestClient
         from main import create_app

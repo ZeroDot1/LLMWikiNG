@@ -2164,7 +2164,9 @@ def edit_get(request: Request):
         clean_filename = filename
         if not clean_filename.endswith(".md"):
             clean_filename += ".md"
-        filepath = target_dir / clean_filename
+        filepath = (target_dir / clean_filename).resolve()
+        if not filepath.is_relative_to(target_dir.resolve()):
+            raise HTTPException(status_code=400, detail="Path traversal blocked")
         if filepath.exists() and filepath.is_file():
             try:
                 content = filepath.read_text(encoding="utf-8", errors="replace")

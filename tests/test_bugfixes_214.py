@@ -42,7 +42,7 @@ def test_bug2_fernet_encryption():
 
 def test_bug3_log_parsing_with_hyphens(tmp_path):
     wiki_name = "test-log-wiki"
-    root = WIKIS_ROOT / wiki_name
+    root = wiki_path(wiki_name)
     root.mkdir(parents=True, exist_ok=True)
     log_file = root / "log.md"
     log_content = (

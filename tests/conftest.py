@@ -26,8 +26,8 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 
-@pytest.fixture()
-def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+@pytest.fixture(autouse=True)
+def tmp_project(tmp_path_factory, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Erstellt ein vollständig isoliertes temporäres Projektverzeichnis.
 
     Erstellt die gleiche Struktur wie das echte Projekt:
@@ -39,6 +39,7 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     - lang/
     - templates/
     """
+    tmp_path = tmp_path_factory.mktemp("isolated_project")
     # Verzeichnisse erstellen
     wikis_root = tmp_path / "wikis"
     main_wiki = wikis_root / "main"
@@ -117,6 +118,16 @@ def tmp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     import core.storage as storage_mod
     monkeypatch.setattr(storage_mod, "USERS_FILE", data_dir / "users.json")
     monkeypatch.setattr(storage_mod, "KEYS_FILE", data_dir / "api_keys.json")
+    monkeypatch.setattr(storage_mod, "MCP_KEYS_FILE", data_dir / "mcp_keys.json")
+    matrix_root = data_dir / "matrix"
+    monkeypatch.setattr(cfg, "MATRIX_DATA_ROOT", matrix_root)
+    import services.matrix_indexer as indexer_mod
+    import services.matrix_searcher as searcher_mod
+    monkeypatch.setattr(indexer_mod, "MATRIX_DATA_ROOT", matrix_root)
+    monkeypatch.setattr(indexer_mod, "WIKIS_ROOT", wikis_root)
+    monkeypatch.setattr(searcher_mod, "MATRIX_DATA_ROOT", matrix_root)
+    import api.routes.matrix as matrix_mod
+    monkeypatch.setattr(matrix_mod, "WIKIS_ROOT", wikis_root)
 
     # ---------------------------------------------------------------
     # Service-Module patchen: Diese importieren Config-Werte bei

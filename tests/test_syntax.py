@@ -56,7 +56,7 @@ def _iter_js_files():
 
 def _iter_html_files():
     for d in HTML_DIRS:
-        yield from sorted(d.glob("*.html"))
+        yield from sorted(d.rglob("*.html"))
 
 
 # ─── Python Syntax ────────────────────────────────────────────────────────────

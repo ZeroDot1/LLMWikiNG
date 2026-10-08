@@ -53,36 +53,30 @@ class TestPerUserMcpKeys:
         assert resp.status_code == 403
         assert "gehoeren nicht demselben Benutzer" in resp.json()["detail"]
 
-    def test_mcp_key_user_match_accepted(self, client, sample_api_keys):
+    def test_mcp_key_user_match_accepted(self, sample_api_keys, monkeypatch):
         """Sollte zugelassen werden (Stream startet), wenn MCP-Key und API-Key demselben Benutzer gehören."""
         tmp_path, key_a_info = sample_api_keys
         mcp_key_a_obj, raw_mcp_key_a = create_mcp_key(key_a_info["admin"]["id"], "User A MCP Key")
 
-        import threading
-        result = {}
+        from fastapi.testclient import TestClient
+        from starlette.applications import Starlette
+        from starlette.responses import JSONResponse
+        from starlette.routing import Route
+        from main import create_app
+        import api.routes.mcp as mcp_mod
 
-        def do_req():
-            try:
-                with client.stream(
-                    "GET",
-                    "/LLMWikiNG/mcp/sse",
-                    headers={
-                        "X-MCP-Key": raw_mcp_a_key if 'raw_mcp_a_key' in locals() else raw_mcp_key_a,
-                        "X-API-Key": key_a_info["raw_key"],
-                    },
-                ) as resp:
-                    result["status"] = resp.status_code
-            except Exception as e:
-                result["error"] = repr(e)
+        async def authenticated_endpoint(request):
+            return JSONResponse({"authenticated": True})
 
-        t = threading.Thread(target=do_req, daemon=True)
-        t.start()
-        t.join(timeout=3)
-        if t.is_alive():
-            # Stream hat gestartet (kein 401/403)
-            assert True
-        else:
-            assert result.get("status") not in (401, 403)
+        transport = Starlette(routes=[Route("/sse", authenticated_endpoint)])
+        monkeypatch.setattr(mcp_mod, "get_mcp_sse_app", lambda: transport)
+        with TestClient(create_app()) as client:
+            response = client.get(
+                "/LLMWikiNG/mcp/sse",
+                headers={"X-MCP-Key": raw_mcp_key_a, "X-API-Key": key_a_info["raw_key"]},
+            )
+        assert response.status_code == 200
+        assert response.json() == {"authenticated": True}
 
     def test_mcp_tool_permission_filtering(self):
         """Testet die _require_tool Berechtigungsprüfung."""
@@ -131,4 +125,3 @@ class TestPerUserMcpKeys:
         assert resp.json()["ok"] is True
         assert resp.json()["mcp_key"]["name"] == "API Updated Name"
         assert "okf_read_concept" in resp.json()["mcp_key"]["allowed_tools"]
-

@@ -75,6 +75,8 @@ class MatrixSearcher:
             Dict mit den Schlüsseln ``results``, ``total``, ``search_time_ms``
             und ``shards_queried``.
         """
+        if limit < 1:
+            raise ValueError("Search limit must be positive")
         start = time.perf_counter()
         # Tag-Filter normalisieren, damit Groß-/Kleinschreibung und
         # Umlaute korrekt mit den indizierten (normalisierten) Tags matchen.
@@ -92,7 +94,7 @@ class MatrixSearcher:
         # otherwise make its worker thread try to notify an already closed
         # event loop.
         tasks = [
-            asyncio.create_task(self._query_shard(path, query_text, tag_filters, wikis))
+            asyncio.create_task(self._query_shard(path, query_text, tag_filters, wikis, limit))
             for path in shard_paths
         ]
         shards_queried = 0
@@ -156,6 +158,7 @@ class MatrixSearcher:
         query: str,
         tag_filters: list[str],
         wikis: list[str],
+        limit: int = _PER_SHARD_LIMIT,
     ) -> list[dict] | None:
         async with self._sem:
             # FTS5 Sonderzeichen bereinigen & Suchwörter flexibel verknüpfen
@@ -163,13 +166,24 @@ class MatrixSearcher:
             if not words:
                 return None
             fts_query = " OR ".join(words)
+            if not wikis:
+                return []
+            filters = ["d.wiki_id IN (" + ",".join("?" for _ in wikis) + ")"]
+            parameters = [fts_query, *wikis]
+            for tag in tag_filters:
+                filters.append("instr(',' || d.tags || ',', ?) > 0")
+                parameters.append(f",{tag},")
+            parameters.append(limit)
+            sql = _QUERY_SQL.replace(
+                "WHERE fts MATCH ?", "WHERE fts MATCH ? AND " + " AND ".join(filters)
+            )
 
             try:
                 async with aiosqlite.connect(str(shard_path), timeout=_QUERY_TIMEOUT) as conn:
                     conn.row_factory = aiosqlite.Row
                     await conn.execute("PRAGMA query_only=ON")
                     async with conn.execute(
-                        _QUERY_SQL, (fts_query, _PER_SHARD_LIMIT)
+                        sql, parameters
                     ) as cur:
                         rows = await cur.fetchall()
             except Exception:

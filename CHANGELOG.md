@@ -49,6 +49,12 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- Storage locks preserve the original I/O exception instead of attempting to enter a failed write operation twice.
+
+### Tests
+- All tests isolate application data, MCP credentials, and Matrix shards in temporary project directories.
+- MCP authentication assertions now verify an actual successful response without leaking a streaming request thread.
+- Syntax checks include nested settings templates, and storage regression coverage exercises failed writes and subsequent lock acquisition.
 - The browser editor blocks reads outside the selected wiki or raw-source directory, including escaped symbolic links.
 - Cache entries are scoped to their data directory, preventing reuse across different wiki roots.
 - Requesting a background synchronization immediately invalidates derived wiki data, the combined knowledge graph, and the status snapshot.

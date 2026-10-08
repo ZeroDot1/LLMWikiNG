@@ -295,10 +295,12 @@ async def api_tags(wiki: str, tag: str = "", user: dict = Depends(get_api_user))
 
 @router.get("/search")
 async def api_search(request: Request, q: str = "", wiki: str = "main", user: dict = Depends(get_api_user)):
+    if wiki != "all":
+        _wiki_or_404(wiki)
     if not q:
         return {"query": q, "results": [], "local": []}
     result = await matrix_search(q, wiki)
-    local = local_search(q, wiki)
+    local = await asyncio.to_thread(local_search, q, wiki)
     try:
         from services.audit import log_action
 

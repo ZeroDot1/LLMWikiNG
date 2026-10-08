@@ -104,6 +104,6 @@ def get_api_user(request: Request, background_tasks: BackgroundTasks) -> dict:
 def require_wiki(wiki_name: str) -> str:
     """Normalisiert den Wiki-Namen und prüft Existenz."""
     slug = slugify_wiki(wiki_name)
-    if not (wiki_path(slug)).exists():
+    if not wiki_path(slug, create=False).is_dir():
         raise HTTPException(status_code=404, detail=f"Wiki '{wiki_name}' nicht gefunden")
     return slug

@@ -1,9 +1,45 @@
 # Changelog
 
-Alle wichtigen Änderungen an LLMWikiNG werden hier dokumentiert.
+All notable changes to LLMWikiNG are documented here.
 
-Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
-LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+LLMWikiNG follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+No changes yet.
+
+## [3.2.3] - 2026-10-08
+
+### Fixed
+- Matrix search applies wiki and tag filters before limiting results and honors requested limits above ten matches per shard.
+- Matrix registry identities include the wiki ID, so equal page IDs in separate wikis cannot overwrite or delete one another; legacy registries migrate without dropping existing rows.
+- Wiki existence checks reject unknown targets without creating directories, and the REST search fallback runs outside the event loop.
+- Storage locks preserve the original I/O exception instead of attempting to enter a failed write operation twice.
+- The browser editor blocks reads outside the selected wiki or raw-source directory, including escaped symbolic links.
+- Cache entries are scoped to their data directory, preventing reuse across different wiki roots.
+- Requesting a background synchronization immediately invalidates derived wiki data, the combined knowledge graph, and the status snapshot.
+- Broken relative Markdown links are reported by lint checks, and cross-wiki search consistently resolves wiki slugs instead of display names.
+- Matrix shard searches finalize outstanding SQLite tasks before event-loop shutdown.
+- Recoverable failures in linting, analytics, Matrix statistics, and synchronization are handled narrowly or logged instead of being silently discarded.
+- WebUI backup creation, restore, deletion, and downloads now require administrator authorization; mutating backup actions also require CSRF protection.
+- WebUI and REST backup restores preserve the current administrator password hash.
+- The browser editor and ingest screen reject unknown wiki slugs instead of creating directories implicitly.
+- Sensitive settings requests use CSRF protection and respect a configured base path.
+
+### Changed
+- The status dashboard reuses a short-lived per-wiki snapshot for expensive health data.
+- Lint backlinks are calculated in linear time and markdown is loaded only once per lint run.
+- Cache hits no longer recursively scan wiki files; writers invalidate affected entries and TTL remains a direct-edit safety net.
+- Wiki analytics are cached and invalidated after synchronization.
+- Raw-source checks in the browser search are explicit and bounded to protect normal search latency.
+- Matrix rebuild file discovery and reads run outside the server event loop.
+
+### Tests
+- All tests isolate application data, MCP credentials, and Matrix shards in temporary project directories.
+- MCP authentication assertions now verify an actual successful response without leaking a streaming request thread.
+- Syntax checks include nested settings templates, and storage regression coverage exercises failed writes and subsequent lock acquisition.
+- Complete regression suite: 649 tests passed.
 
 ## [3.2.2] - 2026-09-19
 
@@ -45,37 +81,6 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ingest-Pipeline extrahiert Buchinhalte vor Bereinigung, Chunking, Tags und OKF-Seitenerzeugung.
 - XSS-Risiken in dynamischen Frontend-Ausgaben für Tag-Autocomplete und Graph-Fehler behoben.
 - Versionsangaben in Frontend-Metadaten und Startskript vereinheitlicht.
-
-## [Unreleased]
-
-### Fixed
-- Matrix search applies wiki and tag filters before limiting results and honors requested limits above ten matches per shard.
-- Matrix registry identities include the wiki ID, so equal page IDs in separate wikis cannot overwrite or delete one another; legacy registries migrate without dropping existing rows.
-- Wiki existence checks reject unknown targets without creating directories, and the REST search fallback runs outside the event loop.
-- Storage locks preserve the original I/O exception instead of attempting to enter a failed write operation twice.
-
-### Tests
-- All tests isolate application data, MCP credentials, and Matrix shards in temporary project directories.
-- MCP authentication assertions now verify an actual successful response without leaking a streaming request thread.
-- Syntax checks include nested settings templates, and storage regression coverage exercises failed writes and subsequent lock acquisition.
-- The browser editor blocks reads outside the selected wiki or raw-source directory, including escaped symbolic links.
-- Cache entries are scoped to their data directory, preventing reuse across different wiki roots.
-- Requesting a background synchronization immediately invalidates derived wiki data, the combined knowledge graph, and the status snapshot.
-- Broken relative Markdown links are reported by lint checks, and cross-wiki search consistently resolves wiki slugs instead of display names.
-- Matrix shard searches finalize outstanding SQLite tasks before event-loop shutdown.
-- Recoverable failures in linting, analytics, Matrix statistics, and synchronization are handled narrowly or logged instead of being silently discarded.
-- WebUI backup creation, restore, deletion, and downloads now require administrator authorization; mutating backup actions also require CSRF protection.
-- WebUI and REST backup restores preserve the current administrator password hash.
-- The browser editor and ingest screen reject unknown wiki slugs instead of creating directories implicitly.
-- Sensitive settings requests use CSRF protection and respect a configured base path.
-
-### Changed
-- The status dashboard reuses a short-lived per-wiki snapshot for expensive health data.
-- Lint backlinks are calculated in linear time and markdown is loaded only once per lint run.
-- Cache hits no longer recursively scan wiki files; writers invalidate affected entries and TTL remains a direct-edit safety net.
-- Wiki analytics are cached and invalidated after synchronization.
-- Raw-source checks in the browser search are explicit and bounded to protect normal search latency.
-- Matrix rebuild file discovery and reads run outside the server event loop.
 
 ## [3.1.1] - 2026-09-19
 

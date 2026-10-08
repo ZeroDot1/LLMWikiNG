@@ -89,10 +89,10 @@ def _read_app_version() -> str:
     try:
         version_file = PROJECT_ROOT / "VERSION"
         if version_file.exists():
-            return version_file.read_text(encoding="utf-8").strip() or "2.13.18"
+            return version_file.read_text(encoding="utf-8").strip() or "3.2.3"
     except Exception:
         pass
-    return "2.13.18"
+    return "3.2.3"
 
 
 APP_VERSION = _read_app_version()

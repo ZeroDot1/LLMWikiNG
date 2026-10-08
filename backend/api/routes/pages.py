@@ -1271,12 +1271,12 @@ async def about(request: Request):
         request.cookies.get("llmwiki_lang"),
     )
     template = "about_de.html" if lang == "de" else "about.html"
-    matrix_ver = "Matrix 3.1.0"
+    matrix_ver = f"Matrix {APP_VERSION}"
     try:
         from core.config import MATRIX_DATA_ROOT
         if MATRIX_DATA_ROOT.exists():
             shards = list(MATRIX_DATA_ROOT.glob("*_shard_*.db"))
-            matrix_ver = f"Matrix 3.1.0 · {len(shards)} Shards"
+            matrix_ver = f"Matrix {APP_VERSION} · {len(shards)} Shards"
     except Exception:
         pass
 
@@ -2194,7 +2194,7 @@ def edit_get(request: Request):
         app_version=APP_VERSION,
         python_version=sys.version.split()[0],
         markdown_version=_pv("markdown"),
-        matrix_version="Matrix 3.1.0",
+        matrix_version=f"Matrix {APP_VERSION}",
         jinja_version=_pv("jinja2"),
         error_msg=error_msg,
     )

@@ -2,7 +2,9 @@
 
 # LLMWikiNG (OKF Edition)
 
-**Current release: 3.2.2**
+**Current release: 3.2.3**
+
+This release fixes Matrix search filtering and cross-wiki registry collisions, hardens editor and backup access, improves cache freshness and performance, and expands automated regression coverage.
 
 The current release supports OKF v0.2 ingestion through the WebUI, REST API, and MCP, including EPUB and PDF source files.
 

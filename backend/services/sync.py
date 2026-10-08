@@ -720,6 +720,9 @@ async def _run_bg_sync_loop(wiki: str) -> None:
 
 def request_sync_background(wiki: str = "main", force: bool = False) -> None:
     """Fordert einen Wiki-Sync im Hintergrund an (nicht-blockierend)."""
+    from services.cache import invalidate_wiki_cache
+
+    invalidate_wiki_cache(wiki)
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:

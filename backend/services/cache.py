@@ -8,7 +8,7 @@ from __future__ import annotations
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 
 class WikiCache:
@@ -28,23 +28,26 @@ class WikiCache:
         self._lock = threading.RLock()
         self._max_age = max_age_seconds
 
-    def get(self, key: str, directory: Path) -> Optional[Any]:
-        """Return a value unless it is expired; ``directory`` is API-compatible."""
+    def get(self, key: str, directory: Path | None) -> Optional[Any]:
+        """Return an unexpired value belonging to the requested directory."""
         with self._lock:
             entry = self._store.get(key)
             if entry is None:
+                return None
+            if entry["directory"] != directory:
                 return None
             if time.monotonic() - entry["ts"] > self._max_age:
                 del self._store[key]
                 return None
             return entry["value"]
 
-    def set(self, key: str, value: Any, directory: Path) -> None:
+    def set(self, key: str, value: Any, directory: Path | None) -> None:
         """Store a value; callers invalidate affected keys after mutations."""
         with self._lock:
             self._store[key] = {
                 "value": value,
                 "ts": time.monotonic(),
+                "directory": directory,
             }
 
     def invalidate(self, key: str) -> None:
@@ -79,3 +82,13 @@ _cache = WikiCache(max_age_seconds=300)
 def get_cache() -> WikiCache:
     """Gibt die globale Cache-Instanz zurück."""
     return _cache
+
+
+def invalidate_wiki_cache(wiki: str) -> None:
+    """Invalidate derived data immediately after a wiki mutation."""
+    for namespace in ("pages", "graph", "tags", "analytics"):
+        _cache.invalidate(f"{namespace}:{wiki}")
+    _cache.invalidate("graph:__all__")
+    from services.status import invalidate_status_snapshot
+
+    invalidate_status_snapshot(wiki)

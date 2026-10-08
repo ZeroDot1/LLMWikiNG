@@ -26,6 +26,25 @@ class TestWikiCache:
         cache = WikiCache()
         assert cache.get("nonexistent", tmp_path) is None
 
+    def test_same_key_cannot_return_data_from_another_root(self, tmp_path):
+        cache = WikiCache()
+        cache.set("pages:main", ["private-page"], tmp_path / "first")
+        assert cache.get("pages:main", tmp_path / "second") is None
+
+    def test_wiki_invalidation_refreshes_all_wiki_graph(self, tmp_path):
+        from services.cache import get_cache, invalidate_wiki_cache
+
+        cache = get_cache()
+        cache.clear()
+        cache.set("pages:main", ["old-page"], tmp_path)
+        cache.set("graph:__all__", {"nodes": ["old-page"]}, None)
+        cache.set("pages:other", ["keep"], tmp_path)
+        invalidate_wiki_cache("main")
+        assert cache.get("pages:main", tmp_path) is None
+        assert cache.get("graph:__all__", None) is None
+        assert cache.get("pages:other", tmp_path) == ["keep"]
+        cache.clear()
+
     def test_cache_invalidated_explicitly_after_file_change(self, tmp_path):
         """Mutations invalidate the affected cache key without a directory scan."""
         cache = WikiCache(max_age_seconds=300)

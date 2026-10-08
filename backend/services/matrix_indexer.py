@@ -57,11 +57,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS fts USING fts5(
 
 _REGISTRY_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS doc_registry (
-    doc_id       TEXT PRIMARY KEY,
+    doc_id       TEXT NOT NULL,
     wiki_id      TEXT NOT NULL,
     md_path      TEXT NOT NULL DEFAULT '',
     shard_name   TEXT NOT NULL,
-    last_updated TEXT NOT NULL
+    last_updated TEXT NOT NULL,
+    PRIMARY KEY (wiki_id, doc_id)
 );
 """
 
@@ -241,6 +242,17 @@ class MatrixIndexer:
         conn = sqlite3.connect(str(self._registry_path))
         try:
             conn.executescript(_REGISTRY_SCHEMA_SQL)
+            conn.execute("BEGIN IMMEDIATE")
+            columns = conn.execute("PRAGMA table_info(doc_registry)").fetchall()
+            primary_key = [row[1] for row in sorted(columns, key=lambda row: row[5]) if row[5]]
+            if primary_key == ["doc_id"]:
+                conn.execute("ALTER TABLE doc_registry RENAME TO doc_registry_legacy")
+                conn.execute(_REGISTRY_SCHEMA_SQL)
+                conn.execute(
+                    "INSERT INTO doc_registry SELECT doc_id, wiki_id, md_path, shard_name, last_updated "
+                    "FROM doc_registry_legacy"
+                )
+                conn.execute("DROP TABLE doc_registry_legacy")
             conn.commit()
         finally:
             conn.close()
@@ -330,7 +342,7 @@ class MatrixIndexer:
         doc_id = job["doc_id"]
         shard = self._get_shard_path(wiki_id, doc_id)
         if not shard.exists():
-            await self._remove_registry(doc_id)
+            await self._remove_registry(wiki_id, doc_id)
             return
 
         async with aiosqlite.connect(str(shard), timeout=10) as conn:
@@ -343,7 +355,7 @@ class MatrixIndexer:
                 await conn.execute("DELETE FROM fts WHERE rowid = ?", (row[0],))
             await conn.execute("DELETE FROM docs WHERE doc_id = ?", (doc_id,))
             await conn.commit()
-        await self._remove_registry(doc_id)
+        await self._remove_registry(wiki_id, doc_id)
 
     async def _update_registry(self, wiki_id: str, doc_id: str, md_path: str, shard_name: str) -> None:
         import sqlite3
@@ -363,13 +375,13 @@ class MatrixIndexer:
 
         await asyncio.to_thread(_write)
 
-    async def _remove_registry(self, doc_id: str) -> None:
+    async def _remove_registry(self, wiki_id: str, doc_id: str) -> None:
         import sqlite3
 
         def _write() -> None:
             conn = sqlite3.connect(str(self._registry_path), timeout=10)
             try:
-                conn.execute("DELETE FROM doc_registry WHERE doc_id = ?", (doc_id,))
+                conn.execute("DELETE FROM doc_registry WHERE wiki_id = ? AND doc_id = ?", (wiki_id, doc_id))
                 conn.commit()
             finally:
                 conn.close()

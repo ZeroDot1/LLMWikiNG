@@ -412,7 +412,7 @@ async def matrix_prune(
             for doc_id, wiki_id, md_path in rows:
                 target = WIKIS_ROOT / wiki_id / md_path
                 if not target.exists():
-                    conn.execute("DELETE FROM doc_registry WHERE doc_id = ?", (doc_id,))
+                    conn.execute("DELETE FROM doc_registry WHERE wiki_id = ? AND doc_id = ?", (wiki_id, doc_id))
                     indexer.remove_document(wiki_id, doc_id)
                     removed += 1
             conn.commit()

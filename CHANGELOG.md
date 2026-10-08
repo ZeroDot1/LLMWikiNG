@@ -49,6 +49,9 @@ LLMWikiNG folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- The browser editor blocks reads outside the selected wiki or raw-source directory, including escaped symbolic links.
+- Cache entries are scoped to their data directory, preventing reuse across different wiki roots.
+- Requesting a background synchronization immediately invalidates derived wiki data, the combined knowledge graph, and the status snapshot.
 - Broken relative Markdown links are reported by lint checks, and cross-wiki search consistently resolves wiki slugs instead of display names.
 - Matrix shard searches finalize outstanding SQLite tasks before event-loop shutdown.
 - Recoverable failures in linting, analytics, Matrix statistics, and synchronization are handled narrowly or logged instead of being silently discarded.

@@ -35,14 +35,20 @@ def _locked_write(path: Path):
         lock_path = path.with_suffix(".lock")
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(lock_path, "w") as lock_file:
+            lock_file = open(lock_path, "w")
+            try:
                 fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-                try:
-                    yield
-                finally:
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            except OSError:
+                lock_file.close()
+                raise
         except OSError:
             yield
+            return
+        with lock_file:
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 

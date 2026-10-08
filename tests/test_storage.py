@@ -8,6 +8,18 @@ from __future__ import annotations
 import pytest
 
 
+def test_locked_write_preserves_original_io_error(tmp_path):
+    from core.storage import _locked_write
+
+    with pytest.raises(OSError, match="disk full"):
+        with _locked_write(tmp_path / "users.json"):
+            raise OSError("disk full")
+
+    # The error must also release the lock for subsequent operations.
+    with _locked_write(tmp_path / "users.json"):
+        pass
+
+
 class TestUserCRUD:
     """Tests für Benutzer-Operationen."""
 
